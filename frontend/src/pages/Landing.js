@@ -107,6 +107,240 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Animated Cases Section */}
+      <section className="py-16 px-6 bg-[#fafafa] border-t border-[#f0f0f0] text-center overflow-hidden">
+        <div className="text-[11px] text-[#1a56db] uppercase tracking-wider font-medium mb-2">See Jasper in action</div>
+        <h2 className="text-2xl md:text-3xl font-medium text-[#0a0a0f] mb-2" style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '-0.5px' }}>
+          Whatever your situation —<br/>Jasper is already on it.
+        </h2>
+        <p className="text-sm text-[#aaa] mb-10">Every case tracked. Every deadline visible. Every risk scored instantly.</p>
+
+        <div className="max-w-[680px] mx-auto bg-white border border-[#e0e0e0] rounded-2xl overflow-hidden shadow-sm">
+          {/* Browser Chrome */}
+          <div className="bg-[#f5f5f5] px-3.5 py-2.5 flex items-center gap-2 border-b border-[#e8e8e8]">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]"></div>
+            <div className="flex-1 mx-2 px-3 py-1 bg-white border border-[#e0e0e0] rounded-md text-[11px] text-[#aaa] text-left">
+              app.jasper.com/dashboard
+            </div>
+          </div>
+
+          {/* Dashboard Header */}
+          <div className="px-5 py-3.5 border-b border-[#f0f0f0] flex items-center justify-between bg-white">
+            <div className="text-left">
+              <div className="text-[13px] font-medium text-[#0a0a0f]">Good morning, Michael.</div>
+              <div className="text-[11px] text-[#aaa] mt-0.5 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626] animate-pulse"></span>
+                3 cases require immediate action
+              </div>
+            </div>
+            <div className="px-3.5 py-1.5 bg-[#1a56db] text-white text-[11px] font-medium rounded-full">+ New case</div>
+          </div>
+
+          {/* Scrolling Cases Container */}
+          <div 
+            className="h-[280px] overflow-hidden relative px-5 pt-4 group"
+            onMouseEnter={(e) => {
+              const track = e.currentTarget.querySelector('.jasper-track');
+              if (track) track.style.animationPlayState = 'paused';
+            }}
+            onMouseLeave={(e) => {
+              const track = e.currentTarget.querySelector('.jasper-track');
+              if (track) track.style.animationPlayState = 'running';
+            }}
+          >
+            <div className="jasper-track flex flex-col gap-2" style={{
+              animation: 'jasperScroll 25s linear infinite'
+            }}>
+              {/* Case 1: Speeding ticket - Red/Urgent */}
+              <div className="bg-white border border-[#ebebeb] rounded-r-xl p-3 flex items-center justify-between" style={{ borderLeft: '3px solid #dc2626' }}>
+                <div className="text-left">
+                  <div className="text-[9px] text-[#aaa] uppercase tracking-wider mb-0.5">Traffic · Court notice</div>
+                  <div className="text-[12px] font-medium text-[#0a0a0f] mb-1">Speeding ticket — 89mph in 65mph zone · Court summons</div>
+                  <div className="text-[10px] text-[#aaa] flex items-center gap-1.5">
+                    <span className="text-[#dc2626] font-medium">Respond by Apr 14</span>
+                    <span className="w-0.5 h-0.5 rounded-full bg-[#ddd]"></span>
+                    <span>Fine up to $1,200 + license points</span>
+                  </div>
+                </div>
+                <div className="text-center ml-3">
+                  <div className="text-[12px] font-medium px-2.5 py-1 rounded-full bg-[#fff5f5] text-[#dc2626]">82/100</div>
+                  <div className="text-[9px] text-[#aaa] mt-1">High risk</div>
+                </div>
+              </div>
+
+              {/* Case 2: Debt collector - Orange/Medium */}
+              <div className="bg-white border border-[#ebebeb] rounded-r-xl p-3 flex items-center justify-between" style={{ borderLeft: '3px solid #f59e0b' }}>
+                <div className="text-left">
+                  <div className="text-[9px] text-[#aaa] uppercase tracking-wider mb-0.5">Debt collection</div>
+                  <div className="text-[12px] font-medium text-[#0a0a0f] mb-1">Collector harassment — 12 calls in 3 days · FDCPA violation</div>
+                  <div className="text-[10px] text-[#aaa] flex items-center gap-1.5">
+                    <span className="text-[#d97706] font-medium">Send cease & desist now</span>
+                    <span className="w-0.5 h-0.5 rounded-full bg-[#ddd]"></span>
+                    <span>$4,800 claimed</span>
+                  </div>
+                </div>
+                <div className="text-center ml-3">
+                  <div className="text-[12px] font-medium px-2.5 py-1 rounded-full bg-[#fef3c7] text-[#d97706]">64/100</div>
+                  <div className="text-[9px] text-[#aaa] mt-1">Medium risk</div>
+                </div>
+              </div>
+
+              {/* Case 3: Wrongful termination - Orange/Medium */}
+              <div className="bg-white border border-[#ebebeb] rounded-r-xl p-3 flex items-center justify-between" style={{ borderLeft: '3px solid #f59e0b' }}>
+                <div className="text-left">
+                  <div className="text-[9px] text-[#aaa] uppercase tracking-wider mb-0.5">Employment</div>
+                  <div className="text-[12px] font-medium text-[#0a0a0f] mb-1">Wrongful termination — demand letter · $8,400 claimed</div>
+                  <div className="text-[10px] text-[#aaa] flex items-center gap-1.5">
+                    <span className="text-[#d97706] font-medium">Respond within 10 days</span>
+                    <span className="w-0.5 h-0.5 rounded-full bg-[#ddd]"></span>
+                    <span>Strong negotiation opportunity</span>
+                  </div>
+                </div>
+                <div className="text-center ml-3">
+                  <div className="text-[12px] font-medium px-2.5 py-1 rounded-full bg-[#fef3c7] text-[#d97706]">58/100</div>
+                  <div className="text-[9px] text-[#aaa] mt-1">Medium risk</div>
+                </div>
+              </div>
+
+              {/* Case 4: Eviction notice - Red/Critical */}
+              <div className="bg-white border border-[#ebebeb] rounded-r-xl p-3 flex items-center justify-between" style={{ borderLeft: '3px solid #dc2626' }}>
+                <div className="text-left">
+                  <div className="text-[9px] text-[#aaa] uppercase tracking-wider mb-0.5">Housing · Eviction</div>
+                  <div className="text-[12px] font-medium text-[#0a0a0f] mb-1">3-Day Notice to Quit — unpaid rent $6,030</div>
+                  <div className="text-[10px] text-[#aaa] flex items-center gap-1.5">
+                    <span className="text-[#dc2626] font-medium">Respond by Apr 12</span>
+                    <span className="w-0.5 h-0.5 rounded-full bg-[#ddd]"></span>
+                    <span>Payment plan available</span>
+                  </div>
+                </div>
+                <div className="text-center ml-3">
+                  <div className="text-[12px] font-medium px-2.5 py-1 rounded-full bg-[#fff5f5] text-[#dc2626]">85/100</div>
+                  <div className="text-[9px] text-[#aaa] mt-1">Critical</div>
+                </div>
+              </div>
+
+              {/* Case 5: NDA resolved - Green/Resolved */}
+              <div className="bg-white border border-[#ebebeb] rounded-r-xl p-3 flex items-center justify-between" style={{ borderLeft: '3px solid #22c55e' }}>
+                <div className="text-left">
+                  <div className="text-[9px] text-[#aaa] uppercase tracking-wider mb-0.5">Contract</div>
+                  <div className="text-[12px] font-medium text-[#0a0a0f] mb-1">NDA review — freelance client agreement resolved</div>
+                  <div className="text-[10px] text-[#aaa] flex items-center gap-1.5">
+                    <span className="text-[#16a34a] font-medium">Resolved — Jasper letter worked</span>
+                    <span className="w-0.5 h-0.5 rounded-full bg-[#ddd]"></span>
+                    <span>No action needed</span>
+                  </div>
+                </div>
+                <div className="text-center ml-3">
+                  <div className="text-[12px] font-medium px-2.5 py-1 rounded-full bg-[#f0fdf4] text-[#16a34a]">12/100</div>
+                  <div className="text-[9px] text-[#aaa] mt-1">Resolved</div>
+                </div>
+              </div>
+
+              {/* Case 6: Refund dispute - Blue/Low risk */}
+              <div className="bg-white border border-[#ebebeb] rounded-r-xl p-3 flex items-center justify-between" style={{ borderLeft: '3px solid #1a56db' }}>
+                <div className="text-left">
+                  <div className="text-[9px] text-[#aaa] uppercase tracking-wider mb-0.5">Consumer rights</div>
+                  <div className="text-[12px] font-medium text-[#0a0a0f] mb-1">Refund dispute — online purchase $890 · Merchant refusing</div>
+                  <div className="text-[10px] text-[#aaa] flex items-center gap-1.5">
+                    <span className="text-[#1a56db] font-medium">Chargeback letter ready</span>
+                    <span className="w-0.5 h-0.5 rounded-full bg-[#ddd]"></span>
+                    <span>FTC complaint option available</span>
+                  </div>
+                </div>
+                <div className="text-center ml-3">
+                  <div className="text-[12px] font-medium px-2.5 py-1 rounded-full bg-[#eff6ff] text-[#1a56db]">44/100</div>
+                  <div className="text-[9px] text-[#aaa] mt-1">Low risk</div>
+                </div>
+              </div>
+
+              {/* Case 7: Immigration contract - Orange/Medium */}
+              <div className="bg-white border border-[#ebebeb] rounded-r-xl p-3 flex items-center justify-between" style={{ borderLeft: '3px solid #f59e0b' }}>
+                <div className="text-left">
+                  <div className="text-[9px] text-[#aaa] uppercase tracking-wider mb-0.5">Immigration</div>
+                  <div className="text-[12px] font-medium text-[#0a0a0f] mb-1">Visa sponsorship contract — 3 unfair clauses identified</div>
+                  <div className="text-[10px] text-[#aaa] flex items-center gap-1.5">
+                    <span className="text-[#d97706] font-medium">Review before signing</span>
+                    <span className="w-0.5 h-0.5 rounded-full bg-[#ddd]"></span>
+                    <span>Do not sign yet</span>
+                  </div>
+                </div>
+                <div className="text-center ml-3">
+                  <div className="text-[12px] font-medium px-2.5 py-1 rounded-full bg-[#fef3c7] text-[#d97706]">51/100</div>
+                  <div className="text-[9px] text-[#aaa] mt-1">Medium risk</div>
+                </div>
+              </div>
+
+              {/* Duplicate cards for seamless loop */}
+              {/* Case 1 duplicate */}
+              <div className="bg-white border border-[#ebebeb] rounded-r-xl p-3 flex items-center justify-between" style={{ borderLeft: '3px solid #dc2626' }}>
+                <div className="text-left">
+                  <div className="text-[9px] text-[#aaa] uppercase tracking-wider mb-0.5">Traffic · Court notice</div>
+                  <div className="text-[12px] font-medium text-[#0a0a0f] mb-1">Speeding ticket — 89mph in 65mph zone · Court summons</div>
+                  <div className="text-[10px] text-[#aaa] flex items-center gap-1.5">
+                    <span className="text-[#dc2626] font-medium">Respond by Apr 14</span>
+                    <span className="w-0.5 h-0.5 rounded-full bg-[#ddd]"></span>
+                    <span>Fine up to $1,200 + license points</span>
+                  </div>
+                </div>
+                <div className="text-center ml-3">
+                  <div className="text-[12px] font-medium px-2.5 py-1 rounded-full bg-[#fff5f5] text-[#dc2626]">82/100</div>
+                  <div className="text-[9px] text-[#aaa] mt-1">High risk</div>
+                </div>
+              </div>
+
+              {/* Case 2 duplicate */}
+              <div className="bg-white border border-[#ebebeb] rounded-r-xl p-3 flex items-center justify-between" style={{ borderLeft: '3px solid #f59e0b' }}>
+                <div className="text-left">
+                  <div className="text-[9px] text-[#aaa] uppercase tracking-wider mb-0.5">Debt collection</div>
+                  <div className="text-[12px] font-medium text-[#0a0a0f] mb-1">Collector harassment — 12 calls in 3 days · FDCPA violation</div>
+                  <div className="text-[10px] text-[#aaa] flex items-center gap-1.5">
+                    <span className="text-[#d97706] font-medium">Send cease & desist now</span>
+                    <span className="w-0.5 h-0.5 rounded-full bg-[#ddd]"></span>
+                    <span>$4,800 claimed</span>
+                  </div>
+                </div>
+                <div className="text-center ml-3">
+                  <div className="text-[12px] font-medium px-2.5 py-1 rounded-full bg-[#fef3c7] text-[#d97706]">64/100</div>
+                  <div className="text-[9px] text-[#aaa] mt-1">Medium risk</div>
+                </div>
+              </div>
+
+              {/* Case 3 duplicate */}
+              <div className="bg-white border border-[#ebebeb] rounded-r-xl p-3 flex items-center justify-between" style={{ borderLeft: '3px solid #f59e0b' }}>
+                <div className="text-left">
+                  <div className="text-[9px] text-[#aaa] uppercase tracking-wider mb-0.5">Employment</div>
+                  <div className="text-[12px] font-medium text-[#0a0a0f] mb-1">Wrongful termination — demand letter · $8,400 claimed</div>
+                  <div className="text-[10px] text-[#aaa] flex items-center gap-1.5">
+                    <span className="text-[#d97706] font-medium">Respond within 10 days</span>
+                    <span className="w-0.5 h-0.5 rounded-full bg-[#ddd]"></span>
+                    <span>Strong negotiation opportunity</span>
+                  </div>
+                </div>
+                <div className="text-center ml-3">
+                  <div className="text-[12px] font-medium px-2.5 py-1 rounded-full bg-[#fef3c7] text-[#d97706]">58/100</div>
+                  <div className="text-[9px] text-[#aaa] mt-1">Medium risk</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Fade gradient at bottom */}
+            <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+          </div>
+
+          {/* AI Bar */}
+          <div className="px-5 py-2.5 bg-[#fafafa] border-t border-[#f0f0f0] flex items-center gap-2.5">
+            <div className="w-5 h-5 rounded-md bg-[#eff6ff] flex items-center justify-center flex-shrink-0">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a56db" strokeWidth="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            </div>
+            <div className="text-[11px] text-[#555] text-left">
+              Jasper AI — <span className="text-[#1a56db] font-medium">78% of cases resolved by AI alone — no lawyer needed.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Stats Bar */}
       <div className="bg-[#f8f8f8] py-6 border-y border-[#ebebeb]">
         <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
