@@ -14,7 +14,7 @@ import os
 class JasperAPITester:
     def __init__(self):
         # Get backend URL from frontend .env
-        self.base_url = "https://jasper-doc-analysis.preview.emergentagent.com/api"
+        self.base_url = "https://predict-outcome.preview.emergentagent.com/api"
         self.session_token = None
         self.user_id = None
         self.tests_run = 0

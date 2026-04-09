@@ -62,7 +62,7 @@ await page.context.add_cookies([{
     "secure": True,
     "sameSite": "None"
 }])
-await page.goto("https://jasper-doc-analysis.preview.emergentagent.com/dashboard")
+await page.goto("https://predict-outcome.preview.emergentagent.com/dashboard")
 ```
 
 ## Quick Debug
