@@ -356,6 +356,143 @@ async def analyze_document_with_claude(extracted_text: str) -> dict:
             "disclaimer": "This analysis provides legal information only, not legal advice."
         }
 
+# ================== Letter Generation System ==================
+
+LETTER_SYSTEM_PROMPT = """You are Jasper's legal communication engine. You write professional, strategic response letters on behalf of US residents facing legal situations. You are NOT a lawyer. Your letters are legal communications, not legal advice.
+
+Your letters must be:
+- Professional and formal in tone
+- Factually accurate based on the case details provided
+- Strategic — designed to de-escalate, buy time, or protect the user's rights
+- Compliant with US law — never ask for anything illegal
+- Clear and concise — no unnecessary legal jargon
+- Signed by the user, not by Jasper
+
+LETTER WRITING RULES:
+1. NEVER admit liability or guilt
+2. ALWAYS use formal business letter format with date, addresses, subject line
+3. ALWAYS end with "Sincerely," followed by the user's name and a signature line
+4. ALWAYS include "Sent via Certified Mail" in the header when relevant
+5. Reference specific dollar amounts, dates, and clause numbers from the case
+6. Reference applicable law when it strengthens the user's position
+7. Keep letters between 200-400 words — professional and concise
+8. One clear ask per letter — don't combine multiple strategies
+9. ALWAYS include: "I reserve all of my legal rights and remedies"
+10. Never threaten violence or make illegal demands
+11. Always propose a specific deadline for the opposing party to respond (7-10 days)
+
+OUTPUT FORMAT — respond ONLY with valid JSON, no other text:
+
+{
+  "letter_type": "LETTER_TYPE_HERE",
+  "subject": "Re: Subject line",
+  "letter_body": "Full letter text here with proper formatting. Use \\n for line breaks.",
+  "tone": "cooperative|assertive|firm|neutral",
+  "legal_basis": "Applicable statute or legal basis",
+  "key_points": ["Point 1", "Point 2", "Point 3"],
+  "warnings": ["Warning 1", "Warning 2"],
+  "next_if_no_response": "What to do if no response",
+  "disclaimer": "This letter was drafted by Jasper AI as a legal communication tool. It does not constitute legal advice."
+}"""
+
+# Letter types by case type
+LETTER_TYPES = {
+    "housing": [
+        {"id": "PAYMENT_PLAN_PROPOSAL", "label": "Payment Plan Proposal", "desc": "Propose a structured payment plan to avoid eviction"},
+        {"id": "DISPUTE_EVICTION_NOTICE", "label": "Dispute Eviction", "desc": "Challenge the legal validity of the eviction notice"},
+        {"id": "DISPUTE_DAMAGES", "label": "Dispute Damages", "desc": "Challenge unfair or inflated damage claims"},
+        {"id": "REQUEST_MEDIATION", "label": "Request Mediation", "desc": "Propose mediation to avoid court"}
+    ],
+    "employment": [
+        {"id": "WRONGFUL_TERMINATION_RESPONSE", "label": "Contest Termination", "desc": "Formally contest termination and preserve rights"},
+        {"id": "UNPAID_WAGES_DEMAND", "label": "Demand Unpaid Wages", "desc": "Formally demand unpaid wages before legal action"},
+        {"id": "NON_COMPETE_CHALLENGE", "label": "Challenge Non-Compete", "desc": "Challenge enforceability of non-compete clause"},
+        {"id": "HARASSMENT_OR_DISCRIMINATION_COMPLAINT", "label": "Report Harassment", "desc": "Document and report workplace issues"}
+    ],
+    "debt": [
+        {"id": "DEBT_VALIDATION_REQUEST", "label": "Validate Debt", "desc": "Force collector to prove the debt is valid (FDCPA)"},
+        {"id": "CEASE_AND_DESIST_COLLECTION", "label": "Cease & Desist", "desc": "Stop harassment from debt collectors"},
+        {"id": "DEBT_SETTLEMENT_OFFER", "label": "Settlement Offer", "desc": "Negotiate a lower lump-sum payment"},
+        {"id": "DISPUTE_CREDIT_REPORT", "label": "Dispute Credit Report", "desc": "Challenge inaccurate credit reporting"}
+    ],
+    "contract": [
+        {"id": "CONTRACT_DISPUTE_RESPONSE", "label": "Dispute Response", "desc": "Formally contest a contract breach claim"},
+        {"id": "DEMAND_LETTER_RESPONSE", "label": "Respond to Demand", "desc": "Respond professionally to a threatening letter"},
+        {"id": "NDA_CLARIFICATION_REQUEST", "label": "NDA Clarification", "desc": "Seek clarification on NDA scope"},
+        {"id": "SERVICE_DISPUTE", "label": "Service Dispute", "desc": "Dispute charges for services not rendered"}
+    ],
+    "consumer": [
+        {"id": "REFUND_DEMAND", "label": "Demand Refund", "desc": "Formally demand refund from business"},
+        {"id": "CHARGEBACK_SUPPORT_LETTER", "label": "Chargeback Support", "desc": "Support a credit card chargeback claim"},
+        {"id": "WARRANTY_CLAIM", "label": "Warranty Claim", "desc": "Assert warranty rights"},
+        {"id": "FTC_COMPLAINT_NOTICE", "label": "FTC Complaint Notice", "desc": "Notify of intent to file FTC complaint"}
+    ],
+    "immigration": [
+        {"id": "SPONSOR_AGREEMENT_DISPUTE", "label": "Sponsor Dispute", "desc": "Address issues with employment sponsor"},
+        {"id": "EMPLOYMENT_AUTHORIZATION_INQUIRY", "label": "Authorization Inquiry", "desc": "Inquire about work authorization status"},
+        {"id": "VISA_CONTRACT_CLARIFICATION", "label": "Visa Clarification", "desc": "Request clarification on visa terms"},
+        {"id": "STATUS_UPDATE_REQUEST", "label": "Status Update", "desc": "Request update on pending application"}
+    ],
+    "court": [
+        {"id": "DEMAND_LETTER_RESPONSE", "label": "Respond to Demand", "desc": "Respond professionally to court notice"},
+        {"id": "EXTENSION_REQUEST", "label": "Request Extension", "desc": "Request additional time to respond"},
+        {"id": "DISPUTE_CLAIMS", "label": "Dispute Claims", "desc": "Formally dispute the claims made"},
+        {"id": "SETTLEMENT_PROPOSAL", "label": "Settlement Proposal", "desc": "Propose out-of-court settlement"}
+    ],
+    "family": [
+        {"id": "MEDIATION_REQUEST", "label": "Request Mediation", "desc": "Propose family mediation"},
+        {"id": "CUSTODY_CONCERNS", "label": "Document Concerns", "desc": "Document custody concerns formally"},
+        {"id": "SUPPORT_MODIFICATION", "label": "Modify Support", "desc": "Request modification of support terms"},
+        {"id": "COMMUNICATION_GUIDELINES", "label": "Communication Request", "desc": "Establish communication guidelines"}
+    ],
+    "other": [
+        {"id": "DEMAND_LETTER_RESPONSE", "label": "Formal Response", "desc": "Respond professionally to demands"},
+        {"id": "DISPUTE_CLAIMS", "label": "Dispute Claims", "desc": "Contest the claims made against you"},
+        {"id": "REQUEST_DOCUMENTATION", "label": "Request Documents", "desc": "Request supporting documentation"},
+        {"id": "SETTLEMENT_PROPOSAL", "label": "Settlement Proposal", "desc": "Propose amicable resolution"}
+    ]
+}
+
+class LetterRequest(BaseModel):
+    case_id: str
+    letter_type: str
+    user_address: Optional[str] = None
+    opposing_party_name: Optional[str] = None
+    opposing_party_address: Optional[str] = None
+    additional_context: Optional[str] = None
+
+async def generate_letter_with_claude(letter_data: dict) -> dict:
+    """Generate a response letter using Claude API"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "Content-Type": "application/json",
+                    "x-api-key": ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01"
+                },
+                json={
+                    "model": "claude-sonnet-4-20250514",
+                    "max_tokens": 3000,
+                    "system": LETTER_SYSTEM_PROMPT,
+                    "messages": [{
+                        "role": "user",
+                        "content": f"Generate a professional response letter based on this case data. Return JSON only:\n\n{json.dumps(letter_data, indent=2)}"
+                    }]
+                },
+                timeout=90.0
+            )
+            response.raise_for_status()
+            data = response.json()
+            text = data["content"][0]["text"]
+            # Clean JSON from markdown code blocks
+            text = text.replace("```json", "").replace("```", "").strip()
+            return json.loads(text)
+    except Exception as e:
+        logger.error(f"Claude Letter API error: {e}")
+        raise HTTPException(status_code=500, detail=f"Letter generation failed: {str(e)}")
+
 def extract_text_from_pdf(file_bytes: bytes) -> str:
     """Extract text from PDF file"""
     try:
@@ -851,6 +988,109 @@ async def download_document(
     except Exception as e:
         logger.error(f"Download failed: {e}")
         raise HTTPException(status_code=500, detail="Download failed")
+
+# ================== Letter Generation Endpoints ==================
+
+@api_router.get("/letters/types/{case_type}")
+async def get_letter_types(case_type: str):
+    """Get available letter types for a case type"""
+    letter_types = LETTER_TYPES.get(case_type, LETTER_TYPES["other"])
+    return {"case_type": case_type, "letter_types": letter_types}
+
+@api_router.post("/letters/generate")
+async def generate_letter(
+    request: LetterRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Generate a response letter for a case"""
+    # Get case data
+    case_doc = await db.cases.find_one(
+        {"case_id": request.case_id, "user_id": current_user.user_id},
+        {"_id": 0}
+    )
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+    
+    # Build letter data
+    today = datetime.now(timezone.utc).strftime("%B %d, %Y")
+    
+    letter_data = {
+        "letter_type": request.letter_type,
+        "case": {
+            "type": case_doc.get("type", "other"),
+            "title": case_doc.get("title", ""),
+            "risk_score": case_doc.get("risk_score", 0),
+            "financial_exposure": case_doc.get("financial_exposure"),
+            "deadline": case_doc.get("deadline"),
+            "deadline_description": case_doc.get("deadline_description"),
+            "ai_summary": case_doc.get("ai_summary"),
+            "findings": [f.get("text", "") for f in case_doc.get("ai_findings", [])]
+        },
+        "user": {
+            "name": current_user.name,
+            "address": request.user_address or f"{current_user.state_of_residence or 'United States'}",
+            "state": current_user.state_of_residence or "United States"
+        },
+        "opposing_party": {
+            "name": request.opposing_party_name or "[Opposing Party Name]",
+            "address": request.opposing_party_address or "[Opposing Party Address]"
+        },
+        "additional_context": request.additional_context,
+        "today_date": today
+    }
+    
+    # Generate letter
+    letter_result = await generate_letter_with_claude(letter_data)
+    
+    # Store letter in database
+    letter_id = f"letter_{uuid.uuid4().hex[:12]}"
+    letter_doc = {
+        "letter_id": letter_id,
+        "case_id": request.case_id,
+        "user_id": current_user.user_id,
+        "letter_type": request.letter_type,
+        "letter_data": letter_result,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.letters.insert_one(letter_doc)
+    
+    # Create case event
+    event_doc = {
+        "event_id": f"evt_{uuid.uuid4().hex[:12]}",
+        "case_id": request.case_id,
+        "event_type": "letter_generated",
+        "title": "Response letter generated",
+        "description": f"{request.letter_type.replace('_', ' ').title()}",
+        "metadata": {"letter_id": letter_id},
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.case_events.insert_one(event_doc)
+    
+    return {
+        "letter_id": letter_id,
+        "letter": letter_result
+    }
+
+@api_router.get("/cases/{case_id}/letters")
+async def get_case_letters(
+    case_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all generated letters for a case"""
+    # Verify case belongs to user
+    case_doc = await db.cases.find_one(
+        {"case_id": case_id, "user_id": current_user.user_id},
+        {"_id": 0}
+    )
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+    
+    letters = await db.letters.find(
+        {"case_id": case_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    
+    return letters
 
 # ================== Lawyer Endpoints ==================
 

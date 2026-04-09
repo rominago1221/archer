@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { FileText, Upload, AlertCircle, Zap, CheckCircle, Clock, Video, ChevronRight, Calendar, Phone } from 'lucide-react';
+import { FileText, Upload, AlertCircle, Zap, CheckCircle, Clock, Video, Mail, X, Download, Copy, Loader2 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -13,6 +13,20 @@ const CaseDetail = () => {
   const [events, setEvents] = useState([]);
   const [lawyers, setLawyers] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Letter state
+  const [letterTypes, setLetterTypes] = useState([]);
+  const [showLetterModal, setShowLetterModal] = useState(false);
+  const [generatingLetter, setGeneratingLetter] = useState(false);
+  const [generatedLetter, setGeneratedLetter] = useState(null);
+  const [selectedLetterType, setSelectedLetterType] = useState(null);
+  const [letterForm, setLetterForm] = useState({
+    user_address: '',
+    opposing_party_name: '',
+    opposing_party_address: '',
+    additional_context: ''
+  });
+  const [copied, setCopied] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -26,6 +40,10 @@ const CaseDetail = () => {
       setDocuments(docsRes.data);
       setEvents(eventsRes.data);
       setLawyers(lawyersRes.data.filter(l => l.availability_status === 'now' || l.availability_status === 'soon').slice(0, 1));
+      
+      // Fetch letter types for this case type
+      const letterTypesRes = await axios.get(`${API}/letters/types/${caseRes.data.type}`);
+      setLetterTypes(letterTypesRes.data.letter_types || []);
     } catch (error) {
       console.error('Case detail fetch error:', error);
       navigate('/cases');
@@ -56,6 +74,7 @@ const CaseDetail = () => {
       case 'call_booked': return <Video size={10} className="text-[#1a56db]" />;
       case 'document_added': return <FileText size={10} className="text-[#dc2626]" />;
       case 'case_opened': return <FileText size={10} className="text-[#dc2626]" />;
+      case 'letter_generated': return <Mail size={10} className="text-[#1a56db]" />;
       default: return <Clock size={10} className="text-[#6b7280]" />;
     }
   };
@@ -64,6 +83,7 @@ const CaseDetail = () => {
     switch (type) {
       case 'score_updated': return '#fff5f5';
       case 'call_booked': return '#eff6ff';
+      case 'letter_generated': return '#eff6ff';
       case 'document_added':
       case 'case_opened': return '#fff5f5';
       default: return '#f5f5f5';
@@ -86,6 +106,66 @@ const CaseDetail = () => {
     const now = new Date();
     const diffDays = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  const handleGenerateLetter = async (letterType) => {
+    setSelectedLetterType(letterType);
+    setGeneratedLetter(null);
+    setShowLetterModal(true);
+  };
+
+  const submitLetterGeneration = async () => {
+    setGeneratingLetter(true);
+    try {
+      const response = await axios.post(`${API}/letters/generate`, {
+        case_id: caseId,
+        letter_type: selectedLetterType.id,
+        user_address: letterForm.user_address || undefined,
+        opposing_party_name: letterForm.opposing_party_name || undefined,
+        opposing_party_address: letterForm.opposing_party_address || undefined,
+        additional_context: letterForm.additional_context || undefined
+      }, { withCredentials: true });
+      
+      setGeneratedLetter(response.data.letter);
+      // Refresh events
+      const eventsRes = await axios.get(`${API}/cases/${caseId}/events`, { withCredentials: true });
+      setEvents(eventsRes.data);
+    } catch (error) {
+      console.error('Letter generation error:', error);
+      alert('Failed to generate letter. Please try again.');
+    } finally {
+      setGeneratingLetter(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    if (generatedLetter?.letter_body) {
+      navigator.clipboard.writeText(generatedLetter.letter_body.replace(/\\n/g, '\n'));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const downloadAsPDF = () => {
+    // Create a printable version
+    const printContent = `
+      <html>
+        <head>
+          <title>${generatedLetter?.subject || 'Letter'}</title>
+          <style>
+            body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.6; margin: 1in; }
+            .letter { white-space: pre-wrap; }
+          </style>
+        </head>
+        <body>
+          <div class="letter">${generatedLetter?.letter_body?.replace(/\\n/g, '\n')}</div>
+        </body>
+      </html>
+    `;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
   };
 
   if (loading) {
@@ -221,6 +301,33 @@ const CaseDetail = () => {
             </div>
           )}
 
+          {/* Jasper Response Letters - NEW SECTION */}
+          {letterTypes.length > 0 && (
+            <div className="card p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-7 h-7 rounded-lg bg-[#eff6ff] flex items-center justify-center">
+                  <Mail size={14} className="text-[#1a56db]" />
+                </div>
+                <div className="text-sm font-medium">Jasper Response Letters</div>
+                <span className="badge badge-blue text-[10px] ml-auto">AI-powered</span>
+              </div>
+              <p className="text-xs text-[#666] mb-4">Generate a professional response letter tailored to your situation. All case details are pre-filled automatically.</p>
+              <div className="grid grid-cols-2 gap-2">
+                {letterTypes.map((letterType) => (
+                  <button
+                    key={letterType.id}
+                    onClick={() => handleGenerateLetter(letterType)}
+                    className="p-3 text-left bg-[#f8f8f8] hover:bg-[#eff6ff] border border-[#ebebeb] hover:border-[#93c5fd] rounded-xl transition-all group"
+                    data-testid={`letter-btn-${letterType.id}`}
+                  >
+                    <div className="text-xs font-medium text-[#111827] group-hover:text-[#1a56db] mb-1">{letterType.label}</div>
+                    <div className="text-[10px] text-[#9ca3af] leading-relaxed">{letterType.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* AI Analysis */}
           {caseData.ai_findings && caseData.ai_findings.length > 0 && (
             <div className="card p-5">
@@ -280,6 +387,11 @@ const CaseDetail = () => {
                       {step.action_type === 'upload_document' && (
                         <span className="text-[11px] text-[#1a56db] cursor-pointer hover:underline" onClick={() => navigate(`/upload?case=${caseId}`)}>
                           Add documents →
+                        </span>
+                      )}
+                      {step.action_type === 'draft_response' && letterTypes.length > 0 && (
+                        <span className="text-[11px] text-[#1a56db] cursor-pointer hover:underline" onClick={() => handleGenerateLetter(letterTypes[0])}>
+                          Generate response letter →
                         </span>
                       )}
                     </div>
@@ -370,6 +482,193 @@ const CaseDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Letter Generation Modal */}
+      {showLetterModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="px-5 py-4 border-b border-[#ebebeb] flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-[#111827]">
+                  {generatedLetter ? 'Your Response Letter' : `Generate: ${selectedLetterType?.label}`}
+                </div>
+                <div className="text-xs text-[#6b7280]">{selectedLetterType?.desc}</div>
+              </div>
+              <button 
+                onClick={() => { setShowLetterModal(false); setGeneratedLetter(null); }}
+                className="w-8 h-8 rounded-full hover:bg-[#f5f5f5] flex items-center justify-center"
+              >
+                <X size={18} className="text-[#6b7280]" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-auto p-5">
+              {!generatedLetter ? (
+                <div className="space-y-4">
+                  <div className="bg-[#eff6ff] rounded-xl p-4">
+                    <div className="text-xs font-medium text-[#1d4ed8] mb-2">Case details will be included automatically:</div>
+                    <div className="text-xs text-[#3b82f6] space-y-1">
+                      <div>• Case: {caseData.title}</div>
+                      <div>• Risk Score: {caseData.risk_score}/100</div>
+                      {caseData.financial_exposure && <div>• Financial exposure: {caseData.financial_exposure}</div>}
+                      {caseData.deadline && <div>• Deadline: {caseData.deadline}</div>}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="form-label">Your address (optional)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="123 Main St, City, State ZIP"
+                      value={letterForm.user_address}
+                      onChange={(e) => setLetterForm({ ...letterForm, user_address: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="form-label">Opposing party name</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Company name or person's name"
+                      value={letterForm.opposing_party_name}
+                      onChange={(e) => setLetterForm({ ...letterForm, opposing_party_name: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="form-label">Opposing party address (optional)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Their address"
+                      value={letterForm.opposing_party_address}
+                      onChange={(e) => setLetterForm({ ...letterForm, opposing_party_address: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="form-label">Additional context (optional)</label>
+                    <textarea
+                      className="form-input min-h-[80px]"
+                      placeholder="Any additional information to include..."
+                      value={letterForm.additional_context}
+                      onChange={(e) => setLetterForm({ ...letterForm, additional_context: e.target.value })}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Letter preview */}
+                  <div className="bg-[#fafafa] rounded-xl p-5 border border-[#ebebeb]">
+                    <div className="text-xs font-medium text-[#1a56db] mb-2">{generatedLetter.subject}</div>
+                    <div className="text-xs text-[#444] whitespace-pre-wrap leading-relaxed font-mono" style={{ fontFamily: 'Georgia, serif' }}>
+                      {generatedLetter.letter_body?.replace(/\\n/g, '\n')}
+                    </div>
+                  </div>
+
+                  {/* Key points */}
+                  {generatedLetter.key_points && (
+                    <div className="bg-[#f0fdf4] rounded-xl p-4">
+                      <div className="text-xs font-medium text-[#16a34a] mb-2">Key points in this letter:</div>
+                      <ul className="space-y-1">
+                        {generatedLetter.key_points.map((point, i) => (
+                          <li key={i} className="text-xs text-[#15803d] flex items-start gap-2">
+                            <CheckCircle size={12} className="text-[#16a34a] mt-0.5 flex-shrink-0" />
+                            {point}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Warnings */}
+                  {generatedLetter.warnings && (
+                    <div className="bg-[#fffbeb] rounded-xl p-4">
+                      <div className="text-xs font-medium text-[#d97706] mb-2">Important reminders:</div>
+                      <ul className="space-y-1">
+                        {generatedLetter.warnings.map((warning, i) => (
+                          <li key={i} className="text-xs text-[#b45309] flex items-start gap-2">
+                            <AlertCircle size={12} className="text-[#d97706] mt-0.5 flex-shrink-0" />
+                            {warning}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Disclaimer */}
+                  <div className="text-[10px] text-[#9ca3af] leading-relaxed">
+                    {generatedLetter.disclaimer}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-5 py-4 border-t border-[#ebebeb] flex items-center justify-between bg-[#fafafa]">
+              {!generatedLetter ? (
+                <>
+                  <button
+                    onClick={() => setShowLetterModal(false)}
+                    className="btn-pill btn-outline"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={submitLetterGeneration}
+                    disabled={generatingLetter}
+                    className="btn-pill btn-blue flex items-center gap-2"
+                    data-testid="generate-letter-btn"
+                  >
+                    {generatingLetter ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Mail size={16} />
+                        Generate Letter
+                      </>
+                    )}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setGeneratedLetter(null)}
+                    className="btn-pill btn-outline"
+                  >
+                    Generate another
+                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={copyToClipboard}
+                      className="btn-pill btn-outline flex items-center gap-2"
+                      data-testid="copy-letter-btn"
+                    >
+                      <Copy size={16} />
+                      {copied ? 'Copied!' : 'Copy'}
+                    </button>
+                    <button
+                      onClick={downloadAsPDF}
+                      className="btn-pill btn-blue flex items-center gap-2"
+                      data-testid="download-letter-btn"
+                    >
+                      <Download size={16} />
+                      Download PDF
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
