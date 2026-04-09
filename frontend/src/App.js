@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import AuthCallback from './components/AuthCallback';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
@@ -28,6 +29,7 @@ const AppRouter = () => {
   return (
     <Routes>
       {/* Public routes */}
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       
@@ -37,7 +39,7 @@ const AppRouter = () => {
           <Layout />
         </ProtectedRoute>
       }>
-        <Route index element={<Navigate to="/dashboard" replace />} />
+        {/* Removed index redirect - landing page is at / */}
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="cases" element={<Cases />} />
         <Route path="cases/:caseId" element={<CaseDetail />} />
