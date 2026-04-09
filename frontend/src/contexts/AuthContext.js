@@ -86,6 +86,7 @@ export const AuthProvider = ({ children }) => {
       logout,
       updateUser,
       checkAuth,
+      refreshUser: checkAuth,
       initiateGoogleLogin,
       isAuthenticated: !!user
     }}>

@@ -1,9 +1,196 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { FileText, Upload, AlertCircle, Zap, CheckCircle, Clock, Video, Mail, X, Download, Copy, Loader2 } from 'lucide-react';
+import { FileText, Upload, AlertCircle, Zap, CheckCircle, Clock, Video, Mail, X, Download, Copy, Loader2, TrendingUp, ChevronDown, ChevronUp, Target } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+// SVG Risk Score History Chart
+const RiskHistoryChart = ({ history, currentScore }) => {
+  if (!history || history.length === 0) return null;
+
+  const width = 520;
+  const height = 160;
+  const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+  const chartW = width - padding.left - padding.right;
+  const chartH = height - padding.top - padding.bottom;
+
+  const maxScore = 100;
+  const points = history.map((entry, i) => ({
+    x: padding.left + (history.length === 1 ? chartW / 2 : (i / (history.length - 1)) * chartW),
+    y: padding.top + chartH - (entry.score / maxScore) * chartH,
+    score: entry.score,
+    date: entry.date,
+    doc: entry.document_name
+  }));
+
+  const pathD = points.length === 1
+    ? ''
+    : points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
+  const areaD = points.length > 1
+    ? `${pathD} L ${points[points.length - 1].x} ${padding.top + chartH} L ${points[0].x} ${padding.top + chartH} Z`
+    : '';
+
+  const getColor = (score) => {
+    if (score <= 30) return '#16a34a';
+    if (score <= 60) return '#d97706';
+    return '#dc2626';
+  };
+
+  const yTicks = [0, 25, 50, 75, 100];
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ maxHeight: '180px' }}>
+      {/* Grid lines */}
+      {yTicks.map(tick => {
+        const y = padding.top + chartH - (tick / maxScore) * chartH;
+        return (
+          <g key={tick}>
+            <line x1={padding.left} y1={y} x2={width - padding.right} y2={y} stroke="#f0f0f0" strokeWidth="1" />
+            <text x={padding.left - 8} y={y + 4} textAnchor="end" fill="#9ca3af" fontSize="9">{tick}</text>
+          </g>
+        );
+      })}
+
+      {/* Area fill */}
+      {areaD && <path d={areaD} fill={getColor(currentScore)} opacity="0.08" />}
+
+      {/* Line */}
+      {pathD && <path d={pathD} fill="none" stroke={getColor(currentScore)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
+
+      {/* Data points */}
+      {points.map((p, i) => (
+        <g key={i}>
+          <circle cx={p.x} cy={p.y} r="5" fill="white" stroke={getColor(p.score)} strokeWidth="2.5" />
+          <text x={p.x} y={p.y - 10} textAnchor="middle" fill={getColor(p.score)} fontSize="9" fontWeight="600">{p.score}</text>
+          {/* X-axis label */}
+          <text x={p.x} y={height - 5} textAnchor="middle" fill="#9ca3af" fontSize="8">
+            {new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          </text>
+        </g>
+      ))}
+    </svg>
+  );
+};
+
+// Outcome Predictor Section
+const OutcomePredictor = ({ caseId }) => {
+  const [prediction, setPrediction] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchPrediction = async () => {
+    if (prediction) {
+      setExpanded(!expanded);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post(`${API}/cases/${caseId}/predict-outcome`, {}, { withCredentials: true });
+      setPrediction(res.data);
+      setExpanded(true);
+    } catch {
+      setError('Prediction failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getScenarioColor = (type) => {
+    if (type === 'favorable') return { bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a', bar: '#22c55e' };
+    if (type === 'neutral') return { bg: '#fffbeb', border: '#fde68a', text: '#d97706', bar: '#f59e0b' };
+    return { bg: '#fef2f2', border: '#fecaca', text: '#dc2626', bar: '#ef4444' };
+  };
+
+  return (
+    <div className="card p-5">
+      <button
+        onClick={fetchPrediction}
+        className="w-full flex items-center justify-between"
+        data-testid="outcome-predictor-toggle"
+        disabled={loading}
+      >
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-[#faf5ff] flex items-center justify-center">
+            <Target size={14} className="text-[#7c3aed]" />
+          </div>
+          <div className="text-sm font-medium">Jasper Outcome Predictor</div>
+          <span className="badge badge-blue text-[10px]">AI-powered</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {loading && <Loader2 size={16} className="animate-spin text-[#7c3aed]" />}
+          {expanded ? <ChevronUp size={16} className="text-[#9ca3af]" /> : <ChevronDown size={16} className="text-[#9ca3af]" />}
+        </div>
+      </button>
+
+      {error && <div className="text-xs text-[#dc2626] mt-3">{error}</div>}
+
+      {expanded && prediction && (
+        <div className="mt-4 space-y-3" data-testid="outcome-prediction-results">
+          {/* Scenario cards */}
+          {['favorable', 'neutral', 'unfavorable'].map((type) => {
+            const scenario = prediction[type];
+            if (!scenario) return null;
+            const colors = getScenarioColor(type);
+            return (
+              <div key={type} className="rounded-xl p-4 border" style={{ backgroundColor: colors.bg, borderColor: colors.border }}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-semibold capitalize" style={{ color: colors.text }}>{scenario.title}</div>
+                  <div className="text-xs font-bold" style={{ color: colors.text }}>{scenario.probability}%</div>
+                </div>
+                {/* Probability bar */}
+                <div className="h-1.5 rounded-full bg-white/60 mb-2">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${scenario.probability}%`, backgroundColor: colors.bar }}></div>
+                </div>
+                <div className="text-[11px] leading-relaxed mb-1" style={{ color: colors.text }}>{scenario.description}</div>
+                <div className="flex items-center gap-4 mt-2">
+                  {scenario.financial_impact && (
+                    <div className="text-[10px]" style={{ color: colors.text }}>
+                      <span className="opacity-70">Impact: </span><span className="font-medium">{scenario.financial_impact}</span>
+                    </div>
+                  )}
+                  {scenario.timeline && (
+                    <div className="text-[10px]" style={{ color: colors.text }}>
+                      <span className="opacity-70">Timeline: </span><span className="font-medium">{scenario.timeline}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Key factors */}
+          {prediction.key_factors && (
+            <div className="bg-[#f8f8f8] rounded-xl p-4">
+              <div className="text-xs font-medium text-[#111827] mb-2">Key factors influencing outcome</div>
+              <div className="space-y-1">
+                {prediction.key_factors.map((factor, i) => (
+                  <div key={i} className="text-[11px] text-[#555] flex items-start gap-2">
+                    <span className="w-1 h-1 rounded-full bg-[#7c3aed] mt-1.5 flex-shrink-0"></span>
+                    {factor}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recommendation */}
+          {prediction.recommendation && (
+            <div className="text-[11px] text-[#7c3aed] bg-[#faf5ff] rounded-lg p-3 font-medium">
+              {prediction.recommendation}
+            </div>
+          )}
+
+          {/* Disclaimer */}
+          <div className="text-[10px] text-[#9ca3af]">{prediction.disclaimer}</div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const CaseDetail = () => {
   const { caseId } = useParams();
@@ -27,6 +214,7 @@ const CaseDetail = () => {
     additional_context: ''
   });
   const [copied, setCopied] = useState(false);
+  const [riskHistory, setRiskHistory] = useState([]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -41,9 +229,13 @@ const CaseDetail = () => {
       setEvents(eventsRes.data);
       setLawyers(lawyersRes.data.filter(l => l.availability_status === 'now' || l.availability_status === 'soon').slice(0, 1));
       
-      // Fetch letter types for this case type
-      const letterTypesRes = await axios.get(`${API}/letters/types/${caseRes.data.type}`);
+      // Fetch letter types and risk history
+      const [letterTypesRes, riskHistoryRes] = await Promise.all([
+        axios.get(`${API}/letters/types/${caseRes.data.type}`),
+        axios.get(`${API}/cases/${caseId}/risk-history`, { withCredentials: true })
+      ]);
       setLetterTypes(letterTypesRes.data.letter_types || []);
+      setRiskHistory(riskHistoryRes.data.history || []);
     } catch (error) {
       console.error('Case detail fetch error:', error);
       navigate('/cases');
@@ -270,6 +462,17 @@ const CaseDetail = () => {
               ></div>
             </div>
 
+            {/* Risk Score History Graph */}
+            {riskHistory.length > 0 && (
+              <div className="mb-4" data-testid="risk-score-history">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp size={12} className="text-[#6b7280]" />
+                  <span className="text-[10px] uppercase tracking-wider text-[#9ca3af] font-medium">Score evolution</span>
+                </div>
+                <RiskHistoryChart history={riskHistory} currentScore={caseData.risk_score} />
+              </div>
+            )}
+
             {/* Dimension scores */}
             <div className="grid grid-cols-4 gap-2">
               {[
@@ -399,6 +602,11 @@ const CaseDetail = () => {
                 ))}
               </div>
             </div>
+          )}
+
+          {/* Outcome Predictor */}
+          {caseData.risk_score > 0 && (
+            <OutcomePredictor caseId={caseId} />
           )}
         </div>
 

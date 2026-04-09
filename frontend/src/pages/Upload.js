@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { Upload as UploadIcon, FileText, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload as UploadIcon, FileText, CheckCircle, AlertCircle, Loader2, Camera, Smartphone } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -11,6 +11,7 @@ const Upload = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
   
   const [cases, setCases] = useState([]);
   const [selectedCaseId, setSelectedCaseId] = useState(searchParams.get('case') || '');
@@ -20,6 +21,7 @@ const Upload = () => {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   const fetchCases = useCallback(async () => {
     try {
@@ -63,6 +65,43 @@ const Upload = () => {
 
   const handleDragLeave = () => {
     setIsDragging(false);
+  };
+
+  const handleCameraCapture = async (e) => {
+    const capturedFile = e.target.files[0];
+    if (!capturedFile) return;
+
+    setScanning(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Data = reader.result;
+        
+        try {
+          setUploadStage('Scanning document...');
+          const response = await axios.post(`${API}/documents/scan`, {
+            image_base64: base64Data,
+            case_id: selectedCaseId || null
+          }, { withCredentials: true });
+
+          setUploadStage('');
+          setResult(response.data);
+        } catch (err) {
+          setError(err.response?.data?.detail || 'Scan failed. Please try again.');
+        } finally {
+          setScanning(false);
+          setUploadStage('');
+        }
+      };
+      reader.readAsDataURL(capturedFile);
+    } catch {
+      setError('Failed to read image. Please try again.');
+      setScanning(false);
+    }
   };
 
   const handleUpload = async () => {
@@ -182,12 +221,51 @@ const Upload = () => {
             </div>
 
             {/* File types */}
-            <div className="flex items-center justify-center gap-3 mb-6 flex-wrap">
+            <div className="flex items-center justify-center gap-3 mb-4 flex-wrap">
               {['PDF', 'Word', 'JPEG / PNG', 'Email (.eml)', 'Max 20MB'].map((type) => (
                 <span key={type} className="px-3 py-1.5 bg-[#f5f5f5] text-[#6b7280] text-xs rounded-full">
                   {type}
                 </span>
               ))}
+            </div>
+
+            {/* Mobile Camera Scanner */}
+            <div className="card p-4 mb-4" data-testid="document-scanner-section">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-lg bg-[#faf5ff] flex items-center justify-center">
+                  <Camera size={14} className="text-[#7c3aed]" />
+                </div>
+                <div className="text-sm font-medium text-[#111827]">Document Scanner</div>
+                <span className="badge badge-blue text-[10px]">AI OCR</span>
+              </div>
+              <p className="text-xs text-[#6b7280] mb-3">Take a photo of a letter, contract, or notice. Jasper will scan and analyze it instantly.</p>
+              <input
+                type="file"
+                ref={cameraInputRef}
+                accept="image/*"
+                capture="environment"
+                onChange={handleCameraCapture}
+                className="hidden"
+                data-testid="camera-input"
+              />
+              <button
+                onClick={() => cameraInputRef.current?.click()}
+                disabled={scanning || uploading}
+                className="w-full btn-pill flex items-center justify-center gap-2 py-3 bg-[#faf5ff] text-[#7c3aed] border border-[#ddd6fe] hover:bg-[#ede9fe] transition-colors font-medium"
+                data-testid="scan-document-btn"
+              >
+                {scanning ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    {uploadStage || 'Scanning...'}
+                  </>
+                ) : (
+                  <>
+                    <Smartphone size={16} />
+                    Take a photo to scan
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Case selector */}

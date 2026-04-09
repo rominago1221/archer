@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { CheckCircle, AlertCircle, Download, Trash2 } from 'lucide-react';
+import { CheckCircle, AlertCircle, Download, Trash2, Loader2, CreditCard } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -10,6 +10,7 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState('account');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
+  const [upgrading, setUpgrading] = useState(false);
 
   // Form state
   const [name, setName] = useState(user?.name || '');
@@ -113,6 +114,20 @@ const Settings = () => {
       data-testid="toggle"
     ></div>
   );
+
+  const handleUpgrade = async () => {
+    setUpgrading(true);
+    try {
+      const res = await axios.post(`${API}/payments/checkout`, {
+        package_id: 'pro_monthly',
+        origin_url: window.location.origin
+      }, { withCredentials: true });
+      window.location.href = res.data.url;
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Failed to start checkout. Please try again.' });
+      setUpgrading(false);
+    }
+  };
 
   return (
     <div data-testid="settings-page">
@@ -275,8 +290,23 @@ const Settings = () => {
                 ))}
               </div>
               {user?.plan === 'free' && (
-                <button className="w-full btn-pill btn-blue mt-4" data-testid="upgrade-btn">
-                  Upgrade to Pro — $69/month
+                <button 
+                  onClick={handleUpgrade}
+                  disabled={upgrading}
+                  className="w-full btn-pill btn-blue mt-4 flex items-center justify-center gap-2"
+                  data-testid="upgrade-btn"
+                >
+                  {upgrading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Redirecting to checkout...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard size={16} />
+                      Upgrade to Pro — $69/month
+                    </>
+                  )}
                 </button>
               )}
             </div>

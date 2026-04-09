@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { Star, User, CheckCircle, FileText, Clock, AlertCircle, Calendar } from 'lucide-react';
+import { Star, User, CheckCircle, FileText, Clock, AlertCircle, Calendar, Loader2, CreditCard } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -71,6 +71,7 @@ const LawyerBook = () => {
       if (period === 'AM' && hours === 12) hours = 0;
       today.setHours(hours, minutes, 0, 0);
 
+      // Book the call first
       await axios.post(`${API}/lawyer-calls`, {
         lawyer_id: lawyerId,
         case_id: caseId || null,
@@ -78,14 +79,23 @@ const LawyerBook = () => {
         time_slot: selectedSlot
       }, { withCredentials: true });
 
-      // Redirect to success or dashboard
-      navigate('/dashboard', { 
-        state: { message: `Call booked with ${lawyer.name} for ${selectedSlot} today` }
-      });
+      // Create Stripe checkout for payment
+      const res = await axios.post(`${API}/payments/checkout`, {
+        package_id: 'lawyer_call',
+        origin_url: window.location.origin,
+        metadata: {
+          lawyer_id: lawyerId,
+          lawyer_name: lawyer.name,
+          time_slot: selectedSlot,
+          case_id: caseId || ''
+        }
+      }, { withCredentials: true });
+
+      // Redirect to Stripe
+      window.location.href = res.data.url;
     } catch (err) {
       console.error('Booking error:', err);
       setError(err.response?.data?.detail || 'Booking failed. Please try again.');
-    } finally {
       setBooking(false);
     }
   };
@@ -238,10 +248,20 @@ const LawyerBook = () => {
         <button
           onClick={handleBook}
           disabled={booking}
-          className="w-full btn-pill btn-blue py-3.5 text-base font-medium disabled:opacity-60"
+          className="w-full btn-pill btn-blue py-3.5 text-base font-medium disabled:opacity-60 flex items-center justify-center gap-2"
           data-testid="confirm-book-btn"
         >
-          {booking ? 'Processing...' : 'Confirm & pay $149'}
+          {booking ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              Redirecting to payment...
+            </>
+          ) : (
+            <>
+              <CreditCard size={18} />
+              Confirm & pay $149
+            </>
+          )}
         </button>
 
         <div className="text-xs text-[#9ca3af] text-center mt-3">

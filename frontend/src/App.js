@@ -14,6 +14,8 @@ import Upload from './pages/Upload';
 import Lawyers from './pages/Lawyers';
 import LawyerBook from './pages/LawyerBook';
 import Settings from './pages/Settings';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentCancel from './pages/PaymentCancel';
 import './App.css';
 
 // Component to handle session_id in URL hash
@@ -47,6 +49,8 @@ const AppRouter = () => {
         <Route path="lawyers" element={<Lawyers />} />
         <Route path="lawyers/book" element={<LawyerBook />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="payment/success" element={<PaymentSuccess />} />
+        <Route path="payment/cancel" element={<PaymentCancel />} />
       </Route>
       
       {/* Catch all */}

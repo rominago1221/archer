@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Response, Header, Query, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Response, Header, Query, Request, Form
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -7,7 +7,7 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Dict
 import uuid
 from datetime import datetime, timezone, timedelta
 import httpx
@@ -15,6 +15,8 @@ import json
 import pdfplumber
 import io
 import requests
+import base64
+from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -28,6 +30,7 @@ db = client[os.environ['DB_NAME']]
 STORAGE_URL = "https://integrations.emergentagent.com/objstore/api/v1/storage"
 EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY")
 APP_NAME = "jasper-legal"
 storage_key = None
 
@@ -132,6 +135,7 @@ class Case(BaseModel):
     risk_urgency: int = 0
     risk_legal_strength: int = 0
     risk_complexity: int = 0
+    risk_score_history: List[dict] = []
     deadline: Optional[str] = None
     deadline_description: Optional[str] = None
     financial_exposure: Optional[str] = None
@@ -657,6 +661,7 @@ async def create_case(case_data: CaseCreate, current_user: User = Depends(get_cu
         "risk_urgency": 0,
         "risk_legal_strength": 0,
         "risk_complexity": 0,
+        "risk_score_history": [],
         "deadline": None,
         "deadline_description": None,
         "financial_exposure": None,
@@ -815,7 +820,7 @@ async def upload_document(
     # Upload to storage
     storage_path = f"{APP_NAME}/documents/{current_user.user_id}/{uuid.uuid4()}.{file_ext}"
     try:
-        result = put_object(storage_path, file_bytes, file.content_type or "application/octet-stream")
+        put_object(storage_path, file_bytes, file.content_type or "application/octet-stream")
     except Exception as e:
         logger.error(f"Storage upload failed: {e}")
         storage_path = None
@@ -859,23 +864,37 @@ async def upload_document(
             old_score = case_doc.get("risk_score", 0)
             new_score = analysis["risk_score"]["total"]
             
+            # Record risk score history
+            history_entry = {
+                "score": new_score,
+                "financial": analysis["risk_score"]["financial"],
+                "urgency": analysis["risk_score"]["urgency"],
+                "legal_strength": analysis["risk_score"]["legal_strength"],
+                "complexity": analysis["risk_score"]["complexity"],
+                "document_name": file.filename,
+                "date": now
+            }
+            
             await db.cases.update_one(
                 {"case_id": case_id},
-                {"$set": {
-                    "risk_score": new_score,
-                    "risk_financial": analysis["risk_score"]["financial"],
-                    "risk_urgency": analysis["risk_score"]["urgency"],
-                    "risk_legal_strength": analysis["risk_score"]["legal_strength"],
-                    "risk_complexity": analysis["risk_score"]["complexity"],
-                    "deadline": analysis.get("deadline"),
-                    "deadline_description": analysis.get("deadline_description"),
-                    "financial_exposure": analysis.get("financial_exposure"),
-                    "ai_summary": analysis.get("summary"),
-                    "ai_findings": analysis.get("findings", []),
-                    "ai_next_steps": analysis.get("next_steps", []),
-                    "recommend_lawyer": analysis.get("recommend_lawyer", False),
-                    "updated_at": now
-                }}
+                {
+                    "$set": {
+                        "risk_score": new_score,
+                        "risk_financial": analysis["risk_score"]["financial"],
+                        "risk_urgency": analysis["risk_score"]["urgency"],
+                        "risk_legal_strength": analysis["risk_score"]["legal_strength"],
+                        "risk_complexity": analysis["risk_score"]["complexity"],
+                        "deadline": analysis.get("deadline"),
+                        "deadline_description": analysis.get("deadline_description"),
+                        "financial_exposure": analysis.get("financial_exposure"),
+                        "ai_summary": analysis.get("summary"),
+                        "ai_findings": analysis.get("findings", []),
+                        "ai_next_steps": analysis.get("next_steps", []),
+                        "recommend_lawyer": analysis.get("recommend_lawyer", False),
+                        "updated_at": now
+                    },
+                    "$push": {"risk_score_history": history_entry}
+                }
             )
             
             # Create score update event
@@ -906,6 +925,15 @@ async def upload_document(
             "risk_urgency": analysis["risk_score"]["urgency"] if analysis else 0,
             "risk_legal_strength": analysis["risk_score"]["legal_strength"] if analysis else 0,
             "risk_complexity": analysis["risk_score"]["complexity"] if analysis else 0,
+            "risk_score_history": [{
+                "score": analysis["risk_score"]["total"],
+                "financial": analysis["risk_score"]["financial"],
+                "urgency": analysis["risk_score"]["urgency"],
+                "legal_strength": analysis["risk_score"]["legal_strength"],
+                "complexity": analysis["risk_score"]["complexity"],
+                "document_name": file.filename,
+                "date": now
+            }] if analysis else [],
             "deadline": analysis.get("deadline") if analysis else None,
             "deadline_description": analysis.get("deadline_description") if analysis else None,
             "financial_exposure": analysis.get("financial_exposure") if analysis else None,
@@ -1251,6 +1279,468 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
         "total_documents": total_docs,
         "next_call": next_call
     }
+
+# ================== Risk Score History ==================
+
+@api_router.get("/cases/{case_id}/risk-history")
+async def get_risk_history(case_id: str, current_user: User = Depends(get_current_user)):
+    """Get risk score history for a case"""
+    case_doc = await db.cases.find_one(
+        {"case_id": case_id, "user_id": current_user.user_id},
+        {"_id": 0, "risk_score_history": 1, "risk_score": 1}
+    )
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+    return {
+        "current_score": case_doc.get("risk_score", 0),
+        "history": case_doc.get("risk_score_history", [])
+    }
+
+# ================== Outcome Predictor ==================
+
+OUTCOME_SYSTEM_PROMPT = """You are Jasper's legal outcome prediction engine. Based on case data and AI analysis, predict likely outcomes for this legal situation. You are NOT a lawyer and never claim to be one.
+
+RULES:
+- Provide 3 scenarios: favorable, neutral, and unfavorable
+- Include probability estimates (must total 100%)
+- Reference specific case facts and legal precedents
+- Be realistic and grounded in the case data
+- Plain English only
+
+OUTPUT FORMAT — respond ONLY with this exact JSON, no other text:
+{
+  "favorable": {
+    "probability": 30,
+    "title": "Short title",
+    "description": "2-3 sentences describing this outcome",
+    "likely_result": "What happens specifically",
+    "financial_impact": "Dollar amount or range",
+    "timeline": "Estimated timeline"
+  },
+  "neutral": {
+    "probability": 45,
+    "title": "Short title",
+    "description": "2-3 sentences describing this outcome",
+    "likely_result": "What happens specifically",
+    "financial_impact": "Dollar amount or range",
+    "timeline": "Estimated timeline"
+  },
+  "unfavorable": {
+    "probability": 25,
+    "title": "Short title",
+    "description": "2-3 sentences describing this outcome",
+    "likely_result": "What happens specifically",
+    "financial_impact": "Dollar amount or range",
+    "timeline": "Estimated timeline"
+  },
+  "key_factors": ["Factor 1", "Factor 2", "Factor 3"],
+  "recommendation": "One sentence best course of action",
+  "disclaimer": "This prediction provides legal information only, not legal advice. Actual outcomes may vary."
+}"""
+
+@api_router.post("/cases/{case_id}/predict-outcome")
+async def predict_outcome(case_id: str, current_user: User = Depends(get_current_user)):
+    """Predict case outcome using AI"""
+    case_doc = await db.cases.find_one(
+        {"case_id": case_id, "user_id": current_user.user_id},
+        {"_id": 0}
+    )
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+    
+    case_context = {
+        "type": case_doc.get("type"),
+        "title": case_doc.get("title"),
+        "risk_score": case_doc.get("risk_score"),
+        "risk_financial": case_doc.get("risk_financial"),
+        "risk_urgency": case_doc.get("risk_urgency"),
+        "risk_legal_strength": case_doc.get("risk_legal_strength"),
+        "risk_complexity": case_doc.get("risk_complexity"),
+        "financial_exposure": case_doc.get("financial_exposure"),
+        "deadline": case_doc.get("deadline"),
+        "summary": case_doc.get("ai_summary"),
+        "findings": [f.get("text") for f in case_doc.get("ai_findings", [])],
+        "next_steps": [s.get("title") for s in case_doc.get("ai_next_steps", [])]
+    }
+    
+    try:
+        async with httpx.AsyncClient() as http_client:
+            response = await http_client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "Content-Type": "application/json",
+                    "x-api-key": ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01"
+                },
+                json={
+                    "model": "claude-sonnet-4-20250514",
+                    "max_tokens": 2000,
+                    "system": OUTCOME_SYSTEM_PROMPT,
+                    "messages": [{
+                        "role": "user",
+                        "content": f"Predict outcomes for this legal case. Return JSON only:\n\n{json.dumps(case_context, indent=2)}"
+                    }]
+                },
+                timeout=60.0
+            )
+            response.raise_for_status()
+            data = response.json()
+            text = data["content"][0]["text"]
+            text = text.replace("```json", "").replace("```", "").strip()
+            prediction = json.loads(text)
+            return prediction
+    except Exception as e:
+        logger.error(f"Outcome prediction error: {e}")
+        raise HTTPException(status_code=500, detail="Prediction failed. Please try again.")
+
+# ================== Document Scanner (Mobile Camera) ==================
+
+class ScanRequest(BaseModel):
+    image_base64: str
+    case_id: Optional[str] = None
+
+@api_router.post("/documents/scan")
+async def scan_document(
+    scan_data: ScanRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Scan a document photo using Claude Vision API"""
+    # Check plan restrictions
+    if current_user.plan == "free":
+        doc_count = await db.documents.count_documents({"user_id": current_user.user_id})
+        if doc_count >= 1:
+            raise HTTPException(
+                status_code=403,
+                detail="Free plan limited to 1 document. Upgrade to Pro for unlimited analyses."
+            )
+    
+    # Clean base64 string
+    image_data = scan_data.image_base64
+    if "base64," in image_data:
+        image_data = image_data.split("base64,")[1]
+    
+    # Determine media type
+    media_type = "image/jpeg"
+    if scan_data.image_base64.startswith("data:image/png"):
+        media_type = "image/png"
+    elif scan_data.image_base64.startswith("data:image/webp"):
+        media_type = "image/webp"
+    
+    # Call Claude Vision API for OCR + analysis
+    try:
+        async with httpx.AsyncClient() as http_client:
+            response = await http_client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "Content-Type": "application/json",
+                    "x-api-key": ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01"
+                },
+                json={
+                    "model": "claude-sonnet-4-20250514",
+                    "max_tokens": 3000,
+                    "system": "First, extract all text from this document image (OCR). Then analyze the extracted text as a legal document.\n\n" + CLAUDE_SYSTEM_PROMPT,
+                    "messages": [{
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": media_type,
+                                    "data": image_data
+                                }
+                            },
+                            {
+                                "type": "text",
+                                "text": "Extract text from this document image and analyze it as a legal document. Return the analysis JSON only."
+                            }
+                        ]
+                    }]
+                },
+                timeout=90.0
+            )
+            response.raise_for_status()
+            data = response.json()
+            text = data["content"][0]["text"]
+            text = text.replace("```json", "").replace("```", "").strip()
+            analysis = json.loads(text)
+    except Exception as e:
+        logger.error(f"Claude Vision scan error: {e}")
+        raise HTTPException(status_code=500, detail="Document scan failed. Please try again or upload a file instead.")
+    
+    # Save scanned image to storage
+    now = datetime.now(timezone.utc).isoformat()
+    image_bytes = base64.b64decode(image_data)
+    ext = "jpg" if media_type == "image/jpeg" else "png"
+    storage_path = f"{APP_NAME}/scans/{current_user.user_id}/{uuid.uuid4()}.{ext}"
+    try:
+        put_object(storage_path, image_bytes, media_type)
+    except Exception as e:
+        logger.error(f"Scan storage failed: {e}")
+        storage_path = None
+    
+    # Create document record
+    document_id = f"doc_{uuid.uuid4().hex[:12]}"
+    case_id = scan_data.case_id
+    
+    doc_record = {
+        "document_id": document_id,
+        "case_id": case_id,
+        "user_id": current_user.user_id,
+        "file_name": f"scan_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.{ext}",
+        "file_url": None,
+        "storage_path": storage_path,
+        "file_type": ext,
+        "extracted_text": analysis.get("summary", ""),
+        "status": "analyzed",
+        "is_key_document": case_id is None,
+        "uploaded_at": now
+    }
+    await db.documents.insert_one(doc_record)
+    
+    # Create or update case (same logic as file upload)
+    if case_id:
+        case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
+        if case_doc and analysis:
+            history_entry = {
+                "score": analysis["risk_score"]["total"],
+                "financial": analysis["risk_score"]["financial"],
+                "urgency": analysis["risk_score"]["urgency"],
+                "legal_strength": analysis["risk_score"]["legal_strength"],
+                "complexity": analysis["risk_score"]["complexity"],
+                "document_name": doc_record["file_name"],
+                "date": now
+            }
+            await db.cases.update_one(
+                {"case_id": case_id},
+                {
+                    "$set": {
+                        "risk_score": analysis["risk_score"]["total"],
+                        "risk_financial": analysis["risk_score"]["financial"],
+                        "risk_urgency": analysis["risk_score"]["urgency"],
+                        "risk_legal_strength": analysis["risk_score"]["legal_strength"],
+                        "risk_complexity": analysis["risk_score"]["complexity"],
+                        "deadline": analysis.get("deadline"),
+                        "deadline_description": analysis.get("deadline_description"),
+                        "financial_exposure": analysis.get("financial_exposure"),
+                        "ai_summary": analysis.get("summary"),
+                        "ai_findings": analysis.get("findings", []),
+                        "ai_next_steps": analysis.get("next_steps", []),
+                        "recommend_lawyer": analysis.get("recommend_lawyer", False),
+                        "updated_at": now
+                    },
+                    "$push": {"risk_score_history": history_entry}
+                }
+            )
+    else:
+        case_id = f"case_{uuid.uuid4().hex[:12]}"
+        case_title = analysis.get("suggested_case_title", "Scanned Document")
+        case_type = analysis.get("case_type", "other")
+        
+        case_doc = {
+            "case_id": case_id,
+            "user_id": current_user.user_id,
+            "title": case_title,
+            "type": case_type,
+            "status": "active",
+            "risk_score": analysis["risk_score"]["total"],
+            "risk_financial": analysis["risk_score"]["financial"],
+            "risk_urgency": analysis["risk_score"]["urgency"],
+            "risk_legal_strength": analysis["risk_score"]["legal_strength"],
+            "risk_complexity": analysis["risk_score"]["complexity"],
+            "risk_score_history": [{
+                "score": analysis["risk_score"]["total"],
+                "financial": analysis["risk_score"]["financial"],
+                "urgency": analysis["risk_score"]["urgency"],
+                "legal_strength": analysis["risk_score"]["legal_strength"],
+                "complexity": analysis["risk_score"]["complexity"],
+                "document_name": doc_record["file_name"],
+                "date": now
+            }],
+            "deadline": analysis.get("deadline"),
+            "deadline_description": analysis.get("deadline_description"),
+            "financial_exposure": analysis.get("financial_exposure"),
+            "ai_summary": analysis.get("summary"),
+            "ai_findings": analysis.get("findings", []),
+            "ai_next_steps": analysis.get("next_steps", []),
+            "recommend_lawyer": analysis.get("recommend_lawyer", False),
+            "document_count": 1,
+            "created_at": now,
+            "updated_at": now
+        }
+        await db.cases.insert_one(case_doc)
+        await db.documents.update_one({"document_id": document_id}, {"$set": {"case_id": case_id}})
+        
+        event_doc = {
+            "event_id": f"evt_{uuid.uuid4().hex[:12]}",
+            "case_id": case_id,
+            "event_type": "case_opened",
+            "title": "Case opened",
+            "description": f"Scanned document analyzed · {analysis['risk_score']['total']}/100",
+            "metadata": None,
+            "created_at": now
+        }
+        await db.case_events.insert_one(event_doc)
+    
+    return {
+        "document_id": document_id,
+        "case_id": case_id,
+        "analysis": analysis,
+        "status": "analyzed"
+    }
+
+# ================== Stripe Payment Endpoints ==================
+
+PAYMENT_PACKAGES = {
+    "pro_monthly": {"amount": 69.00, "currency": "usd", "description": "Jasper Pro Plan - Monthly"},
+    "lawyer_call": {"amount": 149.00, "currency": "usd", "description": "Attorney Video Call - 30 min"}
+}
+
+class CheckoutRequest(BaseModel):
+    package_id: str
+    origin_url: str
+    metadata: Optional[Dict[str, str]] = None
+
+@api_router.post("/payments/checkout")
+async def create_checkout(
+    checkout_data: CheckoutRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a Stripe checkout session"""
+    package = PAYMENT_PACKAGES.get(checkout_data.package_id)
+    if not package:
+        raise HTTPException(status_code=400, detail="Invalid package")
+    
+    origin = checkout_data.origin_url.rstrip("/")
+    success_url = f"{origin}/payment/success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{origin}/payment/cancel"
+    
+    metadata = checkout_data.metadata or {}
+    metadata["user_id"] = current_user.user_id
+    metadata["package_id"] = checkout_data.package_id
+    metadata["user_email"] = current_user.email
+    
+    host_url = str(request.base_url).rstrip("/")
+    webhook_url = f"{host_url}api/webhook/stripe"
+    
+    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+    
+    checkout_req = CheckoutSessionRequest(
+        amount=package["amount"],
+        currency=package["currency"],
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata=metadata
+    )
+    
+    session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(checkout_req)
+    
+    # Record payment transaction
+    now = datetime.now(timezone.utc).isoformat()
+    tx_doc = {
+        "transaction_id": f"tx_{uuid.uuid4().hex[:12]}",
+        "session_id": session.session_id,
+        "user_id": current_user.user_id,
+        "package_id": checkout_data.package_id,
+        "amount": package["amount"],
+        "currency": package["currency"],
+        "description": package["description"],
+        "payment_status": "pending",
+        "status": "initiated",
+        "metadata": metadata,
+        "created_at": now,
+        "updated_at": now
+    }
+    await db.payment_transactions.insert_one(tx_doc)
+    
+    return {"url": session.url, "session_id": session.session_id}
+
+@api_router.get("/payments/status/{session_id}")
+async def get_payment_status(
+    session_id: str,
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """Check payment status and update records"""
+    tx = await db.payment_transactions.find_one(
+        {"session_id": session_id, "user_id": current_user.user_id},
+        {"_id": 0}
+    )
+    if not tx:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    
+    # If already processed, return cached status
+    if tx.get("payment_status") == "paid":
+        return {"status": tx["status"], "payment_status": "paid", "package_id": tx["package_id"]}
+    
+    host_url = str(request.base_url).rstrip("/")
+    webhook_url = f"{host_url}api/webhook/stripe"
+    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+    
+    checkout_status: CheckoutStatusResponse = await stripe_checkout.get_checkout_status(session_id)
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    if checkout_status.payment_status == "paid" and tx.get("payment_status") != "paid":
+        # Update transaction
+        await db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {"$set": {"payment_status": "paid", "status": "completed", "updated_at": now}}
+        )
+        
+        # Fulfill based on package
+        if tx["package_id"] == "pro_monthly":
+            await db.users.update_one(
+                {"user_id": current_user.user_id},
+                {"$set": {"plan": "pro"}}
+            )
+        
+        return {"status": "completed", "payment_status": "paid", "package_id": tx["package_id"]}
+    elif checkout_status.status == "expired":
+        await db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {"$set": {"payment_status": "expired", "status": "expired", "updated_at": now}}
+        )
+        return {"status": "expired", "payment_status": "expired", "package_id": tx["package_id"]}
+    
+    return {"status": tx["status"], "payment_status": checkout_status.payment_status, "package_id": tx["package_id"]}
+
+@api_router.post("/webhook/stripe")
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhook events"""
+    try:
+        body = await request.body()
+        signature = request.headers.get("Stripe-Signature", "")
+        
+        host_url = str(request.base_url).rstrip("/")
+        webhook_url = f"{host_url}api/webhook/stripe"
+        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+        
+        webhook_response = await stripe_checkout.handle_webhook(body, signature)
+        
+        if webhook_response.payment_status == "paid":
+            session_id = webhook_response.session_id
+            now = datetime.now(timezone.utc).isoformat()
+            
+            tx = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+            if tx and tx.get("payment_status") != "paid":
+                await db.payment_transactions.update_one(
+                    {"session_id": session_id},
+                    {"$set": {"payment_status": "paid", "status": "completed", "updated_at": now}}
+                )
+                
+                if tx["package_id"] == "pro_monthly":
+                    await db.users.update_one(
+                        {"user_id": tx["user_id"]},
+                        {"$set": {"plan": "pro"}}
+                    )
+        
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return {"status": "error", "detail": str(e)}
 
 # ================== Seed Data ==================
 
