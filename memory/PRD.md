@@ -15,93 +15,88 @@ Build a complete, production-ready SaaS web application called "Jasper" — a le
 - Lawyer booking system ($149 per 30-min call)
 - Google OAuth authentication
 - Free (1 doc) and Pro ($69/mo) plans
+- Stripe payments for Pro plan and lawyer calls
 
-## What's Been Implemented (Jan 9, 2026)
+## What's Been Implemented
 
 ### Landing Page
-- ✅ Hero section with value proposition and Risk Score preview
-- ✅ Stats bar (47,284 docs, 12,431 users, $8.2M saved, 4.9 rating)
-- ✅ Trust bar with certifications
-- ✅ Press logos (Forbes, TechCrunch, etc.)
-- ✅ "What Jasper handles" - 9 legal document categories
-- ✅ "The Problem" section with demo mockup
-- ✅ "How it works" - 4 steps
-- ✅ "Talk to a lawyer now" CTA section
-- ✅ Attorney profiles grid
-- ✅ Pricing cards (Free, Pro $69/mo, Attorney call $149)
-- ✅ Reviews section
-- ✅ FAQ accordion
-- ✅ Final CTA and footer
+- Hero section with value proposition and Risk Score preview
+- Stats bar, trust bar, press logos
+- "What Jasper handles" - 9 legal document categories
+- "The Problem" section, "How it works" - 4 steps
+- Attorney profiles grid, Pricing cards, Reviews, FAQ, Footer
 
 ### Backend (FastAPI + MongoDB)
-- ✅ User authentication via Emergent Google OAuth
-- ✅ Session management with httpOnly cookies
-- ✅ Profile management with notification/privacy settings
-- ✅ Cases CRUD with risk score tracking
-- ✅ Document upload with Emergent object storage
-- ✅ Claude AI document analysis (claude-sonnet-4-20250514)
-- ✅ PDF text extraction using pdfplumber
-- ✅ Lawyer management with seeded data (6 lawyers)
-- ✅ Lawyer call booking with AI brief generation
-- ✅ Case timeline events
-- ✅ Dashboard stats endpoint
+- User authentication via Emergent Google OAuth
+- Session management with httpOnly cookies
+- Profile management with notification/privacy settings
+- Cases CRUD with risk score tracking
+- Document upload with Emergent object storage
+- Claude AI document analysis (claude-sonnet-4-20250514)
+- PDF text extraction using pdfplumber
+- Lawyer management with seeded data (6 lawyers)
+- Lawyer call booking with AI brief generation
+- Case timeline events
+- Dashboard stats endpoint
+- **Feature 2: Risk Score History** — `risk_score_history` array in cases, GET endpoint
+- **Feature 4: Outcome Predictor** — POST endpoint with Claude AI predictions
+- **Feature 3: Document Scanner** — POST /api/documents/scan with Claude Vision OCR
+- **Feature 5: Response Letters** — Letter generation via Claude API
+- **Stripe Integration** — Checkout for Pro plan ($69/mo) and lawyer calls ($149), payment status polling, webhook
 
 ### Frontend (React + Tailwind CSS)
-- ✅ Login page with Google OAuth
-- ✅ Signup page with plan selection
-- ✅ Dashboard with stats, cases, upload zone, lawyers
-- ✅ Cases list with filters (All/Active/High Risk/Resolved)
-- ✅ Case detail page with:
-  - Risk Score visualization
-  - AI findings with impact badges
-  - Recommended next steps
-  - Documents list
-  - Timeline events
-  - Lawyer CTA for high-risk cases
-- ✅ Upload page with drag-drop, file type badges
-- ✅ Lawyers grid with availability, ratings, specialties
-- ✅ Lawyer booking page with time slots, AI brief preview
-- ✅ Settings page with 4 tabs (Account, Plan, Notifications, Privacy)
+- Login/Signup pages with Google OAuth
+- Dashboard with stats, cases, upload zone, lawyers
+- Cases list with filters
+- Case detail page with Risk Score, AI findings, next steps
+- **Risk Score History Graph** — SVG line chart showing score evolution
+- **Outcome Predictor** — Collapsible section with AI-predicted scenarios
+- **Response Letters** — Generation modal with PDF download
+- Upload page with drag-drop
+- **Document Scanner** — Camera capture for mobile OCR scanning
+- Lawyers grid with availability, ratings, specialties
+- Lawyer booking page with Stripe payment ($149)
+- Settings page with Stripe upgrade to Pro ($69/mo)
+- Payment Success/Cancel pages with status polling
 
 ### Integrations
-- ✅ Emergent Google OAuth for authentication
-- ✅ Emergent Object Storage for document files
-- ✅ Anthropic Claude API for document analysis
+- Emergent Google OAuth for authentication
+- Emergent Object Storage for document files
+- Anthropic Claude API for document analysis + Vision OCR + Outcome prediction
+- Stripe (via emergentintegrations) for payments
 
 ## Prioritized Backlog
 
-### P0 (Critical - Blocking core functionality)
+### P0 (Critical - Done)
 - [x] Document upload and AI analysis
 - [x] Risk Score visualization
 - [x] User authentication
+- [x] Risk Score History Graph
+- [x] Stripe integration (Pro plan + lawyer calls)
 
-### P1 (High - Important for MVP)
-- [ ] Stripe integration for payments ($69/mo Pro plan, $149 lawyer calls)
-- [ ] Email notifications (deadline reminders, call confirmations)
-- [ ] Document re-analysis when multiple docs in case
+### P1 (High - Done)
+- [x] Outcome Predictor
+- [x] Document Scanner (Mobile Camera OCR)
+- [x] Response Letters generation
 
-### P2 (Medium - Nice to have)
+### P2 (Medium - Future)
+- [ ] Deadline Alerts (SMS/Email) — requires Twilio + SendGrid keys
+- [ ] Save generated letters to case history
 - [ ] Mobile responsive sidebar (bottom nav)
 - [ ] Real-time lawyer availability refresh
 - [ ] Download user data functionality
 - [ ] Delete account flow
 
-### P3 (Low - Future enhancements)
-- [ ] AI response draft generation
+### P3 (Low - Future)
 - [ ] Video call integration
 - [ ] Email document intake (.eml parsing)
 - [ ] Multi-language support
 
-## Next Tasks
-1. Integrate Stripe for Pro plan subscriptions and lawyer call payments
-2. Add email notifications using SendGrid or Resend
-3. Implement mobile responsive bottom navigation
-4. Add skeleton loaders for all API calls
-5. Implement proper error boundaries
-
 ## Technical Notes
-- Backend runs on FastAPI with MongoDB
-- Frontend uses React with Tailwind CSS
-- Auth uses Emergent Google OAuth with session cookies
-- Files stored in Emergent Object Storage
-- AI analysis via direct Anthropic Claude API call
+- Backend: FastAPI with MongoDB at localhost:27017
+- Frontend: React with Tailwind CSS
+- Auth: Emergent Google OAuth with session cookies
+- Files: Emergent Object Storage
+- AI: Anthropic Claude API (claude-sonnet-4-20250514)
+- Payments: Stripe via emergentintegrations library (sk_test_emergent)
+- DB Collections: users, user_sessions, cases, documents, lawyers, lawyer_calls, letters, case_events, payment_transactions
