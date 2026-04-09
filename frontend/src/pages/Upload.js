@@ -68,11 +68,8 @@ const Upload = () => {
   const handleUpload = async () => {
     if (!file) return;
 
-    // Check free plan restriction
-    if (user?.plan === 'free') {
-      setError('Free plan is limited to 1 document. Upgrade to Pro for unlimited analyses.');
-      return;
-    }
+    // Free plan check is handled by backend - it allows 1 document
+    // The backend will return 403 if they've already used their free analysis
 
     setUploading(true);
     setError(null);
