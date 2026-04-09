@@ -115,25 +115,30 @@ const Upload = () => {
     setResult(null);
 
     try {
-      setUploadStage('Reading document...');
-      await new Promise(r => setTimeout(r, 500));
+      setUploadStage('reading');
 
-      setUploadStage('Analyzing with AI...');
-      
       const formData = new FormData();
       formData.append('file', file);
       if (selectedCaseId) {
         formData.append('case_id', selectedCaseId);
       }
 
-      const response = await axios.post(`${API}/documents/upload`, formData, {
+      // Start upload in parallel with progress simulation
+      const uploadPromise = axios.post(`${API}/documents/upload`, formData, {
         withCredentials: true,
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      setUploadStage('Generating Risk Score...');
-      await new Promise(r => setTimeout(r, 500));
+      // Simulate 5-step progress while waiting for API
+      const delay = (ms) => new Promise(r => setTimeout(r, ms));
+      await delay(2000); setUploadStage('extracting');
+      await delay(3000); setUploadStage('analyzing');
+      await delay(3500); setUploadStage('strategy');
+      await delay(3000); setUploadStage('battle');
 
+      const response = await uploadPromise;
+      setUploadStage('done');
+      await delay(500);
       setResult(response.data);
     } catch (err) {
       console.error('Upload error:', err);
@@ -186,10 +191,39 @@ const Upload = () => {
               />
               
               {uploading ? (
-                <div className="text-center">
-                  <Loader2 size={32} className="mx-auto mb-3 text-[#1a56db] animate-spin" />
-                  <div className="text-sm font-medium text-[#1d4ed8] mb-1">{uploadStage}</div>
-                  <div className="text-xs text-[#93c5fd]">This may take a moment...</div>
+                <div className="text-center w-full max-w-sm mx-auto" data-testid="analysis-progress">
+                  <Loader2 size={32} className="mx-auto mb-4 text-[#1a56db] animate-spin" />
+                  <div className="space-y-2">
+                    {[
+                      { key: 'reading', label: 'Reading your document...', icon: '1' },
+                      { key: 'extracting', label: 'Extracting facts & dates...', icon: '2' },
+                      { key: 'analyzing', label: 'Analyzing under US law...', icon: '3' },
+                      { key: 'strategy', label: 'Building legal strategy...', icon: '4' },
+                      { key: 'battle', label: 'Running opposing counsel analysis...', icon: '5' }
+                    ].map((step, i) => {
+                      const stages = ['reading', 'extracting', 'analyzing', 'strategy', 'battle', 'done'];
+                      const currentIdx = stages.indexOf(uploadStage);
+                      const stepIdx = stages.indexOf(step.key);
+                      const isDone = currentIdx > stepIdx;
+                      const isCurrent = currentIdx === stepIdx;
+                      return (
+                        <div key={step.key} className={`flex items-center gap-3 py-1.5 px-3 rounded-lg transition-all ${isCurrent ? 'bg-[#eff6ff]' : ''}`}>
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
+                            isDone ? 'bg-[#16a34a] text-white' : isCurrent ? 'bg-[#1a56db] text-white' : 'bg-[#f0f0f0] text-[#aaa]'
+                          }`}>{isDone ? '\u2713' : step.icon}</div>
+                          <span className={`text-xs ${isCurrent ? 'text-[#1a56db] font-medium' : isDone ? 'text-[#16a34a]' : 'text-[#ccc]'}`}>
+                            {step.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-3 h-1 bg-[#f0f0f0] rounded-full overflow-hidden">
+                    <div className="h-full bg-[#1a56db] rounded-full transition-all duration-1000" style={{
+                      width: `${(['reading','extracting','analyzing','strategy','battle','done'].indexOf(uploadStage) + 1) * 20}%`
+                    }}></div>
+                  </div>
+                  <div className="text-[10px] text-[#9ca3af] mt-2">Senior attorney-level analysis in progress...</div>
                 </div>
               ) : file ? (
                 <div className="text-center">

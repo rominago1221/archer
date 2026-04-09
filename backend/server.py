@@ -146,6 +146,21 @@ class Case(BaseModel):
     document_count: int = 0
     created_at: str
     updated_at: str
+    # Advanced 5-Pass Analysis Fields
+    battle_preview: Optional[dict] = None
+    success_probability: Optional[dict] = None
+    procedural_defects: List[dict] = []
+    applicable_laws: List[dict] = []
+    financial_exposure_detailed: Optional[dict] = None
+    immediate_actions: List[dict] = []
+    leverage_points: List[dict] = []
+    red_lines: List[str] = []
+    key_insight: Optional[str] = None
+    strategy: Optional[dict] = None
+    lawyer_recommendation: Optional[dict] = None
+    user_rights: List[dict] = []
+    opposing_weaknesses: List[dict] = []
+    documents_to_gather: List[dict] = []
 
 class Document(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -256,109 +271,411 @@ async def get_current_user(authorization: str = Header(None), request: Request =
     
     return User(**user_doc)
 
-# ================== Claude AI Analysis ==================
+# ================== Claude AI Analysis — 5-Pass Advanced System ==================
 
-CLAUDE_SYSTEM_PROMPT = """You are Jasper's legal analysis engine. You are NOT a lawyer and never claim to be one. You analyze legal documents for US residents and provide clear, actionable legal intelligence in plain English.
+# Load jurisprudence database
+JURISPRUDENCE_PATH = ROOT_DIR / "jurisprudence.json"
+with open(JURISPRUDENCE_PATH) as f:
+    JURISPRUDENCE_DB = json.load(f)
 
-RULES:
-- Never claim to provide legal advice — only legal information
-- Never fabricate information not in the document
-- Always cite specific clauses, amounts, dates, deadlines
-- Recommend a lawyer call if Risk Score exceeds 65
-- Be aware of US state law differences
-- Plain English only — no legal jargon
+SENIOR_ATTORNEY_PERSONA = """You are a senior US attorney with 20 years of experience representing individuals — never corporations — in employment disputes, tenant rights cases, debt collection defense, contract disputes, consumer protection, and civil litigation.
 
-LEGAL KNOWLEDGE BASE:
-FDCPA, FLSA, FHA, FMLA, ADA, FCRA, UCC, state tenant laws (all 50 states), employment contract law (all US states), federal civil procedure, common court notice types, standard NDA and commercial contract clauses.
+You have personally handled over 2,000 cases similar to the ones you will analyze. You think like a litigator: you identify not just the risks, but the opposing party's likely strategy, the weakest points in their argument, and the exact leverage points your client can use to achieve the best outcome.
 
-OUTPUT FORMAT — respond ONLY with this exact JSON, no other text:
+YOUR ANALYSIS PRINCIPLES:
+1. Read every word of the document — details matter, especially what is MISSING
+2. Identify procedural errors first — they are often the strongest defense
+3. Look for violations of the opposing party's own obligations
+4. Quantify financial exposure precisely — vague ranges are useless
+5. Deadlines are sacred — never understate urgency
+6. Look for what can be USED, not just what hurts
+7. Consider the opposing party's incentives — do they want to go to court?
+8. The cheapest resolution is usually the best — recommend deescalation when possible
 
-{
-  "document_type": "demand_letter|employment_contract|lease|court_notice|nda|debt_collection|other",
+YOU NEVER:
+- Admit liability on behalf of the user
+- Recommend paying without first disputing
+- Ignore procedural defects in opposing documents
+- Underestimate a deadline
+- Give false reassurance when risk is genuinely high
+- Use legal jargon without plain-English explanation
+
+JURISDICTION: USA — Federal + applicable state law"""
+
+PASS1_PROMPT = """TASK: FACT EXTRACTION ONLY
+Read this legal document carefully and extract every factual element. Do not interpret, analyze, or recommend anything yet. Return ONLY raw facts organized in JSON.
+
+DOCUMENT TEXT:
+{document_text}
+
+Return ONLY this JSON — no other text:
+{{
+  "document_type": "demand_letter|eviction_notice|employment_contract|court_notice|debt_collection|nda|lease|other",
+  "document_date": "YYYY-MM-DD or null",
+  "parties": {{
+    "opposing_party": {{"name": "exact name from document", "type": "individual|company|government|law_firm"}},
+    "user_party": {{"name": "exact name from document", "role": "tenant|employee|debtor|consumer|contractor|other"}}
+  }},
+  "key_amounts": [{{"amount": 0, "currency": "USD", "description": "what this amount represents", "disputed": false}}],
+  "key_dates": [{{"date": "YYYY-MM-DD", "description": "what this date represents", "is_deadline": true}}],
+  "legal_references": [{{"reference": "statute reference", "description": "what law is referenced"}}],
+  "contract_clauses": [{{"clause_number": "Section X", "description": "what clause says"}}],
+  "claims_made": [{{"claim": "exact claim by opposing party", "amount": null}}],
+  "missing_elements": ["what important info is absent from the document"],
+  "procedural_elements": {{
+    "service_method": "certified mail|posted|email|other|not specified",
+    "notice_period_stated": "X days|not specified",
+    "signature_present": true,
+    "notarization_required": false
+  }}
+}}"""
+
+PASS2_PROMPT = """TASK: LEGAL ANALYSIS
+Based on the extracted facts below, conduct a thorough legal analysis from the perspective of the user's attorney. Apply applicable US federal and state law.
+
+EXTRACTED FACTS FROM DOCUMENT:
+{facts_json}
+
+{jurisprudence_section}
+
+ANALYSIS REQUIRED:
+1. PROCEDURAL ANALYSIS: procedural errors, defects, or omissions that could weaken the opposing party's position
+2. SUBSTANTIVE ANALYSIS: strength of opposing party's case on the merits
+3. USER'S POSITION: rights and protections under applicable law, counterclaims or defenses
+4. FINANCIAL ANALYSIS: realistic financial exposure (best/most likely/worst case)
+5. OPPOSING PARTY'S INCENTIVES: do they want court? likely goal? bluffing or serious?
+6. TIMING ANALYSIS: how critical are deadlines? legally enforceable?
+
+Return ONLY this JSON — no other text:
+{{
+  "risk_score": {{
+    "total": 0,
+    "financial": 0,
+    "urgency": 0,
+    "legal_strength": 0,
+    "complexity": 0
+  }},
+  "risk_level": "low|medium|high|critical",
   "case_type": "employment|housing|contract|debt|immigration|court|consumer|family|other",
   "suggested_case_title": "Short descriptive title max 60 chars",
-  "risk_score": {
-    "total": 0-100,
-    "financial": 0-100,
-    "urgency": 0-100,
-    "legal_strength": 0-100,
-    "complexity": 0-100
-  },
-  "risk_level": "low|medium|high|critical",
   "deadline": "YYYY-MM-DD or null",
-  "deadline_description": "Description of deadline or null",
+  "deadline_description": "Description or null",
   "summary": "2-3 sentences plain English summary",
-  "financial_exposure": "Dollar amount e.g. up to $8,400 or null",
+  "financial_exposure": "Dollar amount or null",
+  "financial_exposure_detailed": {{
+    "best_case": "description",
+    "most_likely": "description",
+    "worst_case": "description"
+  }},
+  "procedural_defects": [
+    {{"defect": "description", "severity": "fatal|significant|minor", "applicable_law": "law ref", "user_benefit": "how this helps"}}
+  ],
+  "user_rights": [
+    {{"right": "specific right", "law_reference": "law", "strength": "strong|medium|weak"}}
+  ],
+  "opposing_weaknesses": [
+    {{"weakness": "description", "severity": "critical|significant|minor"}}
+  ],
+  "applicable_laws": [
+    {{"law": "statute name", "relevance": "how it applies", "favors": "user|opposing|neutral"}}
+  ],
   "findings": [
-    {
-      "text": "Specific finding from the document",
-      "impact": "high|medium|low",
-      "type": "risk|opportunity|deadline|neutral"
-    }
+    {{"text": "Specific finding", "impact": "high|medium|low", "type": "risk|opportunity|deadline|neutral"}}
+  ],
+  "recommend_lawyer": true,
+  "disclaimer": "This analysis provides legal information only, not legal advice."
+}}
+Produce 3-6 findings."""
+
+PASS3_PROMPT = """TASK: STRATEGIC RECOMMENDATIONS
+Based on the facts and legal analysis below, provide concrete strategic recommendations. Think like a litigator preparing a client for the best outcome.
+
+EXTRACTED FACTS:
+{facts_json}
+
+LEGAL ANALYSIS:
+{analysis_json}
+
+Think through ALL possible paths:
+1. Ideal outcome? 2. Fastest resolution? 3. Cheapest path? 4. Most leverage?
+5. What should user do in next 24 hours? 6. What documents to gather? 7. Talk to lawyer first?
+
+Return ONLY this JSON — no other text:
+{{
+  "recommended_strategy": {{
+    "primary": "negotiate|dispute|comply|ignore|lawyer_immediately",
+    "reasoning": "why this is best",
+    "expected_outcome": "realistic outcome",
+    "time_to_resolution": "3-7 days|1-4 weeks|1-3 months"
+  }},
+  "immediate_actions": [
+    {{"action": "description", "deadline": "within 24 hours", "priority": "critical|high|medium"}}
   ],
   "next_steps": [
-    {
-      "title": "Action title",
-      "description": "What the user should do",
-      "action_type": "book_lawyer|upload_document|draft_response|no_action"
-    }
+    {{
+      "title": "Step title",
+      "description": "Detailed description",
+      "action_type": "upload_document|book_lawyer|draft_response|no_action",
+      "why_important": "Why this matters"
+    }}
   ],
-  "recommend_lawyer": true|false,
-  "disclaimer": "This analysis provides legal information only, not legal advice."
-}
+  "documents_to_gather": [
+    {{"document": "description", "why": "reason", "urgency": "critical|important|nice_to_have"}}
+  ],
+  "leverage_points": [
+    {{"leverage": "description", "how_to_use": "how to use it"}}
+  ],
+  "red_lines": ["Never do X", "Always do Y"],
+  "lawyer_recommendation": {{
+    "needed": true,
+    "urgency": "immediately|within_3_days|within_week|optional",
+    "reason": "why",
+    "type_needed": "tenant_rights|employment|debt_collection|contract"
+  }},
+  "success_probability": {{
+    "full_resolution_in_favor": 15,
+    "negotiated_settlement": 62,
+    "partial_loss": 18,
+    "full_loss": 5
+  }},
+  "key_insight": "The most important thing the user must know in one sentence"
+}}
+Exactly 3 next_steps."""
 
-Produce 3-6 findings and exactly 3 next steps."""
+PASS4A_SYSTEM = """You are a senior attorney representing the user. Your job is to make the STRONGEST possible case for your client. Find every argument, every procedural defect, every legal protection that benefits your client. Be aggressive and thorough."""
+
+PASS4A_PROMPT = """Based on these facts and legal analysis, make the strongest possible case for the user. What are their best arguments? What gives them the most leverage? What mistakes did the opposing party make?
+
+FACTS:
+{facts_json}
+
+LEGAL ANALYSIS:
+{analysis_json}
+
+Return ONLY this JSON:
+{{
+  "strongest_arguments": [
+    {{"argument": "description", "strength": "strong|medium|weak", "law_basis": "law ref", "how_to_use": "how to use in response"}}
+  ],
+  "procedural_wins": ["list of procedural advantages"],
+  "best_outcome_scenario": "description of best possible outcome",
+  "opening_argument": "First sentence of response letter to maximize impact"
+}}"""
+
+PASS4B_SYSTEM = """You are a senior attorney representing the opposing party. Your job is to make the STRONGEST possible case against the user. Be rigorous and identify every weakness in the user's position."""
+
+PASS4B_PROMPT = """Based on these facts and legal analysis, make the strongest possible case against the user. What arguments will the opposing party likely use? What are the weaknesses in the user's position?
+
+FACTS:
+{facts_json}
+
+LEGAL ANALYSIS:
+{analysis_json}
+
+Return ONLY this JSON:
+{{
+  "opposing_arguments": [
+    {{"argument": "description", "strength": "strong|medium|weak", "law_basis": "law ref", "user_counter": "how user can counter"}}
+  ],
+  "user_weaknesses": ["list of weaknesses"],
+  "worst_outcome_scenario": "description of worst possible outcome",
+  "what_user_must_prepare_for": "what opposing party will likely argue"
+}}"""
+
+
+def load_jurisprudence(case_type: str, document_type: str) -> str:
+    """Load relevant jurisprudence for the case"""
+    entries = []
+    usa_data = JURISPRUDENCE_DB.get("USA", {})
+
+    # Map case/doc types to jurisprudence keys
+    type_map = {
+        "housing": ["florida_tenant", "general_housing"],
+        "employment": ["new_york_employment", "california_employment", "general_employment"],
+        "debt": ["federal_debt"],
+        "consumer": ["general_consumer"],
+        "contract": ["general_consumer"],
+    }
+
+    keys = type_map.get(case_type, [])
+    if not keys and document_type in ["debt_collection"]:
+        keys = ["federal_debt"]
+    if not keys:
+        keys = ["general_consumer"]
+
+    for key in keys:
+        for entry in usa_data.get(key, []):
+            entries.append(f"- {entry['name']}: {entry['rule']} ({entry['statute']}). User benefit: {entry['user_benefit']}")
+
+    if entries:
+        return "RELEVANT LAW AND PRECEDENTS:\n" + "\n".join(entries) + "\n\nApply these specifically to the facts above."
+    return ""
+
+
+async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 2000) -> dict:
+    """Make a single Claude API call and return parsed JSON"""
+    async with httpx.AsyncClient() as http_client:
+        response = await http_client.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "Content-Type": "application/json",
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01"
+            },
+            json={
+                "model": "claude-sonnet-4-20250514",
+                "max_tokens": max_tokens,
+                "system": system_prompt,
+                "messages": [{"role": "user", "content": user_message}]
+            },
+            timeout=90.0
+        )
+        response.raise_for_status()
+        data = response.json()
+        text = data["content"][0]["text"]
+        text = text.replace("```json", "").replace("```", "").strip()
+        return json.loads(text)
+
 
 async def analyze_document_with_claude(extracted_text: str) -> dict:
-    """Analyze document text using Claude API"""
+    """Legacy single-pass analysis (fallback)"""
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                "https://api.anthropic.com/v1/messages",
-                headers={
-                    "Content-Type": "application/json",
-                    "x-api-key": ANTHROPIC_API_KEY,
-                    "anthropic-version": "2023-06-01"
-                },
-                json={
-                    "model": "claude-sonnet-4-20250514",
-                    "max_tokens": 2000,
-                    "system": CLAUDE_SYSTEM_PROMPT,
-                    "messages": [{
-                        "role": "user",
-                        "content": f"Analyze this legal document and return JSON only:\n\n{extracted_text[:15000]}"
-                    }]
-                },
-                timeout=60.0
-            )
-            response.raise_for_status()
-            data = response.json()
-            text = data["content"][0]["text"]
-            # Clean JSON from markdown code blocks
-            text = text.replace("```json", "").replace("```", "").strip()
-            return json.loads(text)
+        result = await call_claude(CLAUDE_SYSTEM_PROMPT, f"Analyze this legal document and return JSON only:\n\n{extracted_text[:15000]}")
+        return result
     except Exception as e:
         logger.error(f"Claude API error: {e}")
-        # Return default analysis on error
-        return {
-            "document_type": "other",
-            "case_type": "other",
-            "suggested_case_title": "Document Analysis",
-            "risk_score": {"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50},
-            "risk_level": "medium",
-            "deadline": None,
-            "deadline_description": None,
-            "summary": "Document uploaded for analysis. Please review the document details.",
-            "financial_exposure": None,
-            "findings": [{"text": "Document requires manual review", "impact": "medium", "type": "neutral"}],
-            "next_steps": [
-                {"title": "Review document", "description": "Manually review the uploaded document", "action_type": "no_action"},
-                {"title": "Add more context", "description": "Upload related documents for better analysis", "action_type": "upload_document"},
-                {"title": "Consult a lawyer", "description": "Get professional legal advice", "action_type": "book_lawyer"}
-            ],
-            "recommend_lawyer": False,
-            "disclaimer": "This analysis provides legal information only, not legal advice."
+        return _default_analysis()
+
+
+async def analyze_document_advanced(extracted_text: str) -> dict:
+    """Advanced 5-pass analysis system"""
+    import asyncio
+    try:
+        # PASS 1: Fact extraction
+        logger.info("Advanced analysis: Pass 1 — Fact extraction")
+        facts = await call_claude(
+            SENIOR_ATTORNEY_PERSONA,
+            PASS1_PROMPT.format(document_text=extracted_text[:15000])
+        )
+
+        # Load jurisprudence based on facts
+        doc_type = facts.get("document_type", "other")
+        # Determine case type from doc type mapping
+        doc_to_case = {
+            "eviction_notice": "housing", "lease": "housing",
+            "employment_contract": "employment",
+            "debt_collection": "debt", "demand_letter": "debt",
+            "court_notice": "court", "nda": "contract"
         }
+        inferred_case_type = doc_to_case.get(doc_type, "other")
+        jurisprudence_text = load_jurisprudence(inferred_case_type, doc_type)
+
+        # PASS 2: Legal analysis
+        logger.info("Advanced analysis: Pass 2 — Legal analysis")
+        legal_analysis = await call_claude(
+            SENIOR_ATTORNEY_PERSONA,
+            PASS2_PROMPT.format(
+                facts_json=json.dumps(facts, indent=2),
+                jurisprudence_section=jurisprudence_text
+            ),
+            max_tokens=3000
+        )
+
+        facts_str = json.dumps(facts, indent=2)
+        analysis_str = json.dumps(legal_analysis, indent=2)
+
+        # PASS 3, 4A, 4B in parallel
+        logger.info("Advanced analysis: Pass 3+4A+4B — Strategy + Battle Preview")
+        strategy_task = call_claude(
+            SENIOR_ATTORNEY_PERSONA,
+            PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
+            max_tokens=2500
+        )
+        user_args_task = call_claude(
+            PASS4A_SYSTEM,
+            PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
+            max_tokens=1500
+        )
+        opposing_args_task = call_claude(
+            PASS4B_SYSTEM,
+            PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
+            max_tokens=1500
+        )
+
+        strategy, user_arguments, opposing_arguments = await asyncio.gather(
+            strategy_task, user_args_task, opposing_args_task
+        )
+
+        logger.info("Advanced analysis: All 5 passes complete")
+
+        # Combine results into standard format + advanced data
+        return {
+            # Standard fields (backward-compatible)
+            "document_type": doc_type,
+            "case_type": legal_analysis.get("case_type", inferred_case_type),
+            "suggested_case_title": legal_analysis.get("suggested_case_title", "Legal Document Analysis"),
+            "risk_score": legal_analysis.get("risk_score", {"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50}),
+            "risk_level": legal_analysis.get("risk_level", "medium"),
+            "deadline": legal_analysis.get("deadline"),
+            "deadline_description": legal_analysis.get("deadline_description"),
+            "summary": legal_analysis.get("summary", ""),
+            "financial_exposure": legal_analysis.get("financial_exposure"),
+            "findings": legal_analysis.get("findings", []),
+            "next_steps": strategy.get("next_steps", legal_analysis.get("findings", [])[:3]),
+            "recommend_lawyer": legal_analysis.get("recommend_lawyer", False),
+            "disclaimer": "This analysis provides legal information only, not legal advice.",
+            # Advanced fields
+            "facts": facts,
+            "financial_exposure_detailed": legal_analysis.get("financial_exposure_detailed"),
+            "procedural_defects": legal_analysis.get("procedural_defects", []),
+            "user_rights": legal_analysis.get("user_rights", []),
+            "opposing_weaknesses": legal_analysis.get("opposing_weaknesses", []),
+            "applicable_laws": legal_analysis.get("applicable_laws", []),
+            "strategy": strategy.get("recommended_strategy"),
+            "immediate_actions": strategy.get("immediate_actions", []),
+            "documents_to_gather": strategy.get("documents_to_gather", []),
+            "leverage_points": strategy.get("leverage_points", []),
+            "red_lines": strategy.get("red_lines", []),
+            "lawyer_recommendation": strategy.get("lawyer_recommendation"),
+            "success_probability": strategy.get("success_probability"),
+            "key_insight": strategy.get("key_insight", ""),
+            "battle_preview": {
+                "user_side": user_arguments,
+                "opposing_side": opposing_arguments
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Advanced analysis error: {e}")
+        # Fallback to single-pass
+        logger.info("Falling back to single-pass analysis")
+        return await analyze_document_with_claude(extracted_text)
+
+
+def _default_analysis():
+    """Return default analysis on error"""
+    return {
+        "document_type": "other",
+        "case_type": "other",
+        "suggested_case_title": "Document Analysis",
+        "risk_score": {"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50},
+        "risk_level": "medium",
+        "deadline": None,
+        "deadline_description": None,
+        "summary": "Document uploaded for analysis. Please review the document details.",
+        "financial_exposure": None,
+        "findings": [{"text": "Document requires manual review", "impact": "medium", "type": "neutral"}],
+        "next_steps": [
+            {"title": "Review document", "description": "Manually review the uploaded document", "action_type": "no_action"},
+            {"title": "Add more context", "description": "Upload related documents for better analysis", "action_type": "upload_document"},
+            {"title": "Consult a lawyer", "description": "Get professional legal advice", "action_type": "book_lawyer"}
+        ],
+        "recommend_lawyer": False,
+        "disclaimer": "This analysis provides legal information only, not legal advice."
+    }
+
+# Simple system prompt kept for scanner/letter endpoints
+CLAUDE_SYSTEM_PROMPT = SENIOR_ATTORNEY_PERSONA
 
 # ================== Letter Generation System ==================
 
@@ -851,10 +1168,10 @@ async def upload_document(
     }
     await db.documents.insert_one(doc_record)
     
-    # Analyze with Claude
+    # Analyze with Claude (Advanced 5-pass system)
     analysis = None
     if extracted_text:
-        analysis = await analyze_document_with_claude(extracted_text)
+        analysis = await analyze_document_advanced(extracted_text)
     
     # Create or update case
     if case_id:
@@ -891,6 +1208,20 @@ async def upload_document(
                         "ai_findings": analysis.get("findings", []),
                         "ai_next_steps": analysis.get("next_steps", []),
                         "recommend_lawyer": analysis.get("recommend_lawyer", False),
+                        "battle_preview": analysis.get("battle_preview"),
+                        "success_probability": analysis.get("success_probability"),
+                        "procedural_defects": analysis.get("procedural_defects", []),
+                        "applicable_laws": analysis.get("applicable_laws", []),
+                        "financial_exposure_detailed": analysis.get("financial_exposure_detailed"),
+                        "immediate_actions": analysis.get("immediate_actions", []),
+                        "leverage_points": analysis.get("leverage_points", []),
+                        "red_lines": analysis.get("red_lines", []),
+                        "key_insight": analysis.get("key_insight", ""),
+                        "strategy": analysis.get("strategy"),
+                        "lawyer_recommendation": analysis.get("lawyer_recommendation"),
+                        "user_rights": analysis.get("user_rights", []),
+                        "opposing_weaknesses": analysis.get("opposing_weaknesses", []),
+                        "documents_to_gather": analysis.get("documents_to_gather", []),
                         "updated_at": now
                     },
                     "$push": {"risk_score_history": history_entry}
@@ -941,6 +1272,21 @@ async def upload_document(
             "ai_findings": analysis.get("findings", []) if analysis else [],
             "ai_next_steps": analysis.get("next_steps", []) if analysis else [],
             "recommend_lawyer": analysis.get("recommend_lawyer", False) if analysis else False,
+            # Advanced analysis fields
+            "battle_preview": analysis.get("battle_preview") if analysis else None,
+            "success_probability": analysis.get("success_probability") if analysis else None,
+            "procedural_defects": analysis.get("procedural_defects", []) if analysis else [],
+            "applicable_laws": analysis.get("applicable_laws", []) if analysis else [],
+            "financial_exposure_detailed": analysis.get("financial_exposure_detailed") if analysis else None,
+            "immediate_actions": analysis.get("immediate_actions", []) if analysis else [],
+            "leverage_points": analysis.get("leverage_points", []) if analysis else [],
+            "red_lines": analysis.get("red_lines", []) if analysis else [],
+            "key_insight": analysis.get("key_insight", "") if analysis else "",
+            "strategy": analysis.get("strategy") if analysis else None,
+            "lawyer_recommendation": analysis.get("lawyer_recommendation") if analysis else None,
+            "user_rights": analysis.get("user_rights", []) if analysis else [],
+            "opposing_weaknesses": analysis.get("opposing_weaknesses", []) if analysis else [],
+            "documents_to_gather": analysis.get("documents_to_gather", []) if analysis else [],
             "document_count": 1,
             "created_at": now,
             "updated_at": now

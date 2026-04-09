@@ -1,0 +1,202 @@
+{
+  "USA": {
+    "florida_tenant": [
+      {
+        "name": "3-day notice must state exact amount",
+        "rule": "Florida courts have held that a 3-day notice is invalid if it does not state the precise amount of rent due. An approximation or range is insufficient.",
+        "statute": "Florida Statute § 83.56(3)",
+        "user_benefit": "If the notice amount is wrong or estimated, it may be procedurally invalid."
+      },
+      {
+        "name": "Attorney fees cannot be included in 3-day notice amount",
+        "rule": "Attorney fees, late fees beyond what is specified in the lease, and speculative charges cannot be included in the 3-day notice amount.",
+        "statute": "Florida Statute § 83.56",
+        "user_benefit": "Any inflated amounts make the notice challengeable."
+      },
+      {
+        "name": "Landlord must return security deposit within 15 days",
+        "rule": "If landlord does not intend to make a claim on the deposit, they must return it within 15 days. If they intend to make a claim, they must notify within 30 days.",
+        "statute": "Florida Statute § 83.49",
+        "user_benefit": "User has a counterclaim right if deposit is not returned properly."
+      }
+    ],
+    "new_york_employment": [
+      {
+        "name": "At-will employment still requires good faith",
+        "rule": "New York is an at-will employment state, but termination in violation of public policy or in retaliation for protected activity is still actionable.",
+        "statute": "New York Labor Law § 740",
+        "user_benefit": "If termination was retaliatory, user may have a wrongful termination claim."
+      },
+      {
+        "name": "Final paycheck must be paid on next regular payday",
+        "rule": "New York employers must pay all wages on the next regular payday following termination.",
+        "statute": "New York Labor Law § 191",
+        "user_benefit": "If final paycheck was delayed, user has a wage claim."
+      },
+      {
+        "name": "Non-compete must be reasonable in scope",
+        "rule": "New York courts will not enforce non-competes that are overbroad in geographic scope, duration, or nature of restricted activity.",
+        "statute": "New York common law",
+        "user_benefit": "User may be able to challenge the enforceability of non-compete clause."
+      }
+    ],
+    "federal_debt": [
+      {
+        "name": "Debt validation right within 30 days",
+        "rule": "Under FDCPA § 809(b), consumer has 30 days from first contact to dispute the debt and request validation. Collector must cease collection until validation is provided.",
+        "statute": "15 U.S.C. § 1692g",
+        "user_benefit": "User can stop all collection activity immediately by sending validation request."
+      },
+      {
+        "name": "No contact before 8AM or after 9PM",
+        "rule": "FDCPA prohibits calling before 8AM or after 9PM local time. Each violation can result in $1,000 statutory damages.",
+        "statute": "15 U.S.C. § 1692c",
+        "user_benefit": "Document all call times — each violation is worth $1,000 in statutory damages."
+      },
+      {
+        "name": "Harassment and abuse prohibited",
+        "rule": "Collectors cannot use obscene language, make repeated calls to annoy, or threaten violence. More than 7 calls in 7 days is presumed harassment.",
+        "statute": "15 U.S.C. § 1692d + 2021 Reg F",
+        "user_benefit": "Excessive calls constitute a strong FDCPA violation case."
+      }
+    ],
+    "california_employment": [
+      {
+        "name": "Final paycheck due immediately upon termination",
+        "rule": "California requires employers to pay all wages, including accrued vacation, at the time of termination. Waiting time penalties of one day's pay for each day late, up to 30 days.",
+        "statute": "California Labor Code § 201-203",
+        "user_benefit": "Substantial penalties accrue daily if final pay is delayed."
+      },
+      {
+        "name": "Non-compete clauses are generally void",
+        "rule": "California Business & Professions Code § 16600 makes most non-compete agreements unenforceable, with very limited exceptions.",
+        "statute": "Cal. Bus. & Prof. Code § 16600",
+        "user_benefit": "Non-compete clauses in employment agreements are likely unenforceable."
+      }
+    ],
+    "general_housing": [
+      {
+        "name": "Fair Housing Act protections",
+        "rule": "The FHA prohibits discrimination based on race, color, national origin, religion, sex, familial status, or disability in housing-related activities.",
+        "statute": "42 U.S.C. § 3604",
+        "user_benefit": "If adverse action is motivated by protected characteristic, user has federal remedies."
+      },
+      {
+        "name": "Retaliatory eviction prohibited in most states",
+        "rule": "Most states prohibit landlords from evicting tenants in retaliation for exercising legal rights such as requesting repairs or reporting code violations.",
+        "statute": "Varies by state",
+        "user_benefit": "If eviction follows a complaint or repair request, it may be retaliatory and unenforceable."
+      }
+    ],
+    "general_employment": [
+      {
+        "name": "FMLA leave protection",
+        "rule": "Eligible employees are entitled to 12 weeks of unpaid, job-protected leave for specified family and medical reasons. Employers with 50+ employees must comply.",
+        "statute": "29 U.S.C. § 2612",
+        "user_benefit": "If termination occurred during or after FMLA leave, it may constitute interference or retaliation."
+      },
+      {
+        "name": "Whistleblower protections",
+        "rule": "Federal and state laws protect employees who report illegal activity, safety violations, or fraud from retaliation.",
+        "statute": "Various (SOX, Dodd-Frank, state laws)",
+        "user_benefit": "If terminated after reporting misconduct, user may have whistleblower retaliation claim."
+      }
+    ],
+    "general_consumer": [
+      {
+        "name": "FTC Act unfair and deceptive practices",
+        "rule": "The FTC Act prohibits unfair or deceptive acts or practices in commerce. State consumer protection laws often provide additional private right of action.",
+        "statute": "15 U.S.C. § 45",
+        "user_benefit": "User may file complaints with FTC and state AG, and potentially sue under state consumer protection statutes."
+      }
+    ]
+  },
+  "UAE": {
+    "employment": [
+      {
+        "name": "End of Service Gratuity is mandatory",
+        "rule": "Under Federal Decree-Law No. 33 of 2021, employees are entitled to gratuity of 21 days wage per year for first 5 years, 30 days per year thereafter. Cannot be waived by contract.",
+        "statute": "UAE Labour Law Art. 51",
+        "user_benefit": "Employee is entitled to gratuity regardless of contract terms."
+      },
+      {
+        "name": "Arbitrary dismissal compensation",
+        "rule": "If termination is found to be arbitrary, employee is entitled to compensation of up to 3 months wage in addition to all other entitlements.",
+        "statute": "UAE Labour Law Art. 47",
+        "user_benefit": "If dismissal cannot be justified, user has right to additional 3-month compensation."
+      },
+      {
+        "name": "Notice period mandatory",
+        "rule": "Minimum 30 days notice required for both parties. Employer who terminates without notice must pay wage in lieu of notice.",
+        "statute": "UAE Labour Law Art. 43",
+        "user_benefit": "If notice was not given or less than 30 days, user is owed additional pay."
+      }
+    ],
+    "housing": [
+      {
+        "name": "12 months eviction notice required",
+        "rule": "In Dubai, a landlord must give 12 months notice via notary public before eviction. Non-compliance invalidates the eviction.",
+        "statute": "Dubai Tenancy Law No. 26 of 2007",
+        "user_benefit": "Eviction without 12 months notarized notice is procedurally invalid."
+      },
+      {
+        "name": "Ejari registration mandatory",
+        "rule": "All tenancy contracts in Dubai must be registered with Ejari. Unregistered contracts may still protect tenant rights.",
+        "statute": "Dubai Decree No. 26 of 2013",
+        "user_benefit": "Landlord's failure to register may weaken their legal position."
+      }
+    ],
+    "debt": [
+      {
+        "name": "Bounced cheque — 2022 amendment",
+        "rule": "Since 2022 amendment, some cheque cases are now civil rather than criminal. However, bounced cheques of significant value may still carry criminal liability.",
+        "statute": "UAE Penal Code Article 401 (amended 2022)",
+        "user_benefit": "Depending on amount and circumstances, the matter may be handled civilly."
+      }
+    ]
+  },
+  "Belgium": {
+    "emploi": [
+      {
+        "name": "Delai de preavis selon anciennete",
+        "rule": "La duree du preavis est calculee selon la formule: (anciennete en semaines) = (anciennete x 3) + 1 semaine par tranche de 3 ans. Depuis la loi du 26 decembre 2013.",
+        "statute": "Loi du 3 juillet 1978, modifiee",
+        "user_benefit": "Si le preavis donne est insuffisant, l'employeur doit une indemnite compensatoire."
+      },
+      {
+        "name": "Protection contre le licenciement abusif",
+        "rule": "Le licenciement d'un travailleur pour des motifs etrangers a la personne ou a la necessite de l'entreprise est abusif. Indemnite: 3 a 17 semaines de remuneration.",
+        "statute": "CCT n. 109 du 12 fevrier 2014",
+        "user_benefit": "L'utilisateur peut demander les motifs du licenciement dans les 2 mois."
+      }
+    ],
+    "logement": [
+      {
+        "name": "Bail de residence principale",
+        "rule": "Les baux de residence principale ont une duree standard de 9 ans. Le locataire peut resilier avec 3 mois de preavis. Le bailleur a des conditions strictes de resiliation.",
+        "statute": "Loi du 20 fevrier 1991 modifiee",
+        "user_benefit": "Le bailleur doit prouver un motif legal pour rompre le bail avant terme."
+      },
+      {
+        "name": "Garantie locative limitee",
+        "rule": "La garantie locative ne peut exceder 2 mois de loyer depuis 2018. Elle doit etre placee sur un compte bancaire bloque.",
+        "statute": "Code civil belge, art. 10",
+        "user_benefit": "Si la garantie demandee depasse 2 mois, c'est illegal."
+      }
+    ],
+    "consommateur": [
+      {
+        "name": "Droit de retractation 14 jours",
+        "rule": "Pour les achats en ligne, le consommateur dispose de 14 jours pour se retracter sans avoir a justifier de motifs.",
+        "statute": "Code de droit economique, Livre VI",
+        "user_benefit": "Le consommateur peut retourner tout achat en ligne dans les 14 jours."
+      },
+      {
+        "name": "Garantie legale de 2 ans",
+        "rule": "Tous les biens de consommation beneficient d'une garantie legale de 2 ans. Le vendeur est responsable des defauts de conformite.",
+        "statute": "Code de droit economique, Livre VI",
+        "user_benefit": "Le vendeur doit reparer ou remplacer gratuitement pendant 2 ans."
+      }
+    ]
+  }
+}

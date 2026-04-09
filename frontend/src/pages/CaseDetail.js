@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { FileText, Upload, AlertCircle, Zap, CheckCircle, Clock, Video, Mail, X, Download, Copy, Loader2, TrendingUp, ChevronDown, ChevronUp, Target } from 'lucide-react';
+import { FileText, Upload, AlertCircle, Zap, CheckCircle, Clock, Video, Mail, X, Download, Copy, Loader2, TrendingUp, ChevronDown, ChevronUp, Target, Shield, Swords, Scale, BookOpen, AlertTriangle, Lightbulb } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -186,6 +186,158 @@ const OutcomePredictor = ({ caseId }) => {
 
           {/* Disclaimer */}
           <div className="text-[10px] text-[#9ca3af]">{prediction.disclaimer}</div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Legal Battle Preview Section
+const BattlePreview = ({ battlePreview }) => {
+  const [expanded, setExpanded] = useState(false);
+  if (!battlePreview || (!battlePreview.user_side && !battlePreview.opposing_side)) return null;
+
+  const userSide = battlePreview.user_side || {};
+  const opposingSide = battlePreview.opposing_side || {};
+
+  return (
+    <div className="card p-5" data-testid="battle-preview">
+      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-[#fef3c7] flex items-center justify-center">
+            <Swords size={14} className="text-[#d97706]" />
+          </div>
+          <div className="text-sm font-medium">Legal Battle Preview</div>
+          <span className="badge" style={{ background: '#f5f5f5', color: '#888', fontSize: '10px' }}>AI Analysis</span>
+        </div>
+        {expanded ? <ChevronUp size={16} className="text-[#9ca3af]" /> : <ChevronDown size={16} className="text-[#9ca3af]" />}
+      </button>
+
+      {expanded && (
+        <div className="mt-4 space-y-4" data-testid="battle-preview-content">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* User's side */}
+            <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Shield size={14} className="text-[#16a34a]" />
+                <span className="text-xs font-semibold text-[#16a34a]">Your strongest arguments</span>
+              </div>
+              {userSide.strongest_arguments?.map((arg, i) => (
+                <div key={i} className="mb-2 last:mb-0">
+                  <div className="text-[11px] font-medium text-[#111827] mb-0.5">{arg.argument}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{
+                      background: arg.strength === 'strong' ? '#dcfce7' : arg.strength === 'medium' ? '#fef9c3' : '#f5f5f5',
+                      color: arg.strength === 'strong' ? '#16a34a' : arg.strength === 'medium' ? '#ca8a04' : '#888'
+                    }}>{arg.strength}</span>
+                    {arg.law_basis && <span className="text-[10px] text-[#9ca3af]">{arg.law_basis}</span>}
+                  </div>
+                </div>
+              ))}
+              {userSide.best_outcome_scenario && (
+                <div className="mt-3 pt-3 border-t border-[#bbf7d0]">
+                  <div className="text-[10px] text-[#16a34a] font-medium">Best possible outcome:</div>
+                  <div className="text-[11px] text-[#166534]">{userSide.best_outcome_scenario}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Opposing side */}
+            <div className="rounded-xl border border-[#fecaca] bg-[#fef2f2] p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle size={14} className="text-[#dc2626]" />
+                <span className="text-xs font-semibold text-[#dc2626]">What they will argue</span>
+              </div>
+              {opposingSide.opposing_arguments?.map((arg, i) => (
+                <div key={i} className="mb-2 last:mb-0">
+                  <div className="text-[11px] font-medium text-[#111827] mb-0.5">{arg.argument}</div>
+                  {arg.user_counter && (
+                    <div className="text-[10px] text-[#16a34a] bg-white/60 rounded px-1.5 py-0.5 mt-0.5">
+                      Your counter: {arg.user_counter}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {opposingSide.worst_outcome_scenario && (
+                <div className="mt-3 pt-3 border-t border-[#fecaca]">
+                  <div className="text-[10px] text-[#dc2626] font-medium">Worst possible outcome:</div>
+                  <div className="text-[11px] text-[#991b1b]">{opposingSide.worst_outcome_scenario}</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {opposingSide.what_user_must_prepare_for && (
+            <div className="bg-[#fffbeb] border border-[#fde68a] rounded-lg p-3">
+              <div className="text-[10px] font-medium text-[#d97706] mb-1">Prepare for:</div>
+              <div className="text-[11px] text-[#92400e]">{opposingSide.what_user_must_prepare_for}</div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Probability Breakdown
+const ProbabilityBreakdown = ({ probability }) => {
+  if (!probability) return null;
+  const items = [
+    { key: 'negotiated_settlement', label: 'Negotiated settlement', color: '#22c55e' },
+    { key: 'full_resolution_in_favor', label: 'Full resolution in your favor', color: '#3b82f6' },
+    { key: 'partial_loss', label: 'Partial loss', color: '#f59e0b' },
+    { key: 'full_loss', label: 'Full loss', color: '#9ca3af' }
+  ].filter(item => probability[item.key] > 0)
+   .sort((a, b) => (probability[b.key] || 0) - (probability[a.key] || 0));
+
+  return (
+    <div className="card p-5" data-testid="probability-breakdown">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-7 h-7 rounded-lg bg-[#eff6ff] flex items-center justify-center">
+          <Scale size={14} className="text-[#1a56db]" />
+        </div>
+        <div className="text-sm font-medium">Probability breakdown</div>
+      </div>
+      <div className="space-y-2.5">
+        {items.map(item => {
+          const pct = probability[item.key] || 0;
+          return (
+            <div key={item.key}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] text-[#555]">{item.label}</span>
+                <span className="text-[11px] font-semibold" style={{ color: item.color }}>{pct}%</span>
+              </div>
+              <div className="h-1.5 bg-[#f5f5f5] rounded-full">
+                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: item.color }}></div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// Key Insight Banner
+const KeyInsight = ({ insight, leverage }) => {
+  if (!insight && (!leverage || leverage.length === 0)) return null;
+  return (
+    <div className="card p-4 bg-[#eff6ff] border-[#bfdbfe]" data-testid="key-insight">
+      {insight && (
+        <div className="flex items-start gap-2 mb-2">
+          <Lightbulb size={14} className="text-[#1a56db] mt-0.5 flex-shrink-0" />
+          <div className="text-[12px] font-medium text-[#1e40af]">{insight}</div>
+        </div>
+      )}
+      {leverage && leverage.length > 0 && (
+        <div className="mt-2">
+          <div className="text-[10px] uppercase tracking-wider text-[#3b82f6] font-medium mb-1">Leverage points</div>
+          {leverage.map((lev, i) => (
+            <div key={i} className="text-[11px] text-[#1e40af] mb-1">
+              <span className="font-medium">{lev.leverage}</span>
+              {lev.how_to_use && <span className="text-[#60a5fa]"> — {lev.how_to_use}</span>}
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -607,6 +759,42 @@ const CaseDetail = () => {
           {/* Outcome Predictor */}
           {caseData.risk_score > 0 && (
             <OutcomePredictor caseId={caseId} />
+          )}
+
+          {/* Key Insight */}
+          <KeyInsight insight={caseData.key_insight} leverage={caseData.leverage_points} />
+
+          {/* Legal Battle Preview */}
+          <BattlePreview battlePreview={caseData.battle_preview} />
+
+          {/* Probability Breakdown */}
+          <ProbabilityBreakdown probability={caseData.success_probability} />
+
+          {/* Procedural Defects */}
+          {caseData.procedural_defects && caseData.procedural_defects.length > 0 && (
+            <div className="card p-5" data-testid="procedural-defects">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-7 h-7 rounded-lg bg-[#f0fdf4] flex items-center justify-center">
+                  <BookOpen size={14} className="text-[#16a34a]" />
+                </div>
+                <div className="text-sm font-medium">Procedural defects found</div>
+              </div>
+              <div className="space-y-2">
+                {caseData.procedural_defects.map((defect, i) => (
+                  <div key={i} className="bg-[#f0fdf4] rounded-lg p-3 border border-[#bbf7d0]">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{
+                        background: defect.severity === 'fatal' ? '#fef2f2' : defect.severity === 'significant' ? '#fef9c3' : '#f5f5f5',
+                        color: defect.severity === 'fatal' ? '#dc2626' : defect.severity === 'significant' ? '#ca8a04' : '#888'
+                      }}>{defect.severity}</span>
+                      {defect.applicable_law && <span className="text-[10px] text-[#9ca3af]">{defect.applicable_law}</span>}
+                    </div>
+                    <div className="text-[11px] text-[#111827] font-medium">{defect.defect}</div>
+                    {defect.user_benefit && <div className="text-[10px] text-[#16a34a] mt-1">{defect.user_benefit}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
 
