@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { FileText, Upload, AlertCircle, Zap, CheckCircle, Clock, Video, Mail, X, Download, Copy, Loader2, TrendingUp, ChevronDown, ChevronUp, Target, Shield, Swords, Scale, BookOpen, AlertTriangle, Lightbulb } from 'lucide-react';
+import { FileText, Upload, AlertCircle, Zap, CheckCircle, Clock, Video, Mail, X, Download, Copy, Loader2, TrendingUp, ChevronDown, ChevronUp, Target, Shield, Swords, Scale, BookOpen, AlertTriangle, Lightbulb, Share2, Link2, ExternalLink } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -367,6 +367,13 @@ const CaseDetail = () => {
   });
   const [copied, setCopied] = useState(false);
   const [riskHistory, setRiskHistory] = useState([]);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareExpiry, setShareExpiry] = useState(48);
+  const [shareMessage, setShareMessage] = useState('');
+  const [sharing, setSharing] = useState(false);
+  const [shareLink, setShareLink] = useState(null);
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
+  const [activeShares, setActiveShares] = useState([]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -382,12 +389,14 @@ const CaseDetail = () => {
       setLawyers(lawyersRes.data.filter(l => l.availability_status === 'now' || l.availability_status === 'soon').slice(0, 1));
       
       // Fetch letter types and risk history
-      const [letterTypesRes, riskHistoryRes] = await Promise.all([
+      const [letterTypesRes, riskHistoryRes, sharesRes] = await Promise.all([
         axios.get(`${API}/letters/types/${caseRes.data.type}`),
-        axios.get(`${API}/cases/${caseId}/risk-history`, { withCredentials: true })
+        axios.get(`${API}/cases/${caseId}/risk-history`, { withCredentials: true }),
+        axios.get(`${API}/cases/${caseId}/shares`, { withCredentials: true }).catch(() => ({ data: [] }))
       ]);
       setLetterTypes(letterTypesRes.data.letter_types || []);
       setRiskHistory(riskHistoryRes.data.history || []);
+      setActiveShares(sharesRes.data || []);
     } catch (error) {
       console.error('Case detail fetch error:', error);
       navigate('/cases');
@@ -564,6 +573,13 @@ const CaseDetail = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <button 
+            onClick={() => setShowShareModal(true)}
+            className="btn-pill btn-outline flex items-center gap-2"
+            data-testid="share-case-btn"
+          >
+            <Share2 size={14} /> Share
+          </button>
           <button 
             onClick={() => navigate(`/upload?case=${caseId}`)} 
             className="btn-pill btn-outline flex items-center gap-2"
@@ -876,6 +892,35 @@ const CaseDetail = () => {
               </div>
             ))}
           </div>
+
+          {/* Active Shared Links */}
+          <div className="card p-4" data-testid="active-shares">
+            <div className="sec-title mb-3">Shared links</div>
+            {activeShares.length === 0 ? (
+              <div className="text-xs text-[#9ca3af]">No active links · <button onClick={() => setShowShareModal(true)} className="text-[#1a56db] hover:underline">Share this case</button></div>
+            ) : (
+              <div className="space-y-2">
+                {activeShares.map(share => {
+                  const hoursLeft = Math.max(0, Math.round((new Date(share.expires_at) - new Date()) / 3600000));
+                  return (
+                    <div key={share.share_id} className="flex items-center justify-between py-2 border-b border-[#f5f5f5] last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[11px] text-[#555]">Expires in {hoursLeft}h · {share.views_count} views</div>
+                        {share.comment_count > 0 && <div className="text-[10px] text-[#1a56db]">{share.comment_count} comment(s)</div>}
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/shared/${share.token}`); }} className="text-[10px] text-[#1a56db] hover:underline">Copy</button>
+                        <button onClick={async () => {
+                          await axios.post(`${API}/shares/${share.share_id}/revoke`, {}, { withCredentials: true });
+                          setActiveShares(prev => prev.filter(s => s.share_id !== share.share_id));
+                        }} className="text-[10px] text-[#dc2626] hover:underline ml-2">Revoke</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1062,6 +1107,70 @@ const CaseDetail = () => {
                 </>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => { setShowShareModal(false); setShareLink(null); }}>
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl" onClick={e => e.stopPropagation()} data-testid="share-modal">
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-sm font-medium">Share this case</div>
+              <button onClick={() => { setShowShareModal(false); setShareLink(null); }}><X size={16} className="text-[#9ca3af]" /></button>
+            </div>
+
+            {!shareLink ? (
+              <>
+                <div className="text-xs text-[#6b7280] mb-4">Generate a read-only link. Anyone with the link can view this case analysis.</div>
+                <div className="mb-3">
+                  <div className="text-[11px] text-[#9ca3af] mb-1.5">Expires in</div>
+                  <div className="flex gap-2">
+                    {[{h: 24, l: '24 hours'}, {h: 48, l: '48 hours'}, {h: 168, l: '7 days'}, {h: 720, l: '30 days'}].map(opt => (
+                      <button key={opt.h} onClick={() => setShareExpiry(opt.h)}
+                        className={`flex-1 py-2 text-xs rounded-lg border transition-colors ${shareExpiry === opt.h ? 'bg-[#eff6ff] border-[#1a56db] text-[#1a56db]' : 'border-[#ebebeb] text-[#555] hover:border-[#93c5fd]'}`}
+                        data-testid={`expiry-${opt.h}`}
+                      >{opt.l}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <div className="text-[11px] text-[#9ca3af] mb-1.5">Message for recipient (optional)</div>
+                  <input value={shareMessage} onChange={e => setShareMessage(e.target.value)} placeholder="e.g. Please review before my call tomorrow" className="w-full px-3 py-2 text-xs border border-[#ebebeb] rounded-lg focus:outline-none focus:border-[#1a56db]" data-testid="share-message-input" />
+                </div>
+                <div className="text-[10px] text-[#9ca3af] mb-4">Recipients can view your case analysis but cannot download your documents or see your personal information.</div>
+                <button onClick={async () => {
+                  setSharing(true);
+                  try {
+                    const res = await axios.post(`${API}/cases/${caseId}/share`, { expiry_hours: shareExpiry, message: shareMessage || null }, { withCredentials: true });
+                    setShareLink(`${window.location.origin}/shared/${res.data.token}`);
+                    const sharesRes = await axios.get(`${API}/cases/${caseId}/shares`, { withCredentials: true });
+                    setActiveShares(sharesRes.data || []);
+                  } catch (err) {
+                    alert(err.response?.data?.detail || 'Failed to generate link');
+                  } finally { setSharing(false); }
+                }} disabled={sharing} className="w-full btn-pill btn-blue py-2.5 flex items-center justify-center gap-2" data-testid="generate-link-btn">
+                  {sharing ? <Loader2 size={14} className="animate-spin" /> : <Link2 size={14} />}
+                  {sharing ? 'Generating...' : 'Generate secure link'}
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="text-xs text-[#16a34a] flex items-center gap-1.5 mb-3"><CheckCircle size={14} /> Link generated!</div>
+                <div className="flex items-center gap-2 mb-4">
+                  <input value={shareLink} readOnly className="flex-1 px-3 py-2 text-xs bg-[#f8f8f8] border border-[#ebebeb] rounded-lg" data-testid="share-link-input" />
+                  <button onClick={() => { navigator.clipboard.writeText(shareLink); setShareLinkCopied(true); setTimeout(() => setShareLinkCopied(false), 2000); }}
+                    className="btn-pill btn-blue text-xs" data-testid="copy-share-link-btn">
+                    {shareLinkCopied ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <div className="flex gap-2 mb-3">
+                  <a href={`https://wa.me/?text=${encodeURIComponent(`Check out my legal case analysis: ${shareLink}`)}`} target="_blank" rel="noopener noreferrer" className="flex-1 btn-pill btn-outline text-xs text-center py-2">WhatsApp</a>
+                  <a href={`mailto:?subject=Jasper Case Analysis&body=${encodeURIComponent(`I'd like you to review my case: ${shareLink}`)}`} className="flex-1 btn-pill btn-outline text-xs text-center py-2">Email</a>
+                </div>
+                <div className="text-[10px] text-[#9ca3af]">Link expires in {shareExpiry} hours</div>
+              </>
+            )}
           </div>
         </div>
       )}

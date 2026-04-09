@@ -2088,6 +2088,408 @@ async def stripe_webhook(request: Request):
         logger.error(f"Webhook error: {e}")
         return {"status": "error", "detail": str(e)}
 
+# ================== Legal Chat ==================
+
+LEGAL_CHAT_SYSTEM_PROMPT = """You are Jasper Legal Chat — a senior legal information assistant with deep knowledge of US law. You answer legal questions clearly and in plain English for people who have no legal background.
+
+You are NOT a lawyer and never claim to be one.
+You provide legal INFORMATION only, not legal advice.
+
+YOUR ANSWER FORMAT:
+1. Direct answer to the question (2-3 sentences max)
+2. The specific law or rule that applies
+3. What the person should do next
+4. If the situation is complex or high-stakes: recommend booking a lawyer call
+
+RULES:
+- Always specify which state the answer applies to when relevant
+- Never say "I don't know" — say "This varies by state — here's the general rule"
+- Keep answers under 200 words — concise and actionable
+- If user seems to have an urgent legal problem, suggest uploading their document
+- Never reproduce large sections of legal code — summarize in plain English
+- End every answer with one of:
+  * "Want me to analyze a document related to this?" (if relevant)
+  * "Need to talk to a lawyer? Book a 30-min call for $149." (if complex)
+  * "This is a common situation — here's what most people do:" (if simple)
+
+CONVERSATION MEMORY:
+You remember everything said in this conversation. If the user mentions their situation, apply that context to all subsequent answers.
+
+JURISDICTION: USA — Federal + applicable state law"""
+
+class ChatMessageInput(BaseModel):
+    content: str
+    case_id: Optional[str] = None
+
+class CreateConversationInput(BaseModel):
+    case_id: Optional[str] = None
+    first_message: Optional[str] = None
+
+@api_router.post("/chat/conversations")
+async def create_conversation(
+    data: CreateConversationInput,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new chat conversation"""
+    now = datetime.now(timezone.utc).isoformat()
+    conv_id = f"conv_{uuid.uuid4().hex[:12]}"
+    title = "New conversation"
+
+    conv_doc = {
+        "conversation_id": conv_id,
+        "user_id": current_user.user_id,
+        "title": title,
+        "case_id": data.case_id,
+        "created_at": now,
+        "updated_at": now
+    }
+    await db.chat_conversations.insert_one(conv_doc)
+    del conv_doc["_id"]
+    return conv_doc
+
+@api_router.get("/chat/conversations")
+async def list_conversations(current_user: User = Depends(get_current_user)):
+    """List user's chat conversations"""
+    convs = await db.chat_conversations.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0}
+    ).sort("updated_at", -1).to_list(100)
+    return convs
+
+@api_router.delete("/chat/conversations/{conversation_id}")
+async def delete_conversation(conversation_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a conversation and its messages"""
+    await db.chat_conversations.delete_one({"conversation_id": conversation_id, "user_id": current_user.user_id})
+    await db.chat_messages.delete_many({"conversation_id": conversation_id})
+    return {"status": "deleted"}
+
+@api_router.get("/chat/conversations/{conversation_id}/messages")
+async def get_conversation_messages(conversation_id: str, current_user: User = Depends(get_current_user)):
+    """Get messages for a conversation"""
+    conv = await db.chat_conversations.find_one(
+        {"conversation_id": conversation_id, "user_id": current_user.user_id},
+        {"_id": 0}
+    )
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    messages = await db.chat_messages.find(
+        {"conversation_id": conversation_id},
+        {"_id": 0}
+    ).sort("created_at", 1).to_list(500)
+    return messages
+
+@api_router.post("/chat/conversations/{conversation_id}/messages")
+async def send_chat_message(
+    conversation_id: str,
+    data: ChatMessageInput,
+    current_user: User = Depends(get_current_user)
+):
+    """Send a message and get AI response"""
+    conv = await db.chat_conversations.find_one(
+        {"conversation_id": conversation_id, "user_id": current_user.user_id},
+        {"_id": 0}
+    )
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    # Free plan: limit to 3 total questions
+    if current_user.plan == "free":
+        total_user_msgs = await db.chat_messages.count_documents({
+            "conversation_id": {"$in": [c["conversation_id"] for c in await db.chat_conversations.find({"user_id": current_user.user_id}, {"conversation_id": 1, "_id": 0}).to_list(100)]},
+            "role": "user"
+        })
+        if total_user_msgs >= 3:
+            raise HTTPException(status_code=403, detail="Free plan limited to 3 questions. Upgrade to Pro for unlimited legal chat.")
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Save user message
+    user_msg = {
+        "message_id": f"msg_{uuid.uuid4().hex[:12]}",
+        "conversation_id": conversation_id,
+        "role": "user",
+        "content": data.content,
+        "created_at": now
+    }
+    await db.chat_messages.insert_one(user_msg)
+
+    # Update conversation title from first message
+    msg_count = await db.chat_messages.count_documents({"conversation_id": conversation_id, "role": "user"})
+    if msg_count == 1:
+        title = data.content[:60] + ("..." if len(data.content) > 60 else "")
+        await db.chat_conversations.update_one(
+            {"conversation_id": conversation_id},
+            {"$set": {"title": title, "updated_at": now}}
+        )
+
+    # Build conversation history for Claude
+    history = await db.chat_messages.find(
+        {"conversation_id": conversation_id},
+        {"_id": 0, "role": 1, "content": 1}
+    ).sort("created_at", 1).to_list(100)
+
+    claude_messages = [{"role": m["role"], "content": m["content"]} for m in history]
+
+    # Build system prompt with optional case context
+    system_prompt = LEGAL_CHAT_SYSTEM_PROMPT
+    case_id = data.case_id or conv.get("case_id")
+    if case_id:
+        case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
+        if case_doc:
+            system_prompt += f"\n\nCONTEXT: The user has an active case: '{case_doc.get('title', '')}'. Type: {case_doc.get('type', '')}. Risk Score: {case_doc.get('risk_score', 0)}/100. Summary: {case_doc.get('ai_summary', 'N/A')}. They may ask questions related to this case."
+
+    # Call Claude
+    try:
+        ai_response = await call_claude(system_prompt, claude_messages[-1]["content"] if len(claude_messages) == 1 else None, max_tokens=1000)
+        # If single message, call_claude expects string. For multi-turn, use full history
+        if len(claude_messages) > 1:
+            async with httpx.AsyncClient() as http_client:
+                response = await http_client.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-api-key": ANTHROPIC_API_KEY,
+                        "anthropic-version": "2023-06-01"
+                    },
+                    json={
+                        "model": "claude-sonnet-4-20250514",
+                        "max_tokens": 1000,
+                        "system": system_prompt,
+                        "messages": claude_messages
+                    },
+                    timeout=60.0
+                )
+                response.raise_for_status()
+                resp_data = response.json()
+                ai_text = resp_data["content"][0]["text"]
+        else:
+            # Single message - use call_claude but get raw text
+            async with httpx.AsyncClient() as http_client:
+                response = await http_client.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-api-key": ANTHROPIC_API_KEY,
+                        "anthropic-version": "2023-06-01"
+                    },
+                    json={
+                        "model": "claude-sonnet-4-20250514",
+                        "max_tokens": 1000,
+                        "system": system_prompt,
+                        "messages": claude_messages
+                    },
+                    timeout=60.0
+                )
+                response.raise_for_status()
+                resp_data = response.json()
+                ai_text = resp_data["content"][0]["text"]
+    except Exception as e:
+        logger.error(f"Chat Claude error: {e}")
+        ai_text = "I'm having trouble processing your question right now. Please try again in a moment."
+
+    # Save AI response
+    ai_msg = {
+        "message_id": f"msg_{uuid.uuid4().hex[:12]}",
+        "conversation_id": conversation_id,
+        "role": "assistant",
+        "content": ai_text,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.chat_messages.insert_one(ai_msg)
+    await db.chat_conversations.update_one(
+        {"conversation_id": conversation_id},
+        {"$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+
+    return {"user_message": {k: v for k, v in user_msg.items() if k != "_id"}, "ai_message": {k: v for k, v in ai_msg.items() if k != "_id"}}
+
+@api_router.get("/chat/question-count")
+async def get_question_count(current_user: User = Depends(get_current_user)):
+    """Get total question count for free plan tracking"""
+    conv_ids = [c["conversation_id"] for c in await db.chat_conversations.find({"user_id": current_user.user_id}, {"conversation_id": 1, "_id": 0}).to_list(100)]
+    if not conv_ids:
+        return {"count": 0, "limit": 3 if current_user.plan == "free" else None}
+    count = await db.chat_messages.count_documents({"conversation_id": {"$in": conv_ids}, "role": "user"})
+    return {"count": count, "limit": 3 if current_user.plan == "free" else None}
+
+# ================== Case Sharing ==================
+
+import secrets
+
+class ShareCaseInput(BaseModel):
+    expiry_hours: int = 48
+    message: Optional[str] = None
+
+class SharedCaseComment(BaseModel):
+    commenter_name: str
+    comment: str
+
+@api_router.post("/cases/{case_id}/share")
+async def share_case(case_id: str, data: ShareCaseInput, current_user: User = Depends(get_current_user)):
+    """Generate a secure share link for a case"""
+    if current_user.plan == "free":
+        raise HTTPException(status_code=403, detail="Case sharing is available on the Pro plan. Upgrade for $69/month.")
+
+    case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    # Limit expiry options
+    allowed = [24, 48, 168, 720]
+    if data.expiry_hours not in allowed:
+        data.expiry_hours = 48
+
+    now = datetime.now(timezone.utc)
+    token = secrets.token_urlsafe(24)
+
+    share_doc = {
+        "share_id": f"share_{uuid.uuid4().hex[:12]}",
+        "case_id": case_id,
+        "user_id": current_user.user_id,
+        "user_name": current_user.name or "User",
+        "token": token,
+        "expires_at": (now + timedelta(hours=data.expiry_hours)).isoformat(),
+        "expiry_hours": data.expiry_hours,
+        "optional_message": data.message,
+        "views_count": 0,
+        "is_revoked": False,
+        "created_at": now.isoformat()
+    }
+    await db.shared_cases.insert_one(share_doc)
+
+    return {"token": token, "share_id": share_doc["share_id"], "expires_at": share_doc["expires_at"]}
+
+@api_router.get("/cases/{case_id}/shares")
+async def list_case_shares(case_id: str, current_user: User = Depends(get_current_user)):
+    """List active shares for a case"""
+    shares = await db.shared_cases.find(
+        {"case_id": case_id, "user_id": current_user.user_id, "is_revoked": False},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(20)
+
+    now = datetime.now(timezone.utc).isoformat()
+    active = [s for s in shares if s["expires_at"] > now]
+
+    # Get comment counts
+    for s in active:
+        s["comment_count"] = await db.shared_case_comments.count_documents({"share_id": s["share_id"]})
+
+    return active
+
+@api_router.post("/shares/{share_id}/revoke")
+async def revoke_share(share_id: str, current_user: User = Depends(get_current_user)):
+    """Revoke a share link"""
+    result = await db.shared_cases.update_one(
+        {"share_id": share_id, "user_id": current_user.user_id},
+        {"$set": {"is_revoked": True}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Share not found")
+    return {"status": "revoked"}
+
+# Public endpoints (no auth required)
+@api_router.get("/shared/{token}")
+async def get_shared_case(token: str):
+    """Get a shared case by token (public, no auth)"""
+    share = await db.shared_cases.find_one({"token": token}, {"_id": 0})
+    if not share:
+        raise HTTPException(status_code=404, detail="Share link not found")
+
+    if share.get("is_revoked"):
+        raise HTTPException(status_code=410, detail="This link has been revoked by the owner.")
+
+    now = datetime.now(timezone.utc).isoformat()
+    if share["expires_at"] < now:
+        raise HTTPException(status_code=410, detail="This link has expired.")
+
+    # Increment views
+    await db.shared_cases.update_one({"token": token}, {"$inc": {"views_count": 1}})
+
+    # Get case data (filtered for privacy)
+    case_doc = await db.cases.find_one({"case_id": share["case_id"]}, {"_id": 0})
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case no longer exists")
+
+    # Get comments
+    comments = await db.shared_case_comments.find(
+        {"share_id": share["share_id"]},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+
+    # Filter sensitive data
+    safe_case = {
+        "title": case_doc.get("title"),
+        "type": case_doc.get("type"),
+        "status": case_doc.get("status"),
+        "risk_score": case_doc.get("risk_score"),
+        "risk_financial": case_doc.get("risk_financial"),
+        "risk_urgency": case_doc.get("risk_urgency"),
+        "risk_legal_strength": case_doc.get("risk_legal_strength"),
+        "risk_complexity": case_doc.get("risk_complexity"),
+        "deadline": case_doc.get("deadline"),
+        "deadline_description": case_doc.get("deadline_description"),
+        "financial_exposure": case_doc.get("financial_exposure"),
+        "ai_summary": case_doc.get("ai_summary"),
+        "ai_findings": case_doc.get("ai_findings", []),
+        "ai_next_steps": case_doc.get("ai_next_steps", []),
+        "risk_score_history": case_doc.get("risk_score_history", []),
+        "battle_preview": case_doc.get("battle_preview"),
+        "success_probability": case_doc.get("success_probability"),
+        "procedural_defects": case_doc.get("procedural_defects", []),
+        "key_insight": case_doc.get("key_insight"),
+        "leverage_points": case_doc.get("leverage_points", []),
+    }
+
+    # Get document names only (not content)
+    docs = await db.documents.find(
+        {"case_id": share["case_id"]},
+        {"_id": 0, "file_name": 1, "status": 1, "uploaded_at": 1, "is_key_document": 1}
+    ).to_list(50)
+
+    # Get timeline
+    events = await db.case_events.find(
+        {"case_id": share["case_id"]},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+
+    return {
+        "share": {
+            "user_name": share.get("user_name", "User"),
+            "optional_message": share.get("optional_message"),
+            "expires_at": share["expires_at"],
+            "views_count": share.get("views_count", 0) + 1
+        },
+        "case": safe_case,
+        "documents": docs,
+        "events": events,
+        "comments": comments
+    }
+
+@api_router.post("/shared/{token}/comments")
+async def add_shared_case_comment(token: str, data: SharedCaseComment):
+    """Add a comment to a shared case (public, no auth)"""
+    share = await db.shared_cases.find_one({"token": token}, {"_id": 0})
+    if not share:
+        raise HTTPException(status_code=404, detail="Share link not found")
+    if share.get("is_revoked"):
+        raise HTTPException(status_code=410, detail="This link has been revoked.")
+    now = datetime.now(timezone.utc).isoformat()
+    if share["expires_at"] < now:
+        raise HTTPException(status_code=410, detail="This link has expired.")
+
+    comment_doc = {
+        "comment_id": f"cmt_{uuid.uuid4().hex[:12]}",
+        "share_id": share["share_id"],
+        "case_id": share["case_id"],
+        "commenter_name": data.commenter_name[:100],
+        "comment": data.comment[:2000],
+        "created_at": now
+    }
+    await db.shared_case_comments.insert_one(comment_doc)
+
+    return {"comment_id": comment_doc["comment_id"], "status": "created"}
+
 # ================== Seed Data ==================
 
 @api_router.post("/seed/lawyers")

@@ -16,6 +16,9 @@ import LawyerBook from './pages/LawyerBook';
 import Settings from './pages/Settings';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancel from './pages/PaymentCancel';
+import LegalChat from './pages/LegalChat';
+import SharedCase from './pages/SharedCase';
+import FloatingChatButton from './components/FloatingChatButton';
 import './App.css';
 
 // Component to handle session_id in URL hash
@@ -34,6 +37,7 @@ const AppRouter = () => {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/shared/:token" element={<SharedCase />} />
       
       {/* Protected routes with Layout */}
       <Route path="/" element={
@@ -49,6 +53,7 @@ const AppRouter = () => {
         <Route path="lawyers" element={<Lawyers />} />
         <Route path="lawyers/book" element={<LawyerBook />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="chat" element={<LegalChat />} />
         <Route path="payment/success" element={<PaymentSuccess />} />
         <Route path="payment/cancel" element={<PaymentCancel />} />
       </Route>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import FloatingChatButton from './FloatingChatButton';
 
 const Layout = () => {
   return (
@@ -9,6 +10,7 @@ const Layout = () => {
       <main className="main-content flex-1 overflow-auto">
         <Outlet />
       </main>
+      <FloatingChatButton />
     </div>
   );
 };
