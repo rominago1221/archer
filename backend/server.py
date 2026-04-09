@@ -503,7 +503,7 @@ async def update_plan(plan: str = "pro", current_user: User = Depends(get_curren
 
 # ================== Case Endpoints ==================
 
-@api_router.post("/cases", response_model=Case)
+@api_router.post("/cases", response_model=Case, status_code=201)
 async def create_case(case_data: CaseCreate, current_user: User = Depends(get_current_user)):
     """Create a new case"""
     case_id = f"case_{uuid.uuid4().hex[:12]}"
