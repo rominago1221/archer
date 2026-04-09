@@ -1,0 +1,158 @@
+{
+  "theme": "LIGHT",
+  "archetype": "Archetype 4: Swiss & High-Contrast (Adapted for Legal SaaS)",
+  "emotional_tone": "Trustworthy, analytical, authoritative, and clean",
+  "typography": {
+    "heading_font": "Outfit",
+    "body_font": "Inter",
+    "fallback_fonts": "sans-serif",
+    "font_weights": {
+      "light": 300,
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
+    "scale": {
+      "h1": "text-3xl sm:text-4xl font-semibold tracking-tight",
+      "h2": "text-2xl sm:text-3xl font-semibold tracking-tight",
+      "h3": "text-xl sm:text-2xl font-medium",
+      "h4": "text-lg font-medium",
+      "body": "text-sm sm:text-base text-gray-700",
+      "small": "text-xs sm:text-sm text-gray-500",
+      "overline": "text-[10px] uppercase tracking-[0.1em] font-semibold text-gray-500"
+    }
+  },
+  "colors": {
+    "primary": {
+      "DEFAULT": "#1a56db",
+      "hover": "#1546b3",
+      "light": "#eff6ff",
+      "border": "#93c5fd"
+    },
+    "background": {
+      "app": "#f8f8f8",
+      "surface": "#ffffff",
+      "overlay": "rgba(0, 0, 0, 0.4)"
+    },
+    "border": {
+      "DEFAULT": "#ebebeb",
+      "focus": "#1a56db"
+    },
+    "text": {
+      "primary": "#111827",
+      "secondary": "#6b7280",
+      "muted": "#9ca3af",
+      "inverse": "#ffffff"
+    },
+    "risk": {
+      "low": {
+        "text": "#16a34a",
+        "bg": "#f0fdf4",
+        "border": "#bbf7d0"
+      },
+      "medium": {
+        "text": "#d97706",
+        "bg": "#fffbeb",
+        "border": "#fde68a"
+      },
+      "high": {
+        "text": "#dc2626",
+        "bg": "#fef2f2",
+        "border": "#fecaca"
+      }
+    }
+  },
+  "layout_and_spacing": {
+    "sidebar": {
+      "width": "220px",
+      "background": "#ffffff",
+      "border_right": "0.5px solid #ebebeb"
+    },
+    "content_area": {
+      "padding": "p-6 md:p-8",
+      "background": "#f8f8f8"
+    },
+    "containers": {
+      "max_width": "max-w-6xl mx-auto"
+    },
+    "grid_system": {
+      "dashboard": "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6",
+      "lawyers": "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-[#1a56db] text-white rounded-[24px] px-5 py-2.5 text-sm font-medium hover:bg-[#1546b3] transition-colors shadow-sm",
+      "secondary": "bg-white text-[#111827] border border-[#ebebeb] rounded-[24px] px-5 py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm",
+      "ghost": "bg-transparent text-[#111827] rounded-[24px] px-4 py-2 text-sm font-medium hover:bg-gray-100 transition-colors",
+      "danger": "bg-red-50 text-red-600 border border-red-200 rounded-[24px] px-5 py-2.5 text-sm font-medium hover:bg-red-100 transition-colors"
+    },
+    "cards": {
+      "base": "bg-white border border-[#ebebeb] border-[0.5px] rounded-[14px] shadow-sm p-5 md:p-6",
+      "hover": "hover:shadow-md hover:border-gray-300 transition-all duration-200"
+    },
+    "badges": {
+      "base": "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+      "primary": "bg-[#eff6ff] text-[#1a56db] border border-[#93c5fd]",
+      "gray": "bg-gray-100 text-gray-700 border border-gray-200"
+    },
+    "inputs": {
+      "base": "block w-full rounded-lg border-[#ebebeb] shadow-sm focus:border-[#1a56db] focus:ring-[#1a56db] sm:text-sm py-2 px-3 text-gray-900 bg-white",
+      "label": "block text-sm font-medium text-gray-700 mb-1"
+    },
+    "tables": {
+      "wrapper": "overflow-hidden shadow-sm ring-1 ring-[#ebebeb] sm:rounded-[14px] bg-white",
+      "header": "bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+      "row": "border-t border-[#ebebeb] hover:bg-gray-50 transition-colors"
+    }
+  },
+  "interactive_and_motion": {
+    "hover_states": "All interactive elements must change color or shadow on hover. Cards should lift slightly (-translate-y-0.5) if clickable.",
+    "transitions": "Use transition-all duration-200 ease-in-out for buttons, links, and cards.",
+    "focus_states": "Visible focus rings on all inputs and buttons: focus:outline-none focus:ring-2 focus:ring-[#1a56db] focus:ring-offset-2"
+  },
+  "accessibility_and_testing": {
+    "data_testid": "MANDATORY. Every button, input, link, and interactive component must have a data-testid attribute in kebab-case based on its role.",
+    "contrast": "Text over backgrounds must meet APCA or WCAG AA standards. Ensure risk colors have sufficient contrast.",
+    "aria": "Use aria-labels for icon-only buttons (like close modals, upload drops)."
+  },
+  "media_and_assets": {
+    "icons_library": "lucide-react",
+    "image_urls": {
+      "user_avatar": {
+        "url": "https://images.unsplash.com/photo-1762522926262-d96de462ad54?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHw0fHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjBsYXd5ZXJ8ZW58MHx8fHwxNzc1NzYxMDU5fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Michael (User) Avatar - Confident young businessman"
+      },
+      "lawyer_sarah": {
+        "url": "https://images.unsplash.com/photo-1585240975858-7264fd020798?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDZ8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjB3b21hbiUyMGF0dG9ybmV5fGVufDB8fHx8MTc3NTc2MTA2NHww&ixlib=rb-4.1.0&q=85",
+        "description": "Sarah Mitchell, Esq. - Woman in black blazer smiling"
+      },
+      "lawyer_james": {
+        "url": "https://images.unsplash.com/photo-1644268756851-3f69ffb9553f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjBsYXd5ZXJ8ZW58MHx8fHwxNzc1NzYxMDU5fDA&ixlib=rb-4.1.0&q=85",
+        "description": "James Carter, Esq. - Man with beard wearing a suit"
+      },
+      "lawyer_diana": {
+        "url": "https://images.unsplash.com/photo-1685760259914-ee8d2c92d2e0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDZ8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjB3b21hbiUyMGF0dG9ybmV5fGVufDB8fHx8MTc3NTc2MTA2NHww&ixlib=rb-4.1.0&q=85",
+        "description": "Diana Torres, Esq. - Woman with arms crossed"
+      },
+      "lawyer_marcus": {
+        "url": "https://images.unsplash.com/photo-1665224752561-85f4da9a5658?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjBsYXd5ZXJ8ZW58MHx8fHwxNzc1NzYxMDU5fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Marcus Johnson, Esq. - Man in suit sitting"
+      },
+      "lawyer_rachel": {
+        "url": "https://images.unsplash.com/photo-1665224752123-a2ea29dddcb2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDZ8MHwxfHNlYXJjaHw0fHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjB3b21hbiUyMGF0dG9ybmV5fGVufDB8fHx8MTc3NTc2MTA2NHww&ixlib=rb-4.1.0&q=85",
+        "description": "Rachel Kim, Esq. - Person in suit sitting"
+      }
+    }
+  },
+  "instructions_to_main_agent": {
+    "1": "Strictly implement the color palette and border radii. Cards MUST use rounded-[14px] and buttons MUST use rounded-[24px].",
+    "2": "The sidebar MUST be exactly 220px wide, sticky/fixed, with a white background and 0.5px solid #ebebeb border on the right.",
+    "3": "App background is #f8f8f8, while cards are #ffffff. Maintain this contrast.",
+    "4": "Ensure the 'Risk Score' component accurately reflects the colors: 0-30 (Green), 31-60 (Orange), 61-100 (Red).",
+    "5": "Do NOT use placeholder images. Map the provided avatar URLs to their respective lawyer names in the grid.",
+    "6": "Add specific `data-testid` values for every interaction point (e.g., `data-testid=\"upload-document-zone\"`, `data-testid=\"book-lawyer-sarah-btn\"`).",
+    "7": "Include Google fonts 'Outfit' and 'Inter' via Tailwind or CSS."
+  }
+}
