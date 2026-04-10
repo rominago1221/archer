@@ -62,6 +62,13 @@ Build a complete, production-ready SaaS web application called "Jasper" — a le
 - Lawyers grid with booking + Stripe payment
 - Settings page with Stripe upgrade
 
+### Document Library (NEW)
+- **158+ legal document templates** organized in 14 categories
+- AI-powered document generation via Claude (questionnaire → generated document → preview)
+- PDF download, HelloSign e-signature flow (MOCKED - needs API key)
+- Free plan: 5 basic templates, Pro: all 158+
+- Category tabs, real-time search, 3-column card grid
+- Signature flow: add signers by name + email → send for signature
 ### Integrations
 - Emergent Google OAuth for authentication
 - Emergent Object Storage for document files
