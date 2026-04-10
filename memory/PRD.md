@@ -55,7 +55,7 @@ Build a complete, production-ready SaaS web application called "Jasper" — a le
 - Login/Signup pages with email/password + social login buttons (Google/Apple/Facebook)
 - Dashboard with stats, cases, upload zone, lawyers
 - Case detail page with Risk Score History Graph, Battle Preview, Outcome Predictor
-- Upload page with 5-step progress animation + Document Scanner
+- Upload page with 5-step progress animation + Document Scanner + **User Context Textarea** (500 char, injected into Claude analysis)
 - Legal Chat page with floating chat button
 - Case Sharing modal with expiring links
 - SharedCase public view page
