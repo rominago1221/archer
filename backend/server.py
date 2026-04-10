@@ -429,7 +429,7 @@ Return ONLY this JSON — no other text:
     "complexity": 0
   }},
   "risk_level": "low|medium|high|critical",
-  "case_type": "employment|housing|contract|debt|immigration|court|consumer|family|other",
+  "case_type": "employment|housing|nda|contract|debt|demand|immigration|court|consumer|family|other",
   "suggested_case_title": "Short descriptive title max 60 chars",
   "deadline": "YYYY-MM-DD or null",
   "deadline_description": "Description or null",
@@ -642,8 +642,9 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "")
         doc_to_case = {
             "eviction_notice": "housing", "lease": "housing",
             "employment_contract": "employment",
-            "debt_collection": "debt", "demand_letter": "debt",
-            "court_notice": "court", "nda": "contract"
+            "debt_collection": "debt",
+            "demand_letter": "demand",
+            "court_notice": "court", "nda": "nda"
         }
         inferred_case_type = doc_to_case.get(doc_type, "other")
         jurisprudence_text = load_jurisprudence(inferred_case_type, doc_type)
@@ -796,59 +797,111 @@ OUTPUT FORMAT — respond ONLY with valid JSON, no other text:
 
 # Letter types by case type
 LETTER_TYPES = {
+    "nda": [
+        {"id": "NDA_CLAUSE_CLARIFICATION", "label": "Request clause clarification", "desc": "Specific clauses are too vague"},
+        {"id": "NDA_NEGOTIATE_SCOPE", "label": "Negotiate confidentiality scope", "desc": "Definition is too broad"},
+        {"id": "NDA_MUTUAL_OBLIGATIONS", "label": "Request mutual obligations", "desc": "Currently only one party is bound"},
+        {"id": "NDA_CHALLENGE_DURATION", "label": "Challenge duration", "desc": "Obligation period is excessive"},
+        {"id": "NDA_GEOGRAPHIC_LIMITATION", "label": "Request geographic limitation", "desc": "Scope is unreasonably wide"},
+        {"id": "NDA_PROPOSE_CARVEOUTS", "label": "Propose carve-outs", "desc": "Exclude already known information"},
+        {"id": "NDA_CHALLENGE_PENALTY", "label": "Challenge penalty clauses", "desc": "Damages are disproportionate"},
+        {"id": "NDA_GOVERNING_LAW", "label": "Request governing law change", "desc": "Jurisdiction is unfavorable"}
+    ],
     "housing": [
-        {"id": "PAYMENT_PLAN_PROPOSAL", "label": "Payment Plan Proposal", "desc": "Propose a structured payment plan to avoid eviction"},
-        {"id": "DISPUTE_EVICTION_NOTICE", "label": "Dispute Eviction", "desc": "Challenge the legal validity of the eviction notice"},
-        {"id": "DISPUTE_DAMAGES", "label": "Dispute Damages", "desc": "Challenge unfair or inflated damage claims"},
-        {"id": "REQUEST_MEDIATION", "label": "Request Mediation", "desc": "Propose mediation to avoid court"}
+        {"id": "PAYMENT_PLAN_PROPOSAL", "label": "Payment plan proposal", "desc": "Pay in installments"},
+        {"id": "DISPUTE_NOTICE_VALIDITY", "label": "Dispute notice validity", "desc": "Procedural errors found"},
+        {"id": "CONTEST_DAMAGE_AMOUNTS", "label": "Contest damage amounts", "desc": "Amounts are inflated or unjustified"},
+        {"id": "REQUEST_MORE_TIME", "label": "Request more time", "desc": "Need additional days to respond"},
+        {"id": "CHALLENGE_OCCUPANT_CLAIM", "label": "Challenge unauthorized occupant claim", "desc": "Contest the allegation"},
+        {"id": "ASSERT_DEPOSIT_RIGHTS", "label": "Assert security deposit rights", "desc": "Landlord must return deposit"},
+        {"id": "REQUEST_MEDIATION", "label": "Request mediation", "desc": "Avoid court proceedings"},
+        {"id": "DISPUTE_LEASE_VIOLATION", "label": "Dispute lease violation", "desc": "Contest the alleged breach"}
     ],
     "employment": [
-        {"id": "WRONGFUL_TERMINATION_RESPONSE", "label": "Contest Termination", "desc": "Formally contest termination and preserve rights"},
-        {"id": "UNPAID_WAGES_DEMAND", "label": "Demand Unpaid Wages", "desc": "Formally demand unpaid wages before legal action"},
-        {"id": "NON_COMPETE_CHALLENGE", "label": "Challenge Non-Compete", "desc": "Challenge enforceability of non-compete clause"},
-        {"id": "HARASSMENT_OR_DISCRIMINATION_COMPLAINT", "label": "Report Harassment", "desc": "Document and report workplace issues"}
+        {"id": "CONTEST_TERMINATION", "label": "Contest termination", "desc": "Formally dispute the firing"},
+        {"id": "DEMAND_UNPAID_WAGES", "label": "Demand unpaid wages", "desc": "Request final paycheck and overtime"},
+        {"id": "CHALLENGE_NON_COMPETE", "label": "Challenge non-compete enforceability", "desc": "Too broad or unreasonable"},
+        {"id": "REQUEST_TERMINATION_REASON", "label": "Request written termination reason", "desc": "Legal right to know why"},
+        {"id": "ASSERT_DISCRIMINATION", "label": "Assert discrimination claim", "desc": "Termination may be discriminatory"},
+        {"id": "DEMAND_SEVERANCE", "label": "Demand severance pay", "desc": "Request negotiated severance"},
+        {"id": "DISPUTE_PERFORMANCE_REVIEW", "label": "Dispute performance review", "desc": "Contest documented reasons"},
+        {"id": "REQUEST_REFERENCE", "label": "Request reference letter", "desc": "Protect future employment"}
     ],
     "debt": [
-        {"id": "DEBT_VALIDATION_REQUEST", "label": "Validate Debt", "desc": "Force collector to prove the debt is valid (FDCPA)"},
-        {"id": "CEASE_AND_DESIST_COLLECTION", "label": "Cease & Desist", "desc": "Stop harassment from debt collectors"},
-        {"id": "DEBT_SETTLEMENT_OFFER", "label": "Settlement Offer", "desc": "Negotiate a lower lump-sum payment"},
-        {"id": "DISPUTE_CREDIT_REPORT", "label": "Dispute Credit Report", "desc": "Challenge inaccurate credit reporting"}
+        {"id": "DEBT_VALIDATION_REQUEST", "label": "Debt validation request", "desc": "Force collector to prove debt is valid (FDCPA right)"},
+        {"id": "CEASE_AND_DESIST", "label": "Cease and desist", "desc": "Stop all contact immediately"},
+        {"id": "DISPUTE_DEBT_OWNERSHIP", "label": "Dispute debt ownership", "desc": "Collector may not own this debt"},
+        {"id": "CHALLENGE_STATUTE_LIMITATIONS", "label": "Challenge statute of limitations", "desc": "Debt may be too old to collect"},
+        {"id": "SETTLEMENT_OFFER", "label": "Settlement offer", "desc": "Negotiate 40-60% lump sum"},
+        {"id": "FDCPA_VIOLATION_COMPLAINT", "label": "FDCPA violation complaint", "desc": "Document their violations"},
+        {"id": "REQUEST_PAYMENT_HISTORY", "label": "Request payment history", "desc": "Demand full account statement"},
+        {"id": "DISPUTE_CREDIT_REPORTING", "label": "Dispute credit reporting", "desc": "Challenge inaccurate reporting"}
     ],
-    "contract": [
-        {"id": "CONTRACT_DISPUTE_RESPONSE", "label": "Dispute Response", "desc": "Formally contest a contract breach claim"},
-        {"id": "DEMAND_LETTER_RESPONSE", "label": "Respond to Demand", "desc": "Respond professionally to a threatening letter"},
-        {"id": "NDA_CLARIFICATION_REQUEST", "label": "NDA Clarification", "desc": "Seek clarification on NDA scope"},
-        {"id": "SERVICE_DISPUTE", "label": "Service Dispute", "desc": "Dispute charges for services not rendered"}
-    ],
-    "consumer": [
-        {"id": "REFUND_DEMAND", "label": "Demand Refund", "desc": "Formally demand refund from business"},
-        {"id": "CHARGEBACK_SUPPORT_LETTER", "label": "Chargeback Support", "desc": "Support a credit card chargeback claim"},
-        {"id": "WARRANTY_CLAIM", "label": "Warranty Claim", "desc": "Assert warranty rights"},
-        {"id": "FTC_COMPLAINT_NOTICE", "label": "FTC Complaint Notice", "desc": "Notify of intent to file FTC complaint"}
-    ],
-    "immigration": [
-        {"id": "SPONSOR_AGREEMENT_DISPUTE", "label": "Sponsor Dispute", "desc": "Address issues with employment sponsor"},
-        {"id": "EMPLOYMENT_AUTHORIZATION_INQUIRY", "label": "Authorization Inquiry", "desc": "Inquire about work authorization status"},
-        {"id": "VISA_CONTRACT_CLARIFICATION", "label": "Visa Clarification", "desc": "Request clarification on visa terms"},
-        {"id": "STATUS_UPDATE_REQUEST", "label": "Status Update", "desc": "Request update on pending application"}
+    "demand": [
+        {"id": "FORMAL_DISPUTE", "label": "Formal dispute", "desc": "Reject all claims"},
+        {"id": "COUNTER_PROPOSAL", "label": "Counter-proposal", "desc": "Offer alternative resolution"},
+        {"id": "REQUEST_EVIDENCE", "label": "Request evidence", "desc": "Demand proof of their claims"},
+        {"id": "CHALLENGE_LEGAL_BASIS", "label": "Challenge legal basis", "desc": "Their claim has no legal foundation"},
+        {"id": "PROPOSE_MEDIATION", "label": "Propose mediation", "desc": "Neutral third party resolution"},
+        {"id": "ASSERT_COUNTER_CLAIM", "label": "Assert counter-claim", "desc": "You have claims against them too"},
+        {"id": "REQUEST_EXTENSION", "label": "Request extension", "desc": "Need more time to respond"},
+        {"id": "PARTIAL_ACCEPTANCE", "label": "Partial acceptance", "desc": "Accept some claims, reject others"}
     ],
     "court": [
-        {"id": "DEMAND_LETTER_RESPONSE", "label": "Respond to Demand", "desc": "Respond professionally to court notice"},
-        {"id": "EXTENSION_REQUEST", "label": "Request Extension", "desc": "Request additional time to respond"},
-        {"id": "DISPUTE_CLAIMS", "label": "Dispute Claims", "desc": "Formally dispute the claims made"},
-        {"id": "SETTLEMENT_PROPOSAL", "label": "Settlement Proposal", "desc": "Propose out-of-court settlement"}
+        {"id": "FILE_FORMAL_RESPONSE", "label": "File formal response", "desc": "Contest the claims in court"},
+        {"id": "REQUEST_CONTINUANCE", "label": "Request continuance", "desc": "More time to prepare defense"},
+        {"id": "CHALLENGE_JURISDICTION", "label": "Challenge jurisdiction", "desc": "Wrong court or state"},
+        {"id": "MOTION_TO_DISMISS", "label": "Motion to dismiss", "desc": "Case has no legal merit"},
+        {"id": "PROPOSE_SETTLEMENT", "label": "Propose settlement", "desc": "Avoid trial"},
+        {"id": "REQUEST_DISCOVERY", "label": "Request discovery", "desc": "Demand their evidence"},
+        {"id": "COUNTER_CLAIM_FILING", "label": "Counter-claim filing", "desc": "File claims against plaintiff"},
+        {"id": "DEFAULT_AVOIDANCE", "label": "Default avoidance", "desc": "Respond before deadline"}
+    ],
+    "consumer": [
+        {"id": "FORMAL_REFUND_DEMAND", "label": "Formal refund demand", "desc": "Request full refund with deadline"},
+        {"id": "CHARGEBACK_SUPPORT", "label": "Chargeback support letter", "desc": "Support credit card dispute"},
+        {"id": "FTC_COMPLAINT_NOTICE", "label": "FTC complaint notice", "desc": "Warn of regulatory complaint"},
+        {"id": "BBB_COMPLAINT_NOTICE", "label": "BBB complaint notice", "desc": "Warn of Better Business Bureau filing"},
+        {"id": "ATTORNEY_GENERAL_NOTICE", "label": "Attorney General notice", "desc": "Warn of state AG complaint"},
+        {"id": "SMALL_CLAIMS_NOTICE", "label": "Small claims court notice", "desc": "Threaten court action"},
+        {"id": "WARRANTY_CLAIM", "label": "Warranty claim", "desc": "Assert product warranty rights"},
+        {"id": "CONSUMER_PROTECTION_CLAIM", "label": "Consumer protection claim", "desc": "Cite applicable consumer law"}
+    ],
+    "contract": [
+        {"id": "FORMAL_DISPUTE", "label": "Formal dispute", "desc": "Reject all claims"},
+        {"id": "COUNTER_PROPOSAL", "label": "Counter-proposal", "desc": "Offer alternative resolution"},
+        {"id": "REQUEST_EVIDENCE", "label": "Request evidence", "desc": "Demand proof of their claims"},
+        {"id": "CHALLENGE_LEGAL_BASIS", "label": "Challenge legal basis", "desc": "Their claim has no legal foundation"},
+        {"id": "PROPOSE_MEDIATION", "label": "Propose mediation", "desc": "Neutral third party resolution"},
+        {"id": "ASSERT_COUNTER_CLAIM", "label": "Assert counter-claim", "desc": "You have claims against them too"},
+        {"id": "REQUEST_EXTENSION", "label": "Request extension", "desc": "Need more time to respond"},
+        {"id": "PARTIAL_ACCEPTANCE", "label": "Partial acceptance", "desc": "Accept some claims, reject others"}
+    ],
+    "immigration": [
+        {"id": "SPONSOR_AGREEMENT_DISPUTE", "label": "Sponsor dispute", "desc": "Address issues with employment sponsor"},
+        {"id": "EMPLOYMENT_AUTHORIZATION_INQUIRY", "label": "Authorization inquiry", "desc": "Inquire about work authorization status"},
+        {"id": "VISA_CONTRACT_CLARIFICATION", "label": "Visa clarification", "desc": "Request clarification on visa terms"},
+        {"id": "STATUS_UPDATE_REQUEST", "label": "Status update", "desc": "Request update on pending application"},
+        {"id": "WORK_PERMIT_DISPUTE", "label": "Work permit dispute", "desc": "Contest work permit conditions"},
+        {"id": "SPONSOR_OBLIGATIONS", "label": "Sponsor obligations", "desc": "Remind sponsor of legal duties"}
     ],
     "family": [
-        {"id": "MEDIATION_REQUEST", "label": "Request Mediation", "desc": "Propose family mediation"},
-        {"id": "CUSTODY_CONCERNS", "label": "Document Concerns", "desc": "Document custody concerns formally"},
-        {"id": "SUPPORT_MODIFICATION", "label": "Modify Support", "desc": "Request modification of support terms"},
-        {"id": "COMMUNICATION_GUIDELINES", "label": "Communication Request", "desc": "Establish communication guidelines"}
+        {"id": "MEDIATION_REQUEST", "label": "Request mediation", "desc": "Propose family mediation"},
+        {"id": "CUSTODY_CONCERNS", "label": "Document concerns", "desc": "Document custody concerns formally"},
+        {"id": "SUPPORT_MODIFICATION", "label": "Modify support", "desc": "Request modification of support terms"},
+        {"id": "COMMUNICATION_GUIDELINES", "label": "Communication request", "desc": "Establish communication guidelines"},
+        {"id": "ASSET_DIVISION_DISPUTE", "label": "Asset division dispute", "desc": "Contest proposed asset split"},
+        {"id": "VISITATION_RIGHTS", "label": "Visitation rights", "desc": "Assert or modify visitation schedule"}
     ],
     "other": [
-        {"id": "DEMAND_LETTER_RESPONSE", "label": "Formal Response", "desc": "Respond professionally to demands"},
-        {"id": "DISPUTE_CLAIMS", "label": "Dispute Claims", "desc": "Contest the claims made against you"},
-        {"id": "REQUEST_DOCUMENTATION", "label": "Request Documents", "desc": "Request supporting documentation"},
-        {"id": "SETTLEMENT_PROPOSAL", "label": "Settlement Proposal", "desc": "Propose amicable resolution"}
+        {"id": "FORMAL_DISPUTE", "label": "Formal dispute", "desc": "Reject all claims"},
+        {"id": "COUNTER_PROPOSAL", "label": "Counter-proposal", "desc": "Offer alternative resolution"},
+        {"id": "REQUEST_EVIDENCE", "label": "Request evidence", "desc": "Demand proof of their claims"},
+        {"id": "CHALLENGE_LEGAL_BASIS", "label": "Challenge legal basis", "desc": "Their claim has no legal foundation"},
+        {"id": "PROPOSE_MEDIATION", "label": "Propose mediation", "desc": "Neutral third party resolution"},
+        {"id": "ASSERT_COUNTER_CLAIM", "label": "Assert counter-claim", "desc": "You have claims against them too"},
+        {"id": "REQUEST_EXTENSION", "label": "Request extension", "desc": "Need more time to respond"},
+        {"id": "PARTIAL_ACCEPTANCE", "label": "Partial acceptance", "desc": "Accept some claims, reject others"}
     ]
 }
 

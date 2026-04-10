@@ -688,10 +688,16 @@ const CaseDetail = () => {
                   <button
                     key={letterType.id}
                     onClick={() => handleGenerateLetter(letterType)}
-                    className="p-3 text-left bg-[#f8f8f8] hover:bg-[#eff6ff] border border-[#ebebeb] hover:border-[#93c5fd] rounded-xl transition-all group"
+                    className={`p-3 text-left border rounded-xl transition-all group ${
+                      selectedLetterType?.id === letterType.id
+                        ? 'bg-[#eff6ff] border-[#1a56db] ring-1 ring-[#1a56db]'
+                        : 'bg-[#f8f8f8] hover:bg-[#eff6ff] border-[#ebebeb] hover:border-[#93c5fd]'
+                    }`}
                     data-testid={`letter-btn-${letterType.id}`}
                   >
-                    <div className="text-xs font-medium text-[#111827] group-hover:text-[#1a56db] mb-1">{letterType.label}</div>
+                    <div className={`text-xs font-medium mb-0.5 ${
+                      selectedLetterType?.id === letterType.id ? 'text-[#1a56db]' : 'text-[#111827] group-hover:text-[#1a56db]'
+                    }`}>{letterType.label}</div>
                     <div className="text-[10px] text-[#9ca3af] leading-relaxed">{letterType.desc}</div>
                   </button>
                 ))}
