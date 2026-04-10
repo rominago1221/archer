@@ -14,14 +14,21 @@ export const useAuth = () => {
   return context;
 };
 
+function formatApiError(detail) {
+  if (detail == null) return "Something went wrong. Please try again.";
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail))
+    return detail.map((e) => (e && typeof e.msg === "string" ? e.msg : JSON.stringify(e))).filter(Boolean).join(" ");
+  if (detail && typeof detail.msg === "string") return detail.msg;
+  return String(detail);
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const checkAuth = useCallback(async () => {
-    // CRITICAL: If returning from OAuth callback, skip the /me check.
-    // AuthCallback will exchange the session_id and establish the session first.
     if (window.location.hash?.includes('session_id=')) {
       setLoading(false);
       return;
@@ -43,6 +50,7 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, [checkAuth]);
 
+  // Emergent Google OAuth session exchange (existing flow)
   const login = async (sessionId) => {
     try {
       const response = await axios.post(`${API}/auth/session`, 
@@ -52,8 +60,42 @@ export const AuthProvider = ({ children }) => {
       setUser(response.data.user);
       return response.data.user;
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed');
+      setError(formatApiError(err.response?.data?.detail));
       throw err;
+    }
+  };
+
+  // Email/password login
+  const loginWithEmail = async (email, password) => {
+    setError(null);
+    try {
+      const response = await axios.post(`${API}/auth/login`, 
+        { email, password },
+        { withCredentials: true }
+      );
+      setUser(response.data.user);
+      return response.data.user;
+    } catch (err) {
+      const msg = formatApiError(err.response?.data?.detail);
+      setError(msg);
+      throw new Error(msg);
+    }
+  };
+
+  // Email/password register
+  const registerWithEmail = async (name, email, password, plan = 'free') => {
+    setError(null);
+    try {
+      const response = await axios.post(`${API}/auth/register`, 
+        { name, email, password, plan },
+        { withCredentials: true }
+      );
+      setUser(response.data.user);
+      return response.data.user;
+    } catch (err) {
+      const msg = formatApiError(err.response?.data?.detail);
+      setError(msg);
+      throw new Error(msg);
     }
   };
 
@@ -77,17 +119,22 @@ export const AuthProvider = ({ children }) => {
     window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
   };
 
+  const clearError = () => setError(null);
+
   return (
     <AuthContext.Provider value={{
       user,
       loading,
       error,
       login,
+      loginWithEmail,
+      registerWithEmail,
       logout,
       updateUser,
       checkAuth,
       refreshUser: checkAuth,
       initiateGoogleLogin,
+      clearError,
       isAuthenticated: !!user
     }}>
       {children}

@@ -1,17 +1,48 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Signup = () => {
-  const { initiateGoogleLogin } = useAuth();
+  const { initiateGoogleLogin, registerWithEmail, error, clearError } = useAuth();
+  const navigate = useNavigate();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('free');
+  const [localError, setLocalError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleGoogleSignup = () => {
-    initiateGoogleLogin();
+  React.useEffect(() => {
+    clearError();
+  }, []);
+
+  const handleEmailSignup = async (e) => {
+    e.preventDefault();
+    setLocalError('');
+    if (!fullName.trim()) {
+      setLocalError('Please enter your full name');
+      return;
+    }
+    if (!email.trim()) {
+      setLocalError('Please enter your email');
+      return;
+    }
+    if (password.length < 8) {
+      setLocalError('Password must be at least 8 characters');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await registerWithEmail(fullName, email, password, selectedPlan);
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      setLocalError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const displayError = localError || error;
 
   return (
     <div className="auth-wrap">
@@ -26,7 +57,13 @@ const Signup = () => {
           Your lawyer, without the lawyer fees.
         </div>
 
-        <div className="space-y-4">
+        {displayError && (
+          <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700" data-testid="signup-error">
+            {displayError}
+          </div>
+        )}
+
+        <form onSubmit={handleEmailSignup} className="space-y-4">
           <div>
             <label className="form-label">Full name</label>
             <input
@@ -84,25 +121,31 @@ const Signup = () => {
           </div>
 
           <button
-            className="w-full btn-pill btn-blue py-3"
-            onClick={handleGoogleSignup}
+            type="submit"
+            className="w-full btn-pill btn-blue py-3 flex items-center justify-center gap-2"
             data-testid="signup-submit-btn"
+            disabled={isLoading}
           >
-            Create account
+            {isLoading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : 'Create account'}
           </button>
+        </form>
 
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#ebebeb]"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-[#9ca3af]">or</span>
-            </div>
+        <div className="relative my-5">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-[#ebebeb]"></div>
           </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-[#9ca3af]">or continue with</span>
+          </div>
+        </div>
 
+        <div className="space-y-3">
+          {/* Google */}
           <button
-            onClick={handleGoogleSignup}
-            className="w-full py-3 px-4 bg-[#f5f5f5] text-[#333] rounded-[24px] text-sm font-medium hover:bg-[#eee] transition-colors flex items-center justify-center gap-2"
+            onClick={initiateGoogleLogin}
+            className="w-full py-3 px-4 bg-[#f5f5f5] text-[#333] rounded-[24px] text-sm font-medium hover:bg-[#eee] transition-colors flex items-center justify-center gap-3"
             data-testid="google-signup-btn"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -114,12 +157,36 @@ const Signup = () => {
             Continue with Google
           </button>
 
-          <div className="text-center text-sm text-[#6b7280] mt-4">
-            Already have an account?{' '}
-            <Link to="/login" className="font-medium text-[#1a56db] hover:underline" data-testid="login-link">
-              Sign in
-            </Link>
-          </div>
+          {/* Apple */}
+          <button
+            onClick={() => setLocalError('Apple Sign In requires Apple Developer credentials. Please configure them in Settings.')}
+            className="w-full py-3 px-4 bg-[#000000] text-white rounded-[24px] text-sm font-medium hover:bg-[#1a1a1a] transition-colors flex items-center justify-center gap-3"
+            data-testid="apple-signup-btn"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
+              <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.53-3.23 0-1.44.62-2.2.44-3.06-.4C3.79 16.17 4.36 9.02 8.55 8.8c1.18.06 2 .7 2.72.75.98-.2 1.92-.77 2.98-.7 1.27.1 2.23.58 2.86 1.48-2.63 1.57-2.01 5.01.36 5.97-.48 1.28-.72 1.85-1.42 2.98zM12.12 8.74c-.14-2.35 1.76-4.38 3.93-4.54.32 2.63-2.33 4.72-3.93 4.54z"/>
+            </svg>
+            Continue with Apple
+          </button>
+
+          {/* Facebook */}
+          <button
+            onClick={() => setLocalError('Facebook Login requires Facebook App credentials. Please configure them in Settings.')}
+            className="w-full py-3 px-4 bg-[#1877F2] text-white rounded-[24px] text-sm font-medium hover:bg-[#166fe5] transition-colors flex items-center justify-center gap-3"
+            data-testid="facebook-signup-btn"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+            Continue with Facebook
+          </button>
+        </div>
+
+        <div className="text-center text-sm text-[#6b7280] mt-5">
+          Already have an account?{' '}
+          <Link to="/login" className="font-medium text-[#1a56db] hover:underline" data-testid="login-link">
+            Sign in
+          </Link>
         </div>
       </div>
     </div>

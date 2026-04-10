@@ -3,21 +3,42 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
-  const { initiateGoogleLogin, isAuthenticated } = useAuth();
+  const { initiateGoogleLogin, loginWithEmail, isAuthenticated, error, clearError } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [localError, setLocalError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if already authenticated
   React.useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
 
-  const handleGoogleLogin = () => {
-    initiateGoogleLogin();
+  React.useEffect(() => {
+    clearError();
+  }, []);
+
+  const handleEmailLogin = async (e) => {
+    e.preventDefault();
+    setLocalError('');
+    if (!email.trim() || !password.trim()) {
+      setLocalError('Please enter your email and password');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await loginWithEmail(email, password);
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      setLocalError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const displayError = localError || error;
 
   return (
     <div className="auth-wrap">
@@ -32,7 +53,13 @@ const Login = () => {
           Sign in to your account
         </div>
 
-        <div className="space-y-4">
+        {displayError && (
+          <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700" data-testid="login-error">
+            {displayError}
+          </div>
+        )}
+
+        <form onSubmit={handleEmailLogin} className="space-y-4">
           <div>
             <label className="form-label">Email</label>
             <input
@@ -49,7 +76,7 @@ const Login = () => {
             <input
               type="password"
               className="form-input"
-              placeholder="••••••••"
+              placeholder="Min. 8 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               data-testid="login-password-input"
@@ -57,25 +84,31 @@ const Login = () => {
           </div>
 
           <button
-            className="w-full btn-pill btn-blue py-3"
+            type="submit"
+            className="w-full btn-pill btn-blue py-3 flex items-center justify-center gap-2"
             data-testid="login-submit-btn"
-            onClick={() => handleGoogleLogin()}
+            disabled={isLoading}
           >
-            Sign in
+            {isLoading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : 'Sign in'}
           </button>
+        </form>
 
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#ebebeb]"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-[#9ca3af]">or</span>
-            </div>
+        <div className="relative my-5">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-[#ebebeb]"></div>
           </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-[#9ca3af]">or continue with</span>
+          </div>
+        </div>
 
+        <div className="space-y-3">
+          {/* Google */}
           <button
-            onClick={handleGoogleLogin}
-            className="w-full py-3 px-4 bg-[#f5f5f5] text-[#333] rounded-[24px] text-sm font-medium hover:bg-[#eee] transition-colors flex items-center justify-center gap-2"
+            onClick={initiateGoogleLogin}
+            className="w-full py-3 px-4 bg-[#f5f5f5] text-[#333] rounded-[24px] text-sm font-medium hover:bg-[#eee] transition-colors flex items-center justify-center gap-3"
             data-testid="google-login-btn"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -87,12 +120,36 @@ const Login = () => {
             Continue with Google
           </button>
 
-          <div className="text-center text-sm text-[#6b7280] mt-4">
-            Don't have an account?{' '}
-            <Link to="/signup" className="font-medium text-[#1a56db] hover:underline" data-testid="signup-link">
-              Sign up free
-            </Link>
-          </div>
+          {/* Apple */}
+          <button
+            onClick={() => setLocalError('Apple Sign In requires Apple Developer credentials. Please configure them in Settings.')}
+            className="w-full py-3 px-4 bg-[#000000] text-white rounded-[24px] text-sm font-medium hover:bg-[#1a1a1a] transition-colors flex items-center justify-center gap-3"
+            data-testid="apple-login-btn"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
+              <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.53-3.23 0-1.44.62-2.2.44-3.06-.4C3.79 16.17 4.36 9.02 8.55 8.8c1.18.06 2 .7 2.72.75.98-.2 1.92-.77 2.98-.7 1.27.1 2.23.58 2.86 1.48-2.63 1.57-2.01 5.01.36 5.97-.48 1.28-.72 1.85-1.42 2.98zM12.12 8.74c-.14-2.35 1.76-4.38 3.93-4.54.32 2.63-2.33 4.72-3.93 4.54z"/>
+            </svg>
+            Continue with Apple
+          </button>
+
+          {/* Facebook */}
+          <button
+            onClick={() => setLocalError('Facebook Login requires Facebook App credentials. Please configure them in Settings.')}
+            className="w-full py-3 px-4 bg-[#1877F2] text-white rounded-[24px] text-sm font-medium hover:bg-[#166fe5] transition-colors flex items-center justify-center gap-3"
+            data-testid="facebook-login-btn"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+            Continue with Facebook
+          </button>
+        </div>
+
+        <div className="text-center text-sm text-[#6b7280] mt-5">
+          Don't have an account?{' '}
+          <Link to="/signup" className="font-medium text-[#1a56db] hover:underline" data-testid="signup-link">
+            Sign up free
+          </Link>
         </div>
       </div>
     </div>
