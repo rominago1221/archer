@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { Upload as UploadIcon, FileText, AlertCircle, Loader2, Camera, Smartphone, ArrowRight, Scale } from 'lucide-react';
+import { Upload as UploadIcon, FileText, AlertCircle, Loader2, Camera, Smartphone, ArrowRight, Scale, ExternalLink, BookOpen } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -450,6 +450,42 @@ const Upload = () => {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Recent legal updates */}
+                {analysis.recent_case_law?.length > 0 && (
+                  <div className="mb-5" data-testid="recent-case-law">
+                    <div className="flex items-center gap-2 mb-3">
+                      <BookOpen size={14} className="text-[#16a34a]" />
+                      <div className="text-sm font-medium text-[#111827]">Recent legal updates</div>
+                    </div>
+                    <div className="space-y-2">
+                      {analysis.recent_case_law.map((law, i) => (
+                        <div key={i} className="bg-[#f8fdf8] border border-[#d1fae5] rounded-xl p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="text-xs font-medium text-[#111827]">{law.case_name}</div>
+                            {law.source_url && (
+                              <a href={law.source_url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
+                                <ExternalLink size={12} className="text-[#16a34a]" />
+                              </a>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-[#6b7280] mt-1">{law.court} &middot; {law.date}</div>
+                          {law.ruling_summary && (
+                            <div className="text-[11px] text-[#374151] mt-1.5 leading-relaxed">{law.ruling_summary}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Case law badge */}
+                {analysis.case_law_updated && (
+                  <div className="flex items-center gap-1.5 mb-4 px-3 py-1.5 bg-[#f0fdf4] border border-[#bbf7d0] rounded-full w-fit" data-testid="case-law-badge">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
+                    <span className="text-[10px] font-medium text-[#16a34a]">Updated with latest case law — {analysis.case_law_updated}</span>
                   </div>
                 )}
 

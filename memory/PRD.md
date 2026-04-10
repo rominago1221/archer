@@ -38,7 +38,7 @@ Build a complete, production-ready SaaS web application called "Jasper" — a le
 - Profile management with notification/privacy settings
 - Cases CRUD with risk score tracking
 - Document upload with Emergent object storage (PDF, DOCX, TXT, EML)
-- **Advanced 5-Pass AI Analysis System** (claude-sonnet-4-20250514)
+- **Advanced 5-Pass AI Analysis System** (claude-sonnet-4-20250514) with web_search tool + CourtListener real-time jurisprudence
 - Static jurisprudence database
 - PDF text extraction using pdfplumber
 - Lawyer management with seeded data (6 lawyers)

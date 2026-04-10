@@ -1,6 +1,7 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Response, Header, Query, Request, Form
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
+import asyncio
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
@@ -183,6 +184,8 @@ class Case(BaseModel):
     user_rights: List[dict] = []
     opposing_weaknesses: List[dict] = []
     documents_to_gather: List[dict] = []
+    recent_case_law: List[dict] = []
+    case_law_updated: Optional[str] = None
 
 class Document(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -586,29 +589,106 @@ def load_jurisprudence(case_type: str, document_type: str) -> str:
     return ""
 
 
-async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 2000) -> dict:
-    """Make a single Claude API call and return parsed JSON"""
-    async with httpx.AsyncClient() as http_client:
-        response = await http_client.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "Content-Type": "application/json",
-                "x-api-key": ANTHROPIC_API_KEY,
-                "anthropic-version": "2023-06-01"
-            },
-            json={
-                "model": "claude-sonnet-4-20250514",
-                "max_tokens": max_tokens,
-                "system": system_prompt,
-                "messages": [{"role": "user", "content": user_message}]
-            },
-            timeout=90.0
-        )
-        response.raise_for_status()
-        data = response.json()
-        text = data["content"][0]["text"]
-        text = text.replace("```json", "").replace("```", "").strip()
-        return json.loads(text)
+async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 2000, use_web_search: bool = False) -> dict:
+    """Make a single Claude API call and return parsed JSON, with retries"""
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient() as http_client:
+                payload = {
+                    "model": "claude-sonnet-4-20250514",
+                    "max_tokens": max_tokens,
+                    "system": system_prompt,
+                    "messages": [{"role": "user", "content": user_message}]
+                }
+                if use_web_search:
+                    payload["tools"] = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 3}]
+                
+                response = await http_client.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-api-key": ANTHROPIC_API_KEY,
+                        "anthropic-version": "2023-06-01"
+                    },
+                    json=payload,
+                    timeout=120.0
+                )
+                response.raise_for_status()
+                data = response.json()
+                # Extract text from content blocks (web search returns multiple blocks)
+                text = ""
+                for block in data.get("content", []):
+                    if block.get("type") == "text":
+                        text += block["text"]
+                text = text.replace("```json", "").replace("```", "").strip()
+                return json.loads(text)
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in (429, 529) and attempt < 2:
+                wait = (attempt + 1) * 5
+                logger.warning(f"Claude API {e.response.status_code}, retrying in {wait}s (attempt {attempt+1}/3)")
+                await asyncio.sleep(wait)
+                continue
+            raise
+        except json.JSONDecodeError:
+            if attempt < 2:
+                logger.warning(f"JSON parse error, retrying (attempt {attempt+1}/3)")
+                await asyncio.sleep(3)
+                continue
+            raise
+
+
+async def fetch_courtlistener_opinions(case_type: str, state: str = "") -> list:
+    """Fetch recent court opinions from CourtListener API"""
+    type_to_query = {
+        "housing": "eviction tenant landlord",
+        "employment": "wrongful termination employment",
+        "debt": "debt collection FDCPA",
+        "nda": "non-disclosure agreement trade secret",
+        "contract": "breach of contract",
+        "demand": "demand letter civil dispute",
+        "court": "motion to dismiss summary judgment",
+        "consumer": "consumer protection refund",
+        "immigration": "immigration visa employment authorization",
+        "family": "family law custody support",
+    }
+    query = type_to_query.get(case_type, case_type)
+    if state:
+        query += f" {state}"
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://www.courtlistener.com/api/rest/v4/search/",
+                params={
+                    "type": "o",
+                    "q": query,
+                    "order_by": "dateFiled desc",
+                    "format": "json"
+                },
+                timeout=15.0,
+                headers={"User-Agent": "Jasper-Legal-AI/1.0"}
+            )
+            if response.status_code != 200:
+                logger.warning(f"CourtListener API returned {response.status_code}")
+                return []
+            
+            data = response.json()
+            results = data.get("results", [])[:3]
+            opinions = []
+            for r in results:
+                opinions.append({
+                    "case_name": r.get("caseName", "Unknown case"),
+                    "date_filed": r.get("dateFiled", ""),
+                    "court": r.get("court", ""),
+                    "snippet": (r.get("snippet", "") or "")[:300],
+                    "url": f"https://www.courtlistener.com{r.get('absolute_url', '')}" if r.get("absolute_url") else None,
+                    "cite_count": r.get("citeCount", 0)
+                })
+            logger.info(f"CourtListener: fetched {len(opinions)} opinions for '{query}'")
+            return opinions
+    except Exception as e:
+        logger.warning(f"CourtListener API error: {e}")
+        return []
 
 
 async def analyze_document_with_claude(extracted_text: str) -> dict:
@@ -622,8 +702,7 @@ async def analyze_document_with_claude(extracted_text: str) -> dict:
 
 
 async def analyze_document_advanced(extracted_text: str, user_context: str = "") -> dict:
-    """Advanced 5-pass analysis system"""
-    import asyncio
+    """Advanced 5-pass analysis system with real-time jurisprudence"""
     try:
         # Build user context supplement for Pass 1
         context_supplement = ""
@@ -639,7 +718,6 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "")
 
         # Load jurisprudence based on facts
         doc_type = facts.get("document_type", "other")
-        # Determine case type from doc type mapping
         doc_to_case = {
             "eviction_notice": "housing", "lease": "housing",
             "employment_contract": "employment",
@@ -650,43 +728,71 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "")
         inferred_case_type = doc_to_case.get(doc_type, "other")
         jurisprudence_text = load_jurisprudence(inferred_case_type, doc_type)
 
-        # PASS 2: Legal analysis
-        logger.info("Advanced analysis: Pass 2 — Legal analysis")
+        # Fetch real-time case law from CourtListener (parallel with Pass 2 prep)
+        logger.info("Advanced analysis: Fetching real-time case law from CourtListener")
+        state = facts.get("jurisdiction", facts.get("state", ""))
+        courtlistener_opinions = await fetch_courtlistener_opinions(inferred_case_type, state)
+        
+        # Build real-time case law context for Claude
+        realtime_law_context = ""
+        if courtlistener_opinions:
+            realtime_law_context = "\n\nRECENT COURT DECISIONS (from CourtListener — real-time data):\n"
+            for i, op in enumerate(courtlistener_opinions, 1):
+                realtime_law_context += f"{i}. {op['case_name']} (Filed: {op['date_filed']}, Court: {op['court']})\n"
+                if op['snippet']:
+                    clean_snippet = op['snippet'].replace('<em>', '').replace('</em>', '')
+                    realtime_law_context += f"   Excerpt: {clean_snippet}\n"
+            realtime_law_context += "\nConsider these recent decisions when assessing the user's legal position.\n"
+
+        # PASS 2: Legal analysis (with web search + real-time case law)
+        logger.info("Advanced analysis: Pass 2 — Legal analysis (with web search)")
         legal_analysis = await call_claude(
             SENIOR_ATTORNEY_PERSONA,
             PASS2_PROMPT.format(
                 facts_json=json.dumps(facts, indent=2),
-                jurisprudence_section=jurisprudence_text
-            ),
-            max_tokens=3000
+                jurisprudence_section=jurisprudence_text + realtime_law_context
+            ) + "\n\nIMPORTANT: Search the web for the most recent court decisions and legal updates relevant to this case type and jurisdiction. Cite any relevant recent rulings.",
+            max_tokens=3000,
+            use_web_search=True
         )
 
         facts_str = json.dumps(facts, indent=2)
         analysis_str = json.dumps(legal_analysis, indent=2)
 
-        # PASS 3, 4A, 4B in parallel
+        # PASS 3, 4A, 4B — staggered to avoid rate limits
         logger.info("Advanced analysis: Pass 3+4A+4B — Strategy + Battle Preview")
-        strategy_task = call_claude(
+        strategy = await call_claude(
             SENIOR_ATTORNEY_PERSONA,
             PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
             max_tokens=2500
         )
-        user_args_task = call_claude(
+        user_arguments = await call_claude(
             PASS4A_SYSTEM,
             PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
             max_tokens=1500
         )
-        opposing_args_task = call_claude(
+        opposing_arguments = await call_claude(
             PASS4B_SYSTEM,
             PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
             max_tokens=1500
         )
 
-        strategy, user_arguments, opposing_arguments = await asyncio.gather(
-            strategy_task, user_args_task, opposing_args_task
-        )
-
         logger.info("Advanced analysis: All 5 passes complete")
+
+        # Build recent_case_law for frontend display
+        recent_case_law = []
+        for op in courtlistener_opinions:
+            clean_snippet = (op.get("snippet", "") or "").replace("<em>", "").replace("</em>", "")
+            recent_case_law.append({
+                "case_name": op["case_name"],
+                "date": op["date_filed"],
+                "court": op["court"],
+                "ruling_summary": clean_snippet[:200] if clean_snippet else "Decision text available at source.",
+                "source_url": op.get("url"),
+                "cite_count": op.get("cite_count", 0)
+            })
+
+        now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
         # Combine results into standard format + advanced data
         return {
@@ -722,14 +828,33 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "")
             "battle_preview": {
                 "user_side": user_arguments,
                 "opposing_side": opposing_arguments
-            }
+            },
+            # Real-time jurisprudence
+            "recent_case_law": recent_case_law,
+            "case_law_updated": now_date
         }
 
     except Exception as e:
         logger.error(f"Advanced analysis error: {e}")
         # Fallback to single-pass
         logger.info("Falling back to single-pass analysis")
-        return await analyze_document_with_claude(extracted_text)
+        fallback = await analyze_document_with_claude(extracted_text)
+        # Try to add CourtListener data even in fallback
+        try:
+            cl_opinions = await fetch_courtlistener_opinions(fallback.get("case_type", "other"))
+            if cl_opinions:
+                fallback["recent_case_law"] = [{
+                    "case_name": op["case_name"],
+                    "date": op["date_filed"],
+                    "court": op["court"],
+                    "ruling_summary": (op.get("snippet","") or "").replace("<em>","").replace("</em>","")[:200],
+                    "source_url": op.get("url"),
+                    "cite_count": op.get("cite_count", 0)
+                } for op in cl_opinions]
+                fallback["case_law_updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        except Exception:
+            pass
+        return fallback
 
 
 def _default_analysis():
@@ -1488,6 +1613,8 @@ async def upload_document(
                         "user_rights": analysis.get("user_rights", []),
                         "opposing_weaknesses": analysis.get("opposing_weaknesses", []),
                         "documents_to_gather": analysis.get("documents_to_gather", []),
+                        "recent_case_law": analysis.get("recent_case_law", []),
+                        "case_law_updated": analysis.get("case_law_updated"),
                         "updated_at": now
                     },
                     "$push": {"risk_score_history": history_entry}
@@ -1552,6 +1679,8 @@ async def upload_document(
             "lawyer_recommendation": analysis.get("lawyer_recommendation") if analysis else None,
             "user_rights": analysis.get("user_rights", []) if analysis else [],
             "opposing_weaknesses": analysis.get("opposing_weaknesses", []) if analysis else [],
+            "recent_case_law": analysis.get("recent_case_law", []) if analysis else [],
+            "case_law_updated": analysis.get("case_law_updated") if analysis else None,
             "documents_to_gather": analysis.get("documents_to_gather", []) if analysis else [],
             "document_count": 1,
             "created_at": now,
@@ -2705,6 +2834,8 @@ async def get_shared_case(token: str):
         "procedural_defects": case_doc.get("procedural_defects", []),
         "key_insight": case_doc.get("key_insight"),
         "leverage_points": case_doc.get("leverage_points", []),
+        "recent_case_law": case_doc.get("recent_case_law", []),
+        "case_law_updated": case_doc.get("case_law_updated"),
     }
 
     # Get document names only (not content)

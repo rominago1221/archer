@@ -792,6 +792,44 @@ const CaseDetail = () => {
           {/* Probability Breakdown */}
           <ProbabilityBreakdown probability={caseData.success_probability} />
 
+          {/* Recent Legal Updates */}
+          {caseData.recent_case_law && caseData.recent_case_law.length > 0 && (
+            <div className="card p-5" data-testid="recent-case-law-section">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-[#f0fdf4] flex items-center justify-center">
+                    <Scale size={14} className="text-[#16a34a]" />
+                  </div>
+                  <div className="text-sm font-medium">Recent legal updates</div>
+                </div>
+                {caseData.case_law_updated && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#f0fdf4] border border-[#bbf7d0] rounded-full" data-testid="case-law-badge">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
+                    <span className="text-[10px] font-medium text-[#16a34a]">Updated with latest case law — {caseData.case_law_updated}</span>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                {caseData.recent_case_law.map((law, i) => (
+                  <div key={i} className="bg-[#f8fdf8] border border-[#d1fae5] rounded-xl p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="text-xs font-medium text-[#111827]">{law.case_name}</div>
+                      {law.source_url && (
+                        <a href={law.source_url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0" data-testid={`case-law-link-${i}`}>
+                          <ExternalLink size={12} className="text-[#16a34a]" />
+                        </a>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-[#6b7280] mt-1">{law.court} &middot; {law.date}</div>
+                    {law.ruling_summary && (
+                      <div className="text-[11px] text-[#374151] mt-1.5 leading-relaxed">{law.ruling_summary}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Procedural Defects */}
           {caseData.procedural_defects && caseData.procedural_defects.length > 0 && (
             <div className="card p-5" data-testid="procedural-defects">
