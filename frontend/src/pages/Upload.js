@@ -22,6 +22,7 @@ const Upload = () => {
   const [error, setError] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [userContext, setUserContext] = useState('');
 
   const fetchCases = useCallback(async () => {
     try {
@@ -121,6 +122,9 @@ const Upload = () => {
       formData.append('file', file);
       if (selectedCaseId) {
         formData.append('case_id', selectedCaseId);
+      }
+      if (userContext.trim()) {
+        formData.append('user_context', userContext.trim());
       }
 
       // Start upload in parallel with progress simulation
@@ -261,6 +265,28 @@ const Upload = () => {
                   {type}
                 </span>
               ))}
+            </div>
+
+            {/* User Context Textarea */}
+            <div className="card p-4 mb-4" data-testid="user-context-section">
+              <div className="text-sm font-medium text-[#111827] mb-1">Tell Jasper about your situation <span className="text-[#9ca3af] font-normal">(optional)</span></div>
+              <div className="text-xs text-[#6b7280] mb-3">Your context helps Jasper analyze more accurately.</div>
+              <textarea
+                value={userContext}
+                onChange={(e) => {
+                  if (e.target.value.length <= 500) setUserContext(e.target.value);
+                }}
+                placeholder="Example: I have been renting this apartment for 2 years, always paid on time, I have receipts. The landlord is trying to evict me but I think it's because I complained about repairs..."
+                className="form-input min-h-[100px] resize-none text-sm"
+                maxLength={500}
+                disabled={uploading || scanning}
+                data-testid="user-context-input"
+              />
+              <div className="flex justify-end mt-1.5">
+                <span className={`text-xs ${userContext.length >= 450 ? 'text-[#d97706]' : 'text-[#9ca3af]'}`} data-testid="char-counter">
+                  {userContext.length}/500
+                </span>
+              </div>
             </div>
 
             {/* Mobile Camera Scanner */}

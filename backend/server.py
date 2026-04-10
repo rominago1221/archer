@@ -568,15 +568,20 @@ async def analyze_document_with_claude(extracted_text: str) -> dict:
         return _default_analysis()
 
 
-async def analyze_document_advanced(extracted_text: str) -> dict:
+async def analyze_document_advanced(extracted_text: str, user_context: str = "") -> dict:
     """Advanced 5-pass analysis system"""
     import asyncio
     try:
+        # Build user context supplement for Pass 1
+        context_supplement = ""
+        if user_context:
+            context_supplement = f"\n\nADDITIONAL CONTEXT PROVIDED BY THE USER:\n{user_context}\n(Use this context to better understand the situation, identify the user's role, and extract more accurate facts.)"
+
         # PASS 1: Fact extraction
         logger.info("Advanced analysis: Pass 1 — Fact extraction")
         facts = await call_claude(
             SENIOR_ATTORNEY_PERSONA,
-            PASS1_PROMPT.format(document_text=extracted_text[:15000])
+            PASS1_PROMPT.format(document_text=extracted_text[:15000]) + context_supplement
         )
 
         # Load jurisprudence based on facts
@@ -1250,7 +1255,8 @@ async def get_case_documents(case_id: str, current_user: User = Depends(get_curr
 @api_router.post("/documents/upload")
 async def upload_document(
     file: UploadFile = File(...),
-    case_id: Optional[str] = None,
+    case_id: Optional[str] = Form(None),
+    user_context: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user)
 ):
     """Upload and analyze a document"""
@@ -1304,7 +1310,10 @@ async def upload_document(
     # Analyze with Claude (Advanced 5-pass system)
     analysis = None
     if extracted_text:
-        analysis = await analyze_document_advanced(extracted_text)
+        context_str = ""
+        if user_context and user_context.strip():
+            context_str = user_context.strip()[:500]
+        analysis = await analyze_document_advanced(extracted_text, user_context=context_str)
     
     # Create or update case
     if case_id:
