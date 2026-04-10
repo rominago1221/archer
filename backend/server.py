@@ -19,6 +19,8 @@ import requests
 import base64
 import bcrypt
 import docx
+import fitz  # pymupdf for PDF→image conversion
+from PIL import Image
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
 
 ROOT_DIR = Path(__file__).parent
@@ -1807,6 +1809,100 @@ def extract_text_from_docx(file_bytes: bytes) -> str:
         logger.error(f"DOCX extraction error: {e}")
         return ""
 
+
+def pdf_pages_to_images(file_bytes: bytes, max_pages: int = 5) -> list:
+    """Convert PDF pages to JPEG base64 images using pymupdf"""
+    images = []
+    try:
+        pdf_doc = fitz.open(stream=file_bytes, filetype="pdf")
+        page_count = min(len(pdf_doc), max_pages)
+        for i in range(page_count):
+            page = pdf_doc[i]
+            pix = page.get_pixmap(dpi=200)
+            img_bytes = pix.tobytes("jpeg")
+            b64 = base64.b64encode(img_bytes).decode("utf-8")
+            images.append(b64)
+        pdf_doc.close()
+        logger.info(f"Converted {page_count} PDF pages to images")
+    except Exception as e:
+        logger.error(f"PDF to image conversion error: {e}")
+    return images
+
+
+def image_file_to_base64(file_bytes: bytes, content_type: str) -> str:
+    """Convert an image file to JPEG base64 for Claude Vision"""
+    try:
+        img = Image.open(io.BytesIO(file_bytes))
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=85)
+        return base64.b64encode(buf.getvalue()).decode("utf-8")
+    except Exception as e:
+        logger.error(f"Image conversion error: {e}")
+        return base64.b64encode(file_bytes).decode("utf-8")
+
+
+async def analyze_document_vision(image_b64_list: list, system_prompt: str = None, user_context: str = "") -> dict:
+    """Analyze document images using Claude Vision API (for scanned/image docs)"""
+    if not system_prompt:
+        system_prompt = "You are an OCR + legal analysis expert. First, read ALL text visible in the document images. Then analyze the extracted text as a legal document.\n\n" + CLAUDE_SYSTEM_PROMPT
+    
+    content_blocks = []
+    for i, b64 in enumerate(image_b64_list):
+        content_blocks.append({
+            "type": "image",
+            "source": {"type": "base64", "media_type": "image/jpeg", "data": b64}
+        })
+    
+    prompt_text = "Read ALL text from this scanned legal document and analyze it completely. Return the analysis as JSON only."
+    if user_context:
+        prompt_text += f"\n\nUser context: {user_context}"
+    if len(image_b64_list) > 1:
+        prompt_text = f"This document has {len(image_b64_list)} pages. Read ALL text from every page, then analyze the complete document as a single legal document. Return the analysis as JSON only."
+        if user_context:
+            prompt_text += f"\n\nUser context: {user_context}"
+    
+    content_blocks.append({"type": "text", "text": prompt_text})
+    
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient() as http_client:
+                response = await http_client.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-api-key": ANTHROPIC_API_KEY,
+                        "anthropic-version": "2023-06-01"
+                    },
+                    json={
+                        "model": "claude-sonnet-4-20250514",
+                        "max_tokens": 4000,
+                        "system": system_prompt,
+                        "messages": [{"role": "user", "content": content_blocks}]
+                    },
+                    timeout=120.0
+                )
+                response.raise_for_status()
+                data = response.json()
+                text = ""
+                for block in data.get("content", []):
+                    if block.get("type") == "text":
+                        text += block["text"]
+                text = text.replace("```json", "").replace("```", "").strip()
+                return json.loads(text)
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in (429, 529) and attempt < 2:
+                await asyncio.sleep((attempt + 1) * 5)
+                continue
+            raise
+        except json.JSONDecodeError:
+            if attempt < 2:
+                await asyncio.sleep(3)
+                continue
+            raise
+    return _default_analysis()
+
 # ================== Auth Endpoints ==================
 
 @api_router.post("/auth/session")
@@ -2232,25 +2328,39 @@ async def upload_document(
     # Read file
     file_bytes = await file.read()
     file_ext = file.filename.split(".")[-1].lower() if "." in file.filename else "bin"
+    content_type = file.content_type or "application/octet-stream"
+    
+    # Normalize HEIC → JPEG
+    is_image_file = file_ext in ["jpg", "jpeg", "png", "heic", "heif", "webp"]
+    if file_ext in ["heic", "heif"]:
+        file_ext = "jpg"
+        content_type = "image/jpeg"
     
     # Upload to storage
     storage_path = f"{APP_NAME}/documents/{current_user.user_id}/{uuid.uuid4()}.{file_ext}"
     try:
-        put_object(storage_path, file_bytes, file.content_type or "application/octet-stream")
+        put_object(storage_path, file_bytes, content_type)
     except Exception as e:
         logger.error(f"Storage upload failed: {e}")
         storage_path = None
     
-    # Extract text
+    # Extract text (for text-based documents)
     extracted_text = ""
-    if file_ext == "pdf":
+    use_vision = False
+    
+    if is_image_file:
+        use_vision = True
+        logger.info(f"Image file detected ({file_ext}), routing to Claude Vision")
+    elif file_ext == "pdf":
         extracted_text = extract_text_from_pdf(file_bytes)
+        if len(extracted_text.strip()) < 100:
+            use_vision = True
+            logger.info(f"PDF has insufficient text ({len(extracted_text.strip())} chars), routing to Claude Vision")
     elif file_ext in ["docx"]:
         extracted_text = extract_text_from_docx(file_bytes)
     elif file_ext in ["txt", "text", "eml"]:
         extracted_text = file_bytes.decode("utf-8", errors="ignore")
     elif file_ext in ["doc"]:
-        # .doc is legacy format - try as plain text fallback
         extracted_text = file_bytes.decode("utf-8", errors="ignore")
     
     if not extracted_text.strip():
@@ -2283,13 +2393,33 @@ async def upload_document(
     user_language = current_user.language or "en"
     is_belgian = user_country == "BE"
 
-    if extracted_text:
+    if extracted_text or use_vision:
         context_str = ""
         if user_context and user_context.strip():
             context_str = user_context.strip()[:500]
-        if is_contract_guard:
+        
+        if use_vision:
+            # Claude Vision path — for scanned PDFs and image files
+            image_b64_list = []
+            if is_image_file:
+                image_b64_list = [image_file_to_base64(file_bytes, content_type)]
+            elif file_ext == "pdf":
+                image_b64_list = pdf_pages_to_images(file_bytes, max_pages=5)
+            
+            if image_b64_list:
+                try:
+                    if is_contract_guard:
+                        analysis = await analyze_document_vision(image_b64_list, user_context=context_str)
+                    elif is_belgian:
+                        be_system = "You are an OCR + legal analysis expert specializing in Belgian law. First, read ALL text visible in the document images. Then analyze as a Belgian legal document.\n\n" + CLAUDE_SYSTEM_PROMPT
+                        analysis = await analyze_document_vision(image_b64_list, system_prompt=be_system, user_context=context_str)
+                    else:
+                        analysis = await analyze_document_vision(image_b64_list, user_context=context_str)
+                except Exception as e:
+                    logger.error(f"Vision analysis failed: {e}")
+                    analysis = None
+        elif is_contract_guard:
             if is_belgian:
-                # Belgian Contract Guard — use Belgian-specific persona
                 analysis = await analyze_contract_guard(extracted_text, user_context=context_str, country="BE", region=user_region, language=user_language)
             else:
                 analysis = await analyze_contract_guard(extracted_text, user_context=context_str)
@@ -2478,7 +2608,8 @@ async def upload_document(
         "analysis": analysis,
         "analysis_mode": analysis_mode,
         "file_name": file.filename,
-        "status": "analyzed"
+        "status": "analyzed",
+        "vision_mode": use_vision
     }
 
 @api_router.get("/documents/{document_id}/download")

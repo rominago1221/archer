@@ -91,6 +91,8 @@ const Upload = () => {
     setError(null);
     setResult(null);
 
+    const isImageUpload = /\.(jpg|jpeg|png|heic|heif|webp)$/i.test(file.name);
+
     try {
       setUploadStage('reading');
       const formData = new FormData();
@@ -105,9 +107,9 @@ const Upload = () => {
       });
 
       const delay = (ms) => new Promise(r => setTimeout(r, ms));
-      await delay(3000);
+      await delay(isImageUpload ? 2000 : 3000);
       setUploadStage('analyzing');
-      await delay(5000);
+      await delay(isImageUpload ? 8000 : 5000);
       setUploadStage('scoring');
 
       const response = await uploadPromise;
@@ -174,10 +176,12 @@ const Upload = () => {
   const isContractGuard = analysisMode === 'contract_guard';
   const isBelgian = user?.country === 'BE';
   const analysis = result?.analysis;
+  const isVisionMode = result?.vision_mode;
   const isContractGuardResult = result?.analysis_mode === 'contract_guard';
   const showUploadForm = !uploading && !result;
   const showLoading = uploading || scanning;
   const showResult = !!result;
+  const isImageFile = file && /\.(jpg|jpeg|png|heic|heif|webp)$/i.test(file.name);
 
   return (
     <div data-testid="upload-page">
@@ -203,13 +207,18 @@ const Upload = () => {
         {showLoading && (
           <div className={`card p-8 text-center ${isContractGuard ? 'border-[#f59e0b]/30' : ''}`} data-testid="analysis-progress">
             <Loader2 size={36} className={`mx-auto mb-5 animate-spin ${isContractGuard ? 'text-[#d97706]' : 'text-[#1a56db]'}`} />
-            <div className="text-base font-medium text-[#111827] mb-5">
-              {isContractGuard ? 'Analyzing contract for negotiation' : 'Analyzing your document'}
+            <div className="text-base font-medium text-[#111827] mb-2">
+              {isContractGuard ? 'Analyzing contract for negotiation' : isImageFile ? 'Scanning document with image recognition' : 'Analyzing your document'}
             </div>
+            {isImageFile && (
+              <div className="mb-4 px-4 py-2 bg-[#eff6ff] rounded-lg text-xs text-[#1d4ed8]" data-testid="vision-mode-indicator">
+                This appears to be a scanned document. Jasper is using advanced image recognition to analyze it...
+              </div>
+            )}
             <div className="max-w-xs mx-auto space-y-3">
               {[
-                { key: 'reading', label: isContractGuard ? 'Reading contract clauses...' : 'Reading document...' },
-                { key: 'analyzing', label: isContractGuard ? 'Identifying negotiation points...' : 'Analyzing with AI...' },
+                { key: 'reading', label: isContractGuard ? 'Reading contract clauses...' : isImageFile ? 'Reading document image...' : 'Reading document...' },
+                { key: 'analyzing', label: isContractGuard ? 'Identifying negotiation points...' : isImageFile ? 'OCR + AI image analysis...' : 'Analyzing with AI...' },
                 { key: 'scoring', label: isContractGuard ? 'Scoring contract fairness...' : 'Generating Risk Score...' }
               ].map((step) => {
                 const stages = ['reading', 'analyzing', 'scoring', 'done'];
@@ -301,7 +310,7 @@ const Upload = () => {
                 type="file"
                 ref={fileInputRef}
                 onChange={(e) => handleFileSelect(e.target.files[0])}
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.eml"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.heic,.heif,.webp,.txt,.eml"
                 className="hidden"
                 data-testid="file-input"
               />
@@ -338,7 +347,7 @@ const Upload = () => {
 
             {/* File types */}
             <div className="flex items-center justify-center gap-3 mb-4 flex-wrap">
-              {['PDF', 'Word (.docx)', 'JPEG / PNG', 'Email (.eml)', 'Max 20MB'].map((type) => (
+              {['PDF', 'Word (.docx)', 'JPEG / PNG / HEIC', 'Email (.eml)', 'Max 20MB'].map((type) => (
                 <span key={type} className="px-3 py-1.5 bg-[#f5f5f5] text-[#6b7280] text-xs rounded-full">{type}</span>
               ))}
             </div>
@@ -434,7 +443,9 @@ const Upload = () => {
             </div>
             <div className="text-base font-medium text-[#111827] mb-2">Analysis could not be completed</div>
             <p className="text-sm text-[#6b7280] mb-4">
-              We couldn't extract enough text from this document to analyze it.
+              {isVisionMode
+                ? "The image quality was too low to extract text. Please try uploading a clearer photo or a higher-resolution scan."
+                : "We couldn't extract enough text from this document. Try uploading a clearer scan, a photo of the document, or a PDF with selectable text."}
             </p>
             <button onClick={handleReset} className="btn-pill btn-blue px-6" data-testid="try-again-btn">
               Upload another document
@@ -468,6 +479,7 @@ const Upload = () => {
             getDimensionColor={getDimensionColor}
             navigate={navigate}
             onReset={handleReset}
+            isVisionMode={isVisionMode}
           />
         )}
       </div>
@@ -749,9 +761,15 @@ const ContractGuardResult = ({ analysis, fileName, getNegotiationColor, getSever
 /* ============================================ */
 /* Standard Result Component (unchanged logic)  */
 /* ============================================ */
-const StandardResult = ({ result, analysis, file, getRiskColor, getDimensionColor, navigate, onReset }) => {
+const StandardResult = ({ result, analysis, file, getRiskColor, getDimensionColor, navigate, onReset, isVisionMode }) => {
   return (
     <div data-testid="analysis-result">
+      {isVisionMode && (
+        <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-[#eff6ff] border border-[#bfdbfe] rounded-xl" data-testid="vision-mode-badge">
+          <Camera size={14} className="text-[#1a56db]" />
+          <span className="text-xs text-[#1d4ed8] font-medium">Analyzed via image recognition (scanned document)</span>
+        </div>
+      )}
       <div className="card overflow-hidden mb-4">
         <div className="bg-[#1a56db] px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
