@@ -44,7 +44,7 @@ const Landing = () => {
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-[#ebebeb] z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="text-2xl font-bold text-[#1a56db]" style={{ fontFamily: 'Outfit, sans-serif' }}>Jasper</div>
+          <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '20px', fontWeight: 500, letterSpacing: '-0.5px', color: '#1a56db' }} data-testid="landing-logo">Jasper</div>
           <div className="hidden md:flex items-center gap-6 text-sm text-[#555]">
             <a href="#how" className="hover:text-[#1a56db]">How it works</a>
             <a href="#attorneys" className="hover:text-[#1a56db]">Attorneys</a>

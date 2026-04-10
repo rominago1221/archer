@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import AuthCallback from './components/AuthCallback';
@@ -20,6 +20,18 @@ import LegalChat from './pages/LegalChat';
 import SharedCase from './pages/SharedCase';
 import FloatingChatButton from './components/FloatingChatButton';
 import './App.css';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
+// Keep-alive: ping backend every 4 minutes to prevent cold starts
+const useKeepAlive = () => {
+  useEffect(() => {
+    const ping = () => fetch(`${BACKEND_URL}/api/health`).catch(() => {});
+    ping();
+    const id = setInterval(ping, 4 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+};
 
 // Component to handle session_id in URL hash
 const AppRouter = () => {

@@ -47,7 +47,7 @@ const Signup = () => {
   return (
     <div className="auth-wrap">
       <div className="auth-card">
-        <div className="text-3xl font-bold text-[#1a56db] text-center mb-6" style={{ fontFamily: 'Outfit, sans-serif' }}>
+        <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '28px', fontWeight: 500, letterSpacing: '-0.5px', color: '#1a56db', textAlign: 'center', marginBottom: '24px' }} data-testid="signup-logo">
           Jasper
         </div>
         <div className="text-xl font-semibold text-center text-[#111827] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>

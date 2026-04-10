@@ -77,7 +77,7 @@ const SharedCase = () => {
     <div className="min-h-screen bg-[#f8f8f8]" data-testid="shared-case-page">
       {/* Header */}
       <div className="bg-white border-b border-[#ebebeb] px-6 py-3 flex items-center justify-between">
-        <div className="text-xl font-bold text-[#1a56db]" style={{ fontFamily: 'Outfit, sans-serif' }}>Jasper</div>
+        <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '20px', fontWeight: 500, letterSpacing: '-0.5px', color: '#1a56db' }} data-testid="shared-case-logo">Jasper</div>
         <span className="text-xs text-[#9ca3af] bg-[#f5f5f5] px-3 py-1 rounded-full">View only</span>
       </div>
 

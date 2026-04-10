@@ -25,7 +25,7 @@ const Sidebar = () => {
     <div className="sidebar" data-testid="sidebar">
       {/* Logo */}
       <div className="p-5 border-b border-[#ebebeb]">
-        <div className="text-2xl font-bold text-[#1a56db]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+        <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '20px', fontWeight: 500, letterSpacing: '-0.5px', color: '#1a56db' }} data-testid="sidebar-logo">
           Jasper
         </div>
       </div>
