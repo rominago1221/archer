@@ -145,7 +145,7 @@ const RiskHistoryChart = ({ history, currentScore, t }) => {
 
 // ========== MAIN COMPONENT ==========
 const CaseDetail = () => {
-  const { id: caseId } = useParams();
+  const { caseId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [caseData, setCaseData] = useState(null);
@@ -186,8 +186,8 @@ const CaseDetail = () => {
 
       const userCountry = user?.country || caseRes.data?.country || 'US';
       const caseType = caseRes.data?.type || 'other';
-      const ltRes = await axios.get(`${API}/letters/types/${caseType}?country=${userCountry}`, { withCredentials: true }).catch(() => ({ data: [] }));
-      setLetterTypes(ltRes.data || []);
+      const ltRes = await axios.get(`${API}/letters/types/${caseType}?country=${userCountry}`, { withCredentials: true }).catch(() => ({ data: { letter_types: [] } }));
+      setLetterTypes(ltRes.data?.letter_types || ltRes.data || []);
     } catch (err) {
       console.error('Failed to load case:', err);
     } finally {
