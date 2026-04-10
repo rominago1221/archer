@@ -35,8 +35,19 @@ Build a complete, production-ready SaaS web application called "Jasper" — a le
 
 ### Bug Fixes (Feb 2026)
 - **BUG 1**: All analysis outputs now enforce user's language via `get_language_instruction()` on every Claude prompt
-- **BUG 2**: Case model validators normalize `deadline` (dict→str) and `financial_exposure` (dict→str) preventing 500 errors
+- **BUG 2**: Case model validators normalize `deadline` (dict->str) and `financial_exposure` (dict->str) preventing 500 errors
 - **BUG 3**: All features available for Belgian users with French legal references inline
+
+### 8 Critical CaseDetail Bugs (Apr 2026) - ALL FIXED
+- **Bug 1**: AI Analysis empty -> Fixed: ai_summary, key_insight, ai_findings now display correctly
+- **Bug 2**: Wrong language UI -> Fixed: Full fr-BE/nl-BE/de-BE translation system in CaseDetail.js
+- **Bug 3**: Missing legal refs -> Fixed: Each finding shows inline legal_ref and jurisprudence
+- **Bug 4**: Negative deadline -> Fixed: Shows "DELAI DEPASSE" for past deadlines, "Action requise dans X jours" for future
+- **Bug 5**: Predictor infinite loading -> Fixed: 30s AbortController timeout
+- **Bug 6**: Filename as title -> Fixed: Backend prompts extract suggested_case_title from Claude
+- **Bug 7**: Type defaulting to Other -> Fixed: Backend prompts extract proper case_type
+- **Bug 8**: Response Letters missing desc -> Fixed: API response parsing (letter_types array extraction)
+- **useParams bug**: Fixed `{ id: caseId }` -> `{ caseId }` matching route param
 
 ### Integrations
 - Emergent Google OAuth, Emergent Object Storage
@@ -59,5 +70,5 @@ users, user_sessions, cases, documents, lawyers, lawyer_calls, letters, case_eve
 - [ ] Deadline Alerts (SMS/Email) — needs Twilio + SendGrid
 
 ### P3 (Future)
-- [ ] Refactor server.py (4500+ lines → modular routers)
+- [ ] Refactor server.py (4500+ lines -> modular routers)
 - [ ] Multi-Country expansion (more EU countries)
