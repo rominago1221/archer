@@ -17,8 +17,12 @@ Build a complete, production-ready SaaS web application called "Jasper" — a le
   - Regional routing: auto-loads correct jurisprudence based on detected document type + user region
   - Belgian scoring thresholds adapted per document type
 
-### Authentication
+### Authentication & Onboarding
 - Email/Password Auth + Google OAuth + session management
+- **Signup page with Country/Region/Language selector** (added Feb 2026)
+  - US users: default flow
+  - Belgium users: Region (Wallonie, Bruxelles-Capitale, Flandre, Communauté germanophone) + Language (FR/NL/DE)
+  - Auto-language detection based on region selection
 
 ### Core Features
 - Document upload & AI analysis (PDF, DOCX, TXT, EML), Document Scanner (mobile camera OCR)
@@ -49,15 +53,19 @@ users, user_sessions, cases, documents, lawyers, lawyer_calls, letters, case_eve
 
 ## Prioritized Backlog
 
-### P2 (Medium - Next)
+### P1 (High)
+- [ ] HelloSign / Dropbox Sign API integration (e-signature)
+- [ ] Stripe Checkout for Pro Plan subscriptions
+
+### P2 (Medium)
 - [ ] Full interface translation (FR/NL/DE) — navigation, dashboard, upload labels, error messages
 - [ ] Belgian document templates in library
 - [ ] Belgian chat suggestions by region/language
 - [ ] Real Gmail/Outlook OAuth, HelloSign e-signature
 - [ ] Date format DD/MM/YYYY for Belgian users
+- [ ] Deadline Alerts (SMS/Email) — requires Twilio + SendGrid keys
 
 ### P3 (Future)
-- [ ] Deadline Alerts (SMS/Email) — requires Twilio + SendGrid keys
 - [ ] Refactor server.py into modular routers (4500+ lines)
 - [ ] Multi-Country: Add UAE, more EU countries
 - [ ] Save generated letters to case history
