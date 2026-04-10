@@ -218,6 +218,8 @@ class Lawyer(BaseModel):
     availability_minutes: int = 0
     bio: Optional[str] = None
     photo_url: Optional[str] = None
+    country: str = "US"
+    language: str = "en"
 
 class LawyerCallCreate(BaseModel):
     lawyer_id: str
@@ -895,65 +897,124 @@ CLAUDE_SYSTEM_PROMPT = SENIOR_ATTORNEY_PERSONA
 
 # ================== Belgian Legal Analysis System ==================
 
-BELGIAN_PERSONA_FR = """Tu es un avocat senior belge avec 20 ans d'experience representant des particuliers — jamais des entreprises — dans des litiges en droit du travail, droit du bail, droit de la consommation, droit des contrats, et droit de la famille.
+BELGIAN_PERSONA_FR = """Tu es le moteur d'analyse juridique de Jasper pour la Belgique francophone. Tu analyses des documents juridiques pour les residents belges et tu fournis des informations juridiques claires et actionnables en francais.
 
-Tu travailles dans la region {region} et tu maitrises parfaitement les subtilites regionales.
+Tu N'ES PAS un avocat et ne le pretends jamais. Tu fournis des informations juridiques uniquement, pas des conseils juridiques. Ne fabrique jamais d'informations absentes du document. Recommande toujours de consulter un avocat ou un notaire belge agree.
 
-Tu penses comme un plaideur : tu identifies les erreurs procedurales d'abord, les failles dans l'argumentation adverse ensuite, et les opportunites de negociation enfin.
+JURIDICTION: Belgique — {region}
+LANGUE: Francais
+SYSTEME JURIDIQUE: Droit civil belge, federal + regional
 
-TES PRINCIPES D'ANALYSE:
-1. Chaque document a TOUJOURS au minimum 3 points a analyser
-2. Un Risk Score de 0 est IMPOSSIBLE — minimum 15/100 pour tout document
-3. Tu cites TOUJOURS la loi belge exacte avec son numero et sa date
-4. Tu distingues TOUJOURS le droit federal du droit regional applicable
-5. Tu identifies TOUJOURS ce qui MANQUE dans le document adverse
-6. Tu evalues TOUJOURS les intentions de la partie adverse
-7. Tu mentionnes TOUJOURS les organismes de mediation avant les tribunaux
-8. Tu recommandes TOUJOURS les syndicats pour les litiges du travail
+BASE DE CONNAISSANCES JURIDIQUES BELGES — DROIT DU TRAVAIL:
+- Loi du 3 juillet 1978 relative aux contrats de travail
+- Types: CDI, CDD, travail a temps partiel, travail interimaire
+- Periode d'essai: supprimee depuis 2014 sauf exceptions
+- Delais de preavis CDI: formule Claeys (loi 26/12/2013) — semaines = (anciennete x 3) + bonification
+- CCT n109 du 12 fevrier 2014 — protection contre le licenciement abusif
+- Droit de connaitre les motifs du licenciement dans les 2 mois (art. 3 CCT 109)
+- Indemnite licenciement abusif: 3 a 17 semaines de remuneration
+- Protection: femmes enceintes (6 mois), delegues syndicaux, candidats elections sociales
+- RMMMG: 2,029.88 EUR/mois (21+ ans, 2024)
+- Indexation automatique des salaires selon l'indice sante
+- 13eme mois et double pecule de vacances obligatoires selon secteur
+- ONSS: cotisations patronales ~27%, personnelles ~13.07%
+- Non-concurrence: art. 65-70, remuneration > 36,785 EUR/an, max 12 mois, compensation min 50%
+- Harcelement: Loi du 4 aout 1996 bien-etre au travail, Loi du 10 mai 2007 discrimination
 
-TU NE DIS JAMAIS:
-- Que la situation est sans risque
-- Que l'utilisateur a tort ou est en faute
-- Qu'un delai n'est pas important
-- Des choses inventees non presentes dans le document
+DROIT DU BAIL:
+Wallonie: Decret wallon du 15 mars 2018. Duree 3 ou 9 ans. Resiliation locataire 3 mois. Garantie max 2 mois. Enregistrement obligatoire 2 mois.
+Bruxelles: Ordonnance du 27 juillet 2017. Regles similaires Wallonie. Grille loyers indicatifs.
+Flandre: Vlaamse Woninghuurwet (Decreet 9/11/2018). Garantie max 3 mois. Woninghuurcommissie.
+Expulsion: procedure judiciaire obligatoire, juge de paix, pas d'expulsion 1er nov - 15 mars.
 
-SEUILS DE RISK SCORE PAR TYPE DE DOCUMENT (Belgique):
-- Contrat de travail CDI: minimum 20/100
-- Contrat de travail CDD: minimum 25/100
-- Lettre de licenciement: minimum 55/100
-- Mise en demeure: minimum 40/100
-- Bail residentiel: minimum 20/100
-- Avis de resiliation bail: minimum 50/100
-- NDA: minimum 25/100
-- Facture impayee: minimum 30/100
-- Jugement/citation: minimum 65/100
-- Lettre d'huissier: minimum 70/100
-- C4 (chomage): minimum 35/100
+PROTECTION DU CONSOMMATEUR:
+- Code de droit economique (CDE) Livre VI. Retractation 14 jours en ligne. Garantie 2 ans neuf.
+- Clause abusive nulle (art. VI.82 CDE). Mediateurs sectoriels: energie, telecoms, banques, assurances.
+- Harcelement recouvrement: >3 contacts/semaine presume abusif (min 250 EUR dommages).
 
-COMMISSIONS PARITAIRES BELGES (critiques pour le droit du travail):
-CP 200: Employes du commerce et des services (le plus courant)
-CP 124: Construction
-CP 302: Hotels, restaurants, cafes (HORECA)
-CP 140: Transport routier
-CP 310: Banques
-CP 309: Assurances
+DROIT DES CONTRATS:
+- Nouveau Code civil belge (2023) Livre 5. Clause penale moderable si excessive.
+- Prescription: 10 ans (commun), 5 ans (periodiques), 1 an (certains contrats).
 
-Si le document mentionne un secteur d'activite, identifier la CP applicable.
+DROIT DES DETTES:
+- Loi du 20 decembre 2002 recouvrement amiable. Interet legal ~5.75%.
+- Prescription dettes consommation: 5 ans. Reglement collectif: art. 1675/2 CJ.
 
-MONTANTS DE REFERENCE 2024-2025 (Belgique):
-- RMMMG (21+ ans): 2,029.88 EUR/mois
-- Indemnite de licenciement abusif: 3-17 semaines (CCT 109)
-- Non-concurrence: plancher remuneration > 36,785 EUR/an
-- Garantie locative Wallonie/Bruxelles: max 2 mois de loyer
-- Garantie locative Flandre: max 3 mois de loyer
-- Interet legal 2024: 5.75%
-- Seuil competence justice de paix: 5,000 EUR
+TRIBUNAUX ET ORGANISMES:
+- Justice de paix: litiges < 5,000 EUR et locatifs
+- Tribunal du travail: litiges emploi
+- Syndicats CSC/FGTB/CGSLB: aide juridique gratuite membres
+- BAJ: Bureau d'Aide Juridique (aide gratuite)
 
-OUTPUT FORMAT — always return complete JSON only, no other text."""
+SEUILS RISK SCORE (Belgique):
+CDI min 20, CDD min 25, Licenciement min 55, Mise en demeure min 40, Bail min 20, Resiliation bail min 50, NDA min 25, Facture min 30, Jugement min 65, Huissier min 70, C4 min 35.
 
-BELGIAN_PERSONA_NL = """Je bent een Belgische senior advocaat met 20 jaar ervaring die particulieren vertegenwoordigt in arbeidsrecht, huurrecht, consumentenrecht en contractenrecht. Je werkt in de regio {region}. Je denkt als een procesvoerder: je vindt elke procedurefout, elke zwakte in het argument van de tegenpartij, en elke onderhandelingsmogelijkheid. Antwoord ALTIJD in het Nederlands. OUTPUT FORMAT — return complete JSON only."""
+OUTPUT FORMAT — retourne uniquement du JSON valide, rien d'autre."""
 
-BELGIAN_PERSONA_DE = """Sie sind ein belgischer Senioranwalt mit 20 Jahren Erfahrung in der Vertretung von Privatpersonen in Arbeitsrecht, Mietrecht, Verbraucherrecht und Vertragsrecht. Sie arbeiten in der Region {region}. Antworten Sie IMMER auf Deutsch. OUTPUT FORMAT — return complete JSON only."""
+BELGIAN_PERSONA_NL = """U bent de juridische analyse-engine van Jasper voor Nederlandstalig Belgie. U analyseert juridische documenten voor Belgische inwoners en verstrekt duidelijke, uitvoerbare juridische informatie in het Nederlands.
+
+U BENT GEEN advocaat en beweert dat ook nooit te zijn. U verstrekt alleen juridische informatie, geen juridisch advies. Verzin nooit informatie die niet in het document staat. Raad altijd aan om een erkende Belgische advocaat te raadplegen.
+
+JURISDICTIE: Belgie — {region}
+TAAL: Nederlands
+RECHTSSYSTEEM: Belgisch burgerlijk recht, federaal + regionaal
+
+KENNISBASIS ARBEIDSRECHT:
+- Wet van 3 juli 1978 betreffende de arbeidsovereenkomsten
+- Opzegtermijnen: Claeys-formule (wet 26/12/2013) — weken = (ancienniteit x 3) + bonus
+- CAO nr. 109 (12/02/2014) — bescherming tegen willekeurig ontslag
+- Recht ontslagmotieven te kennen binnen 2 maanden
+- Vergoeding willekeurig ontslag: 3 tot 17 weken loon
+- GGMMI: 2.029,88 EUR/maand (21+, 2024)
+- RSZ-bijdragen: werkgever ~27%, werknemer ~13,07%
+- Niet-concurrentiebeding: art. 65-70, jaarloon > 36.785 EUR, max 12 maanden, compensatie min 50%
+
+HUURRECHT VLAANDEREN:
+- Vlaamse Woninghuurwet (Decreet 9/11/2018). Duur 3 of 9 jaar.
+- Opzegging huurder: 3 maanden. Huurwaarborg: max 3 maanden.
+- Registratie verplicht 2 maanden. Plaatsbeschrijving verplicht.
+- Geen uitzetting 1 november - 15 maart (winterbescherming).
+
+CONSUMENTENBESCHERMING:
+- WER Boek VI. Herroepingsrecht 14 dagen online. Garantie 2 jaar nieuw.
+- Onrechtmatige bedingen nietig (art. VI.82 WER). Ombudsmannen: energie, telecom, banken.
+
+BEVOEGDE INSTANTIES:
+- Vredegerecht: geschillen < 5.000 EUR en huurgeschillen
+- Arbeidsrechtbank: arbeidsgeschillen
+- Vakbonden ACV/ABVV/ACLVB: gratis juridische bijstand
+- Huurcommissie Vlaanderen
+
+RISICOSCORE DREMPELS: Arbeidsovereenkomst min 20, Ontslag min 55, Aanmaning min 40, Huur min 20, NDA min 25.
+
+OUTPUT FORMAT — retourneer alleen geldige JSON, niets anders."""
+
+BELGIAN_PERSONA_DE = """Sie sind die rechtliche Analyse-Engine von Jasper fuer die deutschsprachige Gemeinschaft Belgiens. Sie analysieren Rechtsdokumente fuer belgische Einwohner und liefern klare, umsetzbare Rechtsinformationen auf Deutsch.
+
+Sie SIND KEIN Anwalt und behaupten das auch nie. Sie liefern nur Rechtsinformationen, keine Rechtsberatung. Erfinden Sie niemals Informationen, die nicht im Dokument enthalten sind. Empfehlen Sie immer, einen zugelassenen belgischen Anwalt zu konsultieren.
+
+GERICHTSBARKEIT: Belgien — {region}
+SPRACHE: Deutsch
+RECHTSSYSTEM: Belgisches Zivilrecht, federal + regional
+
+ARBEITSRECHT:
+- Gesetz vom 3. Juli 1978 ueber Arbeitsvertraege
+- Kuendigungsfristen: Claeys-Formel (Gesetz 26/12/2013)
+- KAV Nr. 109 (12/02/2014) — Schutz vor willkuerlicher Kuendigung
+- Recht auf Kuendigungsgruende innerhalb 2 Monaten
+- Entschaedigung: 3 bis 17 Wochen Lohn
+- Wettbewerbsverbot: max 12 Monate, Pflichtentschaedigung min. 50%
+
+MIETRECHT (Wallonisches Recht gilt auch in Ostbelgien):
+- Dekret vom 15. Maerz 2018. Mietdauer 3 oder 9 Jahre.
+- Kaution max 2 Monatszahlungen. Keine Raeumung 1. Nov - 15. Maerz.
+
+BEVOEGDE GERICHTE:
+- Friedensgericht: Streitigkeiten < 5.000 EUR und Mietstreitigkeiten
+- Arbeitsgericht: Arbeitsstreitigkeiten
+- Gewerkschaften CSC/FGTB/CGSLB: kostenlose Rechtshilfe
+
+OUTPUT FORMAT — retournieren Sie nur gueltiges JSON, nichts anderes."""
 
 BE_PASS1_PROMPT = """TACHE: EXTRACTION DES FAITS UNIQUEMENT
 
@@ -2550,14 +2611,20 @@ async def get_case_letters(
 @api_router.get("/lawyers", response_model=List[Lawyer])
 async def get_lawyers(
     specialty: Optional[str] = None,
-    available_now: Optional[bool] = None
+    available_now: Optional[bool] = None,
+    country: Optional[str] = None,
+    language: Optional[str] = None
 ):
-    """Get all lawyers"""
+    """Get all lawyers, filtered by country/language if specified"""
     query = {}
     if specialty:
         query["specialty"] = {"$regex": specialty, "$options": "i"}
     if available_now:
         query["availability_status"] = "now"
+    if country:
+        query["country"] = country
+    if language:
+        query["language"] = {"$regex": language, "$options": "i"}
     
     lawyers = await db.lawyers.find(query, {"_id": 0}).to_list(100)
     return [Lawyer(**l) for l in lawyers]
@@ -3575,8 +3642,9 @@ async def add_shared_case_comment(token: str, data: SharedCaseComment):
 
 @api_router.post("/seed/lawyers")
 async def seed_lawyers():
-    """Seed lawyer data"""
+    """Seed lawyer data — US + Belgian lawyers"""
     lawyers_data = [
+        # ===== US LAWYERS =====
         {
             "lawyer_id": "lawyer_sarah",
             "name": "Sarah Mitchell, Esq.",
@@ -3589,7 +3657,9 @@ async def seed_lawyers():
             "availability_status": "now",
             "availability_minutes": 0,
             "bio": "Specialized in employment disputes and workplace discrimination cases.",
-            "photo_url": "https://images.unsplash.com/photo-1585240975858-7264fd020798?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDZ8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjB3b21hbiUyMGF0dG9ybmV5fGVufDB8fHx8MTc3NTc2MTA2NHww&ixlib=rb-4.1.0&q=85"
+            "photo_url": "https://images.unsplash.com/photo-1585240975858-7264fd020798?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDZ8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjB3b21hbiUyMGF0dG9ybmV5fGVufDB8fHx8MTc3NTc2MTA2NHww&ixlib=rb-4.1.0&q=85",
+            "country": "US",
+            "language": "en"
         },
         {
             "lawyer_id": "lawyer_james",
@@ -3603,7 +3673,9 @@ async def seed_lawyers():
             "availability_status": "soon",
             "availability_minutes": 8,
             "bio": "Expert in business contracts and commercial litigation.",
-            "photo_url": "https://images.unsplash.com/photo-1644268756851-3f69ffb9553f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjBsYXd5ZXJ8ZW58MHx8fHwxNzc1NzYxMDU5fDA&ixlib=rb-4.1.0&q=85"
+            "photo_url": "https://images.unsplash.com/photo-1644268756851-3f69ffb9553f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjBsYXd5ZXJ8ZW58MHx8fHwxNzc1NzYxMDU5fDA&ixlib=rb-4.1.0&q=85",
+            "country": "US",
+            "language": "en"
         },
         {
             "lawyer_id": "lawyer_diana",
@@ -3617,7 +3689,9 @@ async def seed_lawyers():
             "availability_status": "soon",
             "availability_minutes": 22,
             "bio": "Dedicated to protecting tenant rights and housing law.",
-            "photo_url": "https://images.unsplash.com/photo-1685760259914-ee8d2c92d2e0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDZ8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjB3b21hbiUyMGF0dG9ybmV5fGVufDB8fHx8MTc3NTc2MTA2NHww&ixlib=rb-4.1.0&q=85"
+            "photo_url": "https://images.unsplash.com/photo-1685760259914-ee8d2c92d2e0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDZ8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjB3b21hbiUyMGF0dG9ybmV5fGVufDB8fHx8MTc3NTc2MTA2NHww&ixlib=rb-4.1.0&q=85",
+            "country": "US",
+            "language": "en"
         },
         {
             "lawyer_id": "lawyer_marcus",
@@ -3631,7 +3705,9 @@ async def seed_lawyers():
             "availability_status": "tomorrow",
             "availability_minutes": 0,
             "bio": "Immigration law specialist with federal court experience.",
-            "photo_url": "https://images.unsplash.com/photo-1665224752561-85f4da9a5658?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjBsYXd5ZXJ8ZW58MHx8fHwxNzc1NzYxMDU5fDA&ixlib=rb-4.1.0&q=85"
+            "photo_url": "https://images.unsplash.com/photo-1665224752561-85f4da9a5658?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjBsYXd5ZXJ8ZW58MHx8fHwxNzc1NzYxMDU5fDA&ixlib=rb-4.1.0&q=85",
+            "country": "US",
+            "language": "en"
         },
         {
             "lawyer_id": "lawyer_rachel",
@@ -3645,7 +3721,9 @@ async def seed_lawyers():
             "availability_status": "now",
             "availability_minutes": 0,
             "bio": "Consumer protection and debt collection defense.",
-            "photo_url": "https://images.unsplash.com/photo-1665224752123-a2ea29dddcb2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDZ8MHwxfHNlYXJjaHw0fHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjB3b21hbiUyMGF0dG9ybmV5fGVufDB8fHx8MTc3NTc2MTA2NHww&ixlib=rb-4.1.0&q=85"
+            "photo_url": "https://images.unsplash.com/photo-1665224752123-a2ea29dddcb2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDZ8MHwxfHNlYXJjaHw0fHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjB3b21hbiUyMGF0dG9ybmV5fGVufDB8fHx8MTc3NTc2MTA2NHww&ixlib=rb-4.1.0&q=85",
+            "country": "US",
+            "language": "en"
         },
         {
             "lawyer_id": "lawyer_david",
@@ -3659,7 +3737,188 @@ async def seed_lawyers():
             "availability_status": "soon",
             "availability_minutes": 45,
             "bio": "Business formation and partnership dispute resolution.",
-            "photo_url": "https://images.unsplash.com/photo-1762522926262-d96de462ad54?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHw0fHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjBsYXd5ZXJ8ZW58MHx8fHwxNzc1NzYxMDU5fDA&ixlib=rb-4.1.0&q=85"
+            "photo_url": "https://images.unsplash.com/photo-1762522926262-d96de462ad54?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHw0fHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjBsYXd5ZXJ8ZW58MHx8fHwxNzc1NzYxMDU5fDA&ixlib=rb-4.1.0&q=85",
+            "country": "US",
+            "language": "en"
+        },
+        # ===== BELGIAN LAWYERS — FRANCOPHONE =====
+        {
+            "lawyer_id": "lawyer_be_sophie",
+            "name": "Me Sophie Lecomte",
+            "specialty": "Droit du travail",
+            "bar_state": "Barreau de Bruxelles",
+            "years_experience": 11,
+            "rating": 4.9,
+            "sessions_count": 187,
+            "tags": ["Licenciement abusif", "Harcelement", "Preavis", "CCT 109"],
+            "availability_status": "now",
+            "availability_minutes": 0,
+            "bio": "Specialisee en litiges du travail et protection contre le licenciement abusif. Ancienne collaboratrice du syndicat CSC.",
+            "photo_url": "https://images.unsplash.com/photo-1702875581098-36844f1910f3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTF8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjBldXJvcGVhbiUyMGxhd3llcnxlbnwwfHx8fDE3NzU4MzU1MTN8MA&ixlib=rb-4.1.0&q=85",
+            "country": "BE",
+            "language": "fr"
+        },
+        {
+            "lawyer_id": "lawyer_be_thomas",
+            "name": "Me Thomas Dupont",
+            "specialty": "Droit du bail (Wallonie)",
+            "bar_state": "Barreau de Liege",
+            "years_experience": 7,
+            "rating": 4.8,
+            "sessions_count": 134,
+            "tags": ["Bail residentiel", "Expulsion", "Garantie locative", "CWLHD"],
+            "availability_status": "soon",
+            "availability_minutes": 15,
+            "bio": "Expert en droit du bail wallon. Intervient regulierement devant les justices de paix de la province de Liege.",
+            "photo_url": "https://images.unsplash.com/photo-1591702694482-ecc51ff9642e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTF8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjBldXJvcGVhbiUyMGxhd3llcnxlbnwwfHx8fDE3NzU4MzU1MTN8MA&ixlib=rb-4.1.0&q=85",
+            "country": "BE",
+            "language": "fr"
+        },
+        {
+            "lawyer_id": "lawyer_be_julie",
+            "name": "Me Julie Renard",
+            "specialty": "Droit de la consommation",
+            "bar_state": "Barreau de Namur",
+            "years_experience": 9,
+            "rating": 4.9,
+            "sessions_count": 156,
+            "tags": ["Protection consommateur", "Remboursement", "Contrats abusifs", "CDE"],
+            "availability_status": "now",
+            "availability_minutes": 0,
+            "bio": "Specialisee en protection du consommateur et clauses abusives. Collabore avec le SPF Economie.",
+            "photo_url": "https://images.unsplash.com/photo-1733348137479-2e726d326d9b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTF8MHwxfHNlYXJjaHw0fHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjBldXJvcGVhbiUyMGxhd3llcnxlbnwwfHx8fDE3NzU4MzU1MTN8MA&ixlib=rb-4.1.0&q=85",
+            "country": "BE",
+            "language": "fr"
+        },
+        {
+            "lawyer_id": "lawyer_be_alexandre",
+            "name": "Me Alexandre Martin",
+            "specialty": "Droit des contrats",
+            "bar_state": "Barreau de Bruxelles",
+            "years_experience": 14,
+            "rating": 4.8,
+            "sessions_count": 203,
+            "tags": ["NDA", "Contrats commerciaux", "Rupture de contrat", "Non-concurrence"],
+            "availability_status": "tomorrow",
+            "availability_minutes": 0,
+            "bio": "Expert en negociation de contrats commerciaux et clauses de non-concurrence. Bilingue FR/NL.",
+            "photo_url": "https://images.unsplash.com/photo-1771244702701-6c9edac63255?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDB8MHwxfHNlYXJjaHw0fHxwcm9mZXNzaW9uYWwlMjBtYW4lMjBoZWFkc2hvdCUyMHBvcnRyYWl0JTIwc3VpdCUyMG9mZmljZXxlbnwwfHx8fDE3NzU4MzU1MTh8MA&ixlib=rb-4.1.0&q=85",
+            "country": "BE",
+            "language": "fr/nl"
+        },
+        {
+            "lawyer_id": "lawyer_be_emilie",
+            "name": "Me Emilie Dubois",
+            "specialty": "Droit de la famille",
+            "bar_state": "Barreau de Mons",
+            "years_experience": 12,
+            "rating": 4.9,
+            "sessions_count": 178,
+            "tags": ["Divorce", "Garde alternee", "Pension alimentaire", "Succession"],
+            "availability_status": "soon",
+            "availability_minutes": 30,
+            "bio": "Specialisee en droit familial et mediations familiales. Mediatrice agreee par la Commission federale de mediation.",
+            "photo_url": "https://images.unsplash.com/photo-1685760259914-ee8d2c92d2e0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTF8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjBldXJvcGVhbiUyMGxhd3llcnxlbnwwfHx8fDE3NzU4MzU1MTN8MA&ixlib=rb-4.1.0&q=85",
+            "country": "BE",
+            "language": "fr"
+        },
+        # ===== BELGIAN LAWYERS — NEDERLANDSTALIG =====
+        {
+            "lawyer_id": "lawyer_be_pieter",
+            "name": "Mr. Pieter Van den Berg",
+            "specialty": "Arbeidsrecht",
+            "bar_state": "Balie Gent",
+            "years_experience": 10,
+            "rating": 4.9,
+            "sessions_count": 165,
+            "tags": ["Ontslag", "Niet-concurrentiebeding", "CAO", "RSZ"],
+            "availability_status": "now",
+            "availability_minutes": 0,
+            "bio": "Gespecialiseerd in arbeidsgeschillen en bescherming tegen willekeurig ontslag. Voormalig juridisch adviseur ABVV.",
+            "photo_url": "https://images.unsplash.com/photo-1758691737644-ef8be18256c3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDB8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBtYW4lMjBoZWFkc2hvdCUyMHBvcnRyYWl0JTIwc3VpdCUyMG9mZmljZXxlbnwwfHx8fDE3NzU4MzU1MTh8MA&ixlib=rb-4.1.0&q=85",
+            "country": "BE",
+            "language": "nl"
+        },
+        {
+            "lawyer_id": "lawyer_be_laura",
+            "name": "Mevr. Laura Janssen",
+            "specialty": "Huurrecht Vlaanderen",
+            "bar_state": "Balie Antwerpen",
+            "years_experience": 8,
+            "rating": 4.8,
+            "sessions_count": 142,
+            "tags": ["Huurgeschillen", "Uitzetting", "Vlaamse Woninghuurwet", "Huurwaarborg"],
+            "availability_status": "soon",
+            "availability_minutes": 20,
+            "bio": "Expert in Vlaams huurrecht. Regelmatig aanwezig bij het vredegerecht van Antwerpen voor huurgeschillen.",
+            "photo_url": "https://images.unsplash.com/photo-1702875581098-36844f1910f3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTF8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjBldXJvcGVhbiUyMGxhd3llcnxlbnwwfHx8fDE3NzU4MzU1MTN8MA&ixlib=rb-4.1.0&q=85",
+            "country": "BE",
+            "language": "nl"
+        },
+        {
+            "lawyer_id": "lawyer_be_luc",
+            "name": "Mr. Luc Vermeersch",
+            "specialty": "Consumentenrecht",
+            "bar_state": "Balie Brussel",
+            "years_experience": 11,
+            "rating": 4.9,
+            "sessions_count": 189,
+            "tags": ["WER", "Onrechtmatige bedingen", "Ombudsman procedures", "E-commerce"],
+            "availability_status": "now",
+            "availability_minutes": 0,
+            "bio": "Expert consumentenrecht en WER. Werkt regelmatig samen met Ombudsfin en de Ombudsman voor Verzekeringen. Tweetalig NL/FR.",
+            "photo_url": "https://images.unsplash.com/photo-1568585105565-e372998a195d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDB8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBtYW4lMjBoZWFkc2hvdCUyMHBvcnRyYWl0JTIwc3VpdCUyMG9mZmljZXxlbnwwfHx8fDE3NzU4MzU1MTh8MA&ixlib=rb-4.1.0&q=85",
+            "country": "BE",
+            "language": "nl/fr"
+        },
+        {
+            "lawyer_id": "lawyer_be_sarah_ds",
+            "name": "Mevr. Sarah De Smedt",
+            "specialty": "Contractenrecht",
+            "bar_state": "Balie Leuven",
+            "years_experience": 6,
+            "rating": 4.8,
+            "sessions_count": 98,
+            "tags": ["NDA", "Handelscontracten", "Aansprakelijkheid", "IP-recht"],
+            "availability_status": "tomorrow",
+            "availability_minutes": 0,
+            "bio": "Gespecialiseerd in contractenrecht en intellectueel eigendom. Docente KU Leuven.",
+            "photo_url": "https://images.unsplash.com/photo-1733348137479-2e726d326d9b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTF8MHwxfHNlYXJjaHw0fHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjBldXJvcGVhbiUyMGxhd3llcnxlbnwwfHx8fDE3NzU4MzU1MTN8MA&ixlib=rb-4.1.0&q=85",
+            "country": "BE",
+            "language": "nl"
+        },
+        # ===== BELGIAN LAWYERS — DEUTSCHSPRACHIG =====
+        {
+            "lawyer_id": "lawyer_be_klaus",
+            "name": "Herr Klaus Mueller",
+            "specialty": "Arbeitsrecht",
+            "bar_state": "Kammer Eupen",
+            "years_experience": 15,
+            "rating": 4.8,
+            "sessions_count": 87,
+            "tags": ["Kuendigung", "Arbeitsvertrag", "Sozialrecht", "KAV"],
+            "availability_status": "now",
+            "availability_minutes": 0,
+            "bio": "Spezialist fuer Arbeitsrecht in der Deutschsprachigen Gemeinschaft. Zweisprachig DE/FR.",
+            "photo_url": "https://images.unsplash.com/photo-1758518729314-b02874db8c37?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDB8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBtYW4lMjBoZWFkc2hvdCUyMHBvcnRyYWl0JTIwc3VpdCUyMG9mZmljZXxlbnwwfHx8fDE3NzU4MzU1MTh8MA&ixlib=rb-4.1.0&q=85",
+            "country": "BE",
+            "language": "de/fr"
+        },
+        {
+            "lawyer_id": "lawyer_be_anna",
+            "name": "Frau Anna Schreiber",
+            "specialty": "Mietrecht und Zivilrecht",
+            "bar_state": "Kammer Malmedy",
+            "years_experience": 9,
+            "rating": 4.7,
+            "sessions_count": 64,
+            "tags": ["Mietvertraege", "Zivilrecht", "Vertragsrecht", "Familienrecht"],
+            "availability_status": "soon",
+            "availability_minutes": 45,
+            "bio": "Mietrecht und allgemeines Zivilrecht in Ostbelgien. Zweisprachig DE/FR.",
+            "photo_url": "https://images.unsplash.com/photo-1685760259914-ee8d2c92d2e0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTF8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGhlYWRzaG90JTIwcG9ydHJhaXQlMjBldXJvcGVhbiUyMGxhd3llcnxlbnwwfHx8fDE3NzU4MzU1MTN8MA&ixlib=rb-4.1.0&q=85",
+            "country": "BE",
+            "language": "de/fr"
         }
     ]
     
@@ -4046,10 +4305,10 @@ async def startup_event():
     except Exception as e:
         logger.error(f"Storage init failed: {e}")
     
-    # Seed lawyers if not exist
-    lawyer_count = await db.lawyers.count_documents({})
-    if lawyer_count == 0:
-        logger.info("Seeding lawyer data...")
+    # Seed lawyers — re-seed if missing Belgian lawyers
+    be_count = await db.lawyers.count_documents({"country": "BE"})
+    if be_count == 0:
+        logger.info("Seeding lawyer data (US + Belgian)...")
         await seed_lawyers()
 
 @app.on_event("shutdown")

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import { Star, User } from 'lucide-react';
 
@@ -7,6 +8,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const Lawyers = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [lawyers, setLawyers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,14 +16,16 @@ const Lawyers = () => {
 
   const fetchLawyers = useCallback(async () => {
     try {
-      const res = await axios.get(`${API}/lawyers`);
+      const params = {};
+      if (user?.country) params.country = user.country;
+      const res = await axios.get(`${API}/lawyers`, { params });
       setLawyers(res.data);
     } catch (error) {
       console.error('Lawyers fetch error:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.country]);
 
   useEffect(() => {
     fetchLawyers();
@@ -42,7 +46,17 @@ const Lawyers = () => {
     return l.specialty.toLowerCase().includes(filter.toLowerCase());
   });
 
-  const filters = [
+  const isBelgian = user?.country === 'BE';
+
+  const filters = isBelgian ? [
+    { key: 'all', label: 'Tous' },
+    { key: 'now', label: 'Disponible maintenant' },
+    { key: 'travail', label: 'Droit du travail' },
+    { key: 'bail', label: 'Droit du bail' },
+    { key: 'consommation', label: 'Consommation' },
+    { key: 'contrat', label: 'Contrats' },
+    { key: 'famille', label: 'Famille' }
+  ] : [
     { key: 'all', label: 'All' },
     { key: 'now', label: 'Available now' },
     { key: 'employment', label: 'Employment law' },
@@ -70,8 +84,11 @@ const Lawyers = () => {
     <div data-testid="lawyers-page">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="page-title">Lawyer calls</h1>
-        <p className="page-sub">Licensed US attorneys, available on demand · $149 for 30 minutes</p>
+        <h1 className="page-title">{isBelgian ? 'Appels avocat' : 'Lawyer calls'}</h1>
+        <p className="page-sub">{isBelgian
+          ? 'Avocats belges agrees, disponibles a la demande · 149 EUR pour 30 minutes'
+          : 'Licensed US attorneys, available on demand · $149 for 30 minutes'
+        }</p>
       </div>
 
       {/* Filters */}
@@ -148,7 +165,7 @@ const Lawyers = () => {
                   className="w-full btn-pill btn-blue py-2.5"
                   data-testid={`book-lawyer-${lawyer.lawyer_id}-btn`}
                 >
-                  Book a call — $149
+                  Book a call — {isBelgian ? '149 EUR' : '$149'}
                 </button>
               </div>
             </div>
