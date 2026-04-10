@@ -46,7 +46,7 @@ Build a complete, production-ready SaaS web application called "Jasper" — a le
 - Risk Score History tracking
 - Outcome Predictor via Claude API
 - Document Scanner via Claude Vision API (mobile camera OCR)
-- Response Letters generation via Claude API
+- Response Letters generation via Claude API — **expanded to 6-8 specific options per document type** (NDA, eviction, employment, debt, demand, court, consumer)
 - Stripe Integration (Pro plan $69/mo, lawyer calls $149, webhook)
 - **Legal Chat** with Claude (unlimited Pro, 3 questions Free)
 - **Case Sharing** with secure expiring tokens and read-only public pages
