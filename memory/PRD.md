@@ -37,7 +37,7 @@ Build a complete, production-ready SaaS web application called "Jasper" — a le
 ### Backend (FastAPI + MongoDB)
 - Profile management with notification/privacy settings
 - Cases CRUD with risk score tracking
-- Document upload with Emergent object storage
+- Document upload with Emergent object storage (PDF, DOCX, TXT, EML)
 - **Advanced 5-Pass AI Analysis System** (claude-sonnet-4-20250514)
 - Static jurisprudence database
 - PDF text extraction using pdfplumber

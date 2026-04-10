@@ -17,6 +17,7 @@ import io
 import requests
 import base64
 import bcrypt
+import docx
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
 
 ROOT_DIR = Path(__file__).parent
@@ -959,6 +960,16 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
         logger.error(f"PDF extraction error: {e}")
         return ""
 
+def extract_text_from_docx(file_bytes: bytes) -> str:
+    """Extract text from DOCX file"""
+    try:
+        doc = docx.Document(io.BytesIO(file_bytes))
+        text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
+        return text.strip()
+    except Exception as e:
+        logger.error(f"DOCX extraction error: {e}")
+        return ""
+
 # ================== Auth Endpoints ==================
 
 @api_router.post("/auth/session")
@@ -1390,8 +1401,16 @@ async def upload_document(
     extracted_text = ""
     if file_ext == "pdf":
         extracted_text = extract_text_from_pdf(file_bytes)
-    elif file_ext in ["txt", "text"]:
+    elif file_ext in ["docx"]:
+        extracted_text = extract_text_from_docx(file_bytes)
+    elif file_ext in ["txt", "text", "eml"]:
         extracted_text = file_bytes.decode("utf-8", errors="ignore")
+    elif file_ext in ["doc"]:
+        # .doc is legacy format - try as plain text fallback
+        extracted_text = file_bytes.decode("utf-8", errors="ignore")
+    
+    if not extracted_text.strip():
+        logger.warning(f"No text extracted from {file.filename} (ext={file_ext})")
     
     # Create document record
     document_id = f"doc_{uuid.uuid4().hex[:12]}"
