@@ -18,6 +18,7 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancel from './pages/PaymentCancel';
 import LegalChat from './pages/LegalChat';
 import SharedCase from './pages/SharedCase';
+import DocumentLibrary from './pages/DocumentLibrary';
 import FloatingChatButton from './components/FloatingChatButton';
 import './App.css';
 
@@ -61,6 +62,7 @@ const AppRouter = () => {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="cases" element={<Cases />} />
         <Route path="cases/:caseId" element={<CaseDetail />} />
+        <Route path="documents" element={<DocumentLibrary />} />
         <Route path="upload" element={<Upload />} />
         <Route path="lawyers" element={<Lawyers />} />
         <Route path="lawyers/book" element={<LawyerBook />} />

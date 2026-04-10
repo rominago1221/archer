@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, FolderOpen, Upload, Users, Settings, LogOut, MessageCircle } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, Upload, Users, Settings, LogOut, MessageCircle, FileText } from 'lucide-react';
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
@@ -15,6 +15,7 @@ const Sidebar = () => {
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/cases', label: 'My cases', icon: FolderOpen },
+    { path: '/documents', label: 'Document Library', icon: FileText },
     { path: '/upload', label: 'Upload document', icon: Upload },
     { path: '/chat', label: 'Legal Chat', icon: MessageCircle },
     { path: '/lawyers', label: 'Lawyer calls', icon: Users },

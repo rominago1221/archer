@@ -2988,6 +2988,165 @@ async def seed_lawyers():
     
     return {"message": f"Seeded {len(lawyers_data)} lawyers"}
 
+
+# ================== Document Library ==================
+
+# Load templates
+with open(os.path.join(os.path.dirname(__file__), "document_templates.json")) as f:
+    DOC_TEMPLATES = json.load(f)
+
+FREE_TEMPLATE_IDS = {t["id"] for t in DOC_TEMPLATES if t.get("free")}
+
+CATEGORIES = [
+    {"id": "all", "label": "All"},
+    {"id": "employment", "label": "Employment"},
+    {"id": "housing", "label": "Housing & Lease"},
+    {"id": "business", "label": "Business"},
+    {"id": "nda", "label": "NDA & Confidentiality"},
+    {"id": "contracts", "label": "Contracts"},
+    {"id": "consumer", "label": "Consumer & Demand Letters"},
+    {"id": "debt", "label": "Debt & Finance"},
+    {"id": "family", "label": "Family"},
+    {"id": "realestate", "label": "Real Estate"},
+    {"id": "freelance", "label": "Freelance"},
+    {"id": "ip", "label": "Intellectual Property"},
+    {"id": "court", "label": "Court & Legal"},
+    {"id": "immigration", "label": "Immigration"},
+]
+
+@api_router.get("/library/templates")
+async def get_library_templates(category: str = "all", search: str = ""):
+    templates = DOC_TEMPLATES
+    if category and category != "all":
+        templates = [t for t in templates if t["cat"] == category]
+    if search:
+        q = search.lower()
+        templates = [t for t in templates if q in t["name"].lower() or q in t["desc"].lower()]
+    return {"templates": templates, "categories": CATEGORIES, "total": len(templates)}
+
+class DocGenerateRequest(BaseModel):
+    template_id: str
+    fields: dict
+    jurisdiction: str = "California"
+
+@api_router.post("/library/generate")
+async def generate_document(body: DocGenerateRequest, current_user: User = Depends(get_current_user)):
+    template = next((t for t in DOC_TEMPLATES if t["id"] == body.template_id), None)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    plan = current_user.plan or "free"
+    if plan != "pro" and body.template_id not in FREE_TEMPLATE_IDS:
+        raise HTTPException(status_code=403, detail="This template requires a Pro plan. Upgrade to access all 158+ templates.")
+    
+    fields_text = "\n".join(f"- {k}: {v}" for k, v in body.fields.items() if v)
+    
+    prompt = f"""Generate a complete, professional, legally sound {template['name']} for the jurisdiction of {body.jurisdiction}.
+
+Use the following information provided by the user:
+{fields_text}
+
+The document must:
+1. Include ALL standard clauses for this document type
+2. Be jurisdiction-specific — reference applicable state/country law
+3. Use proper legal language while remaining clear
+4. Include all necessary sections, headings, and signature blocks
+5. Be ready to sign immediately
+6. Include the date {datetime.now(timezone.utc).strftime('%B %d, %Y')}
+
+Return the complete document text formatted with clear sections and headings. Use markdown formatting (# for headings, ** for bold, etc). Include signature lines at the end with [SIGNATURE] placeholders."""
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "Content-Type": "application/json",
+                    "x-api-key": ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01"
+                },
+                json={
+                    "model": "claude-sonnet-4-20250514",
+                    "max_tokens": 4000,
+                    "system": "You are a senior attorney drafting legal documents. Generate complete, jurisdiction-specific, professionally formatted legal documents. Never include disclaimers or notes — just the document itself.",
+                    "messages": [{"role": "user", "content": prompt}]
+                },
+                timeout=120.0
+            )
+            response.raise_for_status()
+            data = response.json()
+            content = data["content"][0]["text"]
+    except Exception as e:
+        logger.error(f"Document generation error: {e}")
+        raise HTTPException(status_code=500, detail="Could not generate document. Please try again.")
+    
+    doc_id = f"gendoc_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    doc_record = {
+        "doc_id": doc_id,
+        "user_id": current_user.user_id,
+        "template_id": body.template_id,
+        "document_type": template["cat"],
+        "document_name": template["name"],
+        "generated_content": content,
+        "fields": body.fields,
+        "jurisdiction": body.jurisdiction,
+        "signature_status": "draft",
+        "signers": [],
+        "created_at": now
+    }
+    await db.generated_documents.insert_one(doc_record)
+    
+    return {
+        "doc_id": doc_id,
+        "document_name": template["name"],
+        "content": content,
+        "jurisdiction": body.jurisdiction,
+        "signature_status": "draft",
+        "created_at": now
+    }
+
+@api_router.get("/library/generated")
+async def get_generated_documents(current_user: User = Depends(get_current_user)):
+    docs = await db.generated_documents.find(
+        {"user_id": current_user.user_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    return docs
+
+class SignatureRequest(BaseModel):
+    doc_id: str
+    signers: list
+    message: str = ""
+
+@api_router.post("/library/sign")
+async def send_for_signature(body: SignatureRequest, current_user: User = Depends(get_current_user)):
+    doc = await db.generated_documents.find_one(
+        {"doc_id": body.doc_id, "user_id": current_user.user_id}, {"_id": 0}
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # HelloSign integration placeholder — needs API key
+    hellosign_key = os.environ.get("HELLOSIGN_API_KEY")
+    if not hellosign_key:
+        now = datetime.now(timezone.utc).isoformat()
+        signers_data = [{"name": s.get("name",""), "email": s.get("email",""), "status": "pending", "signed_at": None} for s in body.signers]
+        await db.generated_documents.update_one(
+            {"doc_id": body.doc_id},
+            {"$set": {"signature_status": "pending", "signers": signers_data, "hellosign_request_id": f"mock_{uuid.uuid4().hex[:8]}"}}
+        )
+        return {
+            "status": "pending",
+            "message": "Signature request created (HelloSign integration pending — API key required)",
+            "signers": signers_data,
+            "doc_id": body.doc_id
+        }
+    
+    # TODO: Real HelloSign API call when key is configured
+    return {"status": "error", "message": "HelloSign integration not yet configured"}
+
+
 # ================== Health Check ==================
 
 @api_router.get("/")
