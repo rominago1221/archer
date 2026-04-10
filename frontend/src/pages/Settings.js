@@ -16,6 +16,9 @@ const Settings = () => {
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [state, setState] = useState(user?.state_of_residence || '');
+  const [country, setCountry] = useState(user?.country || 'US');
+  const [region, setRegion] = useState(user?.region || '');
+  const [language, setLanguage] = useState(user?.language || 'en');
 
   // Notification state
   const [notifRiskScore, setNotifRiskScore] = useState(user?.notif_risk_score ?? true);
@@ -108,8 +111,8 @@ const Settings = () => {
     setSaving(true);
     setMessage(null);
     try {
-      await axios.put(`${API}/profile`, { name, phone, state_of_residence: state }, { withCredentials: true });
-      updateUser({ name, phone, state_of_residence: state });
+      await axios.put(`${API}/profile`, { name, phone, state_of_residence: state, country, region, language }, { withCredentials: true });
+      updateUser({ name, phone, state_of_residence: state, country, region, language });
       setMessage({ type: 'success', text: 'Profile saved successfully' });
     } catch (err) {
       setMessage({ type: 'error', text: 'Failed to save profile' });
@@ -225,12 +228,53 @@ const Settings = () => {
                   <input type="tel" className="form-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 (555) 234-5678" data-testid="settings-phone-input" />
                 </div>
                 <div>
-                  <label className="form-label">State of residence</label>
-                  <select className="form-input" value={state} onChange={(e) => setState(e.target.value)} data-testid="settings-state-select">
-                    <option value="">Select a state</option>
-                    {states.map((s) => (<option key={s} value={s}>{s}</option>))}
+                  <label className="form-label">Country</label>
+                  <select className="form-input" value={country} onChange={(e) => { setCountry(e.target.value); setRegion(''); setLanguage(e.target.value === 'BE' ? 'fr-BE' : 'en'); }} data-testid="settings-country-select">
+                    <option value="US">United States</option>
+                    <option value="BE">Belgium / Belgique</option>
                   </select>
                 </div>
+                {country === 'BE' && (
+                  <>
+                    <div>
+                      <label className="form-label">Region</label>
+                      <select className="form-input" value={region} onChange={(e) => {
+                        setRegion(e.target.value);
+                        if (e.target.value === 'Flandre') setLanguage('nl-BE');
+                        else if (e.target.value === 'Communaute germanophone') setLanguage('de-BE');
+                        else setLanguage('fr-BE');
+                      }} data-testid="settings-region-select">
+                        <option value="">Select a region</option>
+                        <option value="Wallonie">Wallonie</option>
+                        <option value="Bruxelles-Capitale">Bruxelles-Capitale</option>
+                        <option value="Flandre">Vlaanderen / Flandre</option>
+                        <option value="Communaute germanophone">Communaute germanophone</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="form-label">Language / Langue</label>
+                      <select className="form-input" value={language} onChange={(e) => setLanguage(e.target.value)} data-testid="settings-language-select">
+                        <option value="fr-BE">Francais</option>
+                        <option value="nl-BE">Nederlands</option>
+                        <option value="de-BE">Deutsch</option>
+                      </select>
+                    </div>
+                    <div className="p-3 bg-[#fffbeb] border border-[#fde68a] rounded-lg">
+                      <div className="text-xs text-[#92400e]">
+                        <strong>Jasper Belgique:</strong> L'analyse juridique sera adaptee au droit belge de votre region. Jurisprudence belge inline, commissions paritaires, et references legales belges.
+                      </div>
+                    </div>
+                  </>
+                )}
+                {country === 'US' && (
+                  <div>
+                    <label className="form-label">State of residence</label>
+                    <select className="form-input" value={state} onChange={(e) => setState(e.target.value)} data-testid="settings-state-select">
+                      <option value="">Select a state</option>
+                      {states.map((s) => (<option key={s} value={s}>{s}</option>))}
+                    </select>
+                  </div>
+                )}
                 <button onClick={handleSaveProfile} disabled={saving} className="btn-pill btn-blue" data-testid="save-profile-btn">
                   {saving ? 'Saving...' : 'Save changes'}
                 </button>

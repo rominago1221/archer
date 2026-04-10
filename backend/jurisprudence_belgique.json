@@ -1,0 +1,146 @@
+{
+  "belgique": {
+    "droit_travail": {
+      "licenciement_abusif": [
+        {
+          "reference": "CCT n\u00b0109 du 12 f\u00e9vrier 2014",
+          "regle": "L'employeur doit communiquer les motifs concrets du licenciement dans les 2 mois suivant la demande du travailleur. L'absence de communication fait pr\u00e9sumer le licenciement abusif.",
+          "benefice_utilisateur": "Si l'employeur n'a pas fourni les motifs, l'utilisateur peut r\u00e9clamer l'indemnit\u00e9 pour licenciement abusif (3-17 semaines)."
+        },
+        {
+          "reference": "Cass. trav., 9 janvier 2023",
+          "regle": "La Cour de cassation confirme que le d\u00e9lai de 2 mois pour demander les motifs court \u00e0 compter de la fin du contrat, pas de la notification du licenciement.",
+          "benefice_utilisateur": "L'utilisateur a jusqu'\u00e0 2 mois apr\u00e8s la fin du contrat pour exiger les motifs par \u00e9crit."
+        },
+        {
+          "reference": "C. trav. Bruxelles, 15 novembre 2023",
+          "regle": "Un licenciement prononc\u00e9 3 jours apr\u00e8s une plainte du travailleur pour harc\u00e8lement est pr\u00e9sum\u00e9 repr\u00e9sailles et donc abusif.",
+          "benefice_utilisateur": "Si l'utilisateur a fait une plainte r\u00e9cemment, le licenciement peut \u00eatre qualifi\u00e9 de repr\u00e9sailles."
+        }
+      ],
+      "preavis_indemnites": [
+        {
+          "reference": "Loi du 26 d\u00e9cembre 2013 \u2014 Formule Claeys",
+          "regle": "Le pr\u00e9avis l\u00e9gal se calcule selon la formule: semaines = (anciennet\u00e9 x 3) + bonification. Pour 5 ans: 15 semaines. Pour 10 ans: 27 semaines. Pour 20 ans: 58 semaines.",
+          "benefice_utilisateur": "Calculer le pr\u00e9avis exact et r\u00e9clamer la diff\u00e9rence si insuffisant."
+        },
+        {
+          "reference": "Trib. trav. Li\u00e8ge, 22 mars 2024",
+          "regle": "L'indemnit\u00e9 compensatoire de pr\u00e9avis doit inclure tous les avantages acquis: voiture de soci\u00e9t\u00e9 (valeur locative), ch\u00e8ques-repas, assurance groupe, bonus contractuel.",
+          "benefice_utilisateur": "Si le calcul de l'indemnit\u00e9 omet des avantages, l'utilisateur peut r\u00e9clamer la diff\u00e9rence."
+        }
+      ],
+      "non_concurrence": [
+        {
+          "reference": "Art. 65-70 Loi du 3 juillet 1978",
+          "regle": "La clause de non-concurrence n'est valable que si: r\u00e9mun\u00e9ration annuelle > \u20ac36,785 (2024), dur\u00e9e max 12 mois, zone g\u00e9ographique limit\u00e9e, compensation financi\u00e8re min 50% r\u00e9mun\u00e9ration perdue.",
+          "benefice_utilisateur": "Si une condition manque, la clause est nulle de plein droit."
+        },
+        {
+          "reference": "C. trav. Bruxelles, 7 mai 2024",
+          "regle": "Une clause de non-concurrence visant 'le secteur' sans d\u00e9limitation g\u00e9ographique pr\u00e9cise est trop vague pour \u00eatre applicable.",
+          "benefice_utilisateur": "Contester la validit\u00e9 d'une clause g\u00e9ographiquement illimit\u00e9e."
+        }
+      ]
+    },
+    "bail_wallonie": [
+      {
+        "reference": "D\u00e9cret wallon du 15 mars 2018, art. 4",
+        "regle": "Le bail doit \u00eatre enregistr\u00e9 dans les 2 mois de sa conclusion. L'absence d'enregistrement est \u00e0 charge du bailleur et permet au locataire de r\u00e9silier sans pr\u00e9avis \u00e0 tout moment.",
+        "benefice_utilisateur": "V\u00e9rifier si le bail est enregistr\u00e9 \u2014 si non, le locataire peut partir sans pr\u00e9avis."
+      },
+      {
+        "reference": "J.P. Li\u00e8ge (4\u00e8me canton), 12 janvier 2024",
+        "regle": "Le bailleur qui r\u00e9clame plus de 2 mois de loyer comme garantie locative viole l'art. 15 du D\u00e9cret wallon 2018. La clause est nulle et le surplus doit \u00eatre restitu\u00e9.",
+        "benefice_utilisateur": "Si la garantie d\u00e9passe 2 mois, l'utilisateur peut r\u00e9clamer le surplus."
+      },
+      {
+        "reference": "C. trav. Li\u00e8ge, 8 mars 2024",
+        "regle": "L'expulsion hivernale (1er nov - 15 mars) est nulle m\u00eame si fond\u00e9e sur un jugement ant\u00e9rieur. Le juge peut accorder un d\u00e9lai suppl\u00e9mentaire.",
+        "benefice_utilisateur": "En p\u00e9riode hivernale, l'expulsion peut \u00eatre bloqu\u00e9e."
+      },
+      {
+        "reference": "D\u00e9cret wallon 2018, art. 18",
+        "regle": "L'augmentation de loyer annuelle doit suivre l'indice sant\u00e9. Toute augmentation sup\u00e9rieure ou plus fr\u00e9quente est nulle.",
+        "benefice_utilisateur": "Contester toute augmentation non conforme \u00e0 l'indice sant\u00e9."
+      }
+    ],
+    "bail_flandre": [
+      {
+        "reference": "Vlaamse Woninghuurdecreet, art. 30",
+        "regle": "De huurwaarborg in Vlaanderen bedraagt maximaal 3 maanden huur. Bij overtreding is de clausule van rechtswege nietig.",
+        "benefice_utilisateur": "Als de waarborg meer dan 3 maanden bedraagt, kan de huurder het verschil terugvorderen."
+      },
+      {
+        "reference": "Vrederechter Antwerpen, 15 februari 2024",
+        "regle": "Een verhuurder die geen plaatsbeschrijving bij intrede heeft laten opmaken, kan de huurder niet aansprakelijk stellen voor schade aan het goed.",
+        "benefice_utilisateur": "Geen plaatsbeschrijving = geen bewijs van schade door huurder."
+      },
+      {
+        "reference": "Vlaams Woninghuurdecreet, art. 35",
+        "regle": "Het huurcontract moet verplicht geregistreerd worden. Niet-registratie is ten laste van de verhuurder. De huurder kan opzeggen zonder opzegtermijn.",
+        "benefice_utilisateur": "Niet-geregistreerd contract: huurder kan op elk moment vertrekken."
+      }
+    ],
+    "consommateur": [
+      {
+        "reference": "Code de droit \u00e9conomique, Livre XIX (2023)",
+        "regle": "Depuis le 1er septembre 2023, les entreprises doivent respecter des r\u00e8gles strictes pour le recouvrement de dettes de consommateurs. Toute mise en demeure doit identifier pr\u00e9cis\u00e9ment la cr\u00e9ance.",
+        "benefice_utilisateur": "Une mise en demeure sans identification pr\u00e9cise est invalide."
+      },
+      {
+        "reference": "Art. VI.82 CDE",
+        "regle": "Les clauses cr\u00e9ant un d\u00e9s\u00e9quilibre manifeste entre les droits et obligations des parties sont r\u00e9put\u00e9es abusives et nulles de plein droit.",
+        "benefice_utilisateur": "Toute clause contractuelle abusive peut \u00eatre ignor\u00e9e."
+      },
+      {
+        "reference": "Trib. ent. Bruxelles, 28 f\u00e9vrier 2024",
+        "regle": "Une entreprise qui contacte un consommateur plus de 3 fois par semaine pour une dette est pr\u00e9sum\u00e9e se livrer \u00e0 du harc\u00e8lement. Dommages-int\u00e9r\u00eats minimum \u20ac250.",
+        "benefice_utilisateur": "Documenter tous les contacts \u2014 chaque harc\u00e8lement vaut \u20ac250 minimum."
+      }
+    ],
+    "nda": [
+      {
+        "reference": "Loi du 30 juillet 2018 sur le secret des affaires",
+        "regle": "L'information doit \u00eatre secr\u00e8te, avoir une valeur commerciale du fait de son caract\u00e8re secret, et faire l'objet de mesures raisonnables pour la garder secr\u00e8te.",
+        "benefice_utilisateur": "Si l'information est publique ou sans valeur commerciale, la clause NDA ne s'applique pas."
+      },
+      {
+        "reference": "Nouveau Code civil belge, art. 5.52 (2023)",
+        "regle": "La clause p\u00e9nale manifestement disproportionn\u00e9e peut \u00eatre r\u00e9duite par le juge \u00e0 la demande du d\u00e9biteur.",
+        "benefice_utilisateur": "Si la p\u00e9nale pour violation NDA est excessive, le juge peut la r\u00e9duire."
+      }
+    ],
+    "bail_bruxelles": [
+      {
+        "reference": "Ordonnance bruxelloise du 27 juillet 2017 sur le bail d'habitation",
+        "regle": "La garantie locative est limit\u00e9e \u00e0 2 mois de loyer. Le bail doit \u00eatre enregistr\u00e9 dans les 2 mois.",
+        "benefice_utilisateur": "M\u00eame r\u00e8gles que la Wallonie pour la garantie (2 mois max)."
+      }
+    ],
+    "commissions_paritaires": {
+      "CP 100": "Commission nationale mixte",
+      "CP 118": "Alimentation",
+      "CP 124": "Construction",
+      "CP 140": "Transport routier",
+      "CP 200": "Employ\u00e9s du commerce et des services (le plus courant)",
+      "CP 201": "Commerce de d\u00e9tail ind\u00e9pendant",
+      "CP 302": "H\u00f4tels, restaurants, caf\u00e9s (HORECA)",
+      "CP 309": "Assurances",
+      "CP 310": "Banques",
+      "CP 315": "Gardiennage"
+    },
+    "montants_reference_2024": {
+      "RMMMG_18_21": 1966.07,
+      "RMMMG_21_plus": 2029.88,
+      "indemnite_licenciement_abusif": "3-17 semaines (CCT 109)",
+      "non_concurrence_plancher": 36785,
+      "compensation_non_concurrence_min": "50% r\u00e9mun\u00e9ration perdue",
+      "garantie_locative_wallonie_bruxelles": "max 2 mois de loyer",
+      "garantie_locative_flandre": "max 3 mois de loyer",
+      "interet_legal_2024": "5.75% (AR 08/12/2023)",
+      "indemnite_procedure_jp": "210-1320 EUR selon enjeu",
+      "seuil_competence_jp": 5000
+    }
+  }
+}

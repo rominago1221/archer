@@ -1,0 +1,115 @@
+{
+  "summary": "Tested Belgian legal analysis features: Settings page country/region/language selectors, Profile API, Country Config API, Letter Types API (BE vs US), Upload page Belgian mode indicator. Backend: 14/14 tests passed. Frontend: All UI tests passed.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "Backend: PUT /api/profile accepts country=BE, region=Wallonie, language=fr-BE",
+    "Backend: PUT /api/profile accepts region=Flandre with nl-BE language",
+    "Backend: PUT /api/profile accepts region=Bruxelles-Capitale",
+    "Backend: PUT /api/profile accepts region=Communaute germanophone with de-BE language",
+    "Backend: PUT /api/profile accepts country=US",
+    "Backend: GET /api/user/country-config returns Belgian config (4 regions, 3 languages) when user has country=BE",
+    "Backend: GET /api/user/country-config returns US config when user has country=US",
+    "Backend: GET /api/letters/types/employment?country=BE returns 8 Belgian letter types (CCT109, preavis, C4, etc.)",
+    "Backend: GET /api/letters/types/housing?country=BE returns Belgian housing letter types (garantie, enregistrement, etc.)",
+    "Backend: GET /api/letters/types/employment?country=US returns US letter types (no Belgian prefixes)",
+    "Backend: GET /api/letters/types/debt?country=BE returns Belgian debt letter types",
+    "Backend: GET /api/letters/types/nda?country=BE returns Belgian NDA letter types",
+    "Backend: GET /api/auth/me returns country, region, language fields correctly",
+    "Frontend: Settings page Country selector shows 'United States' and 'Belgium / Belgique'",
+    "Frontend: When Belgium selected, Region dropdown appears with Wallonie/Bruxelles-Capitale/Vlaanderen-Flandre/Communaute germanophone",
+    "Frontend: When Belgium selected, Language dropdown appears with Francais/Nederlands/Deutsch",
+    "Frontend: Yellow info banner with 'Jasper Belgique' appears when Belgium is selected",
+    "Frontend: Save changes persists country/region/language to profile (success message shown)",
+    "Frontend: Upload page shows Belgian mode indicator (🇧🇪 Jasper Belgique · Wallonie · Droit belge applicable) when user has country=BE",
+    "Frontend: Mode toggle (Analyze risk vs Contract Guard) still works in Belgian mode",
+    "Frontend: Risk Monitor tab still works in Settings"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_belgian_features.py",
+    "/app/test_reports/pytest/pytest_belgian_features.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_belgian_features.py (New test file for Belgian features)"
+  ],
+
+  "success_rate": {
+    "backend": "100% (14/14 tests passed)",
+    "frontend": "100% (all UI tests passed)"
+  },
+
+  "test_credentials": {
+    "test_user": "test_cg@example.com / testpassword123",
+    "user_plan": "pro",
+    "user_country": "BE",
+    "user_region": "Wallonie",
+    "user_language": "fr-BE"
+  },
+
+  "seed_data_creation": "None - used existing test user, updated country/region/language via API",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Belgian legal analysis features fully implemented and tested. Settings page has Country selector (US/Belgium), and when Belgium is selected, Region (4 options: Wallonie, Bruxelles-Capitale, Flandre, Communaute germanophone) and Language (3 options: Francais, Nederlands, Deutsch) dropdowns appear with a yellow info banner. Profile API accepts country/region/language fields. Country Config API returns Belgian-specific config. Letter Types API returns Belgian letter types (BE_ prefixed) when ?country=BE is passed. Upload page shows Belgian mode indicator when user has country=BE in profile. Test file /app/backend/tests/test_belgian_features.py can be reused for regression testing.",
+
+  "features_verified": {
+    "settings_page_country_selector": {
+      "us_option": "WORKING - 'United States' option available",
+      "belgium_option": "WORKING - 'Belgium / Belgique' option available",
+      "region_dropdown": "WORKING - Appears when Belgium selected with 4 regions",
+      "language_dropdown": "WORKING - Appears when Belgium selected with 3 languages",
+      "info_banner": "WORKING - Yellow banner with 'Jasper Belgique' text appears",
+      "save_changes": "WORKING - Profile saved successfully message shown"
+    },
+    "profile_api": {
+      "country_field": "WORKING - PUT /api/profile accepts country=BE and country=US",
+      "region_field": "WORKING - PUT /api/profile accepts all 4 Belgian regions",
+      "language_field": "WORKING - PUT /api/profile accepts fr-BE, nl-BE, de-BE"
+    },
+    "country_config_api": {
+      "belgian_config": "WORKING - Returns 4 regions and 3 languages when user is BE",
+      "us_config": "WORKING - Returns US config when user is US"
+    },
+    "letter_types_api": {
+      "belgian_employment": "WORKING - 8 Belgian letter types (CCT109, preavis, C4, etc.)",
+      "belgian_housing": "WORKING - Belgian housing letter types (garantie, enregistrement, etc.)",
+      "belgian_debt": "WORKING - Belgian debt letter types",
+      "belgian_nda": "WORKING - Belgian NDA letter types",
+      "us_employment": "WORKING - US letter types (no BE_ prefixes)"
+    },
+    "upload_page_belgian_mode": {
+      "indicator": "WORKING - Shows 🇧🇪 Jasper Belgique · Wallonie · Droit belge applicable",
+      "mode_toggle": "WORKING - Analyze risk and Contract Guard modes work"
+    },
+    "risk_monitor_tab": {
+      "visibility": "WORKING - Tab visible and functional",
+      "connect_buttons": "WORKING - Gmail and Outlook connect buttons visible"
+    }
+  },
+
+  "mocked_apis": {
+    "has_mocked_apis": true,
+    "mocked_apis_list": [
+      "POST /api/risk-monitor/connect (simulated OAuth, no real Gmail/Outlook integration)",
+      "Belgian analysis uses real Claude API but may be slow"
+    ]
+  }
+}

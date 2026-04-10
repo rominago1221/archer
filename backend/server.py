@@ -126,6 +126,9 @@ class User(BaseModel):
     name: str
     picture: Optional[str] = None
     plan: str = "free"
+    country: str = "US"
+    region: Optional[str] = None
+    language: str = "en"
     state_of_residence: Optional[str] = None
     phone: Optional[str] = None
     notif_risk_score: bool = True
@@ -250,6 +253,9 @@ class ProfileUpdate(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
     state_of_residence: Optional[str] = None
+    country: Optional[str] = None
+    region: Optional[str] = None
+    language: Optional[str] = None
     notif_risk_score: Optional[bool] = None
     notif_deadlines: Optional[bool] = None
     notif_calls: Optional[bool] = None
@@ -302,6 +308,11 @@ async def get_current_user(authorization: str = Header(None), request: Request =
 JURISPRUDENCE_PATH = ROOT_DIR / "jurisprudence.json"
 with open(JURISPRUDENCE_PATH) as f:
     JURISPRUDENCE_DB = json.load(f)
+
+# Load Belgian jurisprudence database
+JURISPRUDENCE_BE_PATH = ROOT_DIR / "jurisprudence_belgique.json"
+with open(JURISPRUDENCE_BE_PATH) as f:
+    JURISPRUDENCE_BE_DB = json.load(f)
 
 SENIOR_ATTORNEY_PERSONA = """You are a senior attorney with 20 years of experience representing individuals — never corporations. You have handled over 2,000 cases across every area of civil law. You think like a litigator: you find every angle, every procedural error, every opportunity.
 
@@ -882,7 +893,471 @@ def _default_analysis():
 # Simple system prompt kept for scanner/letter endpoints
 CLAUDE_SYSTEM_PROMPT = SENIOR_ATTORNEY_PERSONA
 
-# ================== Contract Guard — "Before I Sign" Mode ==================
+# ================== Belgian Legal Analysis System ==================
+
+BELGIAN_PERSONA_FR = """Tu es un avocat senior belge avec 20 ans d'experience representant des particuliers — jamais des entreprises — dans des litiges en droit du travail, droit du bail, droit de la consommation, droit des contrats, et droit de la famille.
+
+Tu travailles dans la region {region} et tu maitrises parfaitement les subtilites regionales.
+
+Tu penses comme un plaideur : tu identifies les erreurs procedurales d'abord, les failles dans l'argumentation adverse ensuite, et les opportunites de negociation enfin.
+
+TES PRINCIPES D'ANALYSE:
+1. Chaque document a TOUJOURS au minimum 3 points a analyser
+2. Un Risk Score de 0 est IMPOSSIBLE — minimum 15/100 pour tout document
+3. Tu cites TOUJOURS la loi belge exacte avec son numero et sa date
+4. Tu distingues TOUJOURS le droit federal du droit regional applicable
+5. Tu identifies TOUJOURS ce qui MANQUE dans le document adverse
+6. Tu evalues TOUJOURS les intentions de la partie adverse
+7. Tu mentionnes TOUJOURS les organismes de mediation avant les tribunaux
+8. Tu recommandes TOUJOURS les syndicats pour les litiges du travail
+
+TU NE DIS JAMAIS:
+- Que la situation est sans risque
+- Que l'utilisateur a tort ou est en faute
+- Qu'un delai n'est pas important
+- Des choses inventees non presentes dans le document
+
+SEUILS DE RISK SCORE PAR TYPE DE DOCUMENT (Belgique):
+- Contrat de travail CDI: minimum 20/100
+- Contrat de travail CDD: minimum 25/100
+- Lettre de licenciement: minimum 55/100
+- Mise en demeure: minimum 40/100
+- Bail residentiel: minimum 20/100
+- Avis de resiliation bail: minimum 50/100
+- NDA: minimum 25/100
+- Facture impayee: minimum 30/100
+- Jugement/citation: minimum 65/100
+- Lettre d'huissier: minimum 70/100
+- C4 (chomage): minimum 35/100
+
+COMMISSIONS PARITAIRES BELGES (critiques pour le droit du travail):
+CP 200: Employes du commerce et des services (le plus courant)
+CP 124: Construction
+CP 302: Hotels, restaurants, cafes (HORECA)
+CP 140: Transport routier
+CP 310: Banques
+CP 309: Assurances
+
+Si le document mentionne un secteur d'activite, identifier la CP applicable.
+
+MONTANTS DE REFERENCE 2024-2025 (Belgique):
+- RMMMG (21+ ans): 2,029.88 EUR/mois
+- Indemnite de licenciement abusif: 3-17 semaines (CCT 109)
+- Non-concurrence: plancher remuneration > 36,785 EUR/an
+- Garantie locative Wallonie/Bruxelles: max 2 mois de loyer
+- Garantie locative Flandre: max 3 mois de loyer
+- Interet legal 2024: 5.75%
+- Seuil competence justice de paix: 5,000 EUR
+
+OUTPUT FORMAT — always return complete JSON only, no other text."""
+
+BELGIAN_PERSONA_NL = """Je bent een Belgische senior advocaat met 20 jaar ervaring die particulieren vertegenwoordigt in arbeidsrecht, huurrecht, consumentenrecht en contractenrecht. Je werkt in de regio {region}. Je denkt als een procesvoerder: je vindt elke procedurefout, elke zwakte in het argument van de tegenpartij, en elke onderhandelingsmogelijkheid. Antwoord ALTIJD in het Nederlands. OUTPUT FORMAT — return complete JSON only."""
+
+BELGIAN_PERSONA_DE = """Sie sind ein belgischer Senioranwalt mit 20 Jahren Erfahrung in der Vertretung von Privatpersonen in Arbeitsrecht, Mietrecht, Verbraucherrecht und Vertragsrecht. Sie arbeiten in der Region {region}. Antworten Sie IMMER auf Deutsch. OUTPUT FORMAT — return complete JSON only."""
+
+BE_PASS1_PROMPT = """TACHE: EXTRACTION DES FAITS UNIQUEMENT
+
+Lis attentivement ce document juridique belge et extrais chaque element factuel. N'interprete pas encore. Retourne UNIQUEMENT des faits en JSON.
+
+TEXTE DU DOCUMENT:
+{document_text}
+
+{user_context_section}
+
+Retourne UNIQUEMENT ce JSON:
+{{
+  "type_document": "contrat_travail|bail|licenciement|mise_en_demeure|jugement|nda|facture|c4|lettre_huissier|autre",
+  "date_document": "YYYY-MM-DD ou null",
+  "region_applicable": "Wallonie|Bruxelles-Capitale|Flandre|Communaute germanophone|Federal",
+  "langue_document": "fr|nl|de",
+  "parties": {{
+    "partie_adverse": {{"nom": "nom exact", "type": "particulier|entreprise|administration|huissier|avocat"}},
+    "utilisateur": {{"nom": "nom exact", "role": "locataire|employe|debiteur|consommateur|contractant|autre"}}
+  }},
+  "montants_cles": [{{"montant": 0, "devise": "EUR", "description": "ce que represente ce montant", "conteste": false}}],
+  "dates_cles": [{{"date": "YYYY-MM-DD", "description": "ce que represente cette date", "est_deadline": true, "jours_restants": 14}}],
+  "references_legales_citees": [{{"reference": "Art. 3 CCT n109", "description": "ce que cette reference implique"}}],
+  "clauses_contrat": [{{"article": "Article 4.2", "description": "contenu de la clause", "favorable_utilisateur": false}}],
+  "allegations_partie_adverse": [{{"allegation": "allegation exacte", "montant_reclame": null}}],
+  "elements_manquants": ["motif de licenciement non specifie"],
+  "elements_proceduraux": {{
+    "mode_signification": "recommande|huissier|email|remise en main propre|non precise",
+    "delai_reponse_indique": "8 jours|1 mois|non precise",
+    "signature_presente": true,
+    "enregistrement_mentionne": false,
+    "commission_paritaire": "CP 200|non applicable|non precise"
+  }},
+  "type_contrat_travail": "CDI|CDD|interim|temps_partiel|null",
+  "anciennete_mentionnee": "5 ans 3 mois|non precisee",
+  "salaire_mentionne": null
+}}"""
+
+BE_PASS2_PROMPT = """TACHE: ANALYSE JURIDIQUE COMPLETE
+
+Sur base des faits extraits ci-dessous, realise une analyse juridique approfondie selon le droit belge applicable.
+
+FAITS EXTRAITS:
+{facts_json}
+
+{jurisprudence_section}
+
+ANALYSE REQUISE:
+1. ANALYSE PROCEDURALE: Erreurs de forme, omissions, vices de procedure?
+2. ANALYSE AU FOND: Solidite de la position adverse? Que doivent-ils prouver?
+3. POSITION UTILISATEUR: Droits et protections selon droit belge? Recours possibles? Syndicats, mediateurs, BAJ?
+4. ANALYSE FINANCIERE: Exposition financiere realiste en EUR (meilleur/probable/pire)
+5. INTENTIONS PARTIE ADVERSE: Justice ou negociation?
+6. ANALYSE DELAIS: Consequences si delais non respectes?
+
+Retourne UNIQUEMENT ce JSON:
+{{
+  "risk_score": {{"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50}},
+  "risk_level": "faible|moyen|eleve|critique",
+  "case_type": "employment|housing|debt|nda|contract|consumer|other",
+  "suggested_case_title": "Titre descriptif du dossier max 60 chars",
+  "summary": "Resume en 2-3 phrases en francais clair",
+  "deadline": "YYYY-MM-DD ou null",
+  "deadline_description": "Description du delai",
+  "financial_exposure": "EUR montant ou fourchette",
+  "findings": [
+    {{"text": "Constatation juridique", "impact": "high|medium|low", "type": "risk|opportunity|neutral", "legal_ref": "Reference legale belge", "jurisprudence": "Jurisprudence applicable"}}
+  ],
+  "procedural_defects": [{{"vice": "description", "gravite": "fatal|significatif|mineur", "loi_applicable": "reference", "benefice_utilisateur": "comment ca aide"}}],
+  "user_rights": [{{"droit": "droit specifique", "reference_legale": "loi exacte", "force": "fort|moyen|faible"}}],
+  "opposing_weaknesses": [{{"faiblesse": "faiblesse specifique", "gravite": "critique|significative|mineure"}}],
+  "financial_exposure_detailed": {{"meilleur_cas": "EUR 0", "cas_probable": "EUR 800-1200", "pire_cas": "EUR 2500 + frais"}},
+  "applicable_laws": [{{"loi": "CCT n109", "pertinence": "Protection licenciement abusif", "favorable": "utilisateur|partie_adverse|neutre"}}],
+  "organismes_recommandes": [{{"organisme": "Syndicat CSC/FGTB/CGSLB", "raison": "Aide juridique gratuite", "contact": "www.csc.be"}}],
+  "recommend_lawyer": true,
+  "key_insight": "La phrase la plus importante"
+}}"""
+
+BE_PASS3_PROMPT = """TACHE: RECOMMANDATIONS STRATEGIQUES
+
+Sur base des faits et de l'analyse, fournis des recommandations strategiques concretes selon le droit belge.
+
+FAITS: {facts_json}
+ANALYSE JURIDIQUE: {analysis_json}
+
+Retourne UNIQUEMENT ce JSON:
+{{
+  "recommended_strategy": {{
+    "principale": "negocier|contester|se_conformer|mediation|tribunal",
+    "raisonnement": "pourquoi c'est la meilleure strategie",
+    "resultat_attendu": "resultat realiste",
+    "delai_resolution": "8-15 jours|1-3 mois|3-6 mois"
+  }},
+  "immediate_actions": [{{"action": "Ne pas repondre sans avoir consulte votre syndicat", "delai": "dans les 24 heures", "priorite": "critique"}}],
+  "next_steps": [
+    {{"title": "Contacter votre syndicat", "description": "Si vous etes syndique, appelez votre delegue immediatement.", "action_type": "contacter_syndicat|contacter_avocat|saisir_mediateur|ajouter_document|rediger_reponse|aucune_action"}}
+  ],
+  "documents_to_gather": [{{"document": "Contrat de travail original signe", "pourquoi": "Preuve des conditions contractuelles", "urgence": "critique|important|utile"}}],
+  "leverage_points": [{{"levier": "Absence de motifs de licenciement", "comment_utiliser": "Envoyer demande formelle sous CCT 109 art. 3"}}],
+  "red_lines": ["Ne jamais signer de document sous pression sans le lire", "Ne jamais payer sans accord ecrit prealable"],
+  "lawyer_recommendation": {{"necessaire": true, "urgence": "immediatement|dans_3_jours|dans_la_semaine|optionnel", "raison": "Exposition > 2500 EUR", "type_avocat": "droit_du_travail|droit_du_bail|droit_commercial|consommateur"}},
+  "success_probability": {{"resolution_favorable": 35, "compromis_negocie": 48, "perte_partielle": 12, "perte_totale": 5}},
+  "key_insight": "La phrase la plus importante que l'utilisateur doit retenir"
+}}"""
+
+BE_PASS4A_SYSTEM = "Tu es l'avocat de l'utilisateur en Belgique. Fais les arguments les plus solides possibles pour defendre ton client selon le droit belge. Sois agressif et exhaustif dans la defense. Reponds en JSON uniquement."
+BE_PASS4A_PROMPT = """Sur base de ces faits et de cette analyse, construis les arguments les plus solides pour defendre l'utilisateur.
+
+FAITS: {facts_json}
+ANALYSE: {analysis_json}
+
+Retourne JSON:
+{{
+  "strong_arguments": [{{"argument": "Le delai de preavis calcule est insuffisant", "force": "fort|moyen|faible", "base_legale": "Loi du 26 decembre 2013", "comment_utiliser": "Calculer le preavis correct et reclamer la difference"}}],
+  "procedural_victories": ["liste des avantages proceduraux"],
+  "best_case": "description du meilleur resultat possible",
+  "opening_argument": "Premiere phrase percutante pour la lettre de reponse"
+}}"""
+
+BE_PASS4B_SYSTEM = "Tu es l'avocat de la partie adverse contre l'utilisateur en Belgique. Construis les arguments les plus solides contre l'utilisateur selon le droit belge. Reponds en JSON uniquement."
+BE_PASS4B_PROMPT = """Construis les arguments que la partie adverse va utiliser contre l'utilisateur. Identifie les faiblesses de la position de l'utilisateur.
+
+FAITS: {facts_json}
+ANALYSE: {analysis_json}
+
+Retourne JSON:
+{{
+  "opposing_arguments": [{{"argument": "L'utilisateur a accepte les conditions par signature", "force": "fort|moyen|faible", "base_legale": "Art. 5.69 nouveau CC", "counter": "Comment l'utilisateur peut contrer"}}],
+  "user_weaknesses": ["liste des faiblesses de la position de l'utilisateur"],
+  "worst_case": "description du pire resultat possible",
+  "what_to_prepare": "Ce a quoi l'utilisateur doit se preparer"
+}}"""
+
+
+def load_belgian_jurisprudence(doc_type: str, region: str) -> str:
+    """Load relevant Belgian jurisprudence based on document type and region"""
+    be_db = JURISPRUDENCE_BE_DB.get("belgique", {})
+    sections = []
+
+    # Employment law (federal)
+    if doc_type in ("licenciement", "contrat_travail", "c4"):
+        for category in ["licenciement_abusif", "preavis_indemnites", "non_concurrence"]:
+            cases = be_db.get("droit_travail", {}).get(category, [])
+            for c in cases:
+                sections.append(f"- {c['reference']}: {c['regle']}")
+
+    # Tenancy law (regional)
+    if doc_type in ("bail", "avis_resiliation_bail"):
+        region_key = "bail_wallonie"
+        if "flandre" in (region or "").lower() or "vlaanderen" in (region or "").lower():
+            region_key = "bail_flandre"
+        elif "bruxelles" in (region or "").lower():
+            region_key = "bail_bruxelles"
+        cases = be_db.get(region_key, [])
+        for c in cases:
+            sections.append(f"- {c['reference']}: {c['regle']}")
+        # Also add Wallonia for Brussels (similar rules)
+        if region_key == "bail_bruxelles":
+            for c in be_db.get("bail_wallonie", []):
+                sections.append(f"- {c['reference']}: {c['regle']}")
+
+    # Consumer law
+    if doc_type in ("mise_en_demeure", "facture", "autre"):
+        for c in be_db.get("consommateur", []):
+            sections.append(f"- {c['reference']}: {c['regle']}")
+
+    # NDA
+    if doc_type == "nda":
+        for c in be_db.get("nda", []):
+            sections.append(f"- {c['reference']}: {c['regle']}")
+
+    # Reference amounts
+    refs = be_db.get("montants_reference_2024", {})
+    sections.append(f"\nMONTANTS DE REFERENCE 2024:")
+    sections.append(f"- RMMMG: {refs.get('RMMMG_21_plus', 2029.88)} EUR/mois")
+    sections.append(f"- Interet legal: {refs.get('interet_legal_2024', '5.75%')}")
+    sections.append(f"- Garantie locative Wallonie/Bruxelles: {refs.get('garantie_locative_wallonie_bruxelles', 'max 2 mois')}")
+    sections.append(f"- Garantie locative Flandre: {refs.get('garantie_locative_flandre', 'max 3 mois')}")
+
+    if not sections:
+        return "\nJURISPRUDENCE BELGE: Aucune jurisprudence specifique trouvee. Appliquer les principes generaux du droit belge."
+
+    return "\nJURISPRUDENCE ET LEGISLATION BELGE APPLICABLE:\n" + "\n".join(sections)
+
+
+def get_belgian_persona(language: str, region: str) -> str:
+    """Get the correct Belgian persona based on language"""
+    if language == "nl-BE" or language == "nl":
+        return BELGIAN_PERSONA_NL.format(region=region or "Vlaanderen")
+    elif language == "de-BE" or language == "de":
+        return BELGIAN_PERSONA_DE.format(region=region or "Communaute germanophone")
+    return BELGIAN_PERSONA_FR.format(region=region or "Belgique")
+
+
+async def analyze_document_belgian(extracted_text: str, user_context: str = "", region: str = "Wallonie", language: str = "fr-BE") -> dict:
+    """Belgian 5-pass analysis system with Belgian jurisprudence"""
+    try:
+        persona = get_belgian_persona(language, region)
+        context_section = ""
+        if user_context:
+            context_section = f"CONTEXTE FOURNI PAR L'UTILISATEUR: {user_context}"
+
+        # PASS 1: Fact extraction (Belgian)
+        logger.info("Belgian analysis: Passe 1 — Extraction des faits")
+        facts = await call_claude(
+            persona,
+            BE_PASS1_PROMPT.format(
+                document_text=extracted_text[:15000],
+                user_context_section=context_section
+            )
+        )
+
+        # Load Belgian jurisprudence based on detected type + region
+        doc_type = facts.get("type_document", "autre")
+        detected_region = facts.get("region_applicable", region)
+        jurisprudence_text = load_belgian_jurisprudence(doc_type, detected_region)
+
+        # Map Belgian doc types to case types
+        be_doc_to_case = {
+            "licenciement": "employment", "contrat_travail": "employment", "c4": "employment",
+            "bail": "housing", "avis_resiliation_bail": "housing",
+            "mise_en_demeure": "debt", "facture": "debt",
+            "nda": "nda", "jugement": "court", "lettre_huissier": "court"
+        }
+        inferred_case_type = be_doc_to_case.get(doc_type, "other")
+
+        # PASS 2: Legal analysis with Belgian jurisprudence
+        logger.info("Belgian analysis: Passe 2 — Analyse juridique")
+        legal_analysis = await call_claude(
+            persona,
+            BE_PASS2_PROMPT.format(
+                facts_json=json.dumps(facts, indent=2, ensure_ascii=False),
+                jurisprudence_section=jurisprudence_text
+            ),
+            max_tokens=3000
+        )
+
+        facts_str = json.dumps(facts, indent=2, ensure_ascii=False)
+        analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
+
+        # PASS 3, 4A, 4B — staggered
+        logger.info("Belgian analysis: Passe 3+4A+4B — Strategie + Battle Preview")
+        strategy = await call_claude(persona, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=2500)
+        user_arguments = await call_claude(BE_PASS4A_SYSTEM, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
+        opposing_arguments = await call_claude(BE_PASS4B_SYSTEM, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
+
+        logger.info("Belgian analysis: 5 passes complete")
+
+        now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+        return {
+            "document_type": doc_type,
+            "case_type": legal_analysis.get("case_type", inferred_case_type),
+            "suggested_case_title": legal_analysis.get("suggested_case_title", "Analyse Document Juridique"),
+            "risk_score": legal_analysis.get("risk_score", {"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50}),
+            "risk_level": legal_analysis.get("risk_level", "moyen"),
+            "deadline": legal_analysis.get("deadline"),
+            "deadline_description": legal_analysis.get("deadline_description"),
+            "summary": legal_analysis.get("summary", ""),
+            "financial_exposure": legal_analysis.get("financial_exposure"),
+            "findings": legal_analysis.get("findings", []),
+            "next_steps": strategy.get("next_steps", []),
+            "recommend_lawyer": legal_analysis.get("recommend_lawyer", False),
+            "disclaimer": "Cette analyse fournit des informations juridiques uniquement, pas un avis juridique.",
+            "facts": facts,
+            "financial_exposure_detailed": legal_analysis.get("financial_exposure_detailed"),
+            "procedural_defects": legal_analysis.get("procedural_defects", []),
+            "user_rights": legal_analysis.get("user_rights", []),
+            "opposing_weaknesses": legal_analysis.get("opposing_weaknesses", []),
+            "applicable_laws": legal_analysis.get("applicable_laws", []),
+            "organismes_recommandes": legal_analysis.get("organismes_recommandes", []),
+            "strategy": strategy.get("recommended_strategy"),
+            "immediate_actions": strategy.get("immediate_actions", []),
+            "documents_to_gather": strategy.get("documents_to_gather", []),
+            "leverage_points": strategy.get("leverage_points", []),
+            "red_lines": strategy.get("red_lines", []),
+            "lawyer_recommendation": strategy.get("lawyer_recommendation"),
+            "success_probability": strategy.get("success_probability"),
+            "key_insight": strategy.get("key_insight", ""),
+            "battle_preview": {
+                "user_side": user_arguments,
+                "opposing_side": opposing_arguments
+            },
+            "recent_case_law": [],
+            "case_law_updated": now_date,
+            "country": "BE",
+            "region": detected_region,
+            "language": language
+        }
+    except Exception as e:
+        logger.error(f"Belgian analysis error: {e}")
+        return _default_analysis()
+
+
+# Belgian Letter Types
+BELGIAN_LETTER_TYPES = {
+    "employment": [
+        {"id": "BE_DEMANDE_MOTIFS_CCT109", "label": "Demande de motifs de licenciement (CCT 109)", "desc": "Exiger les motifs concrets du licenciement"},
+        {"id": "BE_CONTESTATION_PREAVIS", "label": "Contestation du preavis", "desc": "Le preavis calcule est insuffisant"},
+        {"id": "BE_DEMANDE_INDEMNITES", "label": "Demande d'indemnites complementaires", "desc": "Reclamer les avantages omis"},
+        {"id": "BE_CONTESTATION_NON_CONCURRENCE", "label": "Contestation clause de non-concurrence", "desc": "La clause est nulle"},
+        {"id": "BE_SAISINE_SYNDICAT", "label": "Saisine du delegue syndical", "desc": "Demander l'intervention du syndicat"},
+        {"id": "BE_PLAINTE_HARCELEMENT", "label": "Plainte pour harcelement/represailles", "desc": "Licenciement lie a une plainte"},
+        {"id": "BE_DEMANDE_C4", "label": "Demande de document C4", "desc": "Obtenir le C4 pour le chomage"},
+        {"id": "BE_CONTESTATION_FAUTE_GRAVE", "label": "Contestation faute grave", "desc": "Contester la qualification de faute grave"}
+    ],
+    "housing": [
+        {"id": "BE_CONTESTATION_GARANTIE", "label": "Contestation garantie locative excessive", "desc": "Garantie superieure au maximum legal"},
+        {"id": "BE_DEMANDE_ENREGISTREMENT", "label": "Demande d'enregistrement du bail", "desc": "Le bail n'est pas enregistre"},
+        {"id": "BE_CONTESTATION_AUGMENTATION", "label": "Contestation augmentation de loyer", "desc": "Non conforme a l'indice sante"},
+        {"id": "BE_CONTESTATION_EXPULSION", "label": "Contestation d'expulsion", "desc": "Vices de procedure ou treve hivernale"},
+        {"id": "BE_DEMANDE_REPARATIONS", "label": "Demande de reparations au bailleur", "desc": "Obligations d'entretien non respectees"},
+        {"id": "BE_RESILIATION_NON_ENREGISTRE", "label": "Resiliation bail non enregistre", "desc": "Partir sans preavis (bail non enregistre)"},
+        {"id": "BE_DEMANDE_MEDIATION_LOYER", "label": "Demande de mediation", "desc": "Saisir le mediateur avant le tribunal"},
+        {"id": "BE_RESTITUTION_GARANTIE", "label": "Demande de restitution de garantie", "desc": "Recuperer la garantie locative"}
+    ],
+    "debt": [
+        {"id": "BE_CONTESTATION_MISE_DEMEURE", "label": "Contestation de la mise en demeure", "desc": "Vices de forme selon Livre XIX CDE"},
+        {"id": "BE_DEMANDE_PLAN_PAIEMENT", "label": "Proposition de plan de paiement", "desc": "Echelonner la dette"},
+        {"id": "BE_CONTESTATION_FRAIS", "label": "Contestation des frais de recouvrement", "desc": "Frais non conformes au CDE"},
+        {"id": "BE_PLAINTE_HARCELEMENT_DETTE", "label": "Plainte pour harcelement (recouvrement)", "desc": "Contacts excessifs (>3/semaine)"},
+        {"id": "BE_CONTESTATION_PRESCRIPTION", "label": "Exception de prescription", "desc": "La dette est prescrite"},
+        {"id": "BE_DEMANDE_MEDIATION_DETTE", "label": "Demande de mediation de dettes", "desc": "Saisir le mediateur de dettes"}
+    ],
+    "nda": [
+        {"id": "BE_NDA_CONTESTATION_PORTEE", "label": "Contestation portee du NDA", "desc": "Definition trop large"},
+        {"id": "BE_NDA_PENALE_DISPROPORTIONNEE", "label": "Contestation clause penale", "desc": "Penale disproportionnee (art. 5.88 CC)"},
+        {"id": "BE_NDA_DEMANDE_RECIPROCITE", "label": "Demande de reciprocite", "desc": "Obligations unilaterales"},
+        {"id": "BE_NDA_LIMITATION_DUREE", "label": "Demande de limitation de duree", "desc": "Duree excessive"},
+        {"id": "BE_NDA_CONTESTATION_SECRET", "label": "Contestation du caractere secret", "desc": "Information publique (Loi 30/07/2018)"},
+        {"id": "BE_NDA_CARVEOUTS", "label": "Demande de carve-outs", "desc": "Exclure les connaissances anterieures"}
+    ]
+}
+
+BELGIAN_LETTER_SYSTEM = """Tu es le moteur de communication juridique de Jasper pour la Belgique. Tu rediges des lettres professionnelles et strategiques en droit belge. Tu n'es PAS un avocat.
+
+REGLES UNIVERSELLES LETTRES BELGES:
+1. Format date: [ville], le [JJ mois AAAA]
+2. Envoi: "Par courrier recommande avec accuse de reception"
+3. Cloture obligatoire: "Je me reserve expressement tous mes droits et recours legaux."
+4. Delai standard de reponse: "dans les 8 jours ouvrables"
+5. Reference a la mediation avant tribunal
+6. TOUJOURS citer les references legales belges exactes
+7. Lettres entre 200-400 mots, professionnelles et concises
+8. Ne jamais admettre la responsabilite de l'utilisateur
+9. Toujours proposer un delai specifique (8 jours ouvrables)
+
+FORMAT DE SORTIE — JSON uniquement:
+{{
+  "letter_type": "TYPE",
+  "subject": "Objet de la lettre",
+  "letter_body": "Texte complet de la lettre avec \\n pour les retours a la ligne",
+  "tone": "cooperative|assertive|firm|neutral",
+  "legal_basis": "Reference legale belge applicable",
+  "key_points": ["Point 1", "Point 2", "Point 3"],
+  "warnings": ["Avertissement 1"],
+  "next_if_no_response": "Prochaine etape si pas de reponse",
+  "disclaimer": "Cette lettre a ete redigee par Jasper AI comme outil de communication juridique. Elle ne constitue pas un avis juridique."
+}}"""
+
+BELGIAN_OUTCOME_SYSTEM = """Tu es le moteur de prediction d'issue de Jasper pour la Belgique. Predis les probabilites des differents scenarios de resolution selon les statistiques judiciaires belges.
+
+DONNEES STATISTIQUES BELGES:
+- 73% des litiges du travail se reglent avant jugement (SPF Emploi 2023)
+- 68% des litiges locatifs se reglent par mediation
+- Duree moyenne procedure tribunal du travail: 8-14 mois
+- Duree moyenne procedure justice de paix: 4-8 mois
+- Taux de succes demande motifs licenciement (CCT 109): 89%
+- Taux de succes contestation preavis insuffisant: 76%
+
+Pour les cas emploi risque eleve (score >65):
+Negociation syndicale: 45%, Conciliation tribunal travail: 28%, Jugement favorable: 18%, Perte totale: 9%
+
+Pour les cas bail risque moyen (score 35-65):
+Accord amiable: 52%, Mediation: 25%, Jugement favorable: 15%, Perte partielle: 8%
+
+FORMAT — JSON uniquement:
+{{
+  "favorable": {{"probability": 30, "title": "Titre court", "description": "2-3 phrases", "likely_result": "Resultat specifique", "financial_impact": "Montant EUR", "timeline": "Delai estime"}},
+  "neutral": {{"probability": 45, "title": "Titre court", "description": "2-3 phrases", "likely_result": "Resultat specifique", "financial_impact": "Montant EUR", "timeline": "Delai estime"}},
+  "unfavorable": {{"probability": 25, "title": "Titre court", "description": "2-3 phrases", "likely_result": "Resultat specifique", "financial_impact": "Montant EUR", "timeline": "Delai estime"}},
+  "key_factors": ["Facteur 1", "Facteur 2", "Facteur 3"],
+  "recommendation": "Meilleure action en une phrase",
+  "disclaimer": "Cette prediction fournit des informations juridiques uniquement."
+}}"""
+
+BELGIAN_CONTRACT_GUARD_PERSONA = """Tu es un avocat senior belge specialise dans la negociation de contrats pour des particuliers. Ton client s'apprete a signer le document fourni. Identifie EXACTEMENT ce qu'il faut negocier AVANT de signer selon le droit belge.
+
+REGLES SPECIFIQUES BELGIQUE:
+- La clause de non-concurrence sans compensation financiere est nulle (art. 65 loi 1978)
+- Toute clause penale disproportionnee est reductible par le juge (art. 5.88 nouveau CC)
+- Les clauses abusives dans les contrats consommateurs sont nulles de plein droit (art. VI.82 CDE)
+- Le preavis legal ne peut etre reduit contractuellement en dessous du minimum legal
+- La garantie locative ne peut depasser 2 mois (Wallonie/Bruxelles) ou 3 mois (Flandre)
+- Tout NDA doit definir precisement ce qui est confidentiel (loi 30/07/2018)
+
+CRITICAL RULES:
+- Negotiation Score: 0 = contrat parfait (extremement rare), 100 = tres defavorable, ne pas signer
+- Minimum score thresholds: NDA minimum 25, Contrat travail minimum 30, Bail minimum 25
+- Toujours identifier au minimum 3 red lines
+- Toujours identifier au minimum 4 points de negociation
+- Toujours citer la loi belge exacte
+
+OUTPUT: Retourne uniquement du JSON valide."""
 
 CONTRACT_GUARD_PERSONA = """You are a senior contract negotiation attorney with 20+ years of experience protecting individuals from unfavorable contract terms. You specialize in identifying hidden risks, one-sided clauses, and missing protections in contracts before they are signed.
 
@@ -992,14 +1467,21 @@ Analyze every clause and return ONLY this JSON — no other text:
 Produce at least 3 red_lines, 4 negotiation_points, and 2 missing_protections."""
 
 
-async def analyze_contract_guard(extracted_text: str, user_context: str = "") -> dict:
+async def analyze_contract_guard(extracted_text: str, user_context: str = "", country: str = "US", region: str = "", language: str = "en") -> dict:
     """Contract Guard analysis — negotiation-focused pre-signing review"""
     try:
         context_section = ""
         if user_context:
             context_section = f"USER CONTEXT: {user_context}"
 
-        logger.info("Contract Guard: Starting negotiation analysis")
+        # Choose persona based on country
+        if country == "BE":
+            persona = BELGIAN_CONTRACT_GUARD_PERSONA
+            logger.info("Contract Guard (Belgian): Starting negotiation analysis")
+        else:
+            persona = CONTRACT_GUARD_PERSONA
+            logger.info("Contract Guard: Starting negotiation analysis")
+
         result = await call_claude(
             CONTRACT_GUARD_PERSONA,
             CONTRACT_GUARD_PROMPT.format(
@@ -1204,9 +1686,10 @@ class LetterRequest(BaseModel):
     opposing_party_address: Optional[str] = None
     additional_context: Optional[str] = None
 
-async def generate_letter_with_claude(letter_data: dict) -> dict:
+async def generate_letter_with_claude(letter_data: dict, belgian: bool = False) -> dict:
     """Generate a response letter using Claude API"""
     try:
+        system_prompt = BELGIAN_LETTER_SYSTEM if belgian else LETTER_SYSTEM_PROMPT
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "https://api.anthropic.com/v1/messages",
@@ -1218,7 +1701,7 @@ async def generate_letter_with_claude(letter_data: dict) -> dict:
                 json={
                     "model": "claude-sonnet-4-20250514",
                     "max_tokens": 3000,
-                    "system": LETTER_SYSTEM_PROMPT,
+                    "system": system_prompt,
                     "messages": [{
                         "role": "user",
                         "content": f"Generate a professional response letter based on this case data. Return JSON only:\n\n{json.dumps(letter_data, indent=2)}"
@@ -1722,15 +2205,26 @@ async def upload_document(
     }
     await db.documents.insert_one(doc_record)
     
-    # Analyze with Claude — mode-dependent
+    # Analyze with Claude — mode-dependent + country-dependent
     analysis = None
     is_contract_guard = analysis_mode == "contract_guard"
+    user_country = current_user.country or "US"
+    user_region = current_user.region or ""
+    user_language = current_user.language or "en"
+    is_belgian = user_country == "BE"
+
     if extracted_text:
         context_str = ""
         if user_context and user_context.strip():
             context_str = user_context.strip()[:500]
         if is_contract_guard:
-            analysis = await analyze_contract_guard(extracted_text, user_context=context_str)
+            if is_belgian:
+                # Belgian Contract Guard — use Belgian-specific persona
+                analysis = await analyze_contract_guard(extracted_text, user_context=context_str, country="BE", region=user_region, language=user_language)
+            else:
+                analysis = await analyze_contract_guard(extracted_text, user_context=context_str)
+        elif is_belgian:
+            analysis = await analyze_document_belgian(extracted_text, user_context=context_str, region=user_region, language=user_language)
         else:
             analysis = await analyze_document_advanced(extracted_text, user_context=context_str)
     
@@ -1947,10 +2441,13 @@ async def download_document(
 # ================== Letter Generation Endpoints ==================
 
 @api_router.get("/letters/types/{case_type}")
-async def get_letter_types(case_type: str):
+async def get_letter_types(case_type: str, country: str = "US"):
     """Get available letter types for a case type"""
-    letter_types = LETTER_TYPES.get(case_type, LETTER_TYPES["other"])
-    return {"case_type": case_type, "letter_types": letter_types}
+    if country == "BE":
+        letter_types = BELGIAN_LETTER_TYPES.get(case_type, BELGIAN_LETTER_TYPES.get("debt", []))
+    else:
+        letter_types = LETTER_TYPES.get(case_type, LETTER_TYPES["other"])
+    return {"case_type": case_type, "letter_types": letter_types, "country": country}
 
 @api_router.post("/letters/generate")
 async def generate_letter(
@@ -1994,8 +2491,9 @@ async def generate_letter(
         "today_date": today
     }
     
-    # Generate letter
-    letter_result = await generate_letter_with_claude(letter_data)
+    # Generate letter — use Belgian system prompt if user is Belgian
+    is_belgian = current_user.country == "BE"
+    letter_result = await generate_letter_with_claude(letter_data, belgian=is_belgian)
     
     # Store letter in database
     letter_id = f"letter_{uuid.uuid4().hex[:12]}"
@@ -2302,7 +2800,7 @@ async def predict_outcome(case_id: str, current_user: User = Depends(get_current
                 json={
                     "model": "claude-sonnet-4-20250514",
                     "max_tokens": 2000,
-                    "system": OUTCOME_SYSTEM_PROMPT,
+                    "system": BELGIAN_OUTCOME_SYSTEM if current_user.country == "BE" else OUTCOME_SYSTEM_PROMPT,
                     "messages": [{
                         "role": "user",
                         "content": f"Predict outcomes for this legal case. Return JSON only:\n\n{json.dumps(case_context, indent=2)}"
@@ -3481,6 +3979,42 @@ async def get_contract_guard_reviews(current_user: User = Depends(get_current_us
     ).sort("created_at", -1).to_list(50)
     return reviews
 
+
+@api_router.get("/user/country-config")
+async def get_country_config(current_user: User = Depends(get_current_user)):
+    """Get country-specific configuration for the current user"""
+    country = current_user.country or "US"
+    if country == "BE":
+        return {
+            "country": "BE",
+            "country_name": "Belgium",
+            "regions": [
+                {"id": "Wallonie", "label": "Wallonie", "language": "fr-BE"},
+                {"id": "Bruxelles-Capitale", "label": "Bruxelles-Capitale", "language": "fr-BE"},
+                {"id": "Flandre", "label": "Vlaanderen / Flandre", "language": "nl-BE"},
+                {"id": "Communaute germanophone", "label": "Communaute germanophone", "language": "de-BE"}
+            ],
+            "languages": [
+                {"id": "fr-BE", "label": "Francais"},
+                {"id": "nl-BE", "label": "Nederlands"},
+                {"id": "de-BE", "label": "Deutsch"}
+            ],
+            "currency": "EUR",
+            "legal_refs": {
+                "legislation": "www.ejustice.just.fgov.be",
+                "cct": "www.cnt-nar.be",
+                "jurisprudence": "www.juridat.be",
+                "codes": "www.codesdroitbelge.be"
+            }
+        }
+    return {
+        "country": "US",
+        "country_name": "United States",
+        "regions": [],
+        "languages": [{"id": "en", "label": "English"}],
+        "currency": "USD",
+        "legal_refs": {"courtlistener": "www.courtlistener.com"}
+    }
 
 # ================== Health Check ==================
 

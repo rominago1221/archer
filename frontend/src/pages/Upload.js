@@ -172,6 +172,7 @@ const Upload = () => {
   };
 
   const isContractGuard = analysisMode === 'contract_guard';
+  const isBelgian = user?.country === 'BE';
   const analysis = result?.analysis;
   const isContractGuardResult = result?.analysis_mode === 'contract_guard';
   const showUploadForm = !uploading && !result;
@@ -186,6 +187,17 @@ const Upload = () => {
       </div>
 
       <div className="max-w-2xl mx-auto">
+
+        {/* Belgian mode indicator */}
+        {isBelgian && (
+          <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-[#111827] text-white rounded-xl" data-testid="belgian-mode-indicator">
+            <span className="text-xs">🇧🇪</span>
+            <span className="text-xs font-medium">Jasper Belgique</span>
+            <span className="text-[10px] text-white/60 ml-1">
+              {user?.region || 'Belgique'} &middot; Droit belge applicable
+            </span>
+          </div>
+        )}
 
         {/* ========== LOADING STATE ========== */}
         {showLoading && (

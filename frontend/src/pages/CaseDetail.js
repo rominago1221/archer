@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import { FileText, Upload, AlertCircle, Zap, CheckCircle, Clock, Video, Mail, X, Download, Copy, Loader2, TrendingUp, ChevronDown, ChevronUp, Target, Shield, Swords, Scale, BookOpen, AlertTriangle, Lightbulb, Share2, Link2, ExternalLink } from 'lucide-react';
 
@@ -347,6 +348,7 @@ const KeyInsight = ({ insight, leverage }) => {
 const CaseDetail = () => {
   const { caseId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [caseData, setCaseData] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [events, setEvents] = useState([]);
@@ -389,8 +391,9 @@ const CaseDetail = () => {
       setLawyers(lawyersRes.data.filter(l => l.availability_status === 'now' || l.availability_status === 'soon').slice(0, 1));
       
       // Fetch letter types and risk history
+      const userCountry = user?.country || 'US';
       const [letterTypesRes, riskHistoryRes, sharesRes] = await Promise.all([
-        axios.get(`${API}/letters/types/${caseRes.data.type}`),
+        axios.get(`${API}/letters/types/${caseRes.data.type}?country=${userCountry}`),
         axios.get(`${API}/cases/${caseId}/risk-history`, { withCredentials: true }),
         axios.get(`${API}/cases/${caseId}/shares`, { withCredentials: true }).catch(() => ({ data: [] }))
       ]);
@@ -730,6 +733,12 @@ const CaseDetail = () => {
                       <div className="text-xs text-[#444] leading-relaxed">
                         {finding.text}
                         <span className={`badge ${badgeClass} text-[10px] ml-2`}>{badgeText}</span>
+                        {finding.legal_ref && (
+                          <div className="text-[10px] text-[#1a56db] mt-1 font-medium">{finding.legal_ref}</div>
+                        )}
+                        {finding.jurisprudence && (
+                          <div className="text-[10px] text-[#6b7280] mt-0.5 italic">{finding.jurisprudence}</div>
+                        )}
                       </div>
                     </div>
                   );
@@ -844,13 +853,36 @@ const CaseDetail = () => {
                   <div key={i} className="bg-[#f0fdf4] rounded-lg p-3 border border-[#bbf7d0]">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{
-                        background: defect.severity === 'fatal' ? '#fef2f2' : defect.severity === 'significant' ? '#fef9c3' : '#f5f5f5',
-                        color: defect.severity === 'fatal' ? '#dc2626' : defect.severity === 'significant' ? '#ca8a04' : '#888'
-                      }}>{defect.severity}</span>
-                      {defect.applicable_law && <span className="text-[10px] text-[#9ca3af]">{defect.applicable_law}</span>}
+                        background: (defect.severity || defect.gravite) === 'fatal' ? '#fef2f2' : (defect.severity || defect.gravite) === 'significant' || (defect.severity || defect.gravite) === 'significatif' ? '#fef9c3' : '#f5f5f5',
+                        color: (defect.severity || defect.gravite) === 'fatal' ? '#dc2626' : (defect.severity || defect.gravite) === 'significant' || (defect.severity || defect.gravite) === 'significatif' ? '#ca8a04' : '#888'
+                      }}>{defect.severity || defect.gravite}</span>
+                      {(defect.applicable_law || defect.loi_applicable) && <span className="text-[10px] text-[#1a56db] font-medium">{defect.applicable_law || defect.loi_applicable}</span>}
                     </div>
-                    <div className="text-[11px] text-[#111827] font-medium">{defect.defect}</div>
-                    {defect.user_benefit && <div className="text-[10px] text-[#16a34a] mt-1">{defect.user_benefit}</div>}
+                    <div className="text-[11px] text-[#111827] font-medium">{defect.defect || defect.vice}</div>
+                    {(defect.user_benefit || defect.benefice_utilisateur) && <div className="text-[10px] text-[#16a34a] mt-1">{defect.user_benefit || defect.benefice_utilisateur}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Belgian-specific: Recommended organizations */}
+          {caseData.organismes_recommandes && caseData.organismes_recommandes.length > 0 && (
+            <div className="card p-5" data-testid="organismes-recommandes">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-7 h-7 rounded-lg bg-[#eff6ff] flex items-center justify-center">
+                  <Scale size={14} className="text-[#1a56db]" />
+                </div>
+                <div className="text-sm font-medium">Organismes recommandes</div>
+              </div>
+              <div className="space-y-2">
+                {caseData.organismes_recommandes.map((org, i) => (
+                  <div key={i} className="bg-[#eff6ff] rounded-lg p-3 border border-[#bfdbfe]">
+                    <div className="text-xs font-semibold text-[#1d4ed8]">{org.organisme}</div>
+                    <div className="text-[11px] text-[#374151] mt-1">{org.raison}</div>
+                    {org.contact && (
+                      <div className="text-[10px] text-[#1a56db] mt-1 font-medium">{org.contact}</div>
+                    )}
                   </div>
                 ))}
               </div>
