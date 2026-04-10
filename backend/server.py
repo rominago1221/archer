@@ -7,7 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import List, Optional, Any, Dict
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -154,6 +154,30 @@ class CaseUpdate(BaseModel):
     type: Optional[str] = None
     status: Optional[str] = None
 
+def normalize_deadline(val):
+    """Normalize deadline value to string — handles dict, string, or None"""
+    if val is None:
+        return None
+    if isinstance(val, str):
+        return val
+    if isinstance(val, dict):
+        return val.get("date") or val.get("deadline") or str(val)
+    return str(val)
+
+
+def normalize_financial_exposure(val):
+    """Normalize financial_exposure to string"""
+    if val is None:
+        return None
+    if isinstance(val, str):
+        return val
+    if isinstance(val, (int, float)):
+        return f"EUR {val}"
+    if isinstance(val, dict):
+        return val.get("cas_probable") or val.get("probable") or str(val)
+    return str(val)
+
+
 class Case(BaseModel):
     model_config = ConfigDict(extra="ignore")
     case_id: str
@@ -177,6 +201,9 @@ class Case(BaseModel):
     document_count: int = 0
     created_at: str
     updated_at: str
+    country: Optional[str] = None
+    region: Optional[str] = None
+    language: Optional[str] = None
     # Advanced 5-Pass Analysis Fields
     battle_preview: Optional[dict] = None
     success_probability: Optional[dict] = None
@@ -194,6 +221,28 @@ class Case(BaseModel):
     documents_to_gather: List[dict] = []
     recent_case_law: List[dict] = []
     case_law_updated: Optional[str] = None
+
+    @field_validator('deadline', mode='before')
+    @classmethod
+    def normalize_deadline_field(cls, v):
+        return normalize_deadline(v)
+    
+    @field_validator('financial_exposure', mode='before')
+    @classmethod
+    def normalize_financial_field(cls, v):
+        return normalize_financial_exposure(v)
+    
+    @field_validator('risk_score', 'risk_financial', 'risk_urgency', 'risk_legal_strength', 'risk_complexity', mode='before')
+    @classmethod
+    def normalize_int_scores(cls, v):
+        if isinstance(v, (int, float)):
+            return int(v)
+        if isinstance(v, dict):
+            return int(v.get('total', v.get('score', 0)))
+        try:
+            return int(v)
+        except (ValueError, TypeError):
+            return 0
 
 class Document(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -1218,6 +1267,8 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
     """Belgian 5-pass analysis system with Belgian jurisprudence"""
     try:
         persona = get_belgian_persona(language, region)
+        lang_instruction = get_language_instruction(language)
+        persona_with_lang = persona + lang_instruction
         context_section = ""
         if user_context:
             context_section = f"CONTEXTE FOURNI PAR L'UTILISATEUR: {user_context}"
@@ -1225,7 +1276,7 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
         # PASS 1: Fact extraction (Belgian)
         logger.info("Belgian analysis: Passe 1 — Extraction des faits")
         facts = await call_claude(
-            persona,
+            persona_with_lang,
             BE_PASS1_PROMPT.format(
                 document_text=extracted_text[:15000],
                 user_context_section=context_section
@@ -1249,7 +1300,7 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
         # PASS 2: Legal analysis with Belgian jurisprudence
         logger.info("Belgian analysis: Passe 2 — Analyse juridique")
         legal_analysis = await call_claude(
-            persona,
+            persona_with_lang,
             BE_PASS2_PROMPT.format(
                 facts_json=json.dumps(facts, indent=2, ensure_ascii=False),
                 jurisprudence_section=jurisprudence_text
@@ -1262,9 +1313,9 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
 
         # PASS 3, 4A, 4B — staggered
         logger.info("Belgian analysis: Passe 3+4A+4B — Strategie + Battle Preview")
-        strategy = await call_claude(persona, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=2500)
-        user_arguments = await call_claude(BE_PASS4A_SYSTEM, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
-        opposing_arguments = await call_claude(BE_PASS4B_SYSTEM, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
+        strategy = await call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=2500)
+        user_arguments = await call_claude(BE_PASS4A_SYSTEM + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
+        opposing_arguments = await call_claude(BE_PASS4B_SYSTEM + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
 
         logger.info("Belgian analysis: 5 passes complete")
 
@@ -1542,14 +1593,14 @@ async def analyze_contract_guard(extracted_text: str, user_context: str = "", co
 
         # Choose persona based on country
         if country == "BE":
-            persona = BELGIAN_CONTRACT_GUARD_PERSONA
+            persona = BELGIAN_CONTRACT_GUARD_PERSONA + get_language_instruction(language)
             logger.info("Contract Guard (Belgian): Starting negotiation analysis")
         else:
             persona = CONTRACT_GUARD_PERSONA
             logger.info("Contract Guard: Starting negotiation analysis")
 
         result = await call_claude(
-            CONTRACT_GUARD_PERSONA,
+            persona,
             CONTRACT_GUARD_PROMPT.format(
                 document_text=extracted_text[:15000],
                 user_context_section=context_section
@@ -1752,10 +1803,11 @@ class LetterRequest(BaseModel):
     opposing_party_address: Optional[str] = None
     additional_context: Optional[str] = None
 
-async def generate_letter_with_claude(letter_data: dict, belgian: bool = False) -> dict:
+async def generate_letter_with_claude(letter_data: dict, belgian: bool = False, language: str = "en") -> dict:
     """Generate a response letter using Claude API"""
     try:
         system_prompt = BELGIAN_LETTER_SYSTEM if belgian else LETTER_SYSTEM_PROMPT
+        system_prompt += get_language_instruction(language)
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "https://api.anthropic.com/v1/messages",
@@ -1843,10 +1895,26 @@ def image_file_to_base64(file_bytes: bytes, content_type: str) -> str:
         return base64.b64encode(file_bytes).decode("utf-8")
 
 
-async def analyze_document_vision(image_b64_list: list, system_prompt: str = None, user_context: str = "") -> dict:
+def get_language_instruction(language: str) -> str:
+    """Get mandatory language enforcement instruction for Claude"""
+    lang_map = {
+        "fr-BE": ("French", "francais"),
+        "nl-BE": ("Dutch", "neerlandais/Nederlands"),
+        "de-BE": ("German", "allemand/Deutsch"),
+        "en": ("English", "English"),
+    }
+    lang_name, native = lang_map.get(language, ("English", "English"))
+    if language == "en":
+        return ""
+    return f"\n\nMANDATORY LANGUAGE RULE: You MUST respond ENTIRELY in {lang_name} ({native}). ALL findings, next steps, key insights, recommendations, summaries, and every single text field in your JSON response MUST be written in {lang_name}. NEVER respond in English for this user. This is non-negotiable.\n"
+
+
+async def analyze_document_vision(image_b64_list: list, system_prompt: str = None, user_context: str = "", language: str = "en") -> dict:
     """Analyze document images using Claude Vision API (for scanned/image docs)"""
     if not system_prompt:
         system_prompt = "You are an OCR + legal analysis expert. First, read ALL text visible in the document images. Then analyze the extracted text as a legal document.\n\n" + CLAUDE_SYSTEM_PROMPT
+    
+    system_prompt += get_language_instruction(language)
     
     content_blocks = []
     for i, b64 in enumerate(image_b64_list):
@@ -2409,10 +2477,15 @@ async def upload_document(
             if image_b64_list:
                 try:
                     if is_contract_guard:
-                        analysis = await analyze_document_vision(image_b64_list, user_context=context_str)
+                        if is_belgian:
+                            cg_system = get_belgian_persona(user_language, user_region) + "\n\nYou are also a CONTRACT REVIEW specialist.\n" + get_language_instruction(user_language)
+                            analysis = await analyze_document_vision(image_b64_list, system_prompt=cg_system, user_context=context_str, language=user_language)
+                        else:
+                            analysis = await analyze_document_vision(image_b64_list, user_context=context_str)
                     elif is_belgian:
-                        be_system = "You are an OCR + legal analysis expert specializing in Belgian law. First, read ALL text visible in the document images. Then analyze as a Belgian legal document.\n\n" + CLAUDE_SYSTEM_PROMPT
-                        analysis = await analyze_document_vision(image_b64_list, system_prompt=be_system, user_context=context_str)
+                        be_persona = get_belgian_persona(user_language, user_region)
+                        be_system = "Tu es un expert OCR + analyse juridique. Lis d'abord TOUT le texte visible dans les images. Puis analyse le document juridique belge.\n\n" + be_persona + get_language_instruction(user_language)
+                        analysis = await analyze_document_vision(image_b64_list, system_prompt=be_system, user_context=context_str, language=user_language)
                     else:
                         analysis = await analyze_document_vision(image_b64_list, user_context=context_str)
                 except Exception as e:
@@ -2455,9 +2528,9 @@ async def upload_document(
                         "risk_urgency": analysis["risk_score"]["urgency"],
                         "risk_legal_strength": analysis["risk_score"]["legal_strength"],
                         "risk_complexity": analysis["risk_score"]["complexity"],
-                        "deadline": analysis.get("deadline"),
-                        "deadline_description": analysis.get("deadline_description"),
-                        "financial_exposure": analysis.get("financial_exposure"),
+                        "deadline": normalize_deadline(analysis.get("deadline")),
+                        "deadline_description": analysis.get("deadline_description") or (analysis.get("deadline", {}).get("description") if isinstance(analysis.get("deadline"), dict) else None),
+                        "financial_exposure": normalize_financial_exposure(analysis.get("financial_exposure")),
                         "ai_summary": analysis.get("summary"),
                         "ai_findings": analysis.get("findings", []),
                         "ai_next_steps": analysis.get("next_steps", []),
@@ -2523,11 +2596,14 @@ async def upload_document(
             "title": case_title,
             "type": case_type,
             "status": "active",
-            "risk_score": analysis["risk_score"]["total"] if analysis else 0,
-            "risk_financial": analysis["risk_score"]["financial"] if analysis else 0,
-            "risk_urgency": analysis["risk_score"]["urgency"] if analysis else 0,
-            "risk_legal_strength": analysis["risk_score"]["legal_strength"] if analysis else 0,
-            "risk_complexity": analysis["risk_score"]["complexity"] if analysis else 0,
+            "country": user_country,
+            "region": user_region,
+            "language": user_language,
+            "risk_score": analysis["risk_score"]["total"] if analysis and isinstance(analysis.get("risk_score"), dict) else (analysis.get("risk_score", {}).get("total", 0) if analysis else 0),
+            "risk_financial": analysis["risk_score"]["financial"] if analysis and isinstance(analysis.get("risk_score"), dict) else 0,
+            "risk_urgency": analysis["risk_score"]["urgency"] if analysis and isinstance(analysis.get("risk_score"), dict) else 0,
+            "risk_legal_strength": analysis["risk_score"]["legal_strength"] if analysis and isinstance(analysis.get("risk_score"), dict) else 0,
+            "risk_complexity": analysis["risk_score"]["complexity"] if analysis and isinstance(analysis.get("risk_score"), dict) else 0,
             "risk_score_history": [{
                 "score": analysis["risk_score"]["total"],
                 "financial": analysis["risk_score"]["financial"],
@@ -2536,10 +2612,10 @@ async def upload_document(
                 "complexity": analysis["risk_score"]["complexity"],
                 "document_name": file.filename,
                 "date": now
-            }] if analysis else [],
-            "deadline": analysis.get("deadline") if analysis else None,
-            "deadline_description": analysis.get("deadline_description") if analysis else None,
-            "financial_exposure": analysis.get("financial_exposure") if analysis else None,
+            }] if analysis and isinstance(analysis.get("risk_score"), dict) else [],
+            "deadline": normalize_deadline(analysis.get("deadline")) if analysis else None,
+            "deadline_description": (analysis.get("deadline_description") or (analysis.get("deadline", {}).get("description") if isinstance(analysis.get("deadline"), dict) else None)) if analysis else None,
+            "financial_exposure": normalize_financial_exposure(analysis.get("financial_exposure")) if analysis else None,
             "ai_summary": analysis.get("summary") if analysis else None,
             "ai_findings": analysis.get("findings", []) if analysis else [],
             "ai_next_steps": analysis.get("next_steps", []) if analysis else [],
@@ -2694,7 +2770,8 @@ async def generate_letter(
     
     # Generate letter — use Belgian system prompt if user is Belgian
     is_belgian = current_user.country == "BE"
-    letter_result = await generate_letter_with_claude(letter_data, belgian=is_belgian)
+    user_language = getattr(current_user, 'language', 'en') or 'en'
+    letter_result = await generate_letter_with_claude(letter_data, belgian=is_belgian, language=user_language)
     
     # Store letter in database
     letter_id = f"letter_{uuid.uuid4().hex[:12]}"
@@ -3007,7 +3084,7 @@ async def predict_outcome(case_id: str, current_user: User = Depends(get_current
                 json={
                     "model": "claude-sonnet-4-20250514",
                     "max_tokens": 2000,
-                    "system": BELGIAN_OUTCOME_SYSTEM if current_user.country == "BE" else OUTCOME_SYSTEM_PROMPT,
+                    "system": (BELGIAN_OUTCOME_SYSTEM if current_user.country == "BE" else OUTCOME_SYSTEM_PROMPT) + get_language_instruction(getattr(current_user, 'language', 'en') or 'en'),
                     "messages": [{
                         "role": "user",
                         "content": f"Predict outcomes for this legal case. Return JSON only:\n\n{json.dumps(case_context, indent=2)}"
@@ -3153,9 +3230,9 @@ async def scan_document(
                         "risk_urgency": analysis["risk_score"]["urgency"],
                         "risk_legal_strength": analysis["risk_score"]["legal_strength"],
                         "risk_complexity": analysis["risk_score"]["complexity"],
-                        "deadline": analysis.get("deadline"),
-                        "deadline_description": analysis.get("deadline_description"),
-                        "financial_exposure": analysis.get("financial_exposure"),
+                        "deadline": normalize_deadline(analysis.get("deadline")),
+                        "deadline_description": analysis.get("deadline_description") or (analysis.get("deadline", {}).get("description") if isinstance(analysis.get("deadline"), dict) else None),
+                        "financial_exposure": normalize_financial_exposure(analysis.get("financial_exposure")),
                         "ai_summary": analysis.get("summary"),
                         "ai_findings": analysis.get("findings", []),
                         "ai_next_steps": analysis.get("next_steps", []),
@@ -3190,9 +3267,9 @@ async def scan_document(
                 "document_name": doc_record["file_name"],
                 "date": now
             }],
-            "deadline": analysis.get("deadline"),
-            "deadline_description": analysis.get("deadline_description"),
-            "financial_exposure": analysis.get("financial_exposure"),
+            "deadline": normalize_deadline(analysis.get("deadline")),
+            "deadline_description": analysis.get("deadline_description") or (analysis.get("deadline", {}).get("description") if isinstance(analysis.get("deadline"), dict) else None),
+            "financial_exposure": normalize_financial_exposure(analysis.get("financial_exposure")),
             "ai_summary": analysis.get("summary"),
             "ai_findings": analysis.get("findings", []),
             "ai_next_steps": analysis.get("next_steps", []),
@@ -3519,6 +3596,8 @@ async def send_chat_message(
 
     # Build system prompt with optional case context
     system_prompt = LEGAL_CHAT_SYSTEM_PROMPT
+    user_language = getattr(current_user, 'language', 'en') or 'en'
+    system_prompt += get_language_instruction(user_language)
     case_id = data.case_id or conv.get("case_id")
     if case_id:
         case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
