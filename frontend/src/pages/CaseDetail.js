@@ -1,374 +1,167 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FileText, Upload, AlertCircle, Zap, CheckCircle, Clock, Video, Mail, X, Download, Copy, Loader2, TrendingUp, ChevronDown, ChevronUp, Target, Shield, Swords, Scale, BookOpen, AlertTriangle, Lightbulb, Share2, Link2, ExternalLink } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { Scale, Shield, Clock, Zap, FileText, ChevronDown, ChevronUp, Loader2, ExternalLink, AlertCircle, CheckCircle, Sword, Target, TrendingUp, TrendingDown, Mail, X, Copy, Download, Link2, Share2, Camera } from 'lucide-react';
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = process.env.REACT_APP_BACKEND_URL + '/api';
 
-// SVG Risk Score History Chart
-const RiskHistoryChart = ({ history, currentScore }) => {
+// ========== TRANSLATIONS ==========
+const labels = {
+  en: {
+    riskScore: 'Jasper Risk Score', evolution: 'Score evolution', financial: 'Financial', urgency: 'Urgency',
+    legalStrength: 'Legal Strength', complexity: 'Complexity', actionIn: (d) => d > 0 ? `Action required in ${d} day${d !== 1 ? 's' : ''}` : null,
+    deadlinePassed: 'DEADLINE PASSED — Immediate action required',
+    updatedWith: 'Updated with latest document',
+    aiAnalysis: 'Jasper AI Analysis', findings: 'Key Findings', noFindings: 'No findings yet. Upload a document to get your analysis.',
+    legalRef: 'Legal reference', jurisprudence: 'Jurisprudence',
+    nextSteps: 'Recommended next steps', keyInsight: 'Key Insight',
+    battlePreview: 'Legal Battle Preview', yourPosition: 'Your Position', opposingSide: 'Opposing Side',
+    strength: 'Strength', arguments: 'Key Arguments', vulnerabilities: 'Vulnerabilities',
+    outcomePredictor: 'Outcome Predictor', predictOutcome: 'Predict my outcome', predicting: 'Analyzing...',
+    predictError: 'Unable to generate prediction — try again', probable: 'Most probable', best: 'Best case', worst: 'Worst case',
+    confidenceLevel: 'Confidence level', keyFactors: 'Key factors',
+    responseLetters: 'Response Letters', generateLetter: 'Generate Letter', generating: 'Generating...',
+    letterReady: 'Your Response Letter', keyPoints: 'Key points in this letter', warnings: 'Important reminders',
+    generateAnother: 'Generate another', copy: 'Copy', copied: 'Copied!', downloadPdf: 'Download PDF', cancel: 'Cancel',
+    caseDetails: 'Case details will be included automatically', yourAddress: 'Your address (optional)',
+    opposingName: 'Opposing party name', opposingAddress: 'Opposing party address (optional)',
+    additionalContext: 'Additional context (optional)',
+    shareCase: 'Share this case', shareDesc: 'Generate a read-only link. Anyone with the link can view this case analysis.',
+    expiresIn: 'Expires in', msgRecipient: 'Message for recipient (optional)',
+    shareDisclaimer: 'Recipients can view your case analysis but cannot download your documents or see your personal information.',
+    generateLink: 'Generate secure link', generatingLink: 'Generating...', linkGenerated: 'Link generated!',
+    linkExpires: (h) => `Link expires in ${h} hours`,
+    caseTimeline: 'Case Timeline', documents: 'Documents', sharedLinks: 'Shared links',
+    caseMgmt: 'Case Management', activeShares: 'active shares', noShares: 'No shared links yet',
+    upload: 'Upload new document', talkLawyer: 'Talk to a lawyer',
+    caseType: (t) => t || 'Other',
+  },
+  'fr-BE': {
+    riskScore: 'Score de Risque Jasper', evolution: 'Evolution du score', financial: 'Financier', urgency: 'Urgence',
+    legalStrength: 'Solidite juridique', complexity: 'Complexite', actionIn: (d) => d > 0 ? `Action requise dans ${d} jour${d !== 1 ? 's' : ''}` : null,
+    deadlinePassed: 'DELAI DEPASSE — Action immediate requise',
+    updatedWith: 'Mis a jour avec le dernier document',
+    aiAnalysis: 'Analyse IA Jasper', findings: 'Constatations cles', noFindings: 'Aucune constatation. Telechargez un document pour obtenir votre analyse.',
+    legalRef: 'Reference legale', jurisprudence: 'Jurisprudence',
+    nextSteps: 'Prochaines etapes recommandees', keyInsight: 'Point cle',
+    battlePreview: 'Apercu du litige', yourPosition: 'Votre position', opposingSide: 'Partie adverse',
+    strength: 'Force', arguments: 'Arguments cles', vulnerabilities: 'Vulnerabilites',
+    outcomePredictor: 'Predicteur d\'issue', predictOutcome: 'Predire mon issue', predicting: 'Analyse en cours...',
+    predictError: 'Impossible de generer la prediction — reessayez', probable: 'Plus probable', best: 'Meilleur cas', worst: 'Pire cas',
+    confidenceLevel: 'Niveau de confiance', keyFactors: 'Facteurs cles',
+    responseLetters: 'Lettres de reponse', generateLetter: 'Generer la lettre', generating: 'Generation...',
+    letterReady: 'Votre lettre de reponse', keyPoints: 'Points cles de cette lettre', warnings: 'Rappels importants',
+    generateAnother: 'Generer une autre', copy: 'Copier', copied: 'Copie !', downloadPdf: 'Telecharger PDF', cancel: 'Annuler',
+    caseDetails: 'Les details du dossier seront inclus automatiquement', yourAddress: 'Votre adresse (optionnel)',
+    opposingName: 'Nom de la partie adverse', opposingAddress: 'Adresse de la partie adverse (optionnel)',
+    additionalContext: 'Contexte supplementaire (optionnel)',
+    shareCase: 'Partager ce dossier', shareDesc: 'Generez un lien en lecture seule. Toute personne disposant du lien pourra consulter cette analyse.',
+    expiresIn: 'Expire dans', msgRecipient: 'Message pour le destinataire (optionnel)',
+    shareDisclaimer: 'Les destinataires peuvent consulter votre analyse mais ne peuvent pas telecharger vos documents ni voir vos informations personnelles.',
+    generateLink: 'Generer un lien securise', generatingLink: 'Generation...', linkGenerated: 'Lien genere !',
+    linkExpires: (h) => `Le lien expire dans ${h} heures`,
+    caseTimeline: 'Chronologie du dossier', documents: 'Documents', sharedLinks: 'Liens partages',
+    caseMgmt: 'Gestion du dossier', activeShares: 'partages actifs', noShares: 'Aucun lien partage',
+    upload: 'Televerser un nouveau document', talkLawyer: 'Parler a un avocat',
+    caseType: (t) => ({ employment: 'Travail', housing: 'Bail', debt: 'Creance', nda: 'NDA', contract: 'Contrat', consumer: 'Consommateur', family: 'Famille', court: 'Tribunal', penal: 'Penal', commercial: 'Commercial' }[t] || t || 'Autre'),
+  },
+  'nl-BE': {
+    riskScore: 'Jasper Risicoscore', evolution: 'Score-evolutie', financial: 'Financieel', urgency: 'Urgentie',
+    legalStrength: 'Juridische sterkte', complexity: 'Complexiteit', actionIn: (d) => d > 0 ? `Actie vereist binnen ${d} dag${d !== 1 ? 'en' : ''}` : null,
+    deadlinePassed: 'DEADLINE VERSTREKEN — Onmiddellijke actie vereist',
+    updatedWith: 'Bijgewerkt met laatste document',
+    aiAnalysis: 'Jasper AI-analyse', findings: 'Belangrijke bevindingen', noFindings: 'Nog geen bevindingen. Upload een document om uw analyse te krijgen.',
+    legalRef: 'Juridische referentie', jurisprudence: 'Rechtspraak',
+    nextSteps: 'Aanbevolen volgende stappen', keyInsight: 'Belangrijk inzicht',
+    battlePreview: 'Juridisch geschil overzicht', yourPosition: 'Uw positie', opposingSide: 'Tegenpartij',
+    strength: 'Sterkte', arguments: 'Belangrijke argumenten', vulnerabilities: 'Kwetsbaarheden',
+    outcomePredictor: 'Uitkomstvoorspeller', predictOutcome: 'Voorspel mijn uitkomst', predicting: 'Analyseren...',
+    predictError: 'Kan voorspelling niet genereren — probeer opnieuw', probable: 'Meest waarschijnlijk', best: 'Beste geval', worst: 'Slechtste geval',
+    confidenceLevel: 'Betrouwbaarheidsniveau', keyFactors: 'Belangrijke factoren',
+    responseLetters: 'Antwoordbrieven', generateLetter: 'Brief genereren', generating: 'Genereren...',
+    letterReady: 'Uw antwoordbrief', keyPoints: 'Belangrijke punten', warnings: 'Belangrijke herinneringen',
+    generateAnother: 'Andere genereren', copy: 'Kopieren', copied: 'Gekopieerd!', downloadPdf: 'PDF downloaden', cancel: 'Annuleren',
+    caseDetails: 'Dossierdetails worden automatisch opgenomen', yourAddress: 'Uw adres (optioneel)',
+    opposingName: 'Naam tegenpartij', opposingAddress: 'Adres tegenpartij (optioneel)',
+    additionalContext: 'Extra context (optioneel)',
+    shareCase: 'Dit dossier delen', shareDesc: 'Genereer een alleen-lezen link.',
+    expiresIn: 'Verloopt over', msgRecipient: 'Bericht voor ontvanger (optioneel)',
+    shareDisclaimer: 'Ontvangers kunnen uw analyse bekijken maar geen documenten downloaden.',
+    generateLink: 'Beveiligde link genereren', generatingLink: 'Genereren...', linkGenerated: 'Link gegenereerd!',
+    linkExpires: (h) => `Link verloopt over ${h} uur`,
+    caseTimeline: 'Dossiertijdlijn', documents: 'Documenten', sharedLinks: 'Gedeelde links',
+    caseMgmt: 'Dossierbeheer', activeShares: 'actieve delingen', noShares: 'Nog geen gedeelde links',
+    upload: 'Nieuw document uploaden', talkLawyer: 'Spreek met een advocaat',
+    caseType: (t) => ({ employment: 'Arbeidsrecht', housing: 'Huurrecht', debt: 'Schuld', nda: 'NDA', contract: 'Contract', consumer: 'Consument', family: 'Familierecht', court: 'Rechtbank', penal: 'Strafrecht', commercial: 'Handelsrecht' }[t] || t || 'Ander'),
+  },
+  'de-BE': {
+    riskScore: 'Jasper Risikobewertung', evolution: 'Score-Entwicklung', financial: 'Finanziell', urgency: 'Dringlichkeit',
+    legalStrength: 'Rechtliche Starke', complexity: 'Komplexitat', actionIn: (d) => d > 0 ? `Handlung erforderlich in ${d} Tag${d !== 1 ? 'en' : ''}` : null,
+    deadlinePassed: 'FRIST ABGELAUFEN — Sofortiges Handeln erforderlich',
+    updatedWith: 'Aktualisiert mit neuestem Dokument',
+    aiAnalysis: 'Jasper KI-Analyse', findings: 'Wichtige Feststellungen', noFindings: 'Noch keine Feststellungen. Laden Sie ein Dokument hoch.',
+    legalRef: 'Rechtsgrundlage', jurisprudence: 'Rechtsprechung',
+    nextSteps: 'Empfohlene nachste Schritte', keyInsight: 'Wichtige Erkenntnis',
+    battlePreview: 'Rechtsstreit-Vorschau', yourPosition: 'Ihre Position', opposingSide: 'Gegenseite',
+    strength: 'Starke', arguments: 'Wichtige Argumente', vulnerabilities: 'Schwachstellen',
+    outcomePredictor: 'Ergebnisvorhersage', predictOutcome: 'Mein Ergebnis vorhersagen', predicting: 'Analysieren...',
+    predictError: 'Vorhersage nicht moglich — erneut versuchen', probable: 'Am wahrscheinlichsten', best: 'Bester Fall', worst: 'Schlimmster Fall',
+    confidenceLevel: 'Vertrauensniveau', keyFactors: 'Wichtige Faktoren',
+    responseLetters: 'Antwortbriefe', generateLetter: 'Brief erstellen', generating: 'Erstellen...',
+    letterReady: 'Ihr Antwortbrief', keyPoints: 'Wichtige Punkte', warnings: 'Wichtige Hinweise',
+    generateAnother: 'Anderen erstellen', copy: 'Kopieren', copied: 'Kopiert!', downloadPdf: 'PDF herunterladen', cancel: 'Abbrechen',
+    caseDetails: 'Falldetails werden automatisch einbezogen', yourAddress: 'Ihre Adresse (optional)',
+    opposingName: 'Name der Gegenpartei', opposingAddress: 'Adresse der Gegenpartei (optional)',
+    additionalContext: 'Zusatzlicher Kontext (optional)',
+    shareCase: 'Diesen Fall teilen', shareDesc: 'Erstellen Sie einen Nur-Lesen-Link.',
+    expiresIn: 'Lauft ab in', msgRecipient: 'Nachricht fur Empfanger (optional)',
+    shareDisclaimer: 'Empfanger konnen Ihre Analyse einsehen, aber keine Dokumente herunterladen.',
+    generateLink: 'Sicheren Link erstellen', generatingLink: 'Erstellen...', linkGenerated: 'Link erstellt!',
+    linkExpires: (h) => `Link lauft in ${h} Stunden ab`,
+    caseTimeline: 'Fallchronik', documents: 'Dokumente', sharedLinks: 'Geteilte Links',
+    caseMgmt: 'Fallverwaltung', activeShares: 'aktive Freigaben', noShares: 'Noch keine geteilten Links',
+    upload: 'Neues Dokument hochladen', talkLawyer: 'Mit einem Anwalt sprechen',
+    caseType: (t) => ({ employment: 'Arbeitsrecht', housing: 'Mietrecht', debt: 'Schulden', nda: 'NDA', contract: 'Vertrag', consumer: 'Verbraucher', family: 'Familienrecht', court: 'Gericht', penal: 'Strafrecht', commercial: 'Handelsrecht' }[t] || t || 'Sonstige'),
+  },
+};
+
+// ========== RISK HISTORY CHART ==========
+const RiskHistoryChart = ({ history, currentScore, t }) => {
   if (!history || history.length === 0) return null;
-
-  const width = 520;
-  const height = 160;
-  const padding = { top: 20, right: 20, bottom: 30, left: 40 };
-  const chartW = width - padding.left - padding.right;
-  const chartH = height - padding.top - padding.bottom;
-
   const maxScore = 100;
-  const points = history.map((entry, i) => ({
-    x: padding.left + (history.length === 1 ? chartW / 2 : (i / (history.length - 1)) * chartW),
-    y: padding.top + chartH - (entry.score / maxScore) * chartH,
-    score: entry.score,
-    date: entry.date,
-    doc: entry.document_name
-  }));
-
-  const pathD = points.length === 1
-    ? ''
-    : points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-
-  const areaD = points.length > 1
-    ? `${pathD} L ${points[points.length - 1].x} ${padding.top + chartH} L ${points[0].x} ${padding.top + chartH} Z`
-    : '';
-
-  const getColor = (score) => {
-    if (score <= 30) return '#16a34a';
-    if (score <= 60) return '#d97706';
-    return '#dc2626';
-  };
-
-  const yTicks = [0, 25, 50, 75, 100];
-
+  const points = history.map((h, i) => ({ x: (i / Math.max(history.length - 1, 1)) * 100, y: 100 - (h.score / maxScore) * 100 }));
+  const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ maxHeight: '180px' }}>
-      {/* Grid lines */}
-      {yTicks.map(tick => {
-        const y = padding.top + chartH - (tick / maxScore) * chartH;
-        return (
-          <g key={tick}>
-            <line x1={padding.left} y1={y} x2={width - padding.right} y2={y} stroke="#f0f0f0" strokeWidth="1" />
-            <text x={padding.left - 8} y={y + 4} textAnchor="end" fill="#9ca3af" fontSize="9">{tick}</text>
-          </g>
-        );
-      })}
-
-      {/* Area fill */}
-      {areaD && <path d={areaD} fill={getColor(currentScore)} opacity="0.08" />}
-
-      {/* Line */}
-      {pathD && <path d={pathD} fill="none" stroke={getColor(currentScore)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
-
-      {/* Data points */}
-      {points.map((p, i) => (
-        <g key={i}>
-          <circle cx={p.x} cy={p.y} r="5" fill="white" stroke={getColor(p.score)} strokeWidth="2.5" />
-          <text x={p.x} y={p.y - 10} textAnchor="middle" fill={getColor(p.score)} fontSize="9" fontWeight="600">{p.score}</text>
-          {/* X-axis label */}
-          <text x={p.x} y={height - 5} textAnchor="middle" fill="#9ca3af" fontSize="8">
-            {new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-          </text>
-        </g>
-      ))}
-    </svg>
-  );
-};
-
-// Outcome Predictor Section
-const OutcomePredictor = ({ caseId }) => {
-  const [prediction, setPrediction] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-  const [error, setError] = useState(null);
-
-  const fetchPrediction = async () => {
-    if (prediction) {
-      setExpanded(!expanded);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axios.post(`${API}/cases/${caseId}/predict-outcome`, {}, { withCredentials: true });
-      setPrediction(res.data);
-      setExpanded(true);
-    } catch {
-      setError('Prediction failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getScenarioColor = (type) => {
-    if (type === 'favorable') return { bg: '#f0fdf4', border: '#bbf7d0', text: '#16a34a', bar: '#22c55e' };
-    if (type === 'neutral') return { bg: '#fffbeb', border: '#fde68a', text: '#d97706', bar: '#f59e0b' };
-    return { bg: '#fef2f2', border: '#fecaca', text: '#dc2626', bar: '#ef4444' };
-  };
-
-  return (
-    <div className="card p-5">
-      <button
-        onClick={fetchPrediction}
-        className="w-full flex items-center justify-between"
-        data-testid="outcome-predictor-toggle"
-        disabled={loading}
-      >
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#faf5ff] flex items-center justify-center">
-            <Target size={14} className="text-[#7c3aed]" />
-          </div>
-          <div className="text-sm font-medium">Jasper Outcome Predictor</div>
-          <span className="badge badge-blue text-[10px]">AI-powered</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {loading && <Loader2 size={16} className="animate-spin text-[#7c3aed]" />}
-          {expanded ? <ChevronUp size={16} className="text-[#9ca3af]" /> : <ChevronDown size={16} className="text-[#9ca3af]" />}
-        </div>
-      </button>
-
-      {error && <div className="text-xs text-[#dc2626] mt-3">{error}</div>}
-
-      {expanded && prediction && (
-        <div className="mt-4 space-y-3" data-testid="outcome-prediction-results">
-          {/* Scenario cards */}
-          {['favorable', 'neutral', 'unfavorable'].map((type) => {
-            const scenario = prediction[type];
-            if (!scenario) return null;
-            const colors = getScenarioColor(type);
-            return (
-              <div key={type} className="rounded-xl p-4 border" style={{ backgroundColor: colors.bg, borderColor: colors.border }}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-xs font-semibold capitalize" style={{ color: colors.text }}>{scenario.title}</div>
-                  <div className="text-xs font-bold" style={{ color: colors.text }}>{scenario.probability}%</div>
-                </div>
-                {/* Probability bar */}
-                <div className="h-1.5 rounded-full bg-white/60 mb-2">
-                  <div className="h-full rounded-full transition-all" style={{ width: `${scenario.probability}%`, backgroundColor: colors.bar }}></div>
-                </div>
-                <div className="text-[11px] leading-relaxed mb-1" style={{ color: colors.text }}>{scenario.description}</div>
-                <div className="flex items-center gap-4 mt-2">
-                  {scenario.financial_impact && (
-                    <div className="text-[10px]" style={{ color: colors.text }}>
-                      <span className="opacity-70">Impact: </span><span className="font-medium">{scenario.financial_impact}</span>
-                    </div>
-                  )}
-                  {scenario.timeline && (
-                    <div className="text-[10px]" style={{ color: colors.text }}>
-                      <span className="opacity-70">Timeline: </span><span className="font-medium">{scenario.timeline}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Key factors */}
-          {prediction.key_factors && (
-            <div className="bg-[#f8f8f8] rounded-xl p-4">
-              <div className="text-xs font-medium text-[#111827] mb-2">Key factors influencing outcome</div>
-              <div className="space-y-1">
-                {prediction.key_factors.map((factor, i) => (
-                  <div key={i} className="text-[11px] text-[#555] flex items-start gap-2">
-                    <span className="w-1 h-1 rounded-full bg-[#7c3aed] mt-1.5 flex-shrink-0"></span>
-                    {factor}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Recommendation */}
-          {prediction.recommendation && (
-            <div className="text-[11px] text-[#7c3aed] bg-[#faf5ff] rounded-lg p-3 font-medium">
-              {prediction.recommendation}
-            </div>
-          )}
-
-          {/* Disclaimer */}
-          <div className="text-[10px] text-[#9ca3af]">{prediction.disclaimer}</div>
-        </div>
-      )}
+    <div className="mt-3" data-testid="risk-history-chart">
+      <div className="text-[10px] text-[#9ca3af] mb-2">{t.evolution}</div>
+      <svg viewBox="-5 -5 110 60" className="w-full h-16">
+        <path d={pathD} fill="none" stroke="#1a56db" strokeWidth="1.5" strokeLinecap="round" />
+        {points.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="2.5" fill={i === points.length - 1 ? '#1a56db' : '#93c5fd'} />)}
+      </svg>
     </div>
   );
 };
 
-// Legal Battle Preview Section
-const BattlePreview = ({ battlePreview }) => {
-  const [expanded, setExpanded] = useState(false);
-  if (!battlePreview || (!battlePreview.user_side && !battlePreview.opposing_side)) return null;
-
-  const userSide = battlePreview.user_side || {};
-  const opposingSide = battlePreview.opposing_side || {};
-
-  return (
-    <div className="card p-5" data-testid="battle-preview">
-      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#fef3c7] flex items-center justify-center">
-            <Swords size={14} className="text-[#d97706]" />
-          </div>
-          <div className="text-sm font-medium">Legal Battle Preview</div>
-          <span className="badge" style={{ background: '#f5f5f5', color: '#888', fontSize: '10px' }}>AI Analysis</span>
-        </div>
-        {expanded ? <ChevronUp size={16} className="text-[#9ca3af]" /> : <ChevronDown size={16} className="text-[#9ca3af]" />}
-      </button>
-
-      {expanded && (
-        <div className="mt-4 space-y-4" data-testid="battle-preview-content">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {/* User's side */}
-            <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Shield size={14} className="text-[#16a34a]" />
-                <span className="text-xs font-semibold text-[#16a34a]">Your strongest arguments</span>
-              </div>
-              {userSide.strongest_arguments?.map((arg, i) => (
-                <div key={i} className="mb-2 last:mb-0">
-                  <div className="text-[11px] font-medium text-[#111827] mb-0.5">{arg.argument}</div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{
-                      background: arg.strength === 'strong' ? '#dcfce7' : arg.strength === 'medium' ? '#fef9c3' : '#f5f5f5',
-                      color: arg.strength === 'strong' ? '#16a34a' : arg.strength === 'medium' ? '#ca8a04' : '#888'
-                    }}>{arg.strength}</span>
-                    {arg.law_basis && <span className="text-[10px] text-[#9ca3af]">{arg.law_basis}</span>}
-                  </div>
-                </div>
-              ))}
-              {userSide.best_outcome_scenario && (
-                <div className="mt-3 pt-3 border-t border-[#bbf7d0]">
-                  <div className="text-[10px] text-[#16a34a] font-medium">Best possible outcome:</div>
-                  <div className="text-[11px] text-[#166534]">{userSide.best_outcome_scenario}</div>
-                </div>
-              )}
-            </div>
-
-            {/* Opposing side */}
-            <div className="rounded-xl border border-[#fecaca] bg-[#fef2f2] p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle size={14} className="text-[#dc2626]" />
-                <span className="text-xs font-semibold text-[#dc2626]">What they will argue</span>
-              </div>
-              {opposingSide.opposing_arguments?.map((arg, i) => (
-                <div key={i} className="mb-2 last:mb-0">
-                  <div className="text-[11px] font-medium text-[#111827] mb-0.5">{arg.argument}</div>
-                  {arg.user_counter && (
-                    <div className="text-[10px] text-[#16a34a] bg-white/60 rounded px-1.5 py-0.5 mt-0.5">
-                      Your counter: {arg.user_counter}
-                    </div>
-                  )}
-                </div>
-              ))}
-              {opposingSide.worst_outcome_scenario && (
-                <div className="mt-3 pt-3 border-t border-[#fecaca]">
-                  <div className="text-[10px] text-[#dc2626] font-medium">Worst possible outcome:</div>
-                  <div className="text-[11px] text-[#991b1b]">{opposingSide.worst_outcome_scenario}</div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {opposingSide.what_user_must_prepare_for && (
-            <div className="bg-[#fffbeb] border border-[#fde68a] rounded-lg p-3">
-              <div className="text-[10px] font-medium text-[#d97706] mb-1">Prepare for:</div>
-              <div className="text-[11px] text-[#92400e]">{opposingSide.what_user_must_prepare_for}</div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Probability Breakdown
-const ProbabilityBreakdown = ({ probability }) => {
-  if (!probability) return null;
-  const items = [
-    { key: 'negotiated_settlement', label: 'Negotiated settlement', color: '#22c55e' },
-    { key: 'full_resolution_in_favor', label: 'Full resolution in your favor', color: '#3b82f6' },
-    { key: 'partial_loss', label: 'Partial loss', color: '#f59e0b' },
-    { key: 'full_loss', label: 'Full loss', color: '#9ca3af' }
-  ].filter(item => probability[item.key] > 0)
-   .sort((a, b) => (probability[b.key] || 0) - (probability[a.key] || 0));
-
-  return (
-    <div className="card p-5" data-testid="probability-breakdown">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-7 h-7 rounded-lg bg-[#eff6ff] flex items-center justify-center">
-          <Scale size={14} className="text-[#1a56db]" />
-        </div>
-        <div className="text-sm font-medium">Probability breakdown</div>
-      </div>
-      <div className="space-y-2.5">
-        {items.map(item => {
-          const pct = probability[item.key] || 0;
-          return (
-            <div key={item.key}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] text-[#555]">{item.label}</span>
-                <span className="text-[11px] font-semibold" style={{ color: item.color }}>{pct}%</span>
-              </div>
-              <div className="h-1.5 bg-[#f5f5f5] rounded-full">
-                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: item.color }}></div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-// Key Insight Banner
-const KeyInsight = ({ insight, leverage }) => {
-  if (!insight && (!leverage || leverage.length === 0)) return null;
-  return (
-    <div className="card p-4 bg-[#eff6ff] border-[#bfdbfe]" data-testid="key-insight">
-      {insight && (
-        <div className="flex items-start gap-2 mb-2">
-          <Lightbulb size={14} className="text-[#1a56db] mt-0.5 flex-shrink-0" />
-          <div className="text-[12px] font-medium text-[#1e40af]">{insight}</div>
-        </div>
-      )}
-      {leverage && leverage.length > 0 && (
-        <div className="mt-2">
-          <div className="text-[10px] uppercase tracking-wider text-[#3b82f6] font-medium mb-1">Leverage points</div>
-          {leverage.map((lev, i) => (
-            <div key={i} className="text-[11px] text-[#1e40af] mb-1">
-              <span className="font-medium">{lev.leverage}</span>
-              {lev.how_to_use && <span className="text-[#60a5fa]"> — {lev.how_to_use}</span>}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
+// ========== MAIN COMPONENT ==========
 const CaseDetail = () => {
-  const { caseId } = useParams();
-  const navigate = useNavigate();
+  const { id: caseId } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [caseData, setCaseData] = useState(null);
-  const [documents, setDocuments] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [lawyers, setLawyers] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // Letter state
+  const [events, setEvents] = useState([]);
+  const [showOutcome, setShowOutcome] = useState(false);
+  const [prediction, setPrediction] = useState(null);
+  const [predicting, setPredicting] = useState(false);
+  const [predictError, setPredictError] = useState(false);
   const [letterTypes, setLetterTypes] = useState([]);
+  const [selectedLetterType, setSelectedLetterType] = useState(null);
   const [showLetterModal, setShowLetterModal] = useState(false);
   const [generatingLetter, setGeneratingLetter] = useState(false);
   const [generatedLetter, setGeneratedLetter] = useState(null);
-  const [selectedLetterType, setSelectedLetterType] = useState(null);
-  const [letterForm, setLetterForm] = useState({
-    user_address: '',
-    opposing_party_name: '',
-    opposing_party_address: '',
-    additional_context: ''
-  });
+  const [letterForm, setLetterForm] = useState({ user_address: '', opposing_party_name: '', opposing_party_address: '', additional_context: '' });
   const [copied, setCopied] = useState(false);
-  const [riskHistory, setRiskHistory] = useState([]);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareExpiry, setShareExpiry] = useState(48);
   const [shareMessage, setShareMessage] = useState('');
@@ -377,808 +170,500 @@ const CaseDetail = () => {
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
   const [activeShares, setActiveShares] = useState([]);
 
-  const fetchData = useCallback(async () => {
+  const userLang = user?.language || 'en';
+  const t = labels[userLang] || labels['en'];
+
+  const fetchCase = useCallback(async () => {
     try {
-      const [caseRes, docsRes, eventsRes, lawyersRes] = await Promise.all([
+      const [caseRes, eventsRes, sharesRes] = await Promise.all([
         axios.get(`${API}/cases/${caseId}`, { withCredentials: true }),
-        axios.get(`${API}/cases/${caseId}/documents`, { withCredentials: true }),
-        axios.get(`${API}/cases/${caseId}/events`, { withCredentials: true }),
-        axios.get(`${API}/lawyers`)
+        axios.get(`${API}/cases/${caseId}/events`, { withCredentials: true }).catch(() => ({ data: [] })),
+        axios.get(`${API}/cases/${caseId}/shares`, { withCredentials: true }).catch(() => ({ data: [] })),
       ]);
       setCaseData(caseRes.data);
-      setDocuments(docsRes.data);
-      setEvents(eventsRes.data);
-      setLawyers(lawyersRes.data.filter(l => l.availability_status === 'now' || l.availability_status === 'soon').slice(0, 1));
-      
-      // Fetch letter types and risk history
-      const userCountry = user?.country || 'US';
-      const [letterTypesRes, riskHistoryRes, sharesRes] = await Promise.all([
-        axios.get(`${API}/letters/types/${caseRes.data.type}?country=${userCountry}`),
-        axios.get(`${API}/cases/${caseId}/risk-history`, { withCredentials: true }),
-        axios.get(`${API}/cases/${caseId}/shares`, { withCredentials: true }).catch(() => ({ data: [] }))
-      ]);
-      setLetterTypes(letterTypesRes.data.letter_types || []);
-      setRiskHistory(riskHistoryRes.data.history || []);
+      setEvents(eventsRes.data || []);
       setActiveShares(sharesRes.data || []);
-    } catch (error) {
-      console.error('Case detail fetch error:', error);
-      navigate('/cases');
+
+      const userCountry = user?.country || caseRes.data?.country || 'US';
+      const caseType = caseRes.data?.type || 'other';
+      const ltRes = await axios.get(`${API}/letters/types/${caseType}?country=${userCountry}`, { withCredentials: true }).catch(() => ({ data: [] }));
+      setLetterTypes(ltRes.data || []);
+    } catch (err) {
+      console.error('Failed to load case:', err);
     } finally {
       setLoading(false);
     }
-  }, [caseId, navigate]);
+  }, [caseId, user]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchCase(); }, [fetchCase]);
 
-  const getRiskColor = (score) => {
-    if (score <= 30) return { text: '#16a34a', bg: '#f0fdf4', level: 'Low risk' };
-    if (score <= 60) return { text: '#d97706', bg: '#fffbeb', level: 'Medium risk' };
-    return { text: '#dc2626', bg: '#fef2f2', level: 'High risk' };
-  };
-
-  const getDimensionColor = (score) => {
-    if (score <= 30) return '#16a34a';
-    if (score <= 60) return '#d97706';
-    return '#dc2626';
-  };
-
-  const getEventIcon = (type) => {
-    switch (type) {
-      case 'score_updated': return <Zap size={10} className="text-[#dc2626]" />;
-      case 'call_booked': return <Video size={10} className="text-[#1a56db]" />;
-      case 'document_added': return <FileText size={10} className="text-[#dc2626]" />;
-      case 'case_opened': return <FileText size={10} className="text-[#dc2626]" />;
-      case 'letter_generated': return <Mail size={10} className="text-[#1a56db]" />;
-      default: return <Clock size={10} className="text-[#6b7280]" />;
+  const handlePredict = async () => {
+    setPredicting(true);
+    setPredictError(false);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+    try {
+      const res = await axios.post(`${API}/cases/${caseId}/predict-outcome`, {}, { withCredentials: true, signal: controller.signal });
+      setPrediction(res.data);
+    } catch (err) {
+      console.error('Prediction failed:', err);
+      setPredictError(true);
+    } finally {
+      clearTimeout(timeout);
+      setPredicting(false);
     }
-  };
-
-  const getEventBgColor = (type) => {
-    switch (type) {
-      case 'score_updated': return '#fff5f5';
-      case 'call_booked': return '#eff6ff';
-      case 'letter_generated': return '#eff6ff';
-      case 'document_added':
-      case 'case_opened': return '#fff5f5';
-      default: return '#f5f5f5';
-    }
-  };
-
-  const formatTimeAgo = (dateStr) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return '1d ago';
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-
-  const getDaysUntilDeadline = () => {
-    if (!caseData?.deadline) return null;
-    const deadline = new Date(caseData.deadline);
-    const now = new Date();
-    const diffDays = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const handleGenerateLetter = async (letterType) => {
-    setSelectedLetterType(letterType);
-    setGeneratedLetter(null);
-    setShowLetterModal(true);
   };
 
   const submitLetterGeneration = async () => {
+    if (!selectedLetterType) return;
     setGeneratingLetter(true);
     try {
-      const response = await axios.post(`${API}/letters/generate`, {
+      const res = await axios.post(`${API}/letters/generate`, {
         case_id: caseId,
         letter_type: selectedLetterType.id,
+        user_name: user?.name || '',
         user_address: letterForm.user_address || undefined,
         opposing_party_name: letterForm.opposing_party_name || undefined,
         opposing_party_address: letterForm.opposing_party_address || undefined,
-        additional_context: letterForm.additional_context || undefined
+        additional_context: letterForm.additional_context || undefined,
       }, { withCredentials: true });
-      
-      setGeneratedLetter(response.data.letter);
-      // Refresh events
-      const eventsRes = await axios.get(`${API}/cases/${caseId}/events`, { withCredentials: true });
-      setEvents(eventsRes.data);
-    } catch (error) {
-      console.error('Letter generation error:', error);
-      alert('Failed to generate letter. Please try again.');
+      setGeneratedLetter(res.data);
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Failed to generate letter');
     } finally {
       setGeneratingLetter(false);
     }
   };
 
   const copyToClipboard = () => {
-    if (generatedLetter?.letter_body) {
-      navigator.clipboard.writeText(generatedLetter.letter_body.replace(/\\n/g, '\n'));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+    if (!generatedLetter) return;
+    const text = `${generatedLetter.subject}\n\n${generatedLetter.letter_body?.replace(/\\n/g, '\n')}`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const downloadAsPDF = () => {
-    // Create a printable version
-    const printContent = `
-      <html>
-        <head>
-          <title>${generatedLetter?.subject || 'Letter'}</title>
-          <style>
-            body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.6; margin: 1in; }
-            .letter { white-space: pre-wrap; }
-          </style>
-        </head>
-        <body>
-          <div class="letter">${generatedLetter?.letter_body?.replace(/\\n/g, '\n')}</div>
-        </body>
-      </html>
-    `;
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.print();
+    if (!generatedLetter) return;
+    import('jspdf').then(({ jsPDF }) => {
+      const doc = new jsPDF();
+      doc.setFontSize(14);
+      doc.text(generatedLetter.subject || '', 20, 20);
+      doc.setFontSize(10);
+      const body = generatedLetter.letter_body?.replace(/\\n/g, '\n') || '';
+      const lines = doc.splitTextToSize(body, 170);
+      doc.text(lines, 20, 35);
+      doc.save(`letter_${caseId}.pdf`);
+    });
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <div className="skeleton h-4 w-32"></div>
-        <div className="skeleton h-8 w-64"></div>
-        <div className="grid grid-cols-3 gap-4 mt-6">
-          <div className="col-span-2 space-y-4">
-            <div className="skeleton h-48 rounded-[14px]"></div>
-            <div className="skeleton h-32 rounded-[14px]"></div>
-          </div>
-          <div className="space-y-4">
-            <div className="skeleton h-40 rounded-[14px]"></div>
-            <div className="skeleton h-48 rounded-[14px]"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const getRiskColor = (score) => {
+    if (score >= 75) return '#dc2626';
+    if (score >= 50) return '#f59e0b';
+    if (score >= 25) return '#3b82f6';
+    return '#22c55e';
+  };
 
-  if (!caseData) return null;
+  const getDimensionColor = (score) => {
+    if (score >= 70) return '#dc2626';
+    if (score >= 40) return '#f59e0b';
+    return '#22c55e';
+  };
 
-  const riskColor = getRiskColor(caseData.risk_score);
-  const daysUntil = getDaysUntilDeadline();
-  const showLawyerCTA = caseData.risk_score > 65 || caseData.recommend_lawyer;
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <Loader2 size={24} className="animate-spin text-[#1a56db]" />
+    </div>
+  );
+
+  if (!caseData) return (
+    <div className="text-center py-20">
+      <div className="text-sm text-[#6b7280]">Case not found</div>
+    </div>
+  );
+
+  const findings = caseData.ai_findings || [];
+  const nextSteps = caseData.ai_next_steps || [];
+  const battlePreview = caseData.battle_preview;
+  const daysUntil = caseData.deadline ? Math.ceil((new Date(caseData.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
 
   return (
-    <div data-testid="case-detail-page">
-      {/* Breadcrumb */}
-      <div className="breadcrumb">
-        <Link to="/cases" className="bc-link">My cases</Link>
-        <span>/</span>
-        <span>{caseData.title.substring(0, 30)}</span>
-      </div>
+    <div className="max-w-5xl mx-auto space-y-6 pb-12" data-testid="case-detail-page">
 
-      {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      {/* HEADER */}
+      <div className="flex items-start justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="badge badge-blue text-[10px] capitalize">{caseData.type}</span>
-            {daysUntil !== null && daysUntil <= 7 && (
-              <span className="badge badge-red text-[10px] flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626]"></span>
-                Urgent — respond by {caseData.deadline}
-              </span>
-            )}
-          </div>
-          <h1 className="page-title">{caseData.title}</h1>
-          <p className="page-sub">
-            Opened {new Date(caseData.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {documents.length} document{documents.length !== 1 ? 's' : ''} · Updated {formatTimeAgo(caseData.updated_at)}
-          </p>
+          <div className="text-[10px] text-[#1a56db] uppercase tracking-wider font-medium mb-1" data-testid="case-type-label">{t.caseType(caseData.type)}</div>
+          <h1 className="text-xl font-semibold text-[#111827] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="case-title">{caseData.title}</h1>
+          {daysUntil !== null && (
+            <div className={`flex items-center gap-1.5 text-xs font-medium ${daysUntil <= 0 ? 'text-[#dc2626]' : daysUntil <= 7 ? 'text-[#f59e0b]' : 'text-[#6b7280]'}`} data-testid="deadline-indicator">
+              <Clock size={12} />
+              {daysUntil <= 0 ? t.deadlinePassed : t.actionIn(daysUntil)}
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
-          <button 
-            onClick={() => setShowShareModal(true)}
-            className="btn-pill btn-outline flex items-center gap-2"
-            data-testid="share-case-btn"
-          >
-            <Share2 size={14} /> Share
+          <button onClick={() => setShowShareModal(true)} className="btn-pill btn-outline text-xs flex items-center gap-1.5" data-testid="share-btn">
+            <Share2 size={13} /> {activeShares.length > 0 && <span className="text-[#1a56db]">{activeShares.length}</span>}
           </button>
-          <button 
-            onClick={() => navigate(`/upload?case=${caseId}`)} 
-            className="btn-pill btn-outline flex items-center gap-2"
-            data-testid="add-document-btn"
-          >
-            Add document
-          </button>
-          <button 
-            onClick={() => navigate('/lawyers')} 
-            className="btn-pill btn-blue flex items-center gap-2"
-            data-testid="talk-to-lawyer-btn"
-          >
-            Talk to a lawyer
+          <button onClick={() => navigate('/upload')} className="btn-pill btn-blue text-xs flex items-center gap-1.5" data-testid="upload-btn">
+            <FileText size={13} /> {t.upload}
           </button>
         </div>
       </div>
 
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-3 gap-4">
-        {/* Left Column - 2/3 */}
-        <div className="col-span-2 space-y-4">
-          {/* Risk Score Card */}
-          <div className="card p-5">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <div className="text-[10px] uppercase tracking-wider text-[#9ca3af] font-medium mb-1">Jasper Risk Score</div>
-                <div className="flex items-baseline">
-                  <span className="text-5xl font-semibold" style={{ color: riskColor.text, letterSpacing: '-2px' }}>
-                    {caseData.risk_score}
-                  </span>
-                  <span className="text-lg text-[#ccc] ml-1">/100</span>
-                </div>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: riskColor.text }}></span>
-                  <span className="text-xs font-medium" style={{ color: riskColor.text }}>{riskColor.level}</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] text-[#9ca3af]">Updated {formatTimeAgo(caseData.updated_at)}</div>
-              </div>
-            </div>
-            
-            {/* Progress bar */}
-            <div className="h-2 bg-[#f5f5f5] rounded-full overflow-hidden mb-4">
-              <div 
-                className="h-full rounded-full transition-all" 
-                style={{ width: `${caseData.risk_score}%`, backgroundColor: riskColor.text }}
-              ></div>
-            </div>
-
-            {/* Risk Score History Graph */}
-            {riskHistory.length > 0 && (
-              <div className="mb-4" data-testid="risk-score-history">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp size={12} className="text-[#6b7280]" />
-                  <span className="text-[10px] uppercase tracking-wider text-[#9ca3af] font-medium">Score evolution</span>
-                </div>
-                <RiskHistoryChart history={riskHistory} currentScore={caseData.risk_score} />
-              </div>
-            )}
-
-            {/* Dimension scores */}
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { label: 'Financial', value: caseData.risk_financial },
-                { label: 'Urgency', value: caseData.risk_urgency },
-                { label: 'Legal strength', value: caseData.risk_legal_strength },
-                { label: 'Complexity', value: caseData.risk_complexity }
-              ].map((dim) => (
-                <div key={dim.label} className="bg-[#f8f8f8] rounded-lg p-3 text-center">
-                  <div className="text-lg font-semibold" style={{ color: getDimensionColor(dim.value) }}>{dim.value}</div>
-                  <div className="text-[10px] text-[#9ca3af]">{dim.label}</div>
-                </div>
-              ))}
-            </div>
+      {/* RISK SCORE CARD */}
+      <div className="card p-5" data-testid="risk-score-card">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Shield size={16} className="text-[#1a56db]" />
+            <span className="text-sm font-medium text-[#111827]">{t.riskScore}</span>
           </div>
-
-          {/* Alert Box */}
-          {daysUntil !== null && daysUntil <= 7 && (
-            <div className="bg-[#fff5f5] border border-[#fecaca] rounded-xl p-4 flex gap-3">
-              <div className="w-7 h-7 rounded-full bg-[#fee2e2] flex items-center justify-center flex-shrink-0">
-                <AlertCircle size={14} className="text-[#dc2626]" />
-              </div>
-              <div>
-                <div className="text-sm font-medium text-[#dc2626] mb-1">Action required in {daysUntil} day{daysUntil !== 1 ? 's' : ''}</div>
-                <div className="text-xs text-[#ef4444] leading-relaxed">
-                  {caseData.deadline_description || `Deadline on ${caseData.deadline}. Consider consulting a lawyer before responding.`}
+          <div className="text-xs text-[#9ca3af]">{t.updatedWith}</div>
+        </div>
+        <div className="grid grid-cols-5 gap-4 items-center">
+          <div className="col-span-1 text-center">
+            <div className="text-4xl font-bold" style={{ color: getRiskColor(caseData.risk_score) }} data-testid="risk-score-value">{caseData.risk_score}</div>
+            <div className="text-xs text-[#9ca3af]">/ 100</div>
+          </div>
+          <div className="col-span-4 grid grid-cols-4 gap-3">
+            {[
+              { key: 'financial', val: caseData.risk_financial, icon: <Scale size={12} /> },
+              { key: 'urgency', val: caseData.risk_urgency, icon: <Clock size={12} /> },
+              { key: 'legalStrength', val: caseData.risk_legal_strength, icon: <Shield size={12} /> },
+              { key: 'complexity', val: caseData.risk_complexity, icon: <Zap size={12} /> },
+            ].map(d => (
+              <div key={d.key} className="text-center">
+                <div className="text-lg font-semibold" style={{ color: getDimensionColor(d.val) }}>{d.val || 0}</div>
+                <div className="text-[10px] text-[#9ca3af] flex items-center justify-center gap-1">{d.icon} {t[d.key]}</div>
+                <div className="h-1 bg-[#f3f4f6] rounded-full mt-1">
+                  <div className="h-full rounded-full" style={{ width: `${d.val || 0}%`, backgroundColor: getDimensionColor(d.val) }}></div>
                 </div>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
+        </div>
+        <RiskHistoryChart history={caseData.risk_score_history} currentScore={caseData.risk_score} t={t} />
+      </div>
 
-          {/* Jasper Response Letters - NEW SECTION */}
-          {letterTypes.length > 0 && (
-            <div className="card p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-lg bg-[#eff6ff] flex items-center justify-center">
-                  <Mail size={14} className="text-[#1a56db]" />
-                </div>
-                <div className="text-sm font-medium">Jasper Response Letters</div>
-                <span className="badge badge-blue text-[10px] ml-auto">AI-powered</span>
-              </div>
-              <p className="text-xs text-[#666] mb-4">Generate a professional response letter tailored to your situation. All case details are pre-filled automatically.</p>
-              <div className="grid grid-cols-2 gap-2">
-                {letterTypes.map((letterType) => (
-                  <button
-                    key={letterType.id}
-                    onClick={() => handleGenerateLetter(letterType)}
-                    className={`p-3 text-left border rounded-xl transition-all group ${
-                      selectedLetterType?.id === letterType.id
-                        ? 'bg-[#eff6ff] border-[#1a56db] ring-1 ring-[#1a56db]'
-                        : 'bg-[#f8f8f8] hover:bg-[#eff6ff] border-[#ebebeb] hover:border-[#93c5fd]'
-                    }`}
-                    data-testid={`letter-btn-${letterType.id}`}
-                  >
-                    <div className={`text-xs font-medium mb-0.5 ${
-                      selectedLetterType?.id === letterType.id ? 'text-[#1a56db]' : 'text-[#111827] group-hover:text-[#1a56db]'
-                    }`}>{letterType.label}</div>
-                    <div className="text-[10px] text-[#9ca3af] leading-relaxed">{letterType.desc}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+      {/* AI ANALYSIS — FINDINGS */}
+      <div className="card p-5" data-testid="ai-analysis-section">
+        <div className="flex items-center gap-2 mb-4">
+          <Scale size={16} className="text-[#1a56db]" />
+          <span className="text-sm font-medium text-[#111827]">{t.aiAnalysis}</span>
+        </div>
 
-          {/* AI Analysis */}
-          {caseData.ai_findings && caseData.ai_findings.length > 0 && (
-            <div className="card p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-lg bg-[#eff6ff] flex items-center justify-center">
-                  <Zap size={14} className="text-[#1a56db]" />
-                </div>
-                <div className="text-sm font-medium">Jasper AI analysis</div>
-                <span className="badge badge-green text-[10px] ml-auto">Updated with latest doc</span>
-              </div>
-              <div className="space-y-0">
-                {caseData.ai_findings.map((finding, i) => {
-                  const dotColor = finding.impact === 'high' ? '#dc2626' : finding.impact === 'medium' ? '#d97706' : '#16a34a';
-                  const badgeClass = finding.type === 'risk' ? 'badge-red' : 
-                                     finding.type === 'opportunity' ? 'badge-orange' : 
-                                     finding.type === 'deadline' ? 'badge-red' : 'badge-green';
-                  const badgeText = finding.type === 'risk' ? 'High impact' : 
-                                    finding.type === 'opportunity' ? 'Opportunity' : 
-                                    finding.type === 'deadline' ? 'Deadline critical' : 'Favorable outlook';
-                  return (
-                    <div key={i} className={`flex items-start gap-3 py-3 ${i < caseData.ai_findings.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}>
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: dotColor }}></span>
-                      <div className="text-xs text-[#444] leading-relaxed">
-                        {finding.text}
-                        <span className={`badge ${badgeClass} text-[10px] ml-2`}>{badgeText}</span>
-                        {finding.legal_ref && (
-                          <div className="text-[10px] text-[#1a56db] mt-1 font-medium">{finding.legal_ref}</div>
-                        )}
-                        {finding.jurisprudence && (
-                          <div className="text-[10px] text-[#6b7280] mt-0.5 italic">{finding.jurisprudence}</div>
-                        )}
-                      </div>
+        {caseData.ai_summary && (
+          <div className="mb-4 p-3 bg-[#f8f8f8] rounded-xl text-sm text-[#444] leading-relaxed" data-testid="case-summary">
+            {caseData.ai_summary}
+          </div>
+        )}
+
+        {caseData.key_insight && (
+          <div className="mb-4 p-3 bg-[#eff6ff] border border-[#bfdbfe] rounded-xl" data-testid="key-insight">
+            <div className="text-[10px] text-[#1d4ed8] font-semibold uppercase tracking-wider mb-1">{t.keyInsight}</div>
+            <div className="text-sm text-[#1e40af] leading-relaxed">{caseData.key_insight}</div>
+          </div>
+        )}
+
+        <div className="text-xs font-semibold text-[#111827] mb-3">{t.findings}</div>
+
+        {findings.length > 0 ? (
+          <div className="space-y-3">
+            {findings.map((finding, i) => {
+              const findingText = finding.text || finding.texte || finding.description || finding.constatation || '';
+              const impactColor = finding.impact === 'high' ? '#dc2626' : finding.impact === 'medium' ? '#f59e0b' : '#22c55e';
+              const impactBg = finding.impact === 'high' ? '#fef2f2' : finding.impact === 'medium' ? '#fffbeb' : '#f0fdf4';
+              const legalRef = finding.legal_ref || finding.reference_legale || finding.loi_applicable || '';
+              const juris = finding.jurisprudence || finding.jurisprudence_applicable || '';
+              return (
+                <div key={i} className="p-3 rounded-xl border border-[#ebebeb]" data-testid={`finding-${i}`}>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ backgroundColor: impactBg }}>
+                      {finding.type === 'opportunity' ? <TrendingUp size={12} style={{ color: '#22c55e' }} /> :
+                       finding.type === 'risk' ? <TrendingDown size={12} style={{ color: impactColor }} /> :
+                       <AlertCircle size={12} style={{ color: impactColor }} />}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Next Steps */}
-          {caseData.ai_next_steps && caseData.ai_next_steps.length > 0 && (
-            <div className="card p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-lg bg-[#eff6ff] flex items-center justify-center">
-                  <CheckCircle size={14} className="text-[#1a56db]" />
-                </div>
-                <div className="text-sm font-medium">Recommended next steps</div>
-              </div>
-              <div className="space-y-0">
-                {caseData.ai_next_steps.map((step, i) => (
-                  <div key={i} className={`flex items-start gap-3 py-3 ${i < caseData.ai_next_steps.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}>
-                    <div className="w-6 h-6 rounded-full bg-[#1a56db] text-white text-[10px] font-medium flex items-center justify-center flex-shrink-0">
-                      {i + 1}
-                    </div>
-                    <div>
-                      <div className="text-xs font-medium text-[#111827] mb-1">{step.title}</div>
-                      <div className="text-[11px] text-[#777] leading-relaxed mb-1">{step.description}</div>
-                      {step.action_type === 'book_lawyer' && (
-                        <span className="text-[11px] text-[#1a56db] cursor-pointer hover:underline" onClick={() => navigate('/lawyers')}>
-                          Book a call — $149 →
-                        </span>
-                      )}
-                      {step.action_type === 'upload_document' && (
-                        <span className="text-[11px] text-[#1a56db] cursor-pointer hover:underline" onClick={() => navigate(`/upload?case=${caseId}`)}>
-                          Add documents →
-                        </span>
-                      )}
-                      {step.action_type === 'draft_response' && letterTypes.length > 0 && (
-                        <span className="text-[11px] text-[#1a56db] cursor-pointer hover:underline" onClick={() => handleGenerateLetter(letterTypes[0])}>
-                          Generate response letter →
-                        </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-[#111827] leading-relaxed mb-1.5" data-testid={`finding-text-${i}`}>{findingText}</div>
+                      {(legalRef || juris) && (
+                        <div className="space-y-1 mt-2">
+                          {legalRef && (
+                            <div className="flex items-start gap-1.5 text-[11px]" data-testid={`finding-legal-ref-${i}`}>
+                              <Scale size={10} className="text-[#6366f1] mt-0.5 flex-shrink-0" />
+                              <span className="text-[#6366f1] font-medium">{t.legalRef}:</span>
+                              <span className="text-[#555]">{legalRef}</span>
+                            </div>
+                          )}
+                          {juris && (
+                            <div className="flex items-start gap-1.5 text-[11px]" data-testid={`finding-juris-${i}`}>
+                              <FileText size={10} className="text-[#8b5cf6] mt-0.5 flex-shrink-0" />
+                              <span className="text-[#8b5cf6] font-medium">{t.jurisprudence}:</span>
+                              <span className="text-[#555]">{juris}</span>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: impactBg, color: impactColor }}>
+                      {finding.impact}
+                    </span>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Outcome Predictor */}
-          {caseData.risk_score > 0 && (
-            <OutcomePredictor caseId={caseId} />
-          )}
-
-          {/* Key Insight */}
-          <KeyInsight insight={caseData.key_insight} leverage={caseData.leverage_points} />
-
-          {/* Legal Battle Preview */}
-          <BattlePreview battlePreview={caseData.battle_preview} />
-
-          {/* Probability Breakdown */}
-          <ProbabilityBreakdown probability={caseData.success_probability} />
-
-          {/* Recent Legal Updates */}
-          {caseData.recent_case_law && caseData.recent_case_law.length > 0 && (
-            <div className="card p-5" data-testid="recent-case-law-section">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-[#f0fdf4] flex items-center justify-center">
-                    <Scale size={14} className="text-[#16a34a]" />
-                  </div>
-                  <div className="text-sm font-medium">Recent legal updates</div>
                 </div>
-                {caseData.case_law_updated && (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#f0fdf4] border border-[#bbf7d0] rounded-full" data-testid="case-law-badge">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
-                    <span className="text-[10px] font-medium text-[#16a34a]">Updated with latest case law — {caseData.case_law_updated}</span>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-sm text-[#9ca3af] py-4 text-center">{t.noFindings}</div>
+        )}
+      </div>
+
+      {/* NEXT STEPS */}
+      {nextSteps.length > 0 && (
+        <div className="card p-5" data-testid="next-steps-section">
+          <div className="flex items-center gap-2 mb-4">
+            <Target size={16} className="text-[#16a34a]" />
+            <span className="text-sm font-medium text-[#111827]">{t.nextSteps}</span>
+          </div>
+          <div className="space-y-3">
+            {nextSteps.map((step, i) => (
+              <div key={i} className="flex items-start gap-3" data-testid={`next-step-${i}`}>
+                <div className="w-6 h-6 rounded-full bg-[#f0fdf4] flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold text-[#16a34a]">{i + 1}</div>
+                <div>
+                  <div className="text-sm font-medium text-[#111827]">{step.title || step.titre || ''}</div>
+                  <div className="text-xs text-[#6b7280] mt-0.5">{step.description || step.desc || ''}</div>
+                  {step.deadline && <div className="text-[10px] text-[#f59e0b] mt-1 font-medium">{step.deadline}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* BATTLE PREVIEW */}
+      {battlePreview && (battlePreview.user_side || battlePreview.opposing_side) && (
+        <div className="card p-5" data-testid="battle-preview-section">
+          <div className="flex items-center gap-2 mb-4">
+            <Sword size={16} className="text-[#7c3aed]" />
+            <span className="text-sm font-medium text-[#111827]">{t.battlePreview}</span>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            {battlePreview.user_side && (
+              <div className="bg-[#eff6ff] rounded-xl p-4">
+                <div className="text-xs font-semibold text-[#1d4ed8] mb-2">{t.yourPosition}</div>
+                {battlePreview.user_side.strength && <div className="text-xs text-[#6b7280] mb-2">{t.strength}: <span className="font-medium text-[#1d4ed8]">{battlePreview.user_side.strength}/10</span></div>}
+                <div className="text-xs text-[#111] mb-2">{battlePreview.user_side.summary || ''}</div>
+                {battlePreview.user_side.arguments && (
+                  <div className="space-y-1 mb-2">
+                    <div className="text-[10px] font-medium text-[#1d4ed8]">{t.arguments}:</div>
+                    {(battlePreview.user_side.arguments || []).map((a, i) => <div key={i} className="text-[11px] text-[#555] flex items-start gap-1"><CheckCircle size={10} className="text-[#1d4ed8] mt-0.5 flex-shrink-0" />{typeof a === 'string' ? a : a.argument || a.text || ''}</div>)}
                   </div>
                 )}
               </div>
-              <div className="space-y-2">
-                {caseData.recent_case_law.map((law, i) => (
-                  <div key={i} className="bg-[#f8fdf8] border border-[#d1fae5] rounded-xl p-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="text-xs font-medium text-[#111827]">{law.case_name}</div>
-                      {law.source_url && (
-                        <a href={law.source_url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0" data-testid={`case-law-link-${i}`}>
-                          <ExternalLink size={12} className="text-[#16a34a]" />
-                        </a>
-                      )}
-                    </div>
-                    <div className="text-[10px] text-[#6b7280] mt-1">{law.court} &middot; {law.date}</div>
-                    {law.ruling_summary && (
-                      <div className="text-[11px] text-[#374151] mt-1.5 leading-relaxed">{law.ruling_summary}</div>
-                    )}
+            )}
+            {battlePreview.opposing_side && (
+              <div className="bg-[#fef2f2] rounded-xl p-4">
+                <div className="text-xs font-semibold text-[#dc2626] mb-2">{t.opposingSide}</div>
+                {battlePreview.opposing_side.strength && <div className="text-xs text-[#6b7280] mb-2">{t.strength}: <span className="font-medium text-[#dc2626]">{battlePreview.opposing_side.strength}/10</span></div>}
+                <div className="text-xs text-[#111] mb-2">{battlePreview.opposing_side.summary || ''}</div>
+                {battlePreview.opposing_side.vulnerabilities && (
+                  <div className="space-y-1">
+                    <div className="text-[10px] font-medium text-[#dc2626]">{t.vulnerabilities}:</div>
+                    {(battlePreview.opposing_side.vulnerabilities || []).map((v, i) => <div key={i} className="text-[11px] text-[#555] flex items-start gap-1"><AlertCircle size={10} className="text-[#dc2626] mt-0.5 flex-shrink-0" />{typeof v === 'string' ? v : v.vulnerability || v.text || ''}</div>)}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Procedural Defects */}
-          {caseData.procedural_defects && caseData.procedural_defects.length > 0 && (
-            <div className="card p-5" data-testid="procedural-defects">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-lg bg-[#f0fdf4] flex items-center justify-center">
-                  <BookOpen size={14} className="text-[#16a34a]" />
-                </div>
-                <div className="text-sm font-medium">Procedural defects found</div>
-              </div>
-              <div className="space-y-2">
-                {caseData.procedural_defects.map((defect, i) => (
-                  <div key={i} className="bg-[#f0fdf4] rounded-lg p-3 border border-[#bbf7d0]">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{
-                        background: (defect.severity || defect.gravite) === 'fatal' ? '#fef2f2' : (defect.severity || defect.gravite) === 'significant' || (defect.severity || defect.gravite) === 'significatif' ? '#fef9c3' : '#f5f5f5',
-                        color: (defect.severity || defect.gravite) === 'fatal' ? '#dc2626' : (defect.severity || defect.gravite) === 'significant' || (defect.severity || defect.gravite) === 'significatif' ? '#ca8a04' : '#888'
-                      }}>{defect.severity || defect.gravite}</span>
-                      {(defect.applicable_law || defect.loi_applicable) && <span className="text-[10px] text-[#1a56db] font-medium">{defect.applicable_law || defect.loi_applicable}</span>}
-                    </div>
-                    <div className="text-[11px] text-[#111827] font-medium">{defect.defect || defect.vice}</div>
-                    {(defect.user_benefit || defect.benefice_utilisateur) && <div className="text-[10px] text-[#16a34a] mt-1">{defect.user_benefit || defect.benefice_utilisateur}</div>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Belgian-specific: Recommended organizations */}
-          {caseData.organismes_recommandes && caseData.organismes_recommandes.length > 0 && (
-            <div className="card p-5" data-testid="organismes-recommandes">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-lg bg-[#eff6ff] flex items-center justify-center">
-                  <Scale size={14} className="text-[#1a56db]" />
-                </div>
-                <div className="text-sm font-medium">Organismes recommandes</div>
-              </div>
-              <div className="space-y-2">
-                {caseData.organismes_recommandes.map((org, i) => (
-                  <div key={i} className="bg-[#eff6ff] rounded-lg p-3 border border-[#bfdbfe]">
-                    <div className="text-xs font-semibold text-[#1d4ed8]">{org.organisme}</div>
-                    <div className="text-[11px] text-[#374151] mt-1">{org.raison}</div>
-                    {org.contact && (
-                      <div className="text-[10px] text-[#1a56db] mt-1 font-medium">{org.contact}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right Column - 1/3 */}
-        <div className="space-y-4">
-          {/* Book a Lawyer CTA */}
-          {showLawyerCTA && lawyers.length > 0 && (
-            <div className="bg-gradient-to-br from-[#eff6ff] to-[#dbeafe] border border-[#93c5fd] rounded-[14px] p-4 text-center">
-              <div className="text-sm font-medium text-[#1d4ed8] mb-1">Your risk is high.</div>
-              <div className="text-[11px] text-[#3b82f6] leading-relaxed mb-3">
-                A 30-min call with a licensed attorney could save you thousands. Your full case brief is sent before the call.
-              </div>
-              <button 
-                onClick={() => navigate(`/lawyers/book?lawyer=${lawyers[0].lawyer_id}&case=${caseId}`)}
-                className="w-full btn-pill btn-blue py-2.5 text-sm"
-                data-testid="book-video-call-btn"
-              >
-                Book a video call — $149
-              </button>
-              <div className="text-[10px] text-[#93c5fd] mt-2">
-                {lawyers[0].name} available now · {lawyers[0].specialty}
-              </div>
-            </div>
-          )}
-
-          {/* Documents */}
-          <div className="card p-4">
-            <div className="sec-header mb-3">
-              <div className="sec-title">Documents ({documents.length})</div>
-              <span 
-                className="sec-link"
-                onClick={() => navigate(`/upload?case=${caseId}`)}
-              >
-                + Add
-              </span>
-            </div>
-            {documents.map((doc, i) => (
-              <div key={doc.document_id} className={`flex items-center gap-3 py-2 ${i < documents.length - 1 ? 'border-b border-[#f5f5f5]' : ''} cursor-pointer`}>
-                <div className="w-7 h-7 rounded-lg bg-[#eff6ff] flex items-center justify-center flex-shrink-0">
-                  <FileText size={12} className="text-[#1a56db]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium text-[#111827] truncate">{doc.file_name}</div>
-                  <div className="text-[10px] text-[#9ca3af]">Added {new Date(doc.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
-                </div>
-                <span className={`badge text-[10px] ${doc.is_key_document ? 'badge-red' : doc.status === 'analyzed' ? 'badge-blue' : 'badge-orange'}`}>
-                  {doc.is_key_document ? 'Key' : doc.status === 'analyzed' ? 'Analyzed' : 'Draft'}
-                </span>
-              </div>
-            ))}
-            
-            {/* Drop zone */}
-            <div 
-              className="border-2 border-dashed border-[#93c5fd] rounded-lg p-3 text-center mt-3 cursor-pointer bg-[#eff6ff] hover:bg-[#dbeafe] transition-colors"
-              onClick={() => navigate(`/upload?case=${caseId}`)}
-              data-testid="drop-new-document"
-            >
-              <div className="text-xs text-[#1d4ed8] font-medium">+ Drop a new document</div>
-              <div className="text-[10px] text-[#93c5fd] mt-0.5">Score updates automatically</div>
-            </div>
-          </div>
-
-          {/* Timeline */}
-          <div className="card p-4">
-            <div className="sec-title mb-3">Case timeline</div>
-            {events.slice(0, 5).map((event, i) => (
-              <div key={event.event_id} className={`flex gap-3 py-2 ${i < Math.min(events.length, 5) - 1 ? 'border-b border-[#f5f5f5]' : ''}`}>
-                <div 
-                  className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: getEventBgColor(event.event_type) }}
-                >
-                  {getEventIcon(event.event_type)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium text-[#111827]">{event.title}</div>
-                  <div className="text-[11px] text-[#777]">{event.description}</div>
-                </div>
-                <div className="text-[10px] text-[#9ca3af] flex-shrink-0">{formatTimeAgo(event.created_at)}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Active Shared Links */}
-          <div className="card p-4" data-testid="active-shares">
-            <div className="sec-title mb-3">Shared links</div>
-            {activeShares.length === 0 ? (
-              <div className="text-xs text-[#9ca3af]">No active links · <button onClick={() => setShowShareModal(true)} className="text-[#1a56db] hover:underline">Share this case</button></div>
-            ) : (
-              <div className="space-y-2">
-                {activeShares.map(share => {
-                  const hoursLeft = Math.max(0, Math.round((new Date(share.expires_at) - new Date()) / 3600000));
-                  return (
-                    <div key={share.share_id} className="flex items-center justify-between py-2 border-b border-[#f5f5f5] last:border-0">
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[11px] text-[#555]">Expires in {hoursLeft}h · {share.views_count} views</div>
-                        {share.comment_count > 0 && <div className="text-[10px] text-[#1a56db]">{share.comment_count} comment(s)</div>}
-                      </div>
-                      <div className="flex gap-1">
-                        <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/shared/${share.token}`); }} className="text-[10px] text-[#1a56db] hover:underline">Copy</button>
-                        <button onClick={async () => {
-                          await axios.post(`${API}/shares/${share.share_id}/revoke`, {}, { withCredentials: true });
-                          setActiveShares(prev => prev.filter(s => s.share_id !== share.share_id));
-                        }} className="text-[10px] text-[#dc2626] hover:underline ml-2">Revoke</button>
-                      </div>
-                    </div>
-                  );
-                })}
+                )}
               </div>
             )}
           </div>
         </div>
+      )}
+
+      {/* OUTCOME PREDICTOR */}
+      <div className="card p-5" data-testid="outcome-predictor-section">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp size={16} className="text-[#0891b2]" />
+            <span className="text-sm font-medium text-[#111827]">{t.outcomePredictor}</span>
+          </div>
+          {!prediction && !predicting && !predictError && (
+            <button onClick={handlePredict} className="btn-pill btn-outline text-xs flex items-center gap-1.5" data-testid="predict-btn">
+              <Zap size={12} /> {t.predictOutcome}
+            </button>
+          )}
+        </div>
+        {predicting && (
+          <div className="text-center py-6">
+            <Loader2 size={20} className="animate-spin text-[#0891b2] mx-auto mb-2" />
+            <div className="text-xs text-[#6b7280]">{t.predicting}</div>
+          </div>
+        )}
+        {predictError && (
+          <div className="text-center py-4" data-testid="predict-error">
+            <div className="text-sm text-[#dc2626] mb-2">{t.predictError}</div>
+            <button onClick={handlePredict} className="btn-pill btn-outline text-xs">{t.predictOutcome}</button>
+          </div>
+        )}
+        {prediction && (
+          <div className="space-y-3" data-testid="prediction-result">
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: t.probable, val: prediction.probable_outcome || prediction.cas_probable, color: '#0891b2' },
+                { label: t.best, val: prediction.best_case || prediction.meilleur_cas, color: '#16a34a' },
+                { label: t.worst, val: prediction.worst_case || prediction.pire_cas, color: '#dc2626' },
+              ].map((o, i) => o.val && (
+                <div key={i} className="bg-[#f8f8f8] rounded-xl p-3 text-center">
+                  <div className="text-[10px] text-[#9ca3af] mb-1">{o.label}</div>
+                  <div className="text-xs font-medium" style={{ color: o.color }}>{typeof o.val === 'string' ? o.val : o.val?.description || JSON.stringify(o.val)}</div>
+                </div>
+              ))}
+            </div>
+            {prediction.confidence && (
+              <div className="text-xs text-[#6b7280]">{t.confidenceLevel}: <span className="font-medium text-[#111]">{prediction.confidence}</span></div>
+            )}
+            {prediction.key_factors && (
+              <div>
+                <div className="text-xs font-medium text-[#111] mb-1">{t.keyFactors}:</div>
+                <div className="space-y-1">
+                  {(prediction.key_factors || []).map((f, i) => (
+                    <div key={i} className="text-xs text-[#555] flex items-start gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-[#0891b2] mt-1.5 flex-shrink-0"></span>
+                      {typeof f === 'string' ? f : f.factor || f.text || ''}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Letter Generation Modal */}
+      {/* RESPONSE LETTERS */}
+      {letterTypes.length > 0 && (
+        <div className="card p-5" data-testid="response-letters-section">
+          <div className="flex items-center gap-2 mb-4">
+            <Mail size={16} className="text-[#1a56db]" />
+            <span className="text-sm font-medium text-[#111827]">{t.responseLetters}</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {letterTypes.map((lt, i) => (
+              <button
+                key={i}
+                onClick={() => { setSelectedLetterType(lt); setShowLetterModal(true); setGeneratedLetter(null); }}
+                className="text-left p-3 rounded-xl border border-[#ebebeb] hover:border-[#93c5fd] hover:bg-[#fafafa] transition-all"
+                data-testid={`letter-type-${i}`}
+              >
+                <div className="text-sm font-medium text-[#111827] mb-1">{lt.label}</div>
+                <div className="text-xs text-[#6b7280] leading-relaxed">{lt.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TIMELINE + DOCUMENTS */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="card p-5">
+          <div className="text-sm font-medium text-[#111827] mb-3">{t.caseTimeline}</div>
+          {events.length > 0 ? (
+            <div className="space-y-3">
+              {events.slice(0, 10).map((ev, i) => (
+                <div key={i} className="flex items-start gap-3 text-xs">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#1a56db] mt-1.5 flex-shrink-0"></div>
+                  <div>
+                    <div className="text-[#111]">{ev.title}</div>
+                    <div className="text-[#9ca3af]">{new Date(ev.created_at).toLocaleDateString()}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : <div className="text-xs text-[#9ca3af]">No events yet</div>}
+        </div>
+        <div className="card p-5">
+          <div className="text-sm font-medium text-[#111827] mb-3">{t.caseMgmt}</div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs text-[#6b7280]">
+              <span>{t.documents}</span>
+              <span>{caseData.document_count || 0}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs text-[#6b7280]">
+              <span>{t.sharedLinks}</span>
+              <span>{activeShares.length} {t.activeShares}</span>
+            </div>
+            <button onClick={() => navigate('/lawyers')} className="w-full mt-2 btn-pill btn-outline text-xs py-2">{t.talkLawyer}</button>
+          </div>
+        </div>
+      </div>
+
+      {/* LETTER MODAL */}
       {showLetterModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-            {/* Modal Header */}
             <div className="px-5 py-4 border-b border-[#ebebeb] flex items-center justify-between">
               <div>
                 <div className="text-sm font-semibold text-[#111827]">
-                  {generatedLetter ? 'Your Response Letter' : `Generate: ${selectedLetterType?.label}`}
+                  {generatedLetter ? t.letterReady : `${t.generateLetter}: ${selectedLetterType?.label}`}
                 </div>
                 <div className="text-xs text-[#6b7280]">{selectedLetterType?.desc}</div>
               </div>
-              <button 
-                onClick={() => { setShowLetterModal(false); setGeneratedLetter(null); }}
-                className="w-8 h-8 rounded-full hover:bg-[#f5f5f5] flex items-center justify-center"
-              >
+              <button onClick={() => { setShowLetterModal(false); setGeneratedLetter(null); }} className="w-8 h-8 rounded-full hover:bg-[#f5f5f5] flex items-center justify-center">
                 <X size={18} className="text-[#6b7280]" />
               </button>
             </div>
-
-            {/* Modal Body */}
             <div className="flex-1 overflow-auto p-5">
               {!generatedLetter ? (
                 <div className="space-y-4">
                   <div className="bg-[#eff6ff] rounded-xl p-4">
-                    <div className="text-xs font-medium text-[#1d4ed8] mb-2">Case details will be included automatically:</div>
+                    <div className="text-xs font-medium text-[#1d4ed8] mb-2">{t.caseDetails}:</div>
                     <div className="text-xs text-[#3b82f6] space-y-1">
-                      <div>• Case: {caseData.title}</div>
+                      <div>• {caseData.title}</div>
                       <div>• Risk Score: {caseData.risk_score}/100</div>
-                      {caseData.financial_exposure && <div>• Financial exposure: {caseData.financial_exposure}</div>}
-                      {caseData.deadline && <div>• Deadline: {caseData.deadline}</div>}
+                      {caseData.financial_exposure && <div>• {caseData.financial_exposure}</div>}
+                      {caseData.deadline && <div>• {caseData.deadline}</div>}
                     </div>
                   </div>
-
-                  <div>
-                    <label className="form-label">Your address (optional)</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="123 Main St, City, State ZIP"
-                      value={letterForm.user_address}
-                      onChange={(e) => setLetterForm({ ...letterForm, user_address: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="form-label">Opposing party name</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Company name or person's name"
-                      value={letterForm.opposing_party_name}
-                      onChange={(e) => setLetterForm({ ...letterForm, opposing_party_name: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="form-label">Opposing party address (optional)</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Their address"
-                      value={letterForm.opposing_party_address}
-                      onChange={(e) => setLetterForm({ ...letterForm, opposing_party_address: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="form-label">Additional context (optional)</label>
-                    <textarea
-                      className="form-input min-h-[80px]"
-                      placeholder="Any additional information to include..."
-                      value={letterForm.additional_context}
-                      onChange={(e) => setLetterForm({ ...letterForm, additional_context: e.target.value })}
-                    />
-                  </div>
+                  <div><label className="form-label">{t.yourAddress}</label><input type="text" className="form-input" value={letterForm.user_address} onChange={(e) => setLetterForm({ ...letterForm, user_address: e.target.value })} /></div>
+                  <div><label className="form-label">{t.opposingName}</label><input type="text" className="form-input" value={letterForm.opposing_party_name} onChange={(e) => setLetterForm({ ...letterForm, opposing_party_name: e.target.value })} /></div>
+                  <div><label className="form-label">{t.opposingAddress}</label><input type="text" className="form-input" value={letterForm.opposing_party_address} onChange={(e) => setLetterForm({ ...letterForm, opposing_party_address: e.target.value })} /></div>
+                  <div><label className="form-label">{t.additionalContext}</label><textarea className="form-input min-h-[80px]" value={letterForm.additional_context} onChange={(e) => setLetterForm({ ...letterForm, additional_context: e.target.value })} /></div>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* Letter preview */}
                   <div className="bg-[#fafafa] rounded-xl p-5 border border-[#ebebeb]">
                     <div className="text-xs font-medium text-[#1a56db] mb-2">{generatedLetter.subject}</div>
-                    <div className="text-xs text-[#444] whitespace-pre-wrap leading-relaxed font-mono" style={{ fontFamily: 'Georgia, serif' }}>
+                    <div className="text-xs text-[#444] whitespace-pre-wrap leading-relaxed" style={{ fontFamily: 'Georgia, serif' }}>
                       {generatedLetter.letter_body?.replace(/\\n/g, '\n')}
                     </div>
                   </div>
-
-                  {/* Key points */}
                   {generatedLetter.key_points && (
                     <div className="bg-[#f0fdf4] rounded-xl p-4">
-                      <div className="text-xs font-medium text-[#16a34a] mb-2">Key points in this letter:</div>
-                      <ul className="space-y-1">
-                        {generatedLetter.key_points.map((point, i) => (
-                          <li key={i} className="text-xs text-[#15803d] flex items-start gap-2">
-                            <CheckCircle size={12} className="text-[#16a34a] mt-0.5 flex-shrink-0" />
-                            {point}
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="text-xs font-medium text-[#16a34a] mb-2">{t.keyPoints}:</div>
+                      <ul className="space-y-1">{generatedLetter.key_points.map((p, i) => <li key={i} className="text-xs text-[#15803d] flex items-start gap-2"><CheckCircle size={12} className="text-[#16a34a] mt-0.5 flex-shrink-0" />{p}</li>)}</ul>
                     </div>
                   )}
-
-                  {/* Warnings */}
                   {generatedLetter.warnings && (
                     <div className="bg-[#fffbeb] rounded-xl p-4">
-                      <div className="text-xs font-medium text-[#d97706] mb-2">Important reminders:</div>
-                      <ul className="space-y-1">
-                        {generatedLetter.warnings.map((warning, i) => (
-                          <li key={i} className="text-xs text-[#b45309] flex items-start gap-2">
-                            <AlertCircle size={12} className="text-[#d97706] mt-0.5 flex-shrink-0" />
-                            {warning}
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="text-xs font-medium text-[#d97706] mb-2">{t.warnings}:</div>
+                      <ul className="space-y-1">{generatedLetter.warnings.map((w, i) => <li key={i} className="text-xs text-[#b45309] flex items-start gap-2"><AlertCircle size={12} className="text-[#d97706] mt-0.5 flex-shrink-0" />{w}</li>)}</ul>
                     </div>
                   )}
-
-                  {/* Disclaimer */}
-                  <div className="text-[10px] text-[#9ca3af] leading-relaxed">
-                    {generatedLetter.disclaimer}
-                  </div>
+                  {generatedLetter.disclaimer && <div className="text-[10px] text-[#9ca3af] leading-relaxed">{generatedLetter.disclaimer}</div>}
                 </div>
               )}
             </div>
-
-            {/* Modal Footer */}
             <div className="px-5 py-4 border-t border-[#ebebeb] flex items-center justify-between bg-[#fafafa]">
               {!generatedLetter ? (
                 <>
-                  <button
-                    onClick={() => setShowLetterModal(false)}
-                    className="btn-pill btn-outline"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={submitLetterGeneration}
-                    disabled={generatingLetter}
-                    className="btn-pill btn-blue flex items-center gap-2"
-                    data-testid="generate-letter-btn"
-                  >
-                    {generatingLetter ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Mail size={16} />
-                        Generate Letter
-                      </>
-                    )}
+                  <button onClick={() => setShowLetterModal(false)} className="btn-pill btn-outline">{t.cancel}</button>
+                  <button onClick={submitLetterGeneration} disabled={generatingLetter} className="btn-pill btn-blue flex items-center gap-2" data-testid="generate-letter-btn">
+                    {generatingLetter ? <><Loader2 size={16} className="animate-spin" /> {t.generating}</> : <><Mail size={16} /> {t.generateLetter}</>}
                   </button>
                 </>
               ) : (
                 <>
-                  <button
-                    onClick={() => setGeneratedLetter(null)}
-                    className="btn-pill btn-outline"
-                  >
-                    Generate another
-                  </button>
+                  <button onClick={() => setGeneratedLetter(null)} className="btn-pill btn-outline">{t.generateAnother}</button>
                   <div className="flex gap-2">
-                    <button
-                      onClick={copyToClipboard}
-                      className="btn-pill btn-outline flex items-center gap-2"
-                      data-testid="copy-letter-btn"
-                    >
-                      <Copy size={16} />
-                      {copied ? 'Copied!' : 'Copy'}
-                    </button>
-                    <button
-                      onClick={downloadAsPDF}
-                      className="btn-pill btn-blue flex items-center gap-2"
-                      data-testid="download-letter-btn"
-                    >
-                      <Download size={16} />
-                      Download PDF
-                    </button>
+                    <button onClick={copyToClipboard} className="btn-pill btn-outline flex items-center gap-2" data-testid="copy-letter-btn"><Copy size={16} /> {copied ? t.copied : t.copy}</button>
+                    <button onClick={downloadAsPDF} className="btn-pill btn-blue flex items-center gap-2" data-testid="download-letter-btn"><Download size={16} /> {t.downloadPdf}</button>
                   </div>
                 </>
               )}
@@ -1187,22 +672,21 @@ const CaseDetail = () => {
         </div>
       )}
 
-      {/* Share Modal */}
+      {/* SHARE MODAL */}
       {showShareModal && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => { setShowShareModal(false); setShareLink(null); }}>
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl" onClick={e => e.stopPropagation()} data-testid="share-modal">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-sm font-medium">Share this case</div>
+              <div className="text-sm font-medium">{t.shareCase}</div>
               <button onClick={() => { setShowShareModal(false); setShareLink(null); }}><X size={16} className="text-[#9ca3af]" /></button>
             </div>
-
             {!shareLink ? (
               <>
-                <div className="text-xs text-[#6b7280] mb-4">Generate a read-only link. Anyone with the link can view this case analysis.</div>
+                <div className="text-xs text-[#6b7280] mb-4">{t.shareDesc}</div>
                 <div className="mb-3">
-                  <div className="text-[11px] text-[#9ca3af] mb-1.5">Expires in</div>
+                  <div className="text-[11px] text-[#9ca3af] mb-1.5">{t.expiresIn}</div>
                   <div className="flex gap-2">
-                    {[{h: 24, l: '24 hours'}, {h: 48, l: '48 hours'}, {h: 168, l: '7 days'}, {h: 720, l: '30 days'}].map(opt => (
+                    {[{h: 24, l: '24h'}, {h: 48, l: '48h'}, {h: 168, l: '7d'}, {h: 720, l: '30d'}].map(opt => (
                       <button key={opt.h} onClick={() => setShareExpiry(opt.h)}
                         className={`flex-1 py-2 text-xs rounded-lg border transition-colors ${shareExpiry === opt.h ? 'bg-[#eff6ff] border-[#1a56db] text-[#1a56db]' : 'border-[#ebebeb] text-[#555] hover:border-[#93c5fd]'}`}
                         data-testid={`expiry-${opt.h}`}
@@ -1211,10 +695,10 @@ const CaseDetail = () => {
                   </div>
                 </div>
                 <div className="mb-4">
-                  <div className="text-[11px] text-[#9ca3af] mb-1.5">Message for recipient (optional)</div>
-                  <input value={shareMessage} onChange={e => setShareMessage(e.target.value)} placeholder="e.g. Please review before my call tomorrow" className="w-full px-3 py-2 text-xs border border-[#ebebeb] rounded-lg focus:outline-none focus:border-[#1a56db]" data-testid="share-message-input" />
+                  <div className="text-[11px] text-[#9ca3af] mb-1.5">{t.msgRecipient}</div>
+                  <input value={shareMessage} onChange={e => setShareMessage(e.target.value)} className="w-full px-3 py-2 text-xs border border-[#ebebeb] rounded-lg focus:outline-none focus:border-[#1a56db]" data-testid="share-message-input" />
                 </div>
-                <div className="text-[10px] text-[#9ca3af] mb-4">Recipients can view your case analysis but cannot download your documents or see your personal information.</div>
+                <div className="text-[10px] text-[#9ca3af] mb-4">{t.shareDisclaimer}</div>
                 <button onClick={async () => {
                   setSharing(true);
                   try {
@@ -1223,28 +707,28 @@ const CaseDetail = () => {
                     const sharesRes = await axios.get(`${API}/cases/${caseId}/shares`, { withCredentials: true });
                     setActiveShares(sharesRes.data || []);
                   } catch (err) {
-                    alert(err.response?.data?.detail || 'Failed to generate link');
+                    alert(err.response?.data?.detail || 'Failed');
                   } finally { setSharing(false); }
                 }} disabled={sharing} className="w-full btn-pill btn-blue py-2.5 flex items-center justify-center gap-2" data-testid="generate-link-btn">
                   {sharing ? <Loader2 size={14} className="animate-spin" /> : <Link2 size={14} />}
-                  {sharing ? 'Generating...' : 'Generate secure link'}
+                  {sharing ? t.generatingLink : t.generateLink}
                 </button>
               </>
             ) : (
               <>
-                <div className="text-xs text-[#16a34a] flex items-center gap-1.5 mb-3"><CheckCircle size={14} /> Link generated!</div>
+                <div className="text-xs text-[#16a34a] flex items-center gap-1.5 mb-3"><CheckCircle size={14} /> {t.linkGenerated}</div>
                 <div className="flex items-center gap-2 mb-4">
                   <input value={shareLink} readOnly className="flex-1 px-3 py-2 text-xs bg-[#f8f8f8] border border-[#ebebeb] rounded-lg" data-testid="share-link-input" />
                   <button onClick={() => { navigator.clipboard.writeText(shareLink); setShareLinkCopied(true); setTimeout(() => setShareLinkCopied(false), 2000); }}
                     className="btn-pill btn-blue text-xs" data-testid="copy-share-link-btn">
-                    {shareLinkCopied ? 'Copied!' : 'Copy'}
+                    {shareLinkCopied ? t.copied : t.copy}
                   </button>
                 </div>
                 <div className="flex gap-2 mb-3">
-                  <a href={`https://wa.me/?text=${encodeURIComponent(`Check out my legal case analysis: ${shareLink}`)}`} target="_blank" rel="noopener noreferrer" className="flex-1 btn-pill btn-outline text-xs text-center py-2">WhatsApp</a>
-                  <a href={`mailto:?subject=Jasper Case Analysis&body=${encodeURIComponent(`I'd like you to review my case: ${shareLink}`)}`} className="flex-1 btn-pill btn-outline text-xs text-center py-2">Email</a>
+                  <a href={`https://wa.me/?text=${encodeURIComponent(shareLink)}`} target="_blank" rel="noopener noreferrer" className="flex-1 btn-pill btn-outline text-xs text-center py-2">WhatsApp</a>
+                  <a href={`mailto:?body=${encodeURIComponent(shareLink)}`} className="flex-1 btn-pill btn-outline text-xs text-center py-2">Email</a>
                 </div>
-                <div className="text-[10px] text-[#9ca3af]">Link expires in {shareExpiry} hours</div>
+                <div className="text-[10px] text-[#9ca3af]">{t.linkExpires(shareExpiry)}</div>
               </>
             )}
           </div>

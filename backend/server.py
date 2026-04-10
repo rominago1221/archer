@@ -500,8 +500,8 @@ Return ONLY this JSON — no other text:
     "complexity": 0
   }},
   "risk_level": "low|medium|high|critical",
-  "case_type": "employment|housing|nda|contract|debt|demand|immigration|court|consumer|family|other",
-  "suggested_case_title": "Short descriptive title max 60 chars",
+  "case_type": "employment|housing|nda|contract|debt|demand|immigration|court|consumer|family|traffic|insurance|other",
+  "suggested_case_title": "Short descriptive title based on document content max 60 chars — NEVER use the filename",
   "deadline": "YYYY-MM-DD or null",
   "deadline_description": "Description or null",
   "summary": "2-3 sentences plain English summary",
@@ -524,7 +524,7 @@ Return ONLY this JSON — no other text:
     {{"law": "statute name", "relevance": "how it applies", "favors": "user|opposing|neutral"}}
   ],
   "findings": [
-    {{"text": "Specific finding", "impact": "high|medium|low", "type": "risk|opportunity|deadline|neutral"}}
+    {{"text": "Specific finding", "impact": "high|medium|low", "type": "risk|opportunity|deadline|neutral", "legal_ref": "Applicable law citation (e.g. FDCPA 15 U.S.C. § 1692)", "jurisprudence": "Relevant case law if any"}}
   ],
   "recommend_lawyer": true,
   "disclaimer": "This analysis provides legal information only, not legal advice."
@@ -1128,8 +1128,8 @@ Retourne UNIQUEMENT ce JSON:
 {{
   "risk_score": {{"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50}},
   "risk_level": "faible|moyen|eleve|critique",
-  "case_type": "employment|housing|debt|nda|contract|consumer|other",
-  "suggested_case_title": "Titre descriptif du dossier max 60 chars",
+  "case_type": "employment|housing|debt|nda|contract|consumer|family|court|penal|commercial|other",
+  "suggested_case_title": "Titre descriptif du dossier max 60 chars — JAMAIS le nom du fichier",
   "summary": "Resume en 2-3 phrases en francais clair",
   "deadline": "YYYY-MM-DD ou null",
   "deadline_description": "Description du delai",
@@ -1923,11 +1923,11 @@ async def analyze_document_vision(image_b64_list: list, system_prompt: str = Non
             "source": {"type": "base64", "media_type": "image/jpeg", "data": b64}
         })
     
-    prompt_text = "Read ALL text from this scanned legal document and analyze it completely. Return the analysis as JSON only."
+    prompt_text = "Read ALL text from this scanned legal document and analyze it completely. You MUST return a JSON with: risk_score (total + 4 dimensions), case_type (employment|housing|debt|nda|contract|consumer|family|court|penal|commercial|other), suggested_case_title (descriptive title from content, NEVER the filename), summary, findings (each with text, impact, type, legal_ref, jurisprudence), next_steps, deadline, financial_exposure, key_insight, battle_preview, recommend_lawyer. Return JSON only."
     if user_context:
         prompt_text += f"\n\nUser context: {user_context}"
     if len(image_b64_list) > 1:
-        prompt_text = f"This document has {len(image_b64_list)} pages. Read ALL text from every page, then analyze the complete document as a single legal document. Return the analysis as JSON only."
+        prompt_text = f"This document has {len(image_b64_list)} pages. Read ALL text from every page, then analyze the complete document. You MUST return a JSON with: risk_score, case_type, suggested_case_title (from content, NEVER filename), summary, findings (each with text, impact, type, legal_ref, jurisprudence), next_steps, deadline, financial_exposure, key_insight, battle_preview, recommend_lawyer. Return JSON only."
         if user_context:
             prompt_text += f"\n\nUser context: {user_context}"
     
@@ -2587,7 +2587,11 @@ async def upload_document(
     else:
         # Create new case (standard mode)
         case_id = f"case_{uuid.uuid4().hex[:12]}"
-        case_title = analysis.get("suggested_case_title", file.filename) if analysis else file.filename
+        case_title = (analysis.get("suggested_case_title") or "").strip() if analysis else ""
+        if not case_title or case_title == file.filename or len(case_title) < 5:
+            case_type_val = analysis.get("case_type", "other") if analysis else "other"
+            summary = (analysis.get("summary") or "") if analysis else ""
+            case_title = summary[:60].rstrip('.') if summary else f"Legal case — {case_type_val}"
         case_type = analysis.get("case_type", "other") if analysis else "other"
         
         case_doc = {
@@ -3244,7 +3248,10 @@ async def scan_document(
             )
     else:
         case_id = f"case_{uuid.uuid4().hex[:12]}"
-        case_title = analysis.get("suggested_case_title", "Scanned Document")
+        case_title = (analysis.get("suggested_case_title") or "").strip()
+        if not case_title or len(case_title) < 5:
+            summary = (analysis.get("summary") or "")
+            case_title = summary[:60].rstrip('.') if summary else "Scanned Document Analysis"
         case_type = analysis.get("case_type", "other")
         
         case_doc = {
