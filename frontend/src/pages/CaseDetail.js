@@ -36,6 +36,23 @@ const labels = {
     caseMgmt: 'Case Management', activeShares: 'active shares', noShares: 'No shared links yet',
     upload: 'Upload new document', talkLawyer: 'Talk to a lawyer',
     caseType: (t) => t || 'Other',
+    // Multi-document
+    multiDocTitle: (n) => `Complete case analysis — ${n} documents`,
+    caseNarrative: 'Case narrative',
+    contradictions: 'Contradictions detected',
+    contradictionAlert: 'Contradiction detected',
+    docSays: (d) => `${d} states:`,
+    defenseValue: 'Defense value',
+    opposingStrategy: 'Opposing party strategy assessment',
+    masterDeadlines: 'All deadlines across documents',
+    patternAnalysis: 'Opposing party pattern analysis',
+    caseBrief: 'Case Brief',
+    downloadBrief: 'Download Case Brief',
+    generatingBrief: 'Generating brief...',
+    briefDesc: 'Comprehensive case summary suitable for sharing with an external lawyer',
+    cumulativeExposure: 'Cumulative financial exposure',
+    scoreWas: 'was',
+    scoreNow: 'now',
   },
   'fr-BE': {
     riskScore: 'Score de Risque Jasper', evolution: 'Evolution du score', financial: 'Financier', urgency: 'Urgence',
@@ -65,6 +82,23 @@ const labels = {
     caseMgmt: 'Gestion du dossier', activeShares: 'partages actifs', noShares: 'Aucun lien partage',
     upload: 'Televerser un nouveau document', talkLawyer: 'Parler a un avocat',
     caseType: (t) => ({ employment: 'Travail', housing: 'Bail', debt: 'Creance', nda: 'NDA', contract: 'Contrat', consumer: 'Consommateur', family: 'Famille', court: 'Tribunal', penal: 'Penal', commercial: 'Commercial' }[t] || t || 'Autre'),
+    // Multi-document
+    multiDocTitle: (n) => `Analyse complete du dossier — ${n} documents`,
+    caseNarrative: 'Recit du dossier',
+    contradictions: 'Contradictions detectees',
+    contradictionAlert: 'Contradiction detectee',
+    docSays: (d) => `${d} indique :`,
+    defenseValue: 'Valeur de defense',
+    opposingStrategy: 'Analyse de la strategie adverse',
+    masterDeadlines: 'Tous les delais du dossier',
+    patternAnalysis: 'Analyse du comportement de la partie adverse',
+    caseBrief: 'Dossier juridique',
+    downloadBrief: 'Telecharger le dossier juridique',
+    generatingBrief: 'Generation du dossier...',
+    briefDesc: 'Resume complet du dossier a partager avec un avocat externe',
+    cumulativeExposure: 'Exposition financiere cumulee',
+    scoreWas: 'etait',
+    scoreNow: 'maintenant',
   },
   'nl-BE': {
     riskScore: 'Jasper Risicoscore', evolution: 'Score-evolutie', financial: 'Financieel', urgency: 'Urgentie',
@@ -94,6 +128,14 @@ const labels = {
     caseMgmt: 'Dossierbeheer', activeShares: 'actieve delingen', noShares: 'Nog geen gedeelde links',
     upload: 'Nieuw document uploaden', talkLawyer: 'Spreek met een advocaat',
     caseType: (t) => ({ employment: 'Arbeidsrecht', housing: 'Huurrecht', debt: 'Schuld', nda: 'NDA', contract: 'Contract', consumer: 'Consument', family: 'Familierecht', court: 'Rechtbank', penal: 'Strafrecht', commercial: 'Handelsrecht' }[t] || t || 'Ander'),
+    multiDocTitle: (n) => `Volledige dossieranalyse — ${n} documenten`,
+    caseNarrative: 'Dossierverhaal', contradictions: 'Tegenstrijdigheden gedetecteerd',
+    contradictionAlert: 'Tegenstrijdigheid gedetecteerd', docSays: (d) => `${d} stelt:`,
+    defenseValue: 'Verdedigingswaarde', opposingStrategy: 'Strategie-analyse tegenpartij',
+    masterDeadlines: 'Alle termijnen', patternAnalysis: 'Patroonanalyse tegenpartij',
+    caseBrief: 'Juridisch dossier', downloadBrief: 'Dossier downloaden',
+    generatingBrief: 'Dossier genereren...', briefDesc: 'Samenvatting voor externe advocaat',
+    cumulativeExposure: 'Cumulatieve financiele blootstelling', scoreWas: 'was', scoreNow: 'nu',
   },
   'de-BE': {
     riskScore: 'Jasper Risikobewertung', evolution: 'Score-Entwicklung', financial: 'Finanziell', urgency: 'Dringlichkeit',
@@ -123,6 +165,14 @@ const labels = {
     caseMgmt: 'Fallverwaltung', activeShares: 'aktive Freigaben', noShares: 'Noch keine geteilten Links',
     upload: 'Neues Dokument hochladen', talkLawyer: 'Mit einem Anwalt sprechen',
     caseType: (t) => ({ employment: 'Arbeitsrecht', housing: 'Mietrecht', debt: 'Schulden', nda: 'NDA', contract: 'Vertrag', consumer: 'Verbraucher', family: 'Familienrecht', court: 'Gericht', penal: 'Strafrecht', commercial: 'Handelsrecht' }[t] || t || 'Sonstige'),
+    multiDocTitle: (n) => `Vollstandige Fallanalyse — ${n} Dokumente`,
+    caseNarrative: 'Fallerzahlung', contradictions: 'Widerspruche erkannt',
+    contradictionAlert: 'Widerspruch erkannt', docSays: (d) => `${d} besagt:`,
+    defenseValue: 'Verteidigungswert', opposingStrategy: 'Strategieanalyse der Gegenseite',
+    masterDeadlines: 'Alle Fristen', patternAnalysis: 'Musteranalyse der Gegenseite',
+    caseBrief: 'Rechtsdossier', downloadBrief: 'Dossier herunterladen',
+    generatingBrief: 'Dossier erstellen...', briefDesc: 'Zusammenfassung fur externen Anwalt',
+    cumulativeExposure: 'Kumulative finanzielle Belastung', scoreWas: 'war', scoreNow: 'jetzt',
   },
 };
 
@@ -169,6 +219,7 @@ const CaseDetail = () => {
   const [shareLink, setShareLink] = useState(null);
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
   const [activeShares, setActiveShares] = useState([]);
+  const [generatingBrief, setGeneratingBrief] = useState(false);
 
   const userLang = user?.language || 'en';
   const t = labels[userLang] || labels['en'];
@@ -257,6 +308,68 @@ const CaseDetail = () => {
     });
   };
 
+  const downloadCaseBrief = async () => {
+    setGeneratingBrief(true);
+    try {
+      const res = await axios.get(`${API}/cases/${caseId}/brief`, { withCredentials: true });
+      const brief = res.data;
+      import('jspdf').then(({ jsPDF }) => {
+        const doc = new jsPDF();
+        let y = 20;
+        const addText = (text, size = 10, bold = false) => {
+          doc.setFontSize(size);
+          if (bold) doc.setFont(undefined, 'bold');
+          else doc.setFont(undefined, 'normal');
+          const lines = doc.splitTextToSize(text || '', 170);
+          if (y + lines.length * (size * 0.5) > 275) { doc.addPage(); y = 20; }
+          doc.text(lines, 20, y);
+          y += lines.length * (size * 0.5) + 4;
+        };
+        addText(`CASE BRIEF — ${brief.case_title || caseData?.title || ''}`, 16, true);
+        addText(`Generated: ${new Date().toLocaleDateString()}`, 8);
+        y += 4;
+        addText('EXECUTIVE SUMMARY', 12, true);
+        addText(brief.executive_summary || '');
+        y += 4;
+        if (brief.document_timeline?.length) {
+          addText('DOCUMENT TIMELINE', 12, true);
+          brief.document_timeline.forEach(d => addText(`${d.date} — ${d.document}: ${d.key_event}`));
+        }
+        y += 4;
+        if (brief.key_legal_issues?.length) {
+          addText('KEY LEGAL ISSUES', 12, true);
+          brief.key_legal_issues.forEach(i => addText(`[${i.severity}] ${i.issue} — ${i.applicable_law || ''}`));
+        }
+        y += 4;
+        if (brief.risk_assessment) {
+          addText('RISK ASSESSMENT', 12, true);
+          addText(`Score: ${brief.risk_assessment.score}/100 (${brief.risk_assessment.trend})`);
+          addText(brief.risk_assessment.explanation || '');
+        }
+        y += 4;
+        addText('RECOMMENDED STRATEGY', 12, true);
+        addText(brief.recommended_strategy || '');
+        y += 4;
+        if (brief.legal_references?.length) {
+          addText('LEGAL REFERENCES', 12, true);
+          brief.legal_references.forEach(r => addText(`${r.reference} — ${r.relevance}`));
+        }
+        y += 4;
+        addText('CONCLUSION', 12, true);
+        addText(brief.conclusion || '');
+        y += 8;
+        addText('This brief is generated by Jasper AI and is for informational purposes only.', 8);
+        doc.save(`case_brief_${caseId}.pdf`);
+      });
+    } catch (err) {
+      console.error('Brief generation failed:', err);
+      alert('Failed to generate case brief');
+    } finally {
+      setGeneratingBrief(false);
+    }
+  };
+
+
   const getRiskColor = (score) => {
     if (score >= 75) return '#dc2626';
     if (score >= 50) return '#f59e0b';
@@ -286,6 +399,12 @@ const CaseDetail = () => {
   const nextSteps = caseData.ai_next_steps || [];
   const battlePreview = caseData.battle_preview;
   const daysUntil = caseData.deadline ? Math.ceil((new Date(caseData.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+  const isMultiDoc = (caseData.document_count || 0) > 1;
+  const contradictions = caseData.contradictions || [];
+  const masterDeadlines = caseData.master_deadlines || [];
+  const riskHistory = caseData.risk_score_history || [];
+  const scoreDirection = riskHistory.length >= 2 ? (riskHistory[riskHistory.length - 1]?.score > riskHistory[riskHistory.length - 2]?.score ? 'up' : riskHistory[riskHistory.length - 1]?.score < riskHistory[riskHistory.length - 2]?.score ? 'down' : 'stable') : 'stable';
+  const isComplexCase = (caseData.document_count || 0) >= 5;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12" data-testid="case-detail-page">
@@ -311,6 +430,124 @@ const CaseDetail = () => {
           </button>
         </div>
       </div>
+
+      {/* MULTI-DOCUMENT CASE SUMMARY — only when 2+ documents */}
+      {isMultiDoc && (
+        <div className="card p-5 border-l-4 border-l-[#1a56db] bg-gradient-to-r from-[#eff6ff] to-white" data-testid="multi-doc-summary">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <FileText size={16} className="text-[#1a56db]" />
+              <span className="text-sm font-semibold text-[#111827]" data-testid="multi-doc-title">{t.multiDocTitle(caseData.document_count)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {scoreDirection !== 'stable' && riskHistory.length >= 2 && (
+                <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${scoreDirection === 'up' ? 'bg-[#fef2f2] text-[#dc2626]' : 'bg-[#f0fdf4] text-[#16a34a]'}`} data-testid="score-trend">
+                  {scoreDirection === 'up' ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                  {t.scoreWas} {riskHistory[0]?.score} → {t.scoreNow} {riskHistory[riskHistory.length - 1]?.score}
+                </div>
+              )}
+              {isComplexCase && (
+                <button
+                  onClick={downloadCaseBrief}
+                  disabled={generatingBrief}
+                  className="btn-pill btn-blue text-xs flex items-center gap-1.5"
+                  data-testid="download-brief-btn"
+                >
+                  {generatingBrief ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+                  {generatingBrief ? t.generatingBrief : t.downloadBrief}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Case Narrative */}
+          {caseData.case_narrative && (
+            <div className="mb-4 p-3 bg-white rounded-xl border border-[#e5e7eb]" data-testid="case-narrative">
+              <div className="text-[10px] font-semibold text-[#1a56db] uppercase tracking-wider mb-1.5">{t.caseNarrative}</div>
+              <div className="text-sm text-[#374151] leading-relaxed">{caseData.case_narrative}</div>
+            </div>
+          )}
+
+          {/* Cumulative Financial Exposure */}
+          {caseData.cumulative_financial_exposure && (
+            <div className="mb-4 flex items-center gap-2 p-2.5 bg-[#fffbeb] border border-[#fde68a] rounded-xl" data-testid="cumulative-exposure">
+              <Scale size={14} className="text-[#d97706] flex-shrink-0" />
+              <span className="text-xs font-medium text-[#92400e]">{t.cumulativeExposure}: </span>
+              <span className="text-xs text-[#b45309]">{caseData.cumulative_financial_exposure}</span>
+            </div>
+          )}
+
+          {/* Contradictions */}
+          {contradictions.length > 0 && (
+            <div className="mb-4" data-testid="contradictions-section">
+              <div className="text-[10px] font-semibold text-[#dc2626] uppercase tracking-wider mb-2">{t.contradictions}</div>
+              <div className="space-y-2">
+                {contradictions.map((c, i) => (
+                  <div key={i} className="p-3 bg-[#fef2f2] border border-[#fecaca] rounded-xl" data-testid={`contradiction-${i}`}>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <AlertCircle size={13} className="text-[#dc2626]" />
+                      <span className="text-xs font-semibold text-[#dc2626]">{t.contradictionAlert}</span>
+                      {c.defense_value && (
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ml-auto ${c.defense_value === 'high' ? 'bg-[#dcfce7] text-[#16a34a]' : c.defense_value === 'medium' ? 'bg-[#fef9c3] text-[#a16207]' : 'bg-[#f3f4f6] text-[#6b7280]'}`}>
+                          {t.defenseValue}: {c.defense_value}
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="p-2 bg-white rounded-lg">
+                        <div className="text-[10px] text-[#6b7280] mb-0.5">{t.docSays(c.doc_a || 'Document A')}</div>
+                        <div className="text-xs text-[#111827]">{c.claim_a}</div>
+                      </div>
+                      <div className="p-2 bg-white rounded-lg">
+                        <div className="text-[10px] text-[#6b7280] mb-0.5">{t.docSays(c.doc_b || 'Document B')}</div>
+                        <div className="text-xs text-[#111827]">{c.claim_b}</div>
+                      </div>
+                    </div>
+                    {c.significance && <div className="mt-2 text-xs text-[#7f1d1d] italic">{c.significance}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Master Deadlines */}
+          {masterDeadlines.length > 0 && (
+            <div className="mb-4" data-testid="master-deadlines">
+              <div className="text-[10px] font-semibold text-[#111827] uppercase tracking-wider mb-2">{t.masterDeadlines}</div>
+              <div className="space-y-1.5">
+                {masterDeadlines.map((dl, i) => {
+                  const isPast = dl.status === 'passed' || (dl.date && new Date(dl.date) < new Date());
+                  const isUrgent = dl.status === 'urgent';
+                  return (
+                    <div key={i} className={`flex items-center gap-3 p-2 rounded-lg text-xs ${isPast ? 'bg-[#fef2f2] text-[#dc2626]' : isUrgent ? 'bg-[#fffbeb] text-[#d97706]' : 'bg-[#f8f8f8] text-[#374151]'}`} data-testid={`master-deadline-${i}`}>
+                      <Clock size={12} className="flex-shrink-0" />
+                      <span className="font-medium">{dl.date}</span>
+                      <span className="flex-1">{dl.description}</span>
+                      <span className="text-[10px] opacity-70">{dl.source_document}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Opposing Strategy Analysis */}
+          {caseData.opposing_strategy_analysis && (
+            <div className="p-3 bg-[#f5f3ff] border border-[#ddd6fe] rounded-xl" data-testid="opposing-strategy">
+              <div className="text-[10px] font-semibold text-[#7c3aed] uppercase tracking-wider mb-1.5">{t.opposingStrategy}</div>
+              <div className="text-xs text-[#4c1d95] leading-relaxed">{caseData.opposing_strategy_analysis}</div>
+            </div>
+          )}
+
+          {/* Pattern Analysis — only for 5+ docs */}
+          {isComplexCase && caseData.multi_doc_summary && (
+            <div className="mt-3 p-3 bg-[#faf5ff] border border-[#e9d5ff] rounded-xl" data-testid="pattern-analysis">
+              <div className="text-[10px] font-semibold text-[#9333ea] uppercase tracking-wider mb-1.5">{t.patternAnalysis}</div>
+              <div className="text-xs text-[#581c87] leading-relaxed">{caseData.multi_doc_summary}</div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* RISK SCORE CARD */}
       <div className="card p-5" data-testid="risk-score-card">

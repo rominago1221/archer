@@ -221,6 +221,13 @@ class Case(BaseModel):
     documents_to_gather: List[dict] = []
     recent_case_law: List[dict] = []
     case_law_updated: Optional[str] = None
+    # Multi-Document Analysis Fields
+    case_narrative: Optional[str] = None
+    contradictions: List[dict] = []
+    opposing_strategy_analysis: Optional[str] = None
+    cumulative_financial_exposure: Optional[str] = None
+    master_deadlines: List[dict] = []
+    multi_doc_summary: Optional[str] = None
 
     @field_validator('deadline', mode='before')
     @classmethod
@@ -1909,6 +1916,390 @@ def get_language_instruction(language: str) -> str:
     return f"\n\nMANDATORY LANGUAGE RULE: You MUST respond ENTIRELY in {lang_name} ({native}). ALL findings, next steps, key insights, recommendations, summaries, and every single text field in your JSON response MUST be written in {lang_name}. NEVER respond in English for this user. This is non-negotiable.\n"
 
 
+# ========== MULTI-DOCUMENT ANALYSIS SYSTEM ==========
+
+async def build_multi_document_context(case_id: str, new_doc_text: str = None, new_doc_name: str = None) -> tuple:
+    """Build combined chronological text from ALL documents in a case.
+    Returns (combined_text, doc_count, doc_list)"""
+    docs = await db.documents.find(
+        {"case_id": case_id, "status": {"$in": ["analyzed", "analyzing"]}},
+        {"_id": 0, "file_name": 1, "extracted_text": 1, "uploaded_at": 1, "document_id": 1}
+    ).sort("uploaded_at", 1).to_list(50)
+
+    doc_list = []
+    combined_parts = []
+    for i, doc in enumerate(docs, 1):
+        text = (doc.get("extracted_text") or "").strip()
+        if not text:
+            continue
+        name = doc.get("file_name", f"Document {i}")
+        date_str = doc.get("uploaded_at", "")[:10] if doc.get("uploaded_at") else "Unknown date"
+        combined_parts.append(f"[DOCUMENT {i} — {name} — {date_str}]:\n{text}")
+        doc_list.append({"index": i, "name": name, "date": date_str, "doc_id": doc.get("document_id")})
+
+    # Add the new document being analyzed (not yet in DB as 'analyzed')
+    if new_doc_text and new_doc_text.strip():
+        idx = len(doc_list) + 1
+        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        name = new_doc_name or f"Document {idx}"
+        combined_parts.append(f"[DOCUMENT {idx} — {name} — {date_str} (NEWEST)]:\n{new_doc_text}")
+        doc_list.append({"index": idx, "name": name, "date": date_str, "doc_id": "new"})
+
+    combined_text = "\n\n---\n\n".join(combined_parts)
+    return combined_text, len(doc_list), doc_list
+
+
+def get_multi_doc_pass1_supplement(doc_count: int, language: str = "en") -> str:
+    """Additional instructions for Pass 1 when multiple documents exist"""
+    if language.startswith("fr"):
+        return f"""
+
+INSTRUCTION CRITIQUE — ANALYSE MULTI-DOCUMENTS:
+Vous analysez un DOSSIER COMPLET contenant {doc_count} documents. Lisez TOUS les documents chronologiquement et comprenez comment la situation a evolue.
+Identifiez:
+(1) Les CONTRADICTIONS entre les documents
+(2) Comment la position de la partie adverse a change au fil du temps
+(3) Les nouvelles revendications ou preuves introduites dans chaque nouveau document
+(4) La trajectoire globale du litige
+Extrayez les faits de TOUS les documents, pas seulement du dernier."""
+    elif language.startswith("nl"):
+        return f"""
+
+KRITISCHE INSTRUCTIE — MULTI-DOCUMENT ANALYSE:
+U analyseert een VOLLEDIG DOSSIER met {doc_count} documenten. Lees ALLE documenten chronologisch.
+Identificeer: (1) TEGENSTRIJDIGHEDEN, (2) evolutie positie tegenpartij, (3) nieuwe claims per document, (4) globale trajectorie van het geschil."""
+    elif language.startswith("de"):
+        return f"""
+
+KRITISCHE ANWEISUNG — MULTI-DOKUMENT-ANALYSE:
+Sie analysieren eine VOLLSTANDIGE AKTE mit {doc_count} Dokumenten. Lesen Sie ALLE Dokumente chronologisch.
+Identifizieren Sie: (1) WIDERSPRUCHE, (2) Entwicklung der Gegenpartei-Position, (3) neue Anspruche pro Dokument, (4) Gesamtverlauf des Rechtsstreits."""
+    else:
+        return f"""
+
+CRITICAL INSTRUCTION — MULTI-DOCUMENT ANALYSIS:
+You are analyzing a CASE FILE containing {doc_count} documents. Read ALL documents chronologically and understand how the situation has evolved.
+Identify:
+(1) CONTRADICTIONS between documents
+(2) How the opposing party's position has changed over time
+(3) New claims or evidence introduced in each new document
+(4) The overall trajectory of the dispute
+Extract facts from ALL documents, not just the latest one."""
+
+
+def get_multi_doc_pass2_supplement(doc_count: int, language: str = "en") -> str:
+    """Additional instructions for Pass 2 when multiple documents exist"""
+    if language.startswith("fr"):
+        return f"""
+
+INSTRUCTION MULTI-DOCUMENTS (PASSE 2):
+Sur base de TOUS les {doc_count} documents du dossier, fournissez une analyse juridique complete qui considere le tableau d'ensemble — pas seulement le dernier document.
+Comment la situation juridique a-t-elle evolue? Quel est l'effet cumulatif de tous les documents? Que revele le schema de communication sur la strategie de la partie adverse?
+IMPORTANT: Ajoutez ces champs supplementaires dans votre JSON:
+- "case_narrative": "Recit chronologique du litige: comment il a commence, evolue, et ou en est-on maintenant (3-5 phrases)"
+- "contradictions": [{{"doc_a": "Document X", "doc_b": "Document Y", "claim_a": "Ce que dit le doc X", "claim_b": "Ce que dit le doc Y", "significance": "Pourquoi c'est important", "defense_value": "high|medium|low"}}]
+- "cumulative_financial_exposure": "Exposition financiere totale cumulee de tous les documents"
+- "master_deadlines": [{{"date": "YYYY-MM-DD", "source_document": "nom du doc", "description": "nature du delai", "status": "passed|upcoming|urgent"}}]
+- "opposing_strategy_analysis": "Analyse de la strategie de la partie adverse basee sur l'ensemble des communications"
+"""
+    elif language.startswith("nl"):
+        return f"""
+
+MULTI-DOCUMENT INSTRUCTIE (PASS 2):
+Analyseer ALLE {doc_count} documenten samen. Voeg toe aan JSON:
+- "case_narrative": "Chronologisch verhaal van het geschil (3-5 zinnen)"
+- "contradictions": [{{"doc_a": "Doc X", "doc_b": "Doc Y", "claim_a": "...", "claim_b": "...", "significance": "...", "defense_value": "high|medium|low"}}]
+- "cumulative_financial_exposure": "Totale cumulatieve financiele blootstelling"
+- "master_deadlines": [{{"date": "YYYY-MM-DD", "source_document": "...", "description": "...", "status": "passed|upcoming|urgent"}}]
+- "opposing_strategy_analysis": "Analyse van de strategie van de tegenpartij"
+"""
+    elif language.startswith("de"):
+        return f"""
+
+MULTI-DOKUMENT-ANWEISUNG (PASS 2):
+Analysieren Sie ALLE {doc_count} Dokumente zusammen. Fugen Sie zum JSON hinzu:
+- "case_narrative", "contradictions", "cumulative_financial_exposure", "master_deadlines", "opposing_strategy_analysis"
+"""
+    else:
+        return f"""
+
+MULTI-DOCUMENT INSTRUCTION (PASS 2):
+Based on ALL {doc_count} documents in this case file, provide a comprehensive legal analysis that considers the full picture — not just the latest document.
+How has the legal situation evolved? What is the cumulative effect of all documents? What does the pattern of communication reveal about the opposing party's strategy?
+IMPORTANT: Add these additional fields in your JSON response:
+- "case_narrative": "Chronological narrative of the dispute: how it started, evolved, and where it stands now (3-5 sentences)"
+- "contradictions": [{{"doc_a": "Document X", "doc_b": "Document Y", "claim_a": "What doc X states", "claim_b": "What doc Y states", "significance": "Why this matters", "defense_value": "high|medium|low"}}]
+- "cumulative_financial_exposure": "Total cumulative financial exposure across all documents"
+- "master_deadlines": [{{"date": "YYYY-MM-DD", "source_document": "doc name", "description": "deadline nature", "status": "passed|upcoming|urgent"}}]
+- "opposing_strategy_analysis": "Analysis of opposing party strategy based on all communications"
+"""
+
+
+def get_multi_doc_pass3_supplement(doc_count: int, language: str = "en") -> str:
+    """Additional instructions for Pass 3 when multiple documents exist"""
+    if language.startswith("fr"):
+        return f"""
+
+INSTRUCTION MULTI-DOCUMENTS (PASSE 3):
+Etant donne l'historique complet du dossier a travers les {doc_count} documents, quelle est la strategie optimale MAINTENANT?
+Considerez ce qui a deja ete dit, quels engagements ont ete pris, et quel levier existe sur base de l'historique complet du dossier.
+Si le dossier a 5+ documents couvrant 30+ jours, ajoutez:
+- "pattern_analysis": "La partie adverse a [escalade/desescalade] ses revendications. Leur dernier document [renforce/affaiblit] leur position initiale. Ce schema suggere qu'ils [veulent negocier/preparent un litige]."
+"""
+    elif language.startswith("nl"):
+        return f"""
+
+MULTI-DOCUMENT INSTRUCTIE (PASS 3):
+Gezien de volledige dossiergeschiedenis ({doc_count} documenten), wat is nu de optimale strategie?
+Bij 5+ documenten over 30+ dagen, voeg toe: "pattern_analysis": "Patroonanalyse van de tegenpartij"
+"""
+    elif language.startswith("de"):
+        return f"""
+
+MULTI-DOKUMENT-ANWEISUNG (PASS 3):
+Optimale Strategie basierend auf allen {doc_count} Dokumenten. Bei 5+ Dokumenten uber 30+ Tage: "pattern_analysis" hinzufugen.
+"""
+    else:
+        return f"""
+
+MULTI-DOCUMENT INSTRUCTION (PASS 3):
+Given the complete case history across all {doc_count} documents, what is the optimal strategy NOW?
+Consider what has already been said, what commitments have been made, and what leverage exists based on the full document history.
+If the case has 5+ documents spanning 30+ days, add:
+- "pattern_analysis": "The opposing party has [escalated/de-escalated] their claims over time. Their latest document [strengthens/weakens] their original position. This pattern suggests they [want to settle/are preparing for litigation]."
+"""
+
+
+async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, user_context: str = "") -> dict:
+    """Run 5-pass analysis on combined multi-document text (US/UAE/default)"""
+    p1_supplement = get_multi_doc_pass1_supplement(doc_count, "en")
+    p2_supplement = get_multi_doc_pass2_supplement(doc_count, "en")
+    p3_supplement = get_multi_doc_pass3_supplement(doc_count, "en")
+
+    context_supplement = ""
+    if user_context:
+        context_supplement = f"\n\nADDITIONAL CONTEXT PROVIDED BY THE USER:\n{user_context}"
+
+    # Limit combined text to stay within token limits
+    max_text = 30000 if doc_count <= 5 else 45000
+    text_for_analysis = combined_text[:max_text]
+
+    # PASS 1: Multi-doc fact extraction
+    logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 1 — Fact extraction")
+    facts = await call_claude(
+        SENIOR_ATTORNEY_PERSONA,
+        PASS1_PROMPT.format(document_text=text_for_analysis) + p1_supplement + context_supplement
+    )
+
+    doc_type = facts.get("document_type", "other")
+    doc_to_case = {
+        "eviction_notice": "housing", "lease": "housing",
+        "employment_contract": "employment",
+        "debt_collection": "debt",
+        "demand_letter": "demand",
+        "court_notice": "court", "nda": "nda"
+    }
+    inferred_case_type = doc_to_case.get(doc_type, "other")
+    jurisprudence_text = load_jurisprudence(inferred_case_type, doc_type)
+
+    logger.info("Multi-doc analysis: Fetching real-time case law")
+    state = facts.get("jurisdiction", facts.get("state", ""))
+    courtlistener_opinions = await fetch_courtlistener_opinions(inferred_case_type, state)
+    realtime_law_context = ""
+    if courtlistener_opinions:
+        realtime_law_context = "\n\nRECENT COURT DECISIONS (from CourtListener):\n"
+        for i, op in enumerate(courtlistener_opinions, 1):
+            realtime_law_context += f"{i}. {op['case_name']} (Filed: {op['date_filed']}, Court: {op['court']})\n"
+            if op['snippet']:
+                realtime_law_context += f"   Excerpt: {op['snippet'].replace('<em>', '').replace('</em>', '')}\n"
+
+    # PASS 2: Multi-doc legal analysis
+    logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 2 — Legal analysis")
+    legal_analysis = await call_claude(
+        SENIOR_ATTORNEY_PERSONA,
+        PASS2_PROMPT.format(
+            facts_json=json.dumps(facts, indent=2),
+            jurisprudence_section=jurisprudence_text + realtime_law_context
+        ) + p2_supplement,
+        max_tokens=4000,
+        use_web_search=True
+    )
+
+    facts_str = json.dumps(facts, indent=2)
+    analysis_str = json.dumps(legal_analysis, indent=2)
+
+    # PASS 3+4A+4B: Multi-doc strategy + battle preview
+    logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 3+4A+4B")
+    strategy = await call_claude(
+        SENIOR_ATTORNEY_PERSONA,
+        PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement,
+        max_tokens=3000
+    )
+    user_arguments = await call_claude(
+        PASS4A_SYSTEM,
+        PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
+        max_tokens=1500
+    )
+    opposing_arguments = await call_claude(
+        PASS4B_SYSTEM,
+        PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
+        max_tokens=1500
+    )
+
+    logger.info(f"Multi-doc analysis ({doc_count} docs): All passes complete")
+
+    recent_case_law = []
+    for op in courtlistener_opinions:
+        clean_snippet = (op.get("snippet", "") or "").replace("<em>", "").replace("</em>", "")
+        recent_case_law.append({
+            "case_name": op["case_name"], "date": op["date_filed"], "court": op["court"],
+            "ruling_summary": clean_snippet[:200], "source_url": op.get("url"), "cite_count": op.get("cite_count", 0)
+        })
+
+    now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    return {
+        "document_type": doc_type,
+        "case_type": legal_analysis.get("case_type", inferred_case_type),
+        "suggested_case_title": legal_analysis.get("suggested_case_title", "Legal Document Analysis"),
+        "risk_score": legal_analysis.get("risk_score", {"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50}),
+        "risk_level": legal_analysis.get("risk_level", "medium"),
+        "deadline": legal_analysis.get("deadline"),
+        "deadline_description": legal_analysis.get("deadline_description"),
+        "summary": legal_analysis.get("summary", ""),
+        "financial_exposure": legal_analysis.get("financial_exposure"),
+        "findings": legal_analysis.get("findings", []),
+        "next_steps": strategy.get("next_steps", []),
+        "recommend_lawyer": legal_analysis.get("recommend_lawyer", False),
+        "disclaimer": "This analysis provides legal information only, not legal advice.",
+        "facts": facts,
+        "financial_exposure_detailed": legal_analysis.get("financial_exposure_detailed"),
+        "procedural_defects": legal_analysis.get("procedural_defects", []),
+        "user_rights": legal_analysis.get("user_rights", []),
+        "opposing_weaknesses": legal_analysis.get("opposing_weaknesses", []),
+        "applicable_laws": legal_analysis.get("applicable_laws", []),
+        "strategy": strategy.get("recommended_strategy"),
+        "immediate_actions": strategy.get("immediate_actions", []),
+        "documents_to_gather": strategy.get("documents_to_gather", []),
+        "leverage_points": strategy.get("leverage_points", []),
+        "red_lines": strategy.get("red_lines", []),
+        "lawyer_recommendation": strategy.get("lawyer_recommendation"),
+        "success_probability": strategy.get("success_probability"),
+        "key_insight": strategy.get("key_insight", ""),
+        "battle_preview": {"user_side": user_arguments, "opposing_side": opposing_arguments},
+        "recent_case_law": recent_case_law,
+        "case_law_updated": now_date,
+        # Multi-document specific fields
+        "case_narrative": legal_analysis.get("case_narrative", ""),
+        "contradictions": legal_analysis.get("contradictions", []),
+        "opposing_strategy_analysis": legal_analysis.get("opposing_strategy_analysis", ""),
+        "cumulative_financial_exposure": legal_analysis.get("cumulative_financial_exposure", ""),
+        "master_deadlines": legal_analysis.get("master_deadlines", []),
+        "pattern_analysis": strategy.get("pattern_analysis", ""),
+    }
+
+
+async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, user_context: str = "", region: str = "Wallonie", language: str = "fr-BE") -> dict:
+    """Run 5-pass multi-document analysis for Belgian users"""
+    persona = get_belgian_persona(language, region)
+    lang_instruction = get_language_instruction(language)
+    persona_with_lang = persona + lang_instruction
+    p1_supplement = get_multi_doc_pass1_supplement(doc_count, language)
+    p2_supplement = get_multi_doc_pass2_supplement(doc_count, language)
+    p3_supplement = get_multi_doc_pass3_supplement(doc_count, language)
+
+    context_section = ""
+    if user_context:
+        context_section = f"CONTEXTE FOURNI PAR L'UTILISATEUR: {user_context}"
+
+    max_text = 30000 if doc_count <= 5 else 45000
+    text_for_analysis = combined_text[:max_text]
+
+    # PASS 1
+    logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 1")
+    facts = await call_claude(
+        persona_with_lang,
+        BE_PASS1_PROMPT.format(document_text=text_for_analysis, user_context_section=context_section) + p1_supplement
+    )
+
+    doc_type = facts.get("type_document", "autre")
+    detected_region = facts.get("region_applicable", region)
+    jurisprudence_text = load_belgian_jurisprudence(doc_type, detected_region)
+    be_doc_to_case = {
+        "licenciement": "employment", "contrat_travail": "employment", "c4": "employment",
+        "bail": "housing", "avis_resiliation_bail": "housing",
+        "mise_en_demeure": "debt", "facture": "debt",
+        "nda": "nda", "jugement": "court", "lettre_huissier": "court"
+    }
+    inferred_case_type = be_doc_to_case.get(doc_type, "other")
+
+    # PASS 2
+    logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 2")
+    legal_analysis = await call_claude(
+        persona_with_lang,
+        BE_PASS2_PROMPT.format(
+            facts_json=json.dumps(facts, indent=2, ensure_ascii=False),
+            jurisprudence_section=jurisprudence_text
+        ) + p2_supplement,
+        max_tokens=4000
+    )
+
+    facts_str = json.dumps(facts, indent=2, ensure_ascii=False)
+    analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
+
+    # PASS 3+4A+4B
+    logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 3+4A+4B")
+    strategy = await call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement, max_tokens=3000)
+    user_arguments = await call_claude(BE_PASS4A_SYSTEM + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
+    opposing_arguments = await call_claude(BE_PASS4B_SYSTEM + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
+
+    logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Complete")
+    now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    return {
+        "document_type": doc_type,
+        "case_type": legal_analysis.get("case_type", inferred_case_type),
+        "suggested_case_title": legal_analysis.get("suggested_case_title", "Analyse Document Juridique"),
+        "risk_score": legal_analysis.get("risk_score", {"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50}),
+        "risk_level": legal_analysis.get("risk_level", "moyen"),
+        "deadline": legal_analysis.get("deadline"),
+        "deadline_description": legal_analysis.get("deadline_description"),
+        "summary": legal_analysis.get("summary", ""),
+        "financial_exposure": legal_analysis.get("financial_exposure"),
+        "findings": legal_analysis.get("findings", []),
+        "next_steps": strategy.get("next_steps", []),
+        "recommend_lawyer": legal_analysis.get("recommend_lawyer", False),
+        "disclaimer": "Cette analyse fournit des informations juridiques uniquement.",
+        "facts": facts,
+        "financial_exposure_detailed": legal_analysis.get("financial_exposure_detailed"),
+        "procedural_defects": legal_analysis.get("procedural_defects", []),
+        "user_rights": legal_analysis.get("user_rights", []),
+        "opposing_weaknesses": legal_analysis.get("opposing_weaknesses", []),
+        "applicable_laws": legal_analysis.get("applicable_laws", []),
+        "organismes_recommandes": legal_analysis.get("organismes_recommandes", []),
+        "strategy": strategy.get("recommended_strategy"),
+        "immediate_actions": strategy.get("immediate_actions", []),
+        "documents_to_gather": strategy.get("documents_to_gather", []),
+        "leverage_points": strategy.get("leverage_points", []),
+        "red_lines": strategy.get("red_lines", []),
+        "lawyer_recommendation": strategy.get("lawyer_recommendation"),
+        "success_probability": strategy.get("success_probability"),
+        "key_insight": strategy.get("key_insight", ""),
+        "battle_preview": {"user_side": user_arguments, "opposing_side": opposing_arguments},
+        "recent_case_law": [],
+        "case_law_updated": now_date,
+        "country": "BE", "region": detected_region, "language": language,
+        # Multi-document specific fields
+        "case_narrative": legal_analysis.get("case_narrative", ""),
+        "contradictions": legal_analysis.get("contradictions", []),
+        "opposing_strategy_analysis": legal_analysis.get("opposing_strategy_analysis", ""),
+        "cumulative_financial_exposure": legal_analysis.get("cumulative_financial_exposure", ""),
+        "master_deadlines": legal_analysis.get("master_deadlines", []),
+        "pattern_analysis": strategy.get("pattern_analysis", ""),
+    }
+
+
+
 async def analyze_document_vision(image_b64_list: list, system_prompt: str = None, user_context: str = "", language: str = "en") -> dict:
     """Analyze document images using Claude Vision API (for scanned/image docs)"""
     if not system_prompt:
@@ -2373,6 +2764,111 @@ async def get_case_documents(case_id: str, current_user: User = Depends(get_curr
     
     return [Document(**d) for d in documents]
 
+@api_router.get("/cases/{case_id}/brief")
+async def generate_case_brief(case_id: str, current_user: User = Depends(get_current_user)):
+    """Generate a comprehensive case brief for complex cases (5+ documents)"""
+    case_doc = await db.cases.find_one(
+        {"case_id": case_id, "user_id": current_user.user_id},
+        {"_id": 0}
+    )
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    # Get all documents for this case
+    docs = await db.documents.find(
+        {"case_id": case_id},
+        {"_id": 0, "file_name": 1, "uploaded_at": 1, "extracted_text": 1}
+    ).sort("uploaded_at", 1).to_list(50)
+    doc_count = len(docs)
+
+    user_language = current_user.language or case_doc.get("language") or "en"
+    is_belgian = (current_user.country or case_doc.get("country", "US")) == "BE"
+
+    # Build document timeline
+    doc_timeline = []
+    for i, doc in enumerate(docs, 1):
+        doc_timeline.append({
+            "index": i,
+            "name": doc.get("file_name", f"Document {i}"),
+            "date": (doc.get("uploaded_at") or "")[:10]
+        })
+
+    # Generate the brief using Claude
+    lang_instruction = get_language_instruction(user_language)
+    if user_language.startswith("fr"):
+        brief_prompt = f"""Genere un DOSSIER JURIDIQUE COMPLET pour un dossier avec {doc_count} documents.
+
+INFORMATIONS DU DOSSIER:
+- Titre: {case_doc.get('title', 'Dossier juridique')}
+- Type: {case_doc.get('type', 'other')}
+- Score de risque: {case_doc.get('risk_score', 0)}/100
+- Exposition financiere: {case_doc.get('financial_exposure', 'Non determinee')}
+- Resume IA: {case_doc.get('ai_summary', '')}
+- Point cle: {case_doc.get('key_insight', '')}
+- Recit du dossier: {case_doc.get('case_narrative', '')}
+- Contradictions detectees: {json.dumps(case_doc.get('contradictions', []), ensure_ascii=False)}
+- Analyse strategie adverse: {case_doc.get('opposing_strategy_analysis', '')}
+- Delais: {json.dumps(case_doc.get('master_deadlines', []), ensure_ascii=False)}
+- Documents: {json.dumps(doc_timeline, ensure_ascii=False)}
+
+Retourne UNIQUEMENT ce JSON:
+{{
+  "executive_summary": "Resume executif en 1 paragraphe (200 mots max)",
+  "document_timeline": [{{"date": "YYYY-MM-DD", "document": "nom", "key_event": "ce qui s'est passe"}}],
+  "key_legal_issues": [{{"issue": "description", "severity": "critical|high|medium", "applicable_law": "reference legale"}}],
+  "risk_assessment": {{"score": 0, "explanation": "explication du score", "trend": "increasing|stable|decreasing"}},
+  "recommended_strategy": "Strategie recommandee en detail",
+  "legal_references": [{{"reference": "loi/article", "relevance": "pertinence pour le dossier"}}],
+  "conclusion": "Conclusion et prochaines etapes"
+}}"""
+    elif user_language.startswith("nl"):
+        brief_prompt = f"""Genereer een VOLLEDIG JURIDISCH DOSSIER voor een zaak met {doc_count} documenten.
+Titel: {case_doc.get('title')}, Type: {case_doc.get('type')}, Risico: {case_doc.get('risk_score')}/100
+Samenvatting: {case_doc.get('ai_summary', '')}
+Retourneer JSON met: executive_summary, document_timeline, key_legal_issues, risk_assessment, recommended_strategy, legal_references, conclusion"""
+    else:
+        brief_prompt = f"""Generate a COMPREHENSIVE CASE BRIEF for a case with {doc_count} documents.
+
+CASE INFORMATION:
+- Title: {case_doc.get('title', 'Legal Case')}
+- Type: {case_doc.get('type', 'other')}
+- Risk Score: {case_doc.get('risk_score', 0)}/100
+- Financial Exposure: {case_doc.get('financial_exposure', 'Not determined')}
+- AI Summary: {case_doc.get('ai_summary', '')}
+- Key Insight: {case_doc.get('key_insight', '')}
+- Case Narrative: {case_doc.get('case_narrative', '')}
+- Contradictions: {json.dumps(case_doc.get('contradictions', []))}
+- Opposing Strategy: {case_doc.get('opposing_strategy_analysis', '')}
+- Deadlines: {json.dumps(case_doc.get('master_deadlines', []))}
+- Documents: {json.dumps(doc_timeline)}
+
+Return ONLY this JSON:
+{{
+  "executive_summary": "Executive summary in 1 paragraph (200 words max)",
+  "document_timeline": [{{"date": "YYYY-MM-DD", "document": "name", "key_event": "what happened"}}],
+  "key_legal_issues": [{{"issue": "description", "severity": "critical|high|medium", "applicable_law": "legal reference"}}],
+  "risk_assessment": {{"score": 0, "explanation": "score explanation", "trend": "increasing|stable|decreasing"}},
+  "recommended_strategy": "Detailed recommended strategy",
+  "legal_references": [{{"reference": "law/article", "relevance": "relevance to case"}}],
+  "conclusion": "Conclusion and next steps"
+}}"""
+
+    persona = get_belgian_persona(user_language, current_user.region or "") if is_belgian else SENIOR_ATTORNEY_PERSONA
+    system = persona + lang_instruction
+
+    try:
+        brief = await call_claude(system, brief_prompt, max_tokens=3000)
+        brief["case_id"] = case_id
+        brief["generated_at"] = datetime.now(timezone.utc).isoformat()
+        brief["document_count"] = doc_count
+        brief["case_title"] = case_doc.get("title", "")
+        return brief
+    except Exception as e:
+        logger.error(f"Case brief generation failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate case brief")
+
+
+
 # ================== Document Endpoints ==================
 
 @api_router.post("/documents/upload")
@@ -2461,11 +2957,22 @@ async def upload_document(
     user_language = current_user.language or "en"
     is_belgian = user_country == "BE"
 
+    # Check if this is a multi-document case (existing case with prior docs)
+    existing_doc_count = 0
+    is_multi_doc = False
+    if case_id and not is_contract_guard:
+        existing_doc_count = await db.documents.count_documents({"case_id": case_id, "status": "analyzed"})
+        if existing_doc_count > 0:
+            is_multi_doc = True
+            logger.info(f"Multi-document case detected: {existing_doc_count} existing docs + 1 new for case {case_id}")
+
     if extracted_text or use_vision:
         context_str = ""
         if user_context and user_context.strip():
             context_str = user_context.strip()[:500]
         
+        # For vision docs, first extract OCR text so it can be combined with other docs
+        vision_extracted_text = ""
         if use_vision:
             # Claude Vision path — for scanned PDFs and image files
             image_b64_list = []
@@ -2482,24 +2989,78 @@ async def upload_document(
                             analysis = await analyze_document_vision(image_b64_list, system_prompt=cg_system, user_context=context_str, language=user_language)
                         else:
                             analysis = await analyze_document_vision(image_b64_list, user_context=context_str)
-                    elif is_belgian:
-                        be_persona = get_belgian_persona(user_language, user_region)
-                        be_system = "Tu es un expert OCR + analyse juridique. Lis d'abord TOUT le texte visible dans les images. Puis analyse le document juridique belge.\n\n" + be_persona + get_language_instruction(user_language)
-                        analysis = await analyze_document_vision(image_b64_list, system_prompt=be_system, user_context=context_str, language=user_language)
+                    elif not is_multi_doc:
+                        # Single document vision analysis (no prior docs)
+                        if is_belgian:
+                            be_persona = get_belgian_persona(user_language, user_region)
+                            be_system = "Tu es un expert OCR + analyse juridique. Lis d'abord TOUT le texte visible dans les images. Puis analyse le document juridique belge.\n\n" + be_persona + get_language_instruction(user_language)
+                            analysis = await analyze_document_vision(image_b64_list, system_prompt=be_system, user_context=context_str, language=user_language)
+                        else:
+                            analysis = await analyze_document_vision(image_b64_list, user_context=context_str)
                     else:
-                        analysis = await analyze_document_vision(image_b64_list, user_context=context_str)
+                        # Multi-doc: extract OCR text from vision, then combine below
+                        ocr_prompt = "Read ALL text from this scanned document. Return ONLY the extracted text, nothing else."
+                        ocr_system = "You are an OCR expert. Extract all text from the document image(s). Return only the text content."
+                        if is_belgian:
+                            ocr_system += get_language_instruction(user_language)
+                        ocr_result = await call_claude(ocr_system, ocr_prompt, max_tokens=4000)
+                        if isinstance(ocr_result, dict):
+                            vision_extracted_text = ocr_result.get("text", json.dumps(ocr_result))
+                        elif isinstance(ocr_result, str):
+                            vision_extracted_text = ocr_result
+                        # Update document record with extracted text
+                        await db.documents.update_one(
+                            {"document_id": document_id},
+                            {"$set": {"extracted_text": vision_extracted_text[:50000]}}
+                        )
                 except Exception as e:
                     logger.error(f"Vision analysis failed: {e}")
                     analysis = None
-        elif is_contract_guard:
+
+        # Multi-document combined analysis
+        if is_multi_doc and not is_contract_guard and analysis is None:
+            new_text = extracted_text or vision_extracted_text
+            if new_text:
+                try:
+                    combined_text, total_doc_count, doc_list = await build_multi_document_context(
+                        case_id, new_doc_text=new_text, new_doc_name=file.filename
+                    )
+                    logger.info(f"Running multi-doc analysis: {total_doc_count} documents combined ({len(combined_text)} chars)")
+                    if is_belgian:
+                        analysis = await run_multi_doc_analysis_belgian(
+                            combined_text, total_doc_count, user_context=context_str,
+                            region=user_region, language=user_language
+                        )
+                    else:
+                        analysis = await run_multi_doc_analysis_advanced(
+                            combined_text, total_doc_count, user_context=context_str
+                        )
+                    # Tag as multi-doc analysis
+                    if analysis:
+                        analysis["_multi_doc"] = True
+                        analysis["_doc_count"] = total_doc_count
+                        analysis["_doc_list"] = doc_list
+                except Exception as e:
+                    logger.error(f"Multi-doc analysis failed, falling back to single-doc: {e}")
+                    # Fallback to single-document analysis
+                    if is_belgian:
+                        analysis = await analyze_document_belgian(new_text, user_context=context_str, region=user_region, language=user_language)
+                    else:
+                        analysis = await analyze_document_advanced(new_text, user_context=context_str)
+
+        # Single-document analysis (no prior docs, non-vision)
+        if analysis is None and not use_vision and not is_contract_guard:
+            if is_belgian:
+                analysis = await analyze_document_belgian(extracted_text, user_context=context_str, region=user_region, language=user_language)
+            else:
+                analysis = await analyze_document_advanced(extracted_text, user_context=context_str)
+        
+        # Fallback for contract guard non-vision
+        if analysis is None and is_contract_guard and not use_vision:
             if is_belgian:
                 analysis = await analyze_contract_guard(extracted_text, user_context=context_str, country="BE", region=user_region, language=user_language)
             else:
                 analysis = await analyze_contract_guard(extracted_text, user_context=context_str)
-        elif is_belgian:
-            analysis = await analyze_document_belgian(extracted_text, user_context=context_str, region=user_region, language=user_language)
-        else:
-            analysis = await analyze_document_advanced(extracted_text, user_context=context_str)
     
     # Create or update case
     if case_id and not is_contract_guard:
@@ -2551,6 +3112,13 @@ async def upload_document(
                         "documents_to_gather": analysis.get("documents_to_gather", []),
                         "recent_case_law": analysis.get("recent_case_law", []),
                         "case_law_updated": analysis.get("case_law_updated"),
+                        # Multi-document analysis fields
+                        "case_narrative": analysis.get("case_narrative") or case_doc.get("case_narrative"),
+                        "contradictions": analysis.get("contradictions") or case_doc.get("contradictions", []),
+                        "opposing_strategy_analysis": analysis.get("opposing_strategy_analysis") or case_doc.get("opposing_strategy_analysis"),
+                        "cumulative_financial_exposure": analysis.get("cumulative_financial_exposure") or case_doc.get("cumulative_financial_exposure"),
+                        "master_deadlines": analysis.get("master_deadlines") or case_doc.get("master_deadlines", []),
+                        "multi_doc_summary": analysis.get("case_narrative") or case_doc.get("multi_doc_summary"),
                         "updated_at": now
                     },
                     "$push": {"risk_score_history": history_entry}
