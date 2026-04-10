@@ -33,42 +33,52 @@ Build a complete, production-ready SaaS web application called "Jasper" — a le
 - Document Library (158+ templates)
 - Document Scanner (mobile camera OCR)
 
-### Bug Fixes (Feb 2026)
-- **BUG 1**: All analysis outputs now enforce user's language via `get_language_instruction()` on every Claude prompt
-- **BUG 2**: Case model validators normalize `deadline` (dict->str) and `financial_exposure` (dict->str) preventing 500 errors
-- **BUG 3**: All features available for Belgian users with French legal references inline
+### Multi-Document Analysis System (Apr 2026) - NEW
+- **Combined chronological analysis**: When a case has 2+ docs, ALL documents are combined chronologically with labels and analyzed together in a single 5-pass analysis
+- **Multi-doc prompts**: Each of the 5 analysis passes has country/language-specific multi-doc supplements that instruct Claude to detect contradictions, track evolution, assess strategy
+- **Case Narrative**: AI generates a chronological narrative of the dispute showing how it started and evolved
+- **Contradiction Detection**: Automatically flags contradictions between documents (e.g., "Document 1 says X but Document 3 says Y") with defense value ratings (high/medium/low)
+- **Opposing Strategy Assessment**: AI analyzes the opposing party's communication patterns to identify their strategy
+- **Cumulative Financial Exposure**: Aggregates financial exposure across all documents
+- **Master Deadlines**: Consolidates all deadlines from all documents in one view
+- **Pattern Analysis**: For 5+ documents spanning 30+ days, analyzes escalation/de-escalation patterns
+- **Case Brief PDF**: Downloadable comprehensive case brief (via Case Brief endpoint + jsPDF client-side generation) for cases with 5+ documents
+- **Multi-language**: All multi-doc features work in EN, FR, NL, DE via the existing language system
+- **Backend**: `build_multi_document_context()`, `run_multi_doc_analysis_advanced()`, `run_multi_doc_analysis_belgian()`, `GET /api/cases/{case_id}/brief`
+- **Frontend**: Multi-doc summary section in CaseDetail.js with score trend, narrative, contradictions, deadlines, strategy analysis
 
 ### 8 Critical CaseDetail Bugs (Apr 2026) - ALL FIXED
-- **Bug 1**: AI Analysis empty -> Fixed: ai_summary, key_insight, ai_findings now display correctly
-- **Bug 2**: Wrong language UI -> Fixed: Full fr-BE/nl-BE/de-BE translation system in CaseDetail.js
-- **Bug 3**: Missing legal refs -> Fixed: Each finding shows inline legal_ref and jurisprudence
-- **Bug 4**: Negative deadline -> Fixed: Shows "DELAI DEPASSE" for past deadlines, "Action requise dans X jours" for future
-- **Bug 5**: Predictor infinite loading -> Fixed: 30s AbortController timeout
-- **Bug 6**: Filename as title -> Fixed: Backend prompts extract suggested_case_title from Claude
-- **Bug 7**: Type defaulting to Other -> Fixed: Backend prompts extract proper case_type
-- **Bug 8**: Response Letters missing desc -> Fixed: API response parsing (letter_types array extraction)
-- **useParams bug**: Fixed `{ id: caseId }` -> `{ caseId }` matching route param
+- Bug 1-8: AI Analysis empty, wrong language, missing legal refs, deadline formatting, predictor timeout, filename titles, type defaults, letter descriptions
+- useParams bug: Fixed `{ id: caseId }` -> `{ caseId }`
 
 ### Integrations
 - Emergent Google OAuth, Emergent Object Storage
 - Anthropic Claude (claude-sonnet-4-20250514) with Vision + web_search
-- CourtListener API, pymupdf, python-docx
+- CourtListener API, pymupdf, python-docx, jsPDF
 
 ## DB Collections
 users, user_sessions, cases, documents, lawyers, lawyer_calls, letters, case_events, payment_transactions, chat_conversations, chat_messages, shared_cases, contract_guard_reviews, risk_monitors, risk_monitor_alerts
 
+## Key Case Fields (Multi-Doc)
+- case_narrative (str): Chronological narrative of the dispute
+- contradictions (list[dict]): Detected contradictions between documents
+- opposing_strategy_analysis (str): Analysis of opposing party strategy
+- cumulative_financial_exposure (str): Combined financial exposure
+- master_deadlines (list[dict]): All deadlines across documents
+- multi_doc_summary (str): Overall multi-doc summary/pattern analysis
+
 ## Prioritized Backlog
 
 ### P1 (High)
-- [ ] Stripe Checkout for Pro Plan
-- [ ] HelloSign / Dropbox Sign (e-signature)
+- [ ] Stripe Checkout for Pro Plan ($69/mo) and lawyer calls ($149)
+- [ ] HelloSign / Dropbox Sign (e-signature) — needs user API key
 
 ### P2 (Medium)
 - [ ] Full UI translation (dashboard, upload, settings labels in FR/NL/DE)
 - [ ] UAE-specific AI analysis (UAE Federal Laws, DIFC, RERA)
 - [ ] Real Gmail/Outlook OAuth for Risk Monitor
-- [ ] Deadline Alerts (SMS/Email) — needs Twilio + SendGrid
+- [ ] Deadline Alerts (SMS/Email) — needs Twilio + SendGrid keys
 
 ### P3 (Future)
-- [ ] Refactor server.py (4500+ lines -> modular routers)
+- [ ] Refactor server.py (5000+ lines -> modular routers)
 - [ ] Multi-Country expansion (more EU countries)

@@ -3089,6 +3089,8 @@ async def upload_document(
                         "risk_urgency": analysis["risk_score"]["urgency"],
                         "risk_legal_strength": analysis["risk_score"]["legal_strength"],
                         "risk_complexity": analysis["risk_score"]["complexity"],
+                        "title": analysis.get("suggested_case_title") or case_doc.get("title"),
+                        "type": analysis.get("case_type") or case_doc.get("type"),
                         "deadline": normalize_deadline(analysis.get("deadline")),
                         "deadline_description": analysis.get("deadline_description") or (analysis.get("deadline", {}).get("description") if isinstance(analysis.get("deadline"), dict) else None),
                         "financial_exposure": normalize_financial_exposure(analysis.get("financial_exposure")),
