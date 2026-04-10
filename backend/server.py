@@ -1143,7 +1143,7 @@ async def create_session(request: Request):
             "email": email,
             "name": name,
             "picture": picture,
-            "plan": "free",
+            "plan": "pro" if email in ("romain@nestorconfidential.com", "debe.romain@gmail.com") else "free",
             "state_of_residence": None,
             "phone": None,
             "notif_risk_score": True,
