@@ -882,6 +882,171 @@ def _default_analysis():
 # Simple system prompt kept for scanner/letter endpoints
 CLAUDE_SYSTEM_PROMPT = SENIOR_ATTORNEY_PERSONA
 
+# ================== Contract Guard — "Before I Sign" Mode ==================
+
+CONTRACT_GUARD_PERSONA = """You are a senior contract negotiation attorney with 20+ years of experience protecting individuals from unfavorable contract terms. You specialize in identifying hidden risks, one-sided clauses, and missing protections in contracts before they are signed.
+
+You think like a deal negotiator: you find every leverage point, every unfair clause, every missing protection. Your goal is to empower the user to negotiate better terms BEFORE signing.
+
+CRITICAL RULES:
+- Negotiation Score: 0 = perfect contract (extremely rare), 100 = highly unfavorable, do not sign
+- Minimum score thresholds: NDA minimum 25, Employment contract minimum 30, Service agreement minimum 20, Lease minimum 25
+- Always identify at least 3 red lines (clauses the user should NEVER accept as-is)
+- Always identify at least 4 negotiation points (specific changes to request)
+- Always identify missing protections the user should demand
+- Always compare clauses to industry standards
+- Never tell the user to just accept and sign
+- Always provide specific alternative language for problematic clauses
+- Reference applicable law when a clause may be unenforceable
+
+OUTPUT: Always return valid JSON only, no other text."""
+
+CONTRACT_GUARD_PROMPT = """TASK: CONTRACT NEGOTIATION ANALYSIS ("Before I Sign")
+Analyze this contract/agreement from the perspective of the user who is ABOUT to sign it. The goal is NOT risk analysis of an existing situation — it's pre-signing due diligence and negotiation preparation.
+
+DOCUMENT TEXT:
+{document_text}
+
+{user_context_section}
+
+Analyze every clause and return ONLY this JSON — no other text:
+{{
+  "document_type": "nda|employment_contract|lease|service_agreement|vendor_contract|partnership_agreement|freelance_contract|other",
+  "contract_title": "Short descriptive title max 60 chars",
+  "parties": {{
+    "user_role": "employee|tenant|contractor|service_provider|partner|licensee|other",
+    "counterparty": "Company or individual name",
+    "counterparty_type": "corporation|startup|individual|government|other"
+  }},
+  "negotiation_score": 0,
+  "negotiation_level": "favorable|balanced|unfavorable|dangerous",
+  "summary": "2-3 sentence summary of what this contract does and the overall balance of power",
+  "red_lines": [
+    {{
+      "clause": "Exact clause reference (Section X, Article Y)",
+      "current_text": "What the clause currently says (paraphrased)",
+      "risk": "Why this is dangerous for the user",
+      "severity": "critical|high|medium",
+      "suggested_change": "Specific alternative language the user should propose"
+    }}
+  ],
+  "negotiation_points": [
+    {{
+      "clause": "Clause reference",
+      "issue": "What's wrong or unfavorable",
+      "current_terms": "Current terms in the contract",
+      "industry_standard": "What is standard in the industry",
+      "suggested_counter": "What the user should ask for instead",
+      "priority": "must_have|nice_to_have|optional",
+      "leverage_tip": "How to frame this request in negotiation"
+    }}
+  ],
+  "missing_protections": [
+    {{
+      "protection": "What's missing",
+      "why_important": "Why the user needs this",
+      "suggested_clause": "Exact language to add",
+      "priority": "critical|important|recommended"
+    }}
+  ],
+  "standard_clauses_check": [
+    {{
+      "clause_type": "termination|liability|indemnification|ip_ownership|confidentiality|non_compete|payment_terms|dispute_resolution|governing_law|force_majeure",
+      "present": true,
+      "fair": true,
+      "notes": "Brief assessment"
+    }}
+  ],
+  "financial_terms": {{
+    "total_value": "Dollar amount or description",
+    "payment_schedule": "Description",
+    "penalties": "Any penalty clauses",
+    "hidden_costs": ["List of hidden or unexpected costs"]
+  }},
+  "duration_and_exit": {{
+    "contract_duration": "Duration",
+    "auto_renewal": true,
+    "termination_notice": "Notice period required",
+    "early_exit_penalty": "Description or null",
+    "user_can_exit_easily": true
+  }},
+  "power_balance": {{
+    "score": 0,
+    "favors": "user|counterparty|balanced",
+    "key_asymmetries": ["List of clauses that favor one party disproportionately"]
+  }},
+  "applicable_laws": [
+    {{"law": "statute name", "relevance": "how it applies", "protects_user": true}}
+  ],
+  "overall_recommendation": {{
+    "action": "sign_as_is|negotiate_then_sign|significant_changes_needed|do_not_sign|lawyer_review_required",
+    "reasoning": "Why this recommendation",
+    "estimated_negotiation_time": "1-2 days|1 week|2+ weeks"
+  }},
+  "negotiation_email_draft": {{
+    "subject": "Re: Contract Review — Proposed Amendments",
+    "body": "Full professional email body requesting the changes identified above. Reference specific clauses. Be firm but professional. 200-400 words."
+  }}
+}}
+
+Produce at least 3 red_lines, 4 negotiation_points, and 2 missing_protections."""
+
+
+async def analyze_contract_guard(extracted_text: str, user_context: str = "") -> dict:
+    """Contract Guard analysis — negotiation-focused pre-signing review"""
+    try:
+        context_section = ""
+        if user_context:
+            context_section = f"USER CONTEXT: {user_context}"
+
+        logger.info("Contract Guard: Starting negotiation analysis")
+        result = await call_claude(
+            CONTRACT_GUARD_PERSONA,
+            CONTRACT_GUARD_PROMPT.format(
+                document_text=extracted_text[:15000],
+                user_context_section=context_section
+            ),
+            max_tokens=4000
+        )
+        
+        # Ensure required fields exist
+        if "negotiation_score" not in result:
+            result["negotiation_score"] = 50
+        if "negotiation_level" not in result:
+            score = result["negotiation_score"]
+            if score <= 25:
+                result["negotiation_level"] = "favorable"
+            elif score <= 50:
+                result["negotiation_level"] = "balanced"
+            elif score <= 75:
+                result["negotiation_level"] = "unfavorable"
+            else:
+                result["negotiation_level"] = "dangerous"
+        if "red_lines" not in result:
+            result["red_lines"] = []
+        if "negotiation_points" not in result:
+            result["negotiation_points"] = []
+        if "missing_protections" not in result:
+            result["missing_protections"] = []
+
+        logger.info(f"Contract Guard: Analysis complete — Score {result['negotiation_score']}/100")
+        return result
+
+    except Exception as e:
+        logger.error(f"Contract Guard analysis error: {e}")
+        return {
+            "document_type": "other",
+            "contract_title": "Contract Analysis",
+            "negotiation_score": 50,
+            "negotiation_level": "balanced",
+            "summary": "Contract uploaded for review. Some clauses could not be fully analyzed.",
+            "red_lines": [{"clause": "General", "current_text": "Review required", "risk": "Manual review recommended", "severity": "medium", "suggested_change": "Consult a lawyer"}],
+            "negotiation_points": [],
+            "missing_protections": [],
+            "standard_clauses_check": [],
+            "overall_recommendation": {"action": "lawyer_review_required", "reasoning": "Analysis could not be fully completed", "estimated_negotiation_time": "1 week"}
+        }
+
 # ================== Letter Generation System ==================
 
 LETTER_SYSTEM_PROMPT = """You are Jasper's legal communication engine. You write professional, strategic response letters on behalf of US residents facing legal situations. You are NOT a lawyer. Your letters are legal communications, not legal advice.
@@ -1498,9 +1663,10 @@ async def upload_document(
     file: UploadFile = File(...),
     case_id: Optional[str] = Form(None),
     user_context: Optional[str] = Form(None),
+    analysis_mode: Optional[str] = Form("standard"),
     current_user: User = Depends(get_current_user)
 ):
-    """Upload and analyze a document"""
+    """Upload and analyze a document. analysis_mode: 'standard' or 'contract_guard'"""
     # Check plan restrictions
     if current_user.plan == "free":
         doc_count = await db.documents.count_documents({"user_id": current_user.user_id})
@@ -1556,23 +1722,26 @@ async def upload_document(
     }
     await db.documents.insert_one(doc_record)
     
-    # Analyze with Claude (Advanced 5-pass system)
+    # Analyze with Claude — mode-dependent
     analysis = None
+    is_contract_guard = analysis_mode == "contract_guard"
     if extracted_text:
         context_str = ""
         if user_context and user_context.strip():
             context_str = user_context.strip()[:500]
-        analysis = await analyze_document_advanced(extracted_text, user_context=context_str)
+        if is_contract_guard:
+            analysis = await analyze_contract_guard(extracted_text, user_context=context_str)
+        else:
+            analysis = await analyze_document_advanced(extracted_text, user_context=context_str)
     
     # Create or update case
-    if case_id:
-        # Update existing case
+    if case_id and not is_contract_guard:
+        # Update existing case (standard mode only)
         case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
         if case_doc and analysis:
             old_score = case_doc.get("risk_score", 0)
             new_score = analysis["risk_score"]["total"]
             
-            # Record risk score history
             history_entry = {
                 "score": new_score,
                 "financial": analysis["risk_score"]["financial"],
@@ -1621,7 +1790,6 @@ async def upload_document(
                 }
             )
             
-            # Create score update event
             event_doc = {
                 "event_id": f"evt_{uuid.uuid4().hex[:12]}",
                 "case_id": case_id,
@@ -1632,8 +1800,25 @@ async def upload_document(
                 "created_at": now
             }
             await db.case_events.insert_one(event_doc)
+    elif is_contract_guard:
+        # Contract Guard mode — store in contract_guard_reviews collection
+        case_id = case_id or f"cg_{uuid.uuid4().hex[:12]}"
+        cg_record = {
+            "review_id": case_id,
+            "user_id": current_user.user_id,
+            "document_id": document_id,
+            "file_name": file.filename,
+            "analysis": analysis,
+            "negotiation_score": analysis.get("negotiation_score", 50) if analysis else 50,
+            "created_at": now
+        }
+        await db.contract_guard_reviews.insert_one(cg_record)
+        await db.documents.update_one(
+            {"document_id": document_id},
+            {"$set": {"case_id": case_id, "analysis_mode": "contract_guard"}}
+        )
     else:
-        # Create new case
+        # Create new case (standard mode)
         case_id = f"case_{uuid.uuid4().hex[:12]}"
         case_title = analysis.get("suggested_case_title", file.filename) if analysis else file.filename
         case_type = analysis.get("case_type", "other") if analysis else "other"
@@ -1665,7 +1850,6 @@ async def upload_document(
             "ai_findings": analysis.get("findings", []) if analysis else [],
             "ai_next_steps": analysis.get("next_steps", []) if analysis else [],
             "recommend_lawyer": analysis.get("recommend_lawyer", False) if analysis else False,
-            # Advanced analysis fields
             "battle_preview": analysis.get("battle_preview") if analysis else None,
             "success_probability": analysis.get("success_probability") if analysis else None,
             "procedural_defects": analysis.get("procedural_defects", []) if analysis else [],
@@ -1688,13 +1872,11 @@ async def upload_document(
         }
         await db.cases.insert_one(case_doc)
         
-        # Update document with case_id
         await db.documents.update_one(
             {"document_id": document_id},
             {"$set": {"case_id": case_id}}
         )
         
-        # Create case event
         event_doc = {
             "event_id": f"evt_{uuid.uuid4().hex[:12]}",
             "case_id": case_id,
@@ -1707,27 +1889,31 @@ async def upload_document(
         await db.case_events.insert_one(event_doc)
     
     # Update document status
-    await db.documents.update_one(
-        {"document_id": document_id},
-        {"$set": {"status": "analyzed", "case_id": case_id}}
-    )
+    if not is_contract_guard:
+        await db.documents.update_one(
+            {"document_id": document_id},
+            {"$set": {"status": "analyzed", "case_id": case_id}}
+        )
     
-    # Create document added event
-    doc_event = {
-        "event_id": f"evt_{uuid.uuid4().hex[:12]}",
-        "case_id": case_id,
-        "event_type": "document_added",
-        "title": "Document uploaded",
-        "description": file.filename,
-        "metadata": None,
-        "created_at": now
-    }
-    await db.case_events.insert_one(doc_event)
+    # Create document added event (standard mode only)
+    if not is_contract_guard:
+        doc_event = {
+            "event_id": f"evt_{uuid.uuid4().hex[:12]}",
+            "case_id": case_id,
+            "event_type": "document_added",
+            "title": "Document uploaded",
+            "description": file.filename,
+            "metadata": None,
+            "created_at": now
+        }
+        await db.case_events.insert_one(doc_event)
     
     return {
         "document_id": document_id,
         "case_id": case_id,
         "analysis": analysis,
+        "analysis_mode": analysis_mode,
+        "file_name": file.filename,
         "status": "analyzed"
     }
 
@@ -3145,6 +3331,155 @@ async def send_for_signature(body: SignatureRequest, current_user: User = Depend
     
     # TODO: Real HelloSign API call when key is configured
     return {"status": "error", "message": "HelloSign integration not yet configured"}
+
+
+# ================== Risk Monitor — Email Surveillance (MOCKED) ==================
+
+@api_router.get("/risk-monitor/status")
+async def get_risk_monitor_status(current_user: User = Depends(get_current_user)):
+    """Get risk monitor connection status and stats"""
+    monitor = await db.risk_monitors.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0}
+    )
+    if not monitor:
+        return {
+            "connected": False,
+            "provider": None,
+            "email": None,
+            "emails_scanned": 0,
+            "threats_detected": 0,
+            "last_scan": None,
+            "alerts": []
+        }
+    
+    alerts = await db.risk_monitor_alerts.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0}
+    ).sort("detected_at", -1).limit(10).to_list(10)
+    
+    return {
+        "connected": monitor.get("connected", False),
+        "provider": monitor.get("provider"),
+        "email": monitor.get("email"),
+        "emails_scanned": monitor.get("emails_scanned", 0),
+        "threats_detected": monitor.get("threats_detected", 0),
+        "last_scan": monitor.get("last_scan"),
+        "alerts": alerts
+    }
+
+@api_router.post("/risk-monitor/connect")
+async def connect_risk_monitor(request: Request, current_user: User = Depends(get_current_user)):
+    """Connect email account for risk monitoring (MOCKED — requires OAuth credentials)"""
+    body = await request.json()
+    provider = body.get("provider", "gmail")
+    
+    if provider not in ["gmail", "outlook"]:
+        raise HTTPException(status_code=400, detail="Provider must be 'gmail' or 'outlook'")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # MOCKED: Simulate successful connection
+    monitor_data = {
+        "user_id": current_user.user_id,
+        "provider": provider,
+        "email": current_user.email,
+        "connected": True,
+        "emails_scanned": 0,
+        "threats_detected": 0,
+        "last_scan": now,
+        "connected_at": now
+    }
+    
+    await db.risk_monitors.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": monitor_data},
+        upsert=True
+    )
+    
+    # Simulate initial scan with some mock alerts
+    mock_alerts = [
+        {
+            "alert_id": f"alert_{uuid.uuid4().hex[:12]}",
+            "user_id": current_user.user_id,
+            "type": "legal_document",
+            "severity": "high",
+            "subject": "Notice of Intent to Sue — Account #4892",
+            "sender": "collections@lawfirm-associates.com",
+            "preview": "This letter serves as formal notice that our client intends to pursue legal action regarding the outstanding balance...",
+            "detected_at": now,
+            "status": "new",
+            "recommended_action": "Upload this document to Jasper for full analysis"
+        },
+        {
+            "alert_id": f"alert_{uuid.uuid4().hex[:12]}",
+            "user_id": current_user.user_id,
+            "type": "contract",
+            "severity": "medium",
+            "subject": "Lease Renewal — New Terms Enclosed",
+            "sender": "management@propertygroup.com",
+            "preview": "Please review the attached lease renewal agreement. Note the following changes to your current terms...",
+            "detected_at": (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat(),
+            "status": "new",
+            "recommended_action": "Use Contract Guard to review before signing"
+        },
+        {
+            "alert_id": f"alert_{uuid.uuid4().hex[:12]}",
+            "user_id": current_user.user_id,
+            "type": "deadline",
+            "severity": "low",
+            "subject": "Reminder: Policy Renewal Due Feb 28",
+            "sender": "noreply@insurance-co.com",
+            "preview": "Your current insurance policy is set to expire on February 28, 2026. Please review the renewal terms...",
+            "detected_at": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
+            "status": "new",
+            "recommended_action": "Review renewal terms for any changes"
+        }
+    ]
+    
+    for alert in mock_alerts:
+        await db.risk_monitor_alerts.insert_one(alert)
+    
+    await db.risk_monitors.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": {"emails_scanned": 147, "threats_detected": 3}}
+    )
+    
+    return {
+        "status": "connected",
+        "provider": provider,
+        "email": current_user.email,
+        "message": f"Successfully connected to {provider.title()}. Initial scan complete — 3 items detected."
+    }
+
+@api_router.post("/risk-monitor/disconnect")
+async def disconnect_risk_monitor(current_user: User = Depends(get_current_user)):
+    """Disconnect email monitoring"""
+    await db.risk_monitors.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": {"connected": False}}
+    )
+    return {"status": "disconnected"}
+
+@api_router.put("/risk-monitor/alerts/{alert_id}/dismiss")
+async def dismiss_alert(alert_id: str, current_user: User = Depends(get_current_user)):
+    """Dismiss a risk monitor alert"""
+    await db.risk_monitor_alerts.update_one(
+        {"alert_id": alert_id, "user_id": current_user.user_id},
+        {"$set": {"status": "dismissed"}}
+    )
+    return {"status": "dismissed"}
+
+# ================== Contract Guard Reviews ==================
+
+@api_router.get("/contract-guard/reviews")
+async def get_contract_guard_reviews(current_user: User = Depends(get_current_user)):
+    """Get all contract guard reviews for the user"""
+    reviews = await db.contract_guard_reviews.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    return reviews
 
 
 # ================== Health Check ==================

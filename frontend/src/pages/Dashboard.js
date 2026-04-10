@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { Upload, Plus, Calendar, AlertCircle, FileText, ChevronRight } from 'lucide-react';
+import { Upload, Plus, Calendar, AlertCircle, FileText, ChevronRight, Shield, AlertTriangle, Eye } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -12,6 +12,7 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [cases, setCases] = useState([]);
   const [lawyers, setLawyers] = useState([]);
+  const [monitorStatus, setMonitorStatus] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
@@ -24,6 +25,12 @@ const Dashboard = () => {
       setStats(statsRes.data);
       setCases(casesRes.data.slice(0, 3));
       setLawyers(lawyersRes.data.slice(0, 3));
+      
+      // Fetch monitor status separately (non-blocking)
+      try {
+        const monRes = await axios.get(`${API}/risk-monitor/status`, { withCredentials: true });
+        setMonitorStatus(monRes.data);
+      } catch {}
     } catch (error) {
       console.error('Dashboard fetch error:', error);
     } finally {
@@ -201,6 +208,50 @@ const Dashboard = () => {
           })
         )}
       </div>
+
+      {/* Risk Monitor Widget */}
+      {monitorStatus?.connected && (
+        <div className="mb-6" data-testid="risk-monitor-widget">
+          <div className="sec-header">
+            <div className="sec-title flex items-center gap-2">
+              <Shield size={16} className="text-[#d97706]" />
+              Risk Monitor
+            </div>
+            <Link to="/settings" className="sec-link" data-testid="monitor-settings-link" onClick={() => {}}>Settings</Link>
+          </div>
+          <div className="card p-4 bg-gradient-to-r from-[#fffbeb] to-[#fef3c7] border-[#fbbf24]/30">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#16a34a] animate-pulse"></span>
+                <span className="text-xs font-medium text-[#92400e]">Monitoring {monitorStatus.email}</span>
+              </div>
+              <span className="text-[10px] text-[#6b7280]">{monitorStatus.emails_scanned} emails scanned</span>
+            </div>
+            {monitorStatus.alerts?.filter(a => a.status !== 'dismissed').length > 0 ? (
+              <div className="space-y-2">
+                {monitorStatus.alerts.filter(a => a.status !== 'dismissed').slice(0, 2).map((alert) => (
+                  <div key={alert.alert_id} className={`flex items-start gap-2 p-2 rounded-lg ${
+                    alert.severity === 'high' ? 'bg-[#fef2f2]' : alert.severity === 'medium' ? 'bg-white/80' : 'bg-white/60'
+                  }`}>
+                    {alert.severity === 'high' ? <AlertCircle size={14} className="text-[#dc2626] mt-0.5 flex-shrink-0" /> :
+                     alert.severity === 'medium' ? <AlertTriangle size={14} className="text-[#d97706] mt-0.5 flex-shrink-0" /> :
+                     <Eye size={14} className="text-[#6b7280] mt-0.5 flex-shrink-0" />}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium text-[#111827] truncate">{alert.subject}</div>
+                      <div className="text-[10px] text-[#6b7280]">{alert.sender}</div>
+                    </div>
+                    <span className={`px-1.5 py-0.5 text-[8px] font-bold rounded-full flex-shrink-0 ${
+                      alert.severity === 'high' ? 'bg-[#dc2626] text-white' : alert.severity === 'medium' ? 'bg-[#d97706] text-white' : 'bg-[#e5e7eb] text-[#6b7280]'
+                    }`}>{alert.severity?.toUpperCase()}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-xs text-[#16a34a] text-center py-2">No active threats detected</div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Bottom Row: Upload + Lawyers */}
       <div className="grid grid-cols-2 gap-4">

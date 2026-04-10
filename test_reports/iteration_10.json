@@ -1,0 +1,109 @@
+{
+  "summary": "Tested Contract Guard ('Before I Sign' mode) and Risk Monitor (MOCKED email surveillance) features. Backend: 11/11 tests passed. Frontend: All UI tests passed - mode toggle works correctly, Settings Risk Monitor tab functional, Dashboard widget displays alerts.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "Backend: GET /api/risk-monitor/status returns correct structure (connected, provider, emails_scanned, threats_detected, alerts)",
+    "Backend: POST /api/risk-monitor/connect with provider='gmail' returns success with mock alerts",
+    "Backend: POST /api/risk-monitor/connect with provider='outlook' returns success",
+    "Backend: POST /api/risk-monitor/connect with invalid provider returns 400",
+    "Backend: GET /api/risk-monitor/status after connect shows connected=true, emails_scanned=147, threats_detected=3",
+    "Backend: PUT /api/risk-monitor/alerts/{id}/dismiss returns status='dismissed'",
+    "Backend: POST /api/risk-monitor/disconnect returns status='disconnected'",
+    "Backend: GET /api/risk-monitor/status after disconnect shows connected=false",
+    "Backend: GET /api/contract-guard/reviews returns list of reviews",
+    "Backend: GET /api/health returns 200",
+    "Backend: GET /api/ returns API info",
+    "Frontend: Upload page mode toggle visible with 'Analyze risk' and 'Before I sign' buttons",
+    "Frontend: Standard mode shows blue upload zone, Document Scanner section, Case selector",
+    "Frontend: Contract Guard mode shows amber upload zone, 'Drop your contract here' text, negotiation goals placeholder",
+    "Frontend: Contract Guard mode correctly hides Document Scanner and Case selector",
+    "Frontend: Switching modes toggles visibility of sections correctly",
+    "Frontend: Settings page has Risk Monitor tab with shield icon",
+    "Frontend: Risk Monitor tab shows Gmail/Outlook connect buttons when not connected",
+    "Frontend: Risk Monitor tab shows 'Demo mode' notice about simulated connection",
+    "Frontend: After Gmail connect, shows success message, stats (147 emails, 3 threats), Disconnect button",
+    "Frontend: Detected threats section shows alert cards with severity badges (HIGH, MEDIUM)",
+    "Frontend: Dashboard shows Risk Monitor widget when email is connected",
+    "Frontend: Dashboard widget shows monitoring email, emails scanned count, alert cards"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_contract_guard_risk_monitor.py",
+    "/app/test_reports/pytest/pytest_contract_guard_risk_monitor.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_contract_guard_risk_monitor.py (New test file for Contract Guard and Risk Monitor features)"
+  ],
+
+  "success_rate": {
+    "backend": "100% (11/11 tests passed)",
+    "frontend": "100% (all UI tests passed)"
+  },
+
+  "test_credentials": {
+    "test_user": "test_cg@example.com / testpassword123",
+    "user_plan": "pro"
+  },
+
+  "seed_data_creation": "None - used existing test user",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Contract Guard and Risk Monitor features fully implemented and tested. Contract Guard: Upload page has mode toggle between 'Analyze risk' (standard) and 'Before I sign' (Contract Guard). Contract Guard mode uses amber UI theme, hides Document Scanner and Case selector, shows negotiation-focused placeholder text. Risk Monitor: MOCKED email surveillance - connecting Gmail/Outlook creates simulated mock alerts (3 pre-defined: 'Notice of Intent to Sue', 'Lease Renewal', 'Policy Renewal'). Settings page has Risk Monitor tab (key='monitor') with connect/disconnect/alerts UI. Dashboard shows Risk Monitor widget when email is connected. Test file /app/backend/tests/test_contract_guard_risk_monitor.py can be reused for regression testing.",
+
+  "features_verified": {
+    "contract_guard_upload_mode": {
+      "mode_toggle": "WORKING - 'Analyze risk' and 'Before I sign' buttons toggle correctly",
+      "standard_mode": "WORKING - blue upload zone, Document Scanner visible, Case selector visible",
+      "contract_guard_mode": "WORKING - amber upload zone, 'Drop your contract here', negotiation goals placeholder",
+      "section_visibility": "WORKING - Document Scanner and Case selector hidden in Contract Guard mode"
+    },
+    "risk_monitor_backend": {
+      "status_endpoint": "WORKING - GET /api/risk-monitor/status returns correct structure",
+      "connect_endpoint": "WORKING - POST /api/risk-monitor/connect creates mock alerts",
+      "disconnect_endpoint": "WORKING - POST /api/risk-monitor/disconnect sets connected=false",
+      "dismiss_alert_endpoint": "WORKING - PUT /api/risk-monitor/alerts/{id}/dismiss updates status"
+    },
+    "risk_monitor_frontend": {
+      "settings_tab": "WORKING - Risk Monitor tab visible with shield icon",
+      "connect_buttons": "WORKING - Gmail and Outlook connect buttons visible",
+      "demo_mode_notice": "WORKING - Shows 'Demo mode' notice about simulated connection",
+      "connected_state": "WORKING - Shows stats, Disconnect button, detected threats",
+      "alerts_display": "WORKING - Alert cards with severity badges (HIGH, MEDIUM, LOW)"
+    },
+    "dashboard_widget": {
+      "visibility": "WORKING - Risk Monitor widget appears when email is connected",
+      "content": "WORKING - Shows monitoring email, emails scanned, alert cards",
+      "settings_link": "WORKING - Settings link navigates to Risk Monitor tab"
+    },
+    "contract_guard_reviews": {
+      "endpoint": "WORKING - GET /api/contract-guard/reviews returns list"
+    }
+  },
+
+  "mocked_apis": {
+    "has_mocked_apis": true,
+    "mocked_apis_list": [
+      "POST /api/risk-monitor/connect (simulated OAuth, no real Gmail/Outlook integration)",
+      "Mock alerts generated on connect (3 pre-defined: 'Notice of Intent to Sue', 'Lease Renewal', 'Policy Renewal')"
+    ]
+  }
+}
