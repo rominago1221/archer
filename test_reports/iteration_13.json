@@ -1,0 +1,118 @@
+{
+  "summary": "Tested Signup Country/Region/Language feature: Backend POST /api/auth/register correctly accepts and stores country, region, language fields. Frontend Signup page shows Country/Pays dropdown with US and Belgium options. Belgium selection shows Region and Language dropdowns with auto-language selection based on region. Plan cards show EUR pricing for Belgium, USD for US. Validation prevents submission without region when Belgium selected. Full signup flow with Belgium/Wallonie redirects to dashboard with correct profile. Login regression test passed.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Dashboard - Available lawyers section",
+        "issues": ["Shows US lawyers (Sarah Mitchell, James Carter, Diana Torres) for Belgian users instead of Belgian lawyers. This is outside the scope of signup testing but noted for future improvement."]
+      }
+    ]
+  },
+
+  "passed_tests": [
+    "Backend: POST /api/auth/register with Belgium/Wallonie/fr-BE stores correctly",
+    "Backend: POST /api/auth/register with Belgium/Flandre/nl-BE stores correctly",
+    "Backend: POST /api/auth/register with Belgium/Bruxelles-Capitale/fr-BE stores correctly",
+    "Backend: POST /api/auth/register with Belgium/Communaute germanophone/de-BE stores correctly",
+    "Backend: POST /api/auth/register with US defaults to country=US, language=en",
+    "Backend: POST /api/auth/register without country field defaults to US/en (backwards compat)",
+    "Backend: POST /api/auth/register sets httpOnly session cookie",
+    "Backend: Registered user profile persists correctly via GET /api/auth/me",
+    "Backend: Duplicate email registration rejected with 409",
+    "Backend: Login with existing Belgian user (test_cg@example.com) works",
+    "Backend: Invalid credentials rejected with 401",
+    "Frontend: Signup page shows Country/Pays dropdown with US and Belgium options",
+    "Frontend: Default country is US",
+    "Frontend: Region/Language dropdowns hidden when US selected",
+    "Frontend: Region/Language dropdowns visible when Belgium selected",
+    "Frontend: Default language for Belgium is fr-BE",
+    "Frontend: Plan cards show USD pricing ($0/$69) when US selected",
+    "Frontend: Plan cards show EUR pricing (0/65 EUR) when Belgium selected",
+    "Frontend: Belgian info box visible when Belgium selected",
+    "Frontend: Flandre region auto-sets language to nl-BE",
+    "Frontend: Communaute germanophone auto-sets language to de-BE",
+    "Frontend: Wallonie region auto-sets language to fr-BE",
+    "Frontend: Bruxelles-Capitale region auto-sets language to fr-BE",
+    "Frontend: Region/Language dropdowns hide when switching back to US",
+    "Frontend: Validation error shown when Belgium selected but no region chosen",
+    "Frontend: Full signup flow with Belgium/Wallonie/Pro redirects to dashboard",
+    "Frontend: Login flow with Belgian user redirects to dashboard"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_signup_country_region.py",
+    "/app/test_reports/pytest/pytest_signup_country_region.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_signup_country_region.py (New test file for signup country/region/language feature)"
+  ],
+
+  "success_rate": {
+    "backend": "100% (11/11 tests passed, 1 skipped - US test user not seeded)",
+    "frontend": "100% (all UI tests passed)"
+  },
+
+  "test_credentials": {
+    "belgian_test_user": "test_cg@example.com / testpassword123 (country=BE, region=Wallonie, language=fr-BE, plan=pro)",
+    "us_test_user": "test@example.com / testpassword123 (NOT SEEDED in database - mentioned in test_credentials.md but doesn't exist)"
+  },
+
+  "seed_data_creation": "Multiple test users created during testing with unique emails (test_signup_*, test_e2e_*)",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Signup country/region/language feature fully tested. Backend POST /api/auth/register accepts country (US|BE), region (string), language (string) fields. Frontend Signup.js has Country/Pays dropdown that shows Region/Language dropdowns when Belgium selected. Region auto-sets language: Flandre→nl-BE, Communaute germanophone→de-BE, others→fr-BE. Plan cards show EUR pricing for Belgium. Validation prevents submission without region for Belgium. Test file /app/backend/tests/test_signup_country_region.py can be reused for regression testing. Note: US test user test@example.com mentioned in test_credentials.md is NOT seeded in database.",
+
+  "features_verified": {
+    "signup_country_selector": {
+      "us_option": "WORKING - Shows 'United States' option",
+      "belgium_option": "WORKING - Shows 'Belgium / Belgique' option",
+      "default_us": "WORKING - US is default selection"
+    },
+    "belgium_region_selector": {
+      "visibility": "WORKING - Shows when Belgium selected, hides when US selected",
+      "options": "WORKING - Wallonie, Bruxelles-Capitale, Flandre, Communaute germanophone",
+      "validation": "WORKING - Cannot submit without region when Belgium selected"
+    },
+    "belgium_language_selector": {
+      "visibility": "WORKING - Shows when Belgium selected, hides when US selected",
+      "auto_set_flandre": "WORKING - Flandre → nl-BE",
+      "auto_set_germanophone": "WORKING - Communaute germanophone → de-BE",
+      "auto_set_wallonie": "WORKING - Wallonie → fr-BE",
+      "auto_set_bruxelles": "WORKING - Bruxelles-Capitale → fr-BE"
+    },
+    "plan_pricing": {
+      "us_pricing": "WORKING - Shows $0 / month and $69 / month",
+      "belgium_pricing": "WORKING - Shows 0 EUR / mois and 65 EUR / mois"
+    },
+    "backend_register": {
+      "accepts_country_region_language": "WORKING - Stores all fields correctly",
+      "backwards_compat": "WORKING - Defaults to US/en when no country provided",
+      "session_cookie": "WORKING - Sets httpOnly session cookie"
+    },
+    "login_regression": {
+      "belgian_user_login": "WORKING - test_cg@example.com login works",
+      "invalid_credentials": "WORKING - Returns 401"
+    }
+  },
+
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  }
+}

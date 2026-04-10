@@ -83,11 +83,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Email/password register
-  const registerWithEmail = async (name, email, password, plan = 'free') => {
+  const registerWithEmail = async (name, email, password, plan = 'free', country = 'US', region = null, language = null) => {
     setError(null);
     try {
       const response = await axios.post(`${API}/auth/register`, 
-        { name, email, password, plan },
+        { name, email, password, plan, country, region, language },
         { withCredentials: true }
       );
       setUser(response.data.user);

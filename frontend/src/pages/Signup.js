@@ -9,12 +9,28 @@ const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('free');
+  const [country, setCountry] = useState('US');
+  const [region, setRegion] = useState('');
+  const [language, setLanguage] = useState('en');
   const [localError, setLocalError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   React.useEffect(() => {
     clearError();
   }, []);
+
+  const handleCountryChange = (val) => {
+    setCountry(val);
+    setRegion('');
+    setLanguage(val === 'BE' ? 'fr-BE' : 'en');
+  };
+
+  const handleRegionChange = (val) => {
+    setRegion(val);
+    if (val === 'Flandre') setLanguage('nl-BE');
+    else if (val === 'Communaute germanophone') setLanguage('de-BE');
+    else setLanguage('fr-BE');
+  };
 
   const handleEmailSignup = async (e) => {
     e.preventDefault();
@@ -31,9 +47,13 @@ const Signup = () => {
       setLocalError('Password must be at least 8 characters');
       return;
     }
+    if (country === 'BE' && !region) {
+      setLocalError('Please select your region in Belgium');
+      return;
+    }
     setIsLoading(true);
     try {
-      await registerWithEmail(fullName, email, password, selectedPlan);
+      await registerWithEmail(fullName, email, password, selectedPlan, country, region || null, language);
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setLocalError(err.message);
@@ -98,6 +118,59 @@ const Signup = () => {
             />
           </div>
 
+          {/* Country selector */}
+          <div>
+            <label className="form-label">Country / Pays</label>
+            <select
+              className="form-input"
+              value={country}
+              onChange={(e) => handleCountryChange(e.target.value)}
+              data-testid="signup-country-select"
+            >
+              <option value="US">United States</option>
+              <option value="BE">Belgium / Belgique</option>
+            </select>
+          </div>
+
+          {/* Belgium-specific: Region + Language */}
+          {country === 'BE' && (
+            <>
+              <div>
+                <label className="form-label">Region / Regio</label>
+                <select
+                  className="form-input"
+                  value={region}
+                  onChange={(e) => handleRegionChange(e.target.value)}
+                  data-testid="signup-region-select"
+                >
+                  <option value="">-- Choisir votre region --</option>
+                  <option value="Wallonie">Wallonie</option>
+                  <option value="Bruxelles-Capitale">Bruxelles-Capitale</option>
+                  <option value="Flandre">Vlaanderen / Flandre</option>
+                  <option value="Communaute germanophone">Communaute germanophone</option>
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Langue / Taal / Sprache</label>
+                <select
+                  className="form-input"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  data-testid="signup-language-select"
+                >
+                  <option value="fr-BE">Francais</option>
+                  <option value="nl-BE">Nederlands</option>
+                  <option value="de-BE">Deutsch</option>
+                </select>
+              </div>
+              <div className="p-3 bg-[#fffbeb] border border-[#fde68a] rounded-lg">
+                <div className="text-xs text-[#92400e]">
+                  <strong>Jasper Belgique:</strong> L'analyse juridique sera adaptee au droit belge de votre region. Jurisprudence belge, commissions paritaires et references legales belges.
+                </div>
+              </div>
+            </>
+          )}
+
           <div>
             <label className="form-label">Choose your plan</label>
             <div className="grid grid-cols-2 gap-3">
@@ -107,7 +180,7 @@ const Signup = () => {
                 data-testid="plan-free"
               >
                 <div className="text-sm font-semibold text-[#111827]">Free</div>
-                <div className="text-xs text-[#6b7280]">$0 / month</div>
+                <div className="text-xs text-[#6b7280]">{country === 'BE' ? '0 EUR / mois' : '$0 / month'}</div>
               </div>
               <div
                 className={`plan-card ${selectedPlan === 'pro' ? 'selected' : ''}`}
@@ -115,7 +188,7 @@ const Signup = () => {
                 data-testid="plan-pro"
               >
                 <div className="text-sm font-semibold text-[#111827]">Pro</div>
-                <div className="text-xs text-[#6b7280]">$69 / month</div>
+                <div className="text-xs text-[#6b7280]">{country === 'BE' ? '65 EUR / mois' : '$69 / month'}</div>
               </div>
             </div>
           </div>
@@ -142,7 +215,6 @@ const Signup = () => {
         </div>
 
         <div className="space-y-3">
-          {/* Google */}
           <button
             onClick={initiateGoogleLogin}
             className="w-full py-3 px-4 bg-[#f5f5f5] text-[#333] rounded-[24px] text-sm font-medium hover:bg-[#eee] transition-colors flex items-center justify-center gap-3"
@@ -157,7 +229,6 @@ const Signup = () => {
             Continue with Google
           </button>
 
-          {/* Apple */}
           <button
             onClick={() => setLocalError('Apple Sign In requires Apple Developer credentials. Please configure them in Settings.')}
             className="w-full py-3 px-4 bg-[#000000] text-white rounded-[24px] text-sm font-medium hover:bg-[#1a1a1a] transition-colors flex items-center justify-center gap-3"
@@ -169,7 +240,6 @@ const Signup = () => {
             Continue with Apple
           </button>
 
-          {/* Facebook */}
           <button
             onClick={() => setLocalError('Facebook Login requires Facebook App credentials. Please configure them in Settings.')}
             className="w-full py-3 px-4 bg-[#1877F2] text-white rounded-[24px] text-sm font-medium hover:bg-[#166fe5] transition-colors flex items-center justify-center gap-3"

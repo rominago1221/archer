@@ -109,6 +109,9 @@ class EmailRegister(BaseModel):
     password: str
     name: str
     plan: str = "free"
+    country: str = "US"
+    region: Optional[str] = None
+    language: Optional[str] = None
 
 class EmailLogin(BaseModel):
     email: str
@@ -1917,6 +1920,9 @@ async def register_email(body: EmailRegister):
     password = body.password.strip()
     name = body.name.strip()
     plan = body.plan if body.plan in ["free", "pro"] else "free"
+    country = body.country if body.country in ["US", "BE"] else "US"
+    region = body.region
+    language = body.language or ("en" if country == "US" else "fr-BE")
     
     if not email or not password or not name:
         raise HTTPException(status_code=400, detail="Email, password and name are required")
@@ -1938,6 +1944,9 @@ async def register_email(body: EmailRegister):
         "password_hash": password_hash,
         "auth_provider": "email",
         "plan": plan,
+        "country": country,
+        "region": region,
+        "language": language,
         "state_of_residence": None,
         "phone": None,
         "notif_risk_score": True,
