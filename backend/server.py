@@ -1920,9 +1920,9 @@ async def register_email(body: EmailRegister):
     password = body.password.strip()
     name = body.name.strip()
     plan = body.plan if body.plan in ["free", "pro"] else "free"
-    country = body.country if body.country in ["US", "BE"] else "US"
+    country = body.country if body.country in ["US", "BE", "AE"] else "US"
     region = body.region
-    language = body.language or ("en" if country == "US" else "fr-BE")
+    language = body.language or ("en" if country in ["US", "AE"] else "fr-BE")
     
     if not email or not password or not name:
         raise HTTPException(status_code=400, detail="Email, password and name are required")

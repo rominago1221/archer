@@ -1,56 +1,58 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { ChevronDown } from 'lucide-react';
+import { LOCALE_OPTIONS, getStoredLocale, setStoredLocale } from '../data/landingTranslations';
+
+const localeToSignup = {
+  'us-en': { country: 'US', region: '', language: 'en' },
+  'ae-en': { country: 'AE', region: '', language: 'en' },
+  'be-fr': { country: 'BE', region: '', language: 'fr-BE' },
+  'be-nl': { country: 'BE', region: '', language: 'nl-BE' },
+  'be-de': { country: 'BE', region: '', language: 'de-BE' },
+};
 
 const Signup = () => {
   const { initiateGoogleLogin, registerWithEmail, error, clearError } = useAuth();
   const navigate = useNavigate();
+
+  const storedLocale = getStoredLocale();
+  const initial = localeToSignup[storedLocale] || localeToSignup['us-en'];
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('free');
-  const [country, setCountry] = useState('US');
-  const [region, setRegion] = useState('');
-  const [language, setLanguage] = useState('en');
+  const [country, setCountry] = useState(initial.country);
+  const [region, setRegion] = useState(initial.region);
+  const [language, setLanguage] = useState(initial.language);
   const [localError, setLocalError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  React.useEffect(() => {
-    clearError();
-  }, []);
+  React.useEffect(() => { clearError(); }, []);
 
   const handleCountryChange = (val) => {
     setCountry(val);
     setRegion('');
-    setLanguage(val === 'BE' ? 'fr-BE' : 'en');
+    if (val === 'BE') { setLanguage('fr-BE'); setStoredLocale('be-fr'); }
+    else if (val === 'AE') { setLanguage('en'); setStoredLocale('ae-en'); }
+    else { setLanguage('en'); setStoredLocale('us-en'); }
   };
 
   const handleRegionChange = (val) => {
     setRegion(val);
-    if (val === 'Flandre') setLanguage('nl-BE');
-    else if (val === 'Communaute germanophone') setLanguage('de-BE');
-    else setLanguage('fr-BE');
+    if (val === 'Flandre') { setLanguage('nl-BE'); setStoredLocale('be-nl'); }
+    else if (val === 'Communaute germanophone') { setLanguage('de-BE'); setStoredLocale('be-de'); }
+    else { setLanguage('fr-BE'); setStoredLocale('be-fr'); }
   };
 
   const handleEmailSignup = async (e) => {
     e.preventDefault();
     setLocalError('');
-    if (!fullName.trim()) {
-      setLocalError('Please enter your full name');
-      return;
-    }
-    if (!email.trim()) {
-      setLocalError('Please enter your email');
-      return;
-    }
-    if (password.length < 8) {
-      setLocalError('Password must be at least 8 characters');
-      return;
-    }
-    if (country === 'BE' && !region) {
-      setLocalError('Please select your region in Belgium');
-      return;
-    }
+    if (!fullName.trim()) { setLocalError('Please enter your full name'); return; }
+    if (!email.trim()) { setLocalError('Please enter your email'); return; }
+    if (password.length < 8) { setLocalError('Password must be at least 8 characters'); return; }
+    if (country === 'BE' && !region) { setLocalError('Please select your region in Belgium'); return; }
     setIsLoading(true);
     try {
       await registerWithEmail(fullName, email, password, selectedPlan, country, region || null, language);
@@ -63,6 +65,13 @@ const Signup = () => {
   };
 
   const displayError = localError || error;
+
+  const pricingLabel = (free, pro) => {
+    if (country === 'AE') return { free: 'AED 0 / month', pro: 'AED 249 / month' };
+    if (country === 'BE') return { free: '0 EUR / mois', pro: '65 EUR / mois' };
+    return { free: '$0 / month', pro: '$69 / month' };
+  };
+  const prices = pricingLabel();
 
   return (
     <div className="auth-wrap">
@@ -86,48 +95,23 @@ const Signup = () => {
         <form onSubmit={handleEmailSignup} className="space-y-4">
           <div>
             <label className="form-label">Full name</label>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Michael Rodriguez"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              data-testid="signup-name-input"
-            />
+            <input type="text" className="form-input" placeholder="Michael Rodriguez" value={fullName} onChange={(e) => setFullName(e.target.value)} data-testid="signup-name-input" />
           </div>
           <div>
             <label className="form-label">Email</label>
-            <input
-              type="email"
-              className="form-input"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              data-testid="signup-email-input"
-            />
+            <input type="email" className="form-input" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} data-testid="signup-email-input" />
           </div>
           <div>
             <label className="form-label">Password</label>
-            <input
-              type="password"
-              className="form-input"
-              placeholder="Min. 8 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              data-testid="signup-password-input"
-            />
+            <input type="password" className="form-input" placeholder="Min. 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} data-testid="signup-password-input" />
           </div>
 
           {/* Country selector */}
           <div>
             <label className="form-label">Country / Pays</label>
-            <select
-              className="form-input"
-              value={country}
-              onChange={(e) => handleCountryChange(e.target.value)}
-              data-testid="signup-country-select"
-            >
+            <select className="form-input" value={country} onChange={(e) => handleCountryChange(e.target.value)} data-testid="signup-country-select">
               <option value="US">United States</option>
+              <option value="AE">United Arab Emirates</option>
               <option value="BE">Belgium / Belgique</option>
             </select>
           </div>
@@ -137,12 +121,7 @@ const Signup = () => {
             <>
               <div>
                 <label className="form-label">Region / Regio</label>
-                <select
-                  className="form-input"
-                  value={region}
-                  onChange={(e) => handleRegionChange(e.target.value)}
-                  data-testid="signup-region-select"
-                >
+                <select className="form-input" value={region} onChange={(e) => handleRegionChange(e.target.value)} data-testid="signup-region-select">
                   <option value="">-- Choisir votre region --</option>
                   <option value="Wallonie">Wallonie</option>
                   <option value="Bruxelles-Capitale">Bruxelles-Capitale</option>
@@ -152,12 +131,7 @@ const Signup = () => {
               </div>
               <div>
                 <label className="form-label">Langue / Taal / Sprache</label>
-                <select
-                  className="form-input"
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  data-testid="signup-language-select"
-                >
+                <select className="form-input" value={language} onChange={(e) => setLanguage(e.target.value)} data-testid="signup-language-select">
                   <option value="fr-BE">Francais</option>
                   <option value="nl-BE">Nederlands</option>
                   <option value="de-BE">Deutsch</option>
@@ -171,92 +145,56 @@ const Signup = () => {
             </>
           )}
 
+          {country === 'AE' && (
+            <div className="p-3 bg-[#eff6ff] border border-[#bfdbfe] rounded-lg">
+              <div className="text-xs text-[#1e40af]">
+                <strong>Jasper UAE:</strong> Legal analysis adapted to UAE Federal Laws, DIFC regulations, RERA guidelines, and local Emirate-level legislation.
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="form-label">Choose your plan</label>
             <div className="grid grid-cols-2 gap-3">
-              <div
-                className={`plan-card ${selectedPlan === 'free' ? 'selected' : ''}`}
-                onClick={() => setSelectedPlan('free')}
-                data-testid="plan-free"
-              >
+              <div className={`plan-card ${selectedPlan === 'free' ? 'selected' : ''}`} onClick={() => setSelectedPlan('free')} data-testid="plan-free">
                 <div className="text-sm font-semibold text-[#111827]">Free</div>
-                <div className="text-xs text-[#6b7280]">{country === 'BE' ? '0 EUR / mois' : '$0 / month'}</div>
+                <div className="text-xs text-[#6b7280]">{prices.free}</div>
               </div>
-              <div
-                className={`plan-card ${selectedPlan === 'pro' ? 'selected' : ''}`}
-                onClick={() => setSelectedPlan('pro')}
-                data-testid="plan-pro"
-              >
+              <div className={`plan-card ${selectedPlan === 'pro' ? 'selected' : ''}`} onClick={() => setSelectedPlan('pro')} data-testid="plan-pro">
                 <div className="text-sm font-semibold text-[#111827]">Pro</div>
-                <div className="text-xs text-[#6b7280]">{country === 'BE' ? '65 EUR / mois' : '$69 / month'}</div>
+                <div className="text-xs text-[#6b7280]">{prices.pro}</div>
               </div>
             </div>
           </div>
 
-          <button
-            type="submit"
-            className="w-full btn-pill btn-blue py-3 flex items-center justify-center gap-2"
-            data-testid="signup-submit-btn"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            ) : 'Create account'}
+          <button type="submit" className="w-full btn-pill btn-blue py-3 flex items-center justify-center gap-2" data-testid="signup-submit-btn" disabled={isLoading}>
+            {isLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Create account'}
           </button>
         </form>
 
         <div className="relative my-5">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-[#ebebeb]"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-[#9ca3af]">or continue with</span>
-          </div>
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[#ebebeb]"></div></div>
+          <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-[#9ca3af]">or continue with</span></div>
         </div>
 
         <div className="space-y-3">
-          <button
-            onClick={initiateGoogleLogin}
-            className="w-full py-3 px-4 bg-[#f5f5f5] text-[#333] rounded-[24px] text-sm font-medium hover:bg-[#eee] transition-colors flex items-center justify-center gap-3"
-            data-testid="google-signup-btn"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
+          <button onClick={initiateGoogleLogin} className="w-full py-3 px-4 bg-[#f5f5f5] text-[#333] rounded-[24px] text-sm font-medium hover:bg-[#eee] transition-colors flex items-center justify-center gap-3" data-testid="google-signup-btn">
+            <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
             Continue with Google
           </button>
-
-          <button
-            onClick={() => setLocalError('Apple Sign In requires Apple Developer credentials. Please configure them in Settings.')}
-            className="w-full py-3 px-4 bg-[#000000] text-white rounded-[24px] text-sm font-medium hover:bg-[#1a1a1a] transition-colors flex items-center justify-center gap-3"
-            data-testid="apple-signup-btn"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
-              <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.53-3.23 0-1.44.62-2.2.44-3.06-.4C3.79 16.17 4.36 9.02 8.55 8.8c1.18.06 2 .7 2.72.75.98-.2 1.92-.77 2.98-.7 1.27.1 2.23.58 2.86 1.48-2.63 1.57-2.01 5.01.36 5.97-.48 1.28-.72 1.85-1.42 2.98zM12.12 8.74c-.14-2.35 1.76-4.38 3.93-4.54.32 2.63-2.33 4.72-3.93 4.54z"/>
-            </svg>
+          <button onClick={() => setLocalError('Apple Sign In requires Apple Developer credentials. Please configure them in Settings.')} className="w-full py-3 px-4 bg-[#000000] text-white rounded-[24px] text-sm font-medium hover:bg-[#1a1a1a] transition-colors flex items-center justify-center gap-3" data-testid="apple-signup-btn">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.53-3.23 0-1.44.62-2.2.44-3.06-.4C3.79 16.17 4.36 9.02 8.55 8.8c1.18.06 2 .7 2.72.75.98-.2 1.92-.77 2.98-.7 1.27.1 2.23.58 2.86 1.48-2.63 1.57-2.01 5.01.36 5.97-.48 1.28-.72 1.85-1.42 2.98zM12.12 8.74c-.14-2.35 1.76-4.38 3.93-4.54.32 2.63-2.33 4.72-3.93 4.54z"/></svg>
             Continue with Apple
           </button>
-
-          <button
-            onClick={() => setLocalError('Facebook Login requires Facebook App credentials. Please configure them in Settings.')}
-            className="w-full py-3 px-4 bg-[#1877F2] text-white rounded-[24px] text-sm font-medium hover:bg-[#166fe5] transition-colors flex items-center justify-center gap-3"
-            data-testid="facebook-signup-btn"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-            </svg>
+          <button onClick={() => setLocalError('Facebook Login requires Facebook App credentials. Please configure them in Settings.')} className="w-full py-3 px-4 bg-[#1877F2] text-white rounded-[24px] text-sm font-medium hover:bg-[#166fe5] transition-colors flex items-center justify-center gap-3" data-testid="facebook-signup-btn">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
             Continue with Facebook
           </button>
         </div>
 
         <div className="text-center text-sm text-[#6b7280] mt-5">
           Already have an account?{' '}
-          <Link to="/login" className="font-medium text-[#1a56db] hover:underline" data-testid="login-link">
-            Sign in
-          </Link>
+          <Link to="/login" className="font-medium text-[#1a56db] hover:underline" data-testid="login-link">Sign in</Link>
         </div>
       </div>
     </div>
