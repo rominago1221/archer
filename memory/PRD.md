@@ -1,7 +1,7 @@
 # Jasper - Legal Tech AI Platform PRD
 
 ## Original Problem Statement
-Build Jasper — a legal tech AI platform for US and Belgian consumers. Upload legal documents, get AI risk analysis, manage cases, chat with AI attorney James, and connect with real lawyers. Now includes a complete Attorney Portal.
+Build Jasper — a legal tech AI platform for US and Belgian consumers. Upload legal documents, get AI risk analysis, manage cases, chat with AI attorney James, and connect with real lawyers. Now includes a complete Attorney Portal and a redesigned Virtual Legal Office Dashboard.
 
 ## Core Architecture
 - **Jurisdiction** (US or BE): Determines which laws apply. Stored as `user.jurisdiction`.
@@ -11,47 +11,37 @@ Build Jasper — a legal tech AI platform for US and Belgian consumers. Upload l
 
 ## What's Been Implemented
 
-### Attorney Portal (NEW — Apr 11 2026)
-- **Dual Login System**: Two-card selector ("I'm a client" / "I'm an attorney") on Login page
-- **Attorney Application Flow**: 7-step onboarding (Personal → Professional → Specialties → Profile → Pricing → Stripe Connect → Review & Submit)
-- **Attorney Dashboard** (`/attorney/dashboard`): 4 metric cards, availability toggle, upcoming calls, recent activity
-- **Attorney Sidebar Layout**: 7 nav items + online/offline toggle + sign out
-- **Attorney Calls** (`/attorney/calls`): Scheduled sessions with filters
-- **Attorney Cases** (`/attorney/cases`): Read-only case view with private notes
-- **Attorney Legal Research** (`/attorney/research`): Technical attorney-grade James with unlimited usage
-- **Attorney Profile Editor** (`/attorney/profile`): Bio, specialties, pricing slider ($149-$500), availability schedule
-- **Attorney Earnings** (`/attorney/earnings`): Revenue dashboard with session table
-- **Attorney Settings** (`/attorney/settings`): 4 tabs (Availability, Notifications, Pricing, Account)
-- **Public Attorney Profile** (`/attorneys/:slug`): Client-facing profile with booking card + reviews
-- **Video Calls** (`/video-call/:callId`): Daily.co integration with room creation, tokens, timer, brief panel, notes
-- **AI Case Brief**: Claude-generated 7-section pre-call brief for attorneys
-- **Booking Flow**: Client books attorney call with dynamic pricing + Stripe checkout
-- **Attorney Route Guard**: `AttorneyRoute` component protects `/attorney/*` routes
-- **DB Collections**: `attorney_profiles`, `attorney_calls`, `attorney_activity`, `attorney_case_notes`, `attorney_research_convs`, `attorney_research_msgs`
+### Virtual Legal Office Dashboard Redesign (Apr 11 2026)
+- **3-column layout**: Left sidebar (260px) + Main area + Right panel (240px)
+- **Left sidebar**: Jasper logo, James AI card with stats, active cases list with risk scores/deadlines, "Ouvrir un nouveau dossier" button
+- **Main area**: James banner with badges, case details (title, date, docs), 4-dimension risk score (Financier, Urgence, Juridique, Complexite), AI findings with legal references, James question card
+- **Right panel**: Critical deadline card, numbered next actions, documents section, Battle Preview mini-card
+- **New Case Overlay**: 8 French situation cards (housing, debt, employment, insurance, contract, court, debt_collection, other)
+- **Conversational Flow**: Selecting a situation triggers James to ask 3-4 questions before showing upload/skip buttons
+- **Stripe bug fix**: Fixed missing `await` on checkout session creation for attorney bookings
+
+### Attorney Portal (Apr 11 2026)
+- Dual Login System, 7-step Attorney Application/Onboarding
+- Attorney Dashboard, Calls, Cases, Legal Research, Profile Editor, Earnings, Settings
+- Public Attorney Profile with booking, Daily.co Video Calls, AI Case Brief
+- Stripe Connect routing, Attorney Route Guard
 
 ### James Conversational Document Creator (Apr 11 2026)
 - Two-column layout: sidebar + conversational main area
 - Backend: POST /api/documents/james/send, GET /conversations, /recent, /messages
 
 ### Complete Audit & Bug Fixes (Apr 11 2026)
-- Outcome Predictor 3 scenario cards fixed (field mapping)
+- Outcome Predictor 3 scenario cards fixed
 - Cases list deadline display improved
 - Lawyers page jurisdiction filter fixed
 - Timeline events translated
-
-### Legal Chat — James AI Attorney
-- Direct httpx call to Claude API (claude-sonnet-4-20250514)
-- Free plan limit (3 questions), Pro unlimited
-
-### Multi-Document Analysis System
-- Combined chronological analysis, contradiction detection
-- Case Brief PDF generation for 5+ documents
 
 ### Core Features
 - Document upload & AI analysis (PDF, DOCX, TXT, EML, images)
 - Claude Vision OCR, Risk Score + History Graph
 - Legal Battle Preview, Outcome Predictor, Response Letters
 - Case Sharing, Contract Guard, Document Library, Document Scanner
+- Legal Chat (James AI Attorney), Multi-Document Analysis
 
 ### Integrations
 - Emergent Google OAuth, Object Storage
@@ -73,7 +63,7 @@ Build Jasper — a legal tech AI platform for US and Belgian consumers. Upload l
 - [ ] Mobile Document Scanner (Camera integration)
 
 ### P3 (Future)
-- [ ] Refactor server.py (6000+ lines → modular routers)
+- [ ] Refactor server.py (6000+ lines -> modular routers)
 - [ ] Multi-Country expansion
 - [ ] Post-call client rating flow
 - [ ] Attorney application admin panel
