@@ -10,22 +10,25 @@ Build Jasper — a legal tech AI platform for US and Belgian consumers. Upload l
 
 ## What's Been Implemented
 
-### James Clarification Two-Step (Apr 11 2026) — LATEST
-- STEP 1: James Question Card shows max 1 question with 2-3 clickable buttons
-- Below buttons: "James has more questions — ask him directly →" link (EN/FR/NL)
-- STEP 2: Link opens CaseChatDrawer (400px slide-in from right)
-- Chat pre-loaded with full case context, James continues naturally
-- User never leaves the case page
-- Backend chat migrated from httpx to emergentintegrations (no more 429 errors)
+### Real-Time Post-Upload UI Update (Apr 11 2026) — LATEST
+- 2-second polling when any case has status='analyzing'
+- Re-analyzing banner (blue) when case has existing data being re-analyzed
+- Full spinner only for brand new cases (score = 0)
+- Green toast notification: "Analysis complete — Risk Score updated" (5s auto-dismiss)
+- Auto-update of all sections: Risk Score, findings, Next Actions, Score History
+- onUploadComplete forces local 'analyzing' state for instant polling kickoff
+- No page refresh ever needed
+
+### James Clarification Two-Step (Apr 11 2026)
+- Max 1 question with 2-3 clickable buttons + "ask him directly →" link
+- CaseChatDrawer: 400px slide-in from right, pre-loaded with case context
+- Backend chat migrated to emergentintegrations
 
 ### In-Case Document Upload Modal (Apr 11 2026)
-- AddDocumentModal: drag & drop (PDF/Word/JPEG, 20MB), context textarea, trilingual
+- AddDocumentModal: drag & drop, context textarea, trilingual
 
 ### Dashboard 12-Feature Parity (Apr 11 2026)
-- All features: Brief, Share, Score History, Battle Preview, James Q&A, Jurisprudence, Outcome Predictor, Risk Monitor, Letter/Share Modals, New Case Overlay
-
-### UX Fixes (Apr 11 2026)
-- Post-login auto-select, James welcome empty state, logo → home, My Dashboard button
+- All CaseDetail features on Dashboard: Brief, Share, Score History, Battle Preview, James Q&A, Jurisprudence, Outcome Predictor, Risk Monitor, Letter/Share Modals, New Case Overlay
 
 ### Integrations
 - Emergent LlmChat (claude-sonnet-4-20250514), Google OAuth, Object Storage
@@ -34,13 +37,12 @@ Build Jasper — a legal tech AI platform for US and Belgian consumers. Upload l
 ## Prioritized Backlog
 
 ### P0
-- [ ] Refactor server.py (6300+ lines → modular routers)
+- [ ] Refactor server.py (6400+ lines → modular routers)
 
 ### P1
 - [ ] Deadline Alerts (Twilio/SendGrid) — awaiting keys
 - [ ] HelloSign / Dropbox Sign — awaiting keys
 - [ ] Mobile Document Scanner
-- [ ] Stripe Connect for attorney payouts
 
 ### P2-P3
-- [ ] Email notifications, Full UI translation, Multi-country expansion
+- [ ] Stripe Connect, Email notifications, Full UI translation, Multi-country expansion
