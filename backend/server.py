@@ -22,6 +22,7 @@ import docx
 import fitz  # pymupdf for PDF→image conversion
 from PIL import Image
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -669,81 +670,83 @@ def load_jurisprudence(case_type: str, document_type: str) -> str:
 
 
 async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 2000, use_web_search: bool = False) -> dict:
-    """Make a single Claude API call and return parsed JSON, with retries"""
+    """Make a Claude API call via Emergent integration (better rate limit handling)"""
     for attempt in range(3):
         try:
-            async with httpx.AsyncClient() as http_client:
-                payload = {
-                    "model": "claude-sonnet-4-20250514",
-                    "max_tokens": max_tokens,
-                    "system": system_prompt,
-                    "messages": [{"role": "user", "content": user_message}]
-                }
-                if use_web_search:
-                    payload["tools"] = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 3}]
-                
-                response = await http_client.post(
-                    "https://api.anthropic.com/v1/messages",
-                    headers={
-                        "Content-Type": "application/json",
-                        "x-api-key": ANTHROPIC_API_KEY,
-                        "anthropic-version": "2023-06-01"
-                    },
-                    json=payload,
-                    timeout=120.0
-                )
-                response.raise_for_status()
-                data = response.json()
-                # Extract text from content blocks (web search returns multiple blocks)
-                text = ""
-                for block in data.get("content", []):
-                    if block.get("type") == "text":
-                        text += block["text"]
-                text = text.replace("```json", "").replace("```", "").strip()
-                return json.loads(text)
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code in (429, 529) and attempt < 2:
-                wait = (attempt + 1) * 5
-                logger.warning(f"Claude API {e.response.status_code}, retrying in {wait}s (attempt {attempt+1}/3)")
-                await asyncio.sleep(wait)
-                continue
-            raise
+            chat = LlmChat(
+                api_key=EMERGENT_KEY,
+                session_id=f"analysis_{uuid.uuid4().hex[:8]}",
+                system_message=system_prompt
+            ).with_model("anthropic", "claude-4-sonnet-20250514")
+            msg = UserMessage(text=user_message + "\n\nRespond with valid JSON only. No markdown, no code blocks, just raw JSON.")
+            response = await chat.send_message(msg)
+            text = response.replace("```json", "").replace("```", "").strip()
+            return json.loads(text)
         except json.JSONDecodeError:
             if attempt < 2:
-                logger.warning(f"JSON parse error, retrying (attempt {attempt+1}/3)")
-                await asyncio.sleep(3)
+                logger.warning(f"JSON parse error from Claude, retrying (attempt {attempt+1}/3)")
+                await asyncio.sleep(2)
+                continue
+            raise
+        except Exception as e:
+            if attempt < 2:
+                wait = (attempt + 1) * 5
+                logger.warning(f"Claude call error: {e}, retrying in {wait}s (attempt {attempt+1}/3)")
+                await asyncio.sleep(wait)
                 continue
             raise
 
 
 async def fetch_courtlistener_opinions(case_type: str, state: str = "") -> list:
-    """Fetch recent court opinions from CourtListener API"""
+    """Fetch recent court opinions from CourtListener API filtered by case type AND jurisdiction"""
     type_to_query = {
-        "housing": "eviction tenant landlord",
-        "employment": "wrongful termination employment",
-        "debt": "debt collection FDCPA",
+        "housing": "eviction tenant landlord housing rental lease",
+        "employment": "wrongful termination employment discrimination wages",
+        "debt": "debt collection FDCPA creditor",
         "nda": "non-disclosure agreement trade secret",
-        "contract": "breach of contract",
+        "contract": "breach of contract damages",
         "demand": "demand letter civil dispute",
         "court": "motion to dismiss summary judgment",
-        "consumer": "consumer protection refund",
+        "consumer": "consumer protection refund deceptive",
         "immigration": "immigration visa employment authorization",
-        "family": "family law custody support",
+        "family": "family law custody support divorce",
+        "insurance": "insurance claim denial bad faith",
+        "penal": "criminal defense sentencing",
+        "commercial": "commercial dispute business",
     }
-    query = type_to_query.get(case_type, case_type)
+    query = type_to_query.get(case_type, "")
+    if not query:
+        return []  # Don't return random cases for unknown types
+    
+    # Add state/jurisdiction for targeted results
     if state:
-        query += f" {state}"
+        query = f"{state} {query}"
+    
+    # Map states to CourtListener court abbreviations for better filtering
+    state_court_map = {
+        "florida": "flaapp", "california": "cal", "new york": "ny",
+        "texas": "tex", "illinois": "ill", "pennsylvania": "pa",
+        "ohio": "ohio", "georgia": "ga", "michigan": "mich",
+    }
+    court_filter = ""
+    if state:
+        state_lower = state.lower().strip()
+        court_filter = state_court_map.get(state_lower, "")
     
     try:
+        params = {
+            "type": "o",
+            "q": query,
+            "order_by": "dateFiled desc",
+            "format": "json"
+        }
+        if court_filter:
+            params["court"] = court_filter
+        
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 "https://www.courtlistener.com/api/rest/v4/search/",
-                params={
-                    "type": "o",
-                    "q": query,
-                    "order_by": "dateFiled desc",
-                    "format": "json"
-                },
+                params=params,
                 timeout=15.0,
                 headers={"User-Agent": "Jasper-Legal-AI/1.0"}
             )
@@ -763,7 +766,7 @@ async def fetch_courtlistener_opinions(case_type: str, state: str = "") -> list:
                     "url": f"https://www.courtlistener.com{r.get('absolute_url', '')}" if r.get("absolute_url") else None,
                     "cite_count": r.get("citeCount", 0)
                 })
-            logger.info(f"CourtListener: fetched {len(opinions)} opinions for '{query}'")
+            logger.info(f"CourtListener: fetched {len(opinions)} opinions for '{query}' (state: {state or 'all'})")
             return opinions
     except Exception as e:
         logger.warning(f"CourtListener API error: {e}")
@@ -826,33 +829,38 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
                     realtime_law_context += f"   Excerpt: {clean_snippet}\n"
             realtime_law_context += "\nConsider these recent decisions when assessing the user's legal position.\n"
 
-        # PASS 2: Legal analysis (with web search + real-time case law)
-        logger.info("Advanced analysis: Pass 2 — Legal analysis (with web search)")
+        # PASS 2: Legal analysis (with real-time case law context)
+        logger.info("Advanced analysis: Pass 2 — Legal analysis")
+        await asyncio.sleep(2)  # Stagger API calls
         legal_analysis = await call_claude(
             persona,
             PASS2_PROMPT.format(
                 facts_json=json.dumps(facts, indent=2),
                 jurisprudence_section=jurisprudence_text + realtime_law_context
-            ) + "\n\nIMPORTANT: Search the web for the most recent court decisions and legal updates relevant to this case type and jurisdiction. Cite any relevant recent rulings.",
-            max_tokens=3000,
-            use_web_search=True
+            ) + "\n\nIMPORTANT: Use the provided recent court decisions and jurisprudence to inform your analysis. Cite any relevant rulings in your findings.",
+            max_tokens=3000
         )
 
         facts_str = json.dumps(facts, indent=2)
         analysis_str = json.dumps(legal_analysis, indent=2)
 
         # PASS 3, 4A, 4B — staggered to avoid rate limits
-        logger.info("Advanced analysis: Pass 3+4A+4B — Strategy + Battle Preview")
+        logger.info("Advanced analysis: Pass 3 — Strategy")
+        await asyncio.sleep(2)
         strategy = await call_claude(
             persona,
             PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
             max_tokens=2500
         )
+        logger.info("Advanced analysis: Pass 4A — User arguments")
+        await asyncio.sleep(2)
         user_arguments = await call_claude(
             PASS4A_SYSTEM + lang_instruction,
             PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
             max_tokens=1500
         )
+        logger.info("Advanced analysis: Pass 4B — Opposing arguments")
+        await asyncio.sleep(2)
         opposing_arguments = await call_claude(
             PASS4B_SYSTEM + lang_instruction,
             PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),

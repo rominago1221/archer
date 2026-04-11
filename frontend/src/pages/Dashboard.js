@@ -550,13 +550,13 @@ const Dashboard = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
                   <div style={{ background: '#f0fdf4', border: '0.5px solid #86efac', borderRadius: 6, padding: 6 }}>
                     <div style={{ fontSize: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#16a34a', marginBottom: 3 }}>{t.yourArgs}</div>
-                    {(bp.user_arguments || bp.our_arguments || []).slice(0, 3).map((a, i) => (
+                    {(bp.user_side?.strongest_arguments || bp.user_arguments || bp.our_arguments || []).slice(0, 3).map((a, i) => (
                       <div key={i} style={{ fontSize: 9, color: '#374151', padding: '2px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.4 }}>{typeof a === 'string' ? a : a.argument || a.text || ''}</div>
                     ))}
                   </div>
                   <div style={{ background: '#fff5f5', border: '0.5px solid #fca5a5', borderRadius: 6, padding: 6 }}>
                     <div style={{ fontSize: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#dc2626', marginBottom: 3 }}>{t.theirArgs}</div>
-                    {(bp.opposing_arguments || []).slice(0, 3).map((a, i) => (
+                    {(bp.opposing_side?.strongest_arguments || bp.opposing_arguments || []).slice(0, 3).map((a, i) => (
                       <div key={i} style={{ fontSize: 9, color: '#374151', padding: '2px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.4 }}>{typeof a === 'string' ? a : a.argument || a.text || ''}</div>
                     ))}
                   </div>
