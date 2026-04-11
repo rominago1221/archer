@@ -1,20 +1,32 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Briefcase, Home, Users, DollarSign, AlertCircle, Package, Star, Heart, CheckCircle, Plus, Minus } from 'lucide-react';
-import CountrySelector from '../components/CountrySelector';
-import translations, { getStoredLocale, setStoredLocale } from '../data/landingTranslations';
+import JurisdictionLanguageBar from '../components/JurisdictionLanguageBar';
+import translations, { getStoredLocale, setStoredLocale, getLocaleFromPrefs } from '../data/landingTranslations';
 
 const catIcons = [FileText, Briefcase, Home, Users, DollarSign, AlertCircle, Package, Star, Heart];
 
 const Landing = () => {
   const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState(null);
-  const [locale, setLocale] = useState(getStoredLocale());
+  const stored = getStoredLocale();
+  const [locale, setLocale] = useState(stored);
+  const [jurisdiction, setJurisdiction] = useState(stored.startsWith('be') ? 'BE' : 'US');
+  const [language, setLanguage] = useState(stored.split('-')[1] || stored.split('-')[0] || 'en');
   const t = translations[locale] || translations['us-en'];
 
-  const handleLocaleChange = (key) => {
-    setLocale(key);
-    setStoredLocale(key);
+  const handleJurisdictionChange = (j) => {
+    setJurisdiction(j);
+    const newLocale = getLocaleFromPrefs(j, language);
+    setLocale(newLocale);
+    setStoredLocale(newLocale);
+  };
+
+  const handleLanguageChange = (lang) => {
+    setLanguage(lang);
+    const newLocale = getLocaleFromPrefs(jurisdiction, lang);
+    setLocale(newLocale);
+    setStoredLocale(newLocale);
   };
 
   return (
@@ -30,7 +42,13 @@ const Landing = () => {
             <a href="#faq" className="hover:text-[#1a56db]">{t.nav.faq}</a>
           </div>
           <div className="flex items-center gap-3">
-            <CountrySelector currentLocale={locale} onSelect={handleLocaleChange} />
+            <JurisdictionLanguageBar
+              jurisdiction={jurisdiction}
+              language={language}
+              onJurisdictionChange={handleJurisdictionChange}
+              onLanguageChange={handleLanguageChange}
+              compact
+            />
             <button onClick={() => navigate('/login')} className="text-sm text-[#555] hover:text-[#1a56db]" data-testid="nav-login-btn">{t.nav.signIn}</button>
             <button onClick={() => navigate('/signup')} className="px-4 py-2 bg-[#1a56db] text-white text-sm font-medium rounded-full hover:bg-[#1546b3] transition-colors" data-testid="nav-signup-btn">{t.nav.getStarted}</button>
           </div>

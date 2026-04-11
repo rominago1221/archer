@@ -111,7 +111,8 @@ class EmailRegister(BaseModel):
     password: str
     name: str
     plan: str = "free"
-    country: str = "US"
+    country: str = "US"  # kept for backward compat
+    jurisdiction: str = "US"  # US or BE
     region: Optional[str] = None
     language: Optional[str] = None
 
@@ -131,9 +132,10 @@ class User(BaseModel):
     name: str
     picture: Optional[str] = None
     plan: str = "free"
-    country: str = "US"
+    country: str = "US"  # kept for backward compat
+    jurisdiction: str = "US"  # US or BE — determines which laws apply
     region: Optional[str] = None
-    language: str = "en"
+    language: str = "en"  # en, fr, nl, de, es — UI language only
     state_of_residence: Optional[str] = None
     phone: Optional[str] = None
     notif_risk_score: bool = True
@@ -317,6 +319,7 @@ class ProfileUpdate(BaseModel):
     phone: Optional[str] = None
     state_of_residence: Optional[str] = None
     country: Optional[str] = None
+    jurisdiction: Optional[str] = None
     region: Optional[str] = None
     language: Optional[str] = None
     notif_risk_score: Optional[bool] = None
@@ -381,7 +384,7 @@ SENIOR_ATTORNEY_PERSONA = """You are a senior attorney with 20 years of experien
 
 SPECIALIZATIONS:
 Employment law — wrongful termination, unpaid wages, discrimination, harassment, non-compete, FMLA, ADA, Title VII, FLSA
-Tenant and housing law — evictions, lease disputes, deposit returns, habitability, landlord violations, RERA (UAE), Belgian housing code
+Tenant and housing law — evictions, lease disputes, deposit returns, habitability, landlord violations, Belgian housing code
 Debt and consumer protection — FDCPA violations, debt validation, statute of limitations, FCRA, credit reporting errors, predatory lending
 Contract law — NDA, service agreements, vendor contracts, partnership agreements, breach of contract, penalty clauses
 Consumer rights — refund disputes, warranty claims, FTC violations, chargeback support, deceptive practices
@@ -398,7 +401,7 @@ Risk Score of 0 is NEVER acceptable — minimum 15/100 for any legal document
 Risk Score of 100 is reserved for imminent criminal liability only
 Every document has at least 3 findings worth identifying
 Always cite the specific clause number, article, or section from the document
-Always reference the applicable law by name — Florida Statute § 83.56, FDCPA 15 U.S.C. § 1692, UAE Labour Law Art. 51, Belgian Labour Code Art. 37
+Always reference the applicable law by name — Florida Statute § 83.56, FDCPA 15 U.S.C. § 1692, Belgian Labour Code Art. 37
 Never use legal jargon without immediately explaining it in plain English
 Always identify what is MISSING from the opposing party's document — missing elements are often the strongest defense
 Always assess the opposing party's likely goal — do they want money, possession, compliance?
@@ -433,7 +436,7 @@ Compensation and bonus entitlements
 Intellectual property assignment clauses
 Arbitration clauses that waive court rights
 At-will vs for-cause termination
-Gratuity and end of service entitlements (UAE)
+Gratuity and end of service entitlements
 Applicable labor law by jurisdiction
 
 FOR DEBT COLLECTION always analyze:
@@ -448,7 +451,7 @@ risk_score total + 4 dimensions (financial, urgency, legal_strength, complexity)
 minimum 3 findings with impact level and type
 exactly 3 next steps with action type
 deadline with exact date if present
-financial exposure in specific dollar/AED/EUR amount
+financial exposure in specific dollar/EUR amount
 applicable law reference
 recommend_lawyer boolean
 key_insight — one sentence the user must remember"""
@@ -1906,8 +1909,12 @@ def get_language_instruction(language: str) -> str:
     """Get mandatory language enforcement instruction for Claude"""
     lang_map = {
         "fr-BE": ("French", "francais"),
+        "fr": ("French", "francais"),
         "nl-BE": ("Dutch", "neerlandais/Nederlands"),
+        "nl": ("Dutch", "neerlandais/Nederlands"),
         "de-BE": ("German", "allemand/Deutsch"),
+        "de": ("German", "allemand/Deutsch"),
+        "es": ("Spanish", "espanol"),
         "en": ("English", "English"),
     }
     lang_name, native = lang_map.get(language, ("English", "English"))
@@ -2071,7 +2078,7 @@ If the case has 5+ documents spanning 30+ days, add:
 
 
 async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, user_context: str = "") -> dict:
-    """Run 5-pass analysis on combined multi-document text (US/UAE/default)"""
+    """Run 5-pass analysis on combined multi-document text (US/default)"""
     p1_supplement = get_multi_doc_pass1_supplement(doc_count, "en")
     p2_supplement = get_multi_doc_pass2_supplement(doc_count, "en")
     p3_supplement = get_multi_doc_pass3_supplement(doc_count, "en")
@@ -2475,9 +2482,9 @@ async def register_email(body: EmailRegister):
     password = body.password.strip()
     name = body.name.strip()
     plan = body.plan if body.plan in ["free", "pro"] else "free"
-    country = body.country if body.country in ["US", "BE", "AE"] else "US"
+    jurisdiction = body.jurisdiction if body.jurisdiction in ["US", "BE"] else (body.country if body.country in ["US", "BE"] else "US")
     region = body.region
-    language = body.language or ("en" if country in ["US", "AE"] else "fr-BE")
+    language = body.language or "en"
     
     if not email or not password or not name:
         raise HTTPException(status_code=400, detail="Email, password and name are required")
@@ -2499,7 +2506,8 @@ async def register_email(body: EmailRegister):
         "password_hash": password_hash,
         "auth_provider": "email",
         "plan": plan,
-        "country": country,
+        "country": jurisdiction,
+        "jurisdiction": jurisdiction,
         "region": region,
         "language": language,
         "state_of_residence": None,
@@ -2592,6 +2600,9 @@ async def login_email(body: EmailLogin):
 async def update_profile(update: ProfileUpdate, current_user: User = Depends(get_current_user)):
     """Update user profile"""
     update_data = {k: v for k, v in update.model_dump().items() if v is not None}
+    # Keep country in sync with jurisdiction
+    if "jurisdiction" in update_data:
+        update_data["country"] = update_data["jurisdiction"]
     if update_data:
         await db.users.update_one(
             {"user_id": current_user.user_id},
@@ -2782,7 +2793,7 @@ async def generate_case_brief(case_id: str, current_user: User = Depends(get_cur
     doc_count = len(docs)
 
     user_language = current_user.language or case_doc.get("language") or "en"
-    is_belgian = (current_user.country or case_doc.get("country", "US")) == "BE"
+    is_belgian = (current_user.jurisdiction or case_doc.get("country", "US")) == "BE"
 
     # Build document timeline
     doc_timeline = []
@@ -2952,7 +2963,7 @@ async def upload_document(
     # Analyze with Claude — mode-dependent + country-dependent
     analysis = None
     is_contract_guard = analysis_mode == "contract_guard"
-    user_country = current_user.country or "US"
+    user_country = current_user.jurisdiction or "US"
     user_region = current_user.region or ""
     user_language = current_user.language or "en"
     is_belgian = user_country == "BE"
@@ -3343,7 +3354,7 @@ async def generate_letter(
     }
     
     # Generate letter — use Belgian system prompt if user is Belgian
-    is_belgian = current_user.country == "BE"
+    is_belgian = current_user.jurisdiction == "BE"
     user_language = getattr(current_user, 'language', 'en') or 'en'
     letter_result = await generate_letter_with_claude(letter_data, belgian=is_belgian, language=user_language)
     
@@ -3658,7 +3669,7 @@ async def predict_outcome(case_id: str, current_user: User = Depends(get_current
                 json={
                     "model": "claude-sonnet-4-20250514",
                     "max_tokens": 2000,
-                    "system": (BELGIAN_OUTCOME_SYSTEM if current_user.country == "BE" else OUTCOME_SYSTEM_PROMPT) + get_language_instruction(getattr(current_user, 'language', 'en') or 'en'),
+                    "system": (BELGIAN_OUTCOME_SYSTEM if current_user.jurisdiction == "BE" else OUTCOME_SYSTEM_PROMPT) + get_language_instruction(getattr(current_user, 'language', 'en') or 'en'),
                     "messages": [{
                         "role": "user",
                         "content": f"Predict outcomes for this legal case. Return JSON only:\n\n{json.dumps(case_context, indent=2)}"
@@ -5038,7 +5049,7 @@ async def get_contract_guard_reviews(current_user: User = Depends(get_current_us
 @api_router.get("/user/country-config")
 async def get_country_config(current_user: User = Depends(get_current_user)):
     """Get country-specific configuration for the current user"""
-    country = current_user.country or "US"
+    country = current_user.jurisdiction or "US"
     if country == "BE":
         return {
             "country": "BE",

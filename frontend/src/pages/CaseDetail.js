@@ -174,6 +174,39 @@ const labels = {
     generatingBrief: 'Dossier erstellen...', briefDesc: 'Zusammenfassung fur externen Anwalt',
     cumulativeExposure: 'Kumulative finanzielle Belastung', scoreWas: 'war', scoreNow: 'jetzt',
   },
+  'es': {
+    riskScore: 'Puntuacion de Riesgo Jasper', riskLevel: (s) => s >= 75 ? 'RIESGO CRITICO' : s >= 50 ? 'RIESGO ALTO' : s >= 25 ? 'RIESGO MODERADO' : 'RIESGO BAJO',
+    aiAnalysis: 'Analisis IA Jasper', keyInsight: 'Insight clave',
+    keyFindings: 'Hallazgos clave', findingTypes: { critical: 'Critico', violation: 'Violacion', risk: 'Riesgo', info: 'Info', advantage: 'Ventaja' },
+    legalRef: 'Referencia legal', jurisprudence: 'Jurisprudencia',
+    nextSteps: 'Proximos pasos recomendados', priority: 'Prioridad',
+    battlePreview: 'Vista previa del litigio', yourPosition: 'Su posicion', opposingSide: 'Parte contraria',
+    outcome: 'Predictor de resultado', predictBtn: 'Predecir mi resultado', predicting: 'Analizando...',
+    scenarioLabels: { best_case: 'Mejor caso', likely: 'Probable', worst_case: 'Peor caso' },
+    deadlineAlert: (d) => d <= 0 ? 'PLAZO VENCIDO — Accion inmediata requerida' : `Accion requerida en ${d} dias`,
+    riskDimensions: { financial: 'Financiero', urgency: 'Urgencia', legal_strength: 'Fuerza legal', complexity: 'Complejidad' },
+    responseLetter: 'Cartas de Respuesta Jasper', letterDesc: 'Generar cartas de respuesta profesionales basadas en su caso.',
+    generateLetter: 'Generar carta',
+    letterLabels: { your_address: 'Su direccion', opposing_name: 'Nombre parte contraria', opposing_address: 'Direccion parte contraria', context: 'Contexto adicional' },
+    generating: 'Generando...', letterGenerated: 'Carta generada', downloadPDF: 'Descargar PDF', copyText: 'Copiar',
+    shareCase: 'Compartir caso', shareDesc: 'Crear enlace de solo lectura.',
+    expiresIn: 'Expira en', msgRecipient: 'Mensaje para destinatario (opcional)',
+    shareDisclaimer: 'Los destinatarios pueden ver su analisis pero no descargar documentos.',
+    generateLink: 'Crear enlace seguro', generatingLink: 'Creando...', linkGenerated: 'Enlace creado!',
+    linkExpires: (h) => `El enlace expira en ${h} horas`,
+    caseTimeline: 'Cronologia del caso', documents: 'Documentos', sharedLinks: 'Enlaces compartidos',
+    caseMgmt: 'Gestion del caso', activeShares: 'compartidos activos', noShares: 'Sin enlaces compartidos',
+    upload: 'Subir nuevo documento', talkLawyer: 'Hablar con un abogado',
+    caseType: (t) => ({ employment: 'Laboral', housing: 'Vivienda', debt: 'Deuda', nda: 'NDA', contract: 'Contrato', consumer: 'Consumidor', family: 'Familia', court: 'Tribunal', penal: 'Penal', commercial: 'Comercial' }[t] || t || 'Otro'),
+    multiDocTitle: (n) => `Analisis completo del caso — ${n} documentos`,
+    caseNarrative: 'Narrativa del caso', contradictions: 'Contradicciones detectadas',
+    contradictionAlert: 'Contradiccion detectada', docSays: (d) => `${d} dice:`,
+    defenseValue: 'Valor de defensa', opposingStrategy: 'Analisis estrategia adversa',
+    masterDeadlines: 'Todos los plazos', patternAnalysis: 'Analisis de patron adversario',
+    caseBrief: 'Expediente juridico', downloadBrief: 'Descargar expediente',
+    generatingBrief: 'Generando expediente...', briefDesc: 'Resumen completo para compartir con un abogado externo',
+    cumulativeExposure: 'Exposicion financiera acumulada', scoreWas: 'era', scoreNow: 'ahora',
+  },
 };
 
 // ========== RISK HISTORY CHART ==========
@@ -221,8 +254,8 @@ const CaseDetail = () => {
   const [activeShares, setActiveShares] = useState([]);
   const [generatingBrief, setGeneratingBrief] = useState(false);
 
-  const userLang = user?.language || 'en';
-  const t = labels[userLang] || labels['en'];
+  const userLang = (user?.language || 'en').replace(/-.*/, '');
+  const t = labels[userLang] || labels[user?.language] || labels['en'];
 
   const fetchCase = useCallback(async () => {
     try {

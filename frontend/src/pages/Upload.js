@@ -174,7 +174,7 @@ const Upload = () => {
   };
 
   const isContractGuard = analysisMode === 'contract_guard';
-  const isBelgian = user?.country === 'BE';
+  const isBelgian = (user?.jurisdiction || user?.country) === 'BE';
   const analysis = result?.analysis;
   const isVisionMode = result?.vision_mode;
   const isContractGuardResult = result?.analysis_mode === 'contract_guard';

@@ -6,10 +6,11 @@ import { LOCALE_OPTIONS, getStoredLocale, setStoredLocale } from '../data/landin
 
 const localeToSignup = {
   'us-en': { country: 'US', region: '', language: 'en' },
-  'ae-en': { country: 'AE', region: '', language: 'en' },
-  'be-fr': { country: 'BE', region: '', language: 'fr-BE' },
-  'be-nl': { country: 'BE', region: '', language: 'nl-BE' },
-  'be-de': { country: 'BE', region: '', language: 'de-BE' },
+  'us-es': { country: 'US', region: '', language: 'es' },
+  'be-fr': { country: 'BE', region: '', language: 'fr' },
+  'be-nl': { country: 'BE', region: '', language: 'nl' },
+  'be-de': { country: 'BE', region: '', language: 'de' },
+  'be-en': { country: 'BE', region: '', language: 'en' },
 };
 
 const Signup = () => {
@@ -23,27 +24,23 @@ const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('free');
-  const [country, setCountry] = useState(initial.country);
-  const [region, setRegion] = useState(initial.region);
-  const [language, setLanguage] = useState(initial.language);
+  const [jurisdiction, setJurisdiction] = useState(initial.country || 'US');
+  const [region, setRegion] = useState(initial.region || '');
+  const [language, setLanguage] = useState(initial.language || 'en');
   const [localError, setLocalError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   React.useEffect(() => { clearError(); }, []);
 
-  const handleCountryChange = (val) => {
-    setCountry(val);
+  const handleJurisdictionChange = (val) => {
+    setJurisdiction(val);
     setRegion('');
-    if (val === 'BE') { setLanguage('fr-BE'); setStoredLocale('be-fr'); }
-    else if (val === 'AE') { setLanguage('en'); setStoredLocale('ae-en'); }
-    else { setLanguage('en'); setStoredLocale('us-en'); }
+    if (val === 'BE') { setStoredLocale('be-fr'); }
+    else { setStoredLocale('us-en'); }
   };
 
   const handleRegionChange = (val) => {
     setRegion(val);
-    if (val === 'Flandre') { setLanguage('nl-BE'); setStoredLocale('be-nl'); }
-    else if (val === 'Communaute germanophone') { setLanguage('de-BE'); setStoredLocale('be-de'); }
-    else { setLanguage('fr-BE'); setStoredLocale('be-fr'); }
   };
 
   const handleEmailSignup = async (e) => {
@@ -52,10 +49,10 @@ const Signup = () => {
     if (!fullName.trim()) { setLocalError('Please enter your full name'); return; }
     if (!email.trim()) { setLocalError('Please enter your email'); return; }
     if (password.length < 8) { setLocalError('Password must be at least 8 characters'); return; }
-    if (country === 'BE' && !region) { setLocalError('Please select your region in Belgium'); return; }
+    if (jurisdiction === 'BE' && !region) { setLocalError('Please select your region in Belgium'); return; }
     setIsLoading(true);
     try {
-      await registerWithEmail(fullName, email, password, selectedPlan, country, region || null, language);
+      await registerWithEmail(fullName, email, password, selectedPlan, jurisdiction, region || null, language);
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setLocalError(err.message);
@@ -66,9 +63,8 @@ const Signup = () => {
 
   const displayError = localError || error;
 
-  const pricingLabel = (free, pro) => {
-    if (country === 'AE') return { free: 'AED 0 / month', pro: 'AED 249 / month' };
-    if (country === 'BE') return { free: '0 EUR / mois', pro: '65 EUR / mois' };
+  const pricingLabel = () => {
+    if (jurisdiction === 'BE') return { free: '0 EUR / mois', pro: '65 EUR / mois' };
     return { free: '$0 / month', pro: '$69 / month' };
   };
   const prices = pricingLabel();
@@ -106,51 +102,46 @@ const Signup = () => {
             <input type="password" className="form-input" placeholder="Min. 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} data-testid="signup-password-input" />
           </div>
 
-          {/* Country selector */}
+          {/* Jurisdiction selector */}
           <div>
-            <label className="form-label">Country / Pays</label>
-            <select className="form-input" value={country} onChange={(e) => handleCountryChange(e.target.value)} data-testid="signup-country-select">
-              <option value="US">United States</option>
-              <option value="AE">United Arab Emirates</option>
-              <option value="BE">Belgium / Belgique</option>
+            <label className="form-label">Legal jurisdiction</label>
+            <select className="form-input" value={jurisdiction} onChange={(e) => handleJurisdictionChange(e.target.value)} data-testid="signup-jurisdiction-select">
+              <option value="US">{'\u{1F1FA}\u{1F1F8}'} United States — US Federal + State Law</option>
+              <option value="BE">{'\u{1F1E7}\u{1F1EA}'} Belgium — Belgian Federal + Regional Law</option>
             </select>
           </div>
 
-          {/* Belgium-specific: Region + Language */}
-          {country === 'BE' && (
+          {/* Interface language selector */}
+          <div>
+            <label className="form-label">Interface language</label>
+            <select className="form-input" value={language} onChange={(e) => setLanguage(e.target.value)} data-testid="signup-language-select">
+              <option value="en">{'\u{1F1EC}\u{1F1E7}'} English</option>
+              <option value="fr">{'\u{1F1EB}\u{1F1F7}'} Fran\u00e7ais</option>
+              <option value="nl">{'\u{1F1F3}\u{1F1F1}'} Nederlands</option>
+              <option value="de">{'\u{1F1E9}\u{1F1EA}'} Deutsch</option>
+              <option value="es">{'\u{1F1EA}\u{1F1F8}'} Espa\u00f1ol</option>
+            </select>
+          </div>
+
+          {/* Belgium-specific: Region */}
+          {jurisdiction === 'BE' && (
             <>
               <div>
                 <label className="form-label">Region / Regio</label>
                 <select className="form-input" value={region} onChange={(e) => handleRegionChange(e.target.value)} data-testid="signup-region-select">
-                  <option value="">-- Choisir votre region --</option>
+                  <option value="">-- Choose your region --</option>
                   <option value="Wallonie">Wallonie</option>
                   <option value="Bruxelles-Capitale">Bruxelles-Capitale</option>
                   <option value="Flandre">Vlaanderen / Flandre</option>
                   <option value="Communaute germanophone">Communaute germanophone</option>
                 </select>
               </div>
-              <div>
-                <label className="form-label">Langue / Taal / Sprache</label>
-                <select className="form-input" value={language} onChange={(e) => setLanguage(e.target.value)} data-testid="signup-language-select">
-                  <option value="fr-BE">Francais</option>
-                  <option value="nl-BE">Nederlands</option>
-                  <option value="de-BE">Deutsch</option>
-                </select>
-              </div>
               <div className="p-3 bg-[#fffbeb] border border-[#fde68a] rounded-lg">
                 <div className="text-xs text-[#92400e]">
-                  <strong>Jasper Belgique:</strong> L'analyse juridique sera adaptee au droit belge de votre region. Jurisprudence belge, commissions paritaires et references legales belges.
+                  <strong>Jasper Belgique:</strong> Legal analysis adapted to Belgian federal and regional law.
                 </div>
               </div>
             </>
-          )}
-
-          {country === 'AE' && (
-            <div className="p-3 bg-[#eff6ff] border border-[#bfdbfe] rounded-lg">
-              <div className="text-xs text-[#1e40af]">
-                <strong>Jasper UAE:</strong> Legal analysis adapted to UAE Federal Laws, DIFC regulations, RERA guidelines, and local Emirate-level legislation.
-              </div>
-            </div>
           )}
 
           <div>
