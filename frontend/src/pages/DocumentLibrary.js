@@ -1,177 +1,114 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { FileText, Search, Send, Download, Pen, ArrowUp, Loader2, Check, Lock, Sparkles, ChevronRight, X, Shield } from 'lucide-react';
+import { FileText, Search, Send, Download, Pen, ArrowUp, Loader2, Check, Lock, ChevronRight, X, Shield, Briefcase, Home, Code, CreditCard, Users, Info } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-/* ─── helpers ─── */
-const extractDocument = (text) => {
-  const match = text.match(/<DOCUMENT>([\s\S]*?)<\/DOCUMENT>/);
-  return match ? match[1].trim() : null;
-};
+const extractDocument = (text) => { const m = text.match(/<DOCUMENT>([\s\S]*?)<\/DOCUMENT>/); return m ? m[1].trim() : null; };
+const stripDocumentTags = (text) => text.replace(/<DOCUMENT>[\s\S]*?<\/DOCUMENT>/g, '').trim();
 
-const stripDocumentTags = (text) => {
-  return text.replace(/<DOCUMENT>[\s\S]*?<\/DOCUMENT>/g, '').trim();
-};
-
-/* ─── Template data (reused from existing) ─── */
-const CAT_COLORS = {
-  employment: { bg: '#eff6ff', text: '#1d4ed8', icon: '#3b82f6' },
-  housing: { bg: '#f0fdf4', text: '#15803d', icon: '#22c55e' },
-  business: { bg: '#fef3c7', text: '#92400e', icon: '#f59e0b' },
-  nda: { bg: '#f5f3ff', text: '#6d28d9', icon: '#8b5cf6' },
-  contracts: { bg: '#f0f9ff', text: '#075985', icon: '#0ea5e9' },
-  consumer: { bg: '#fff5f5', text: '#991b1b', icon: '#ef4444' },
-  debt: { bg: '#fef2f2', text: '#991b1b', icon: '#dc2626' },
-  family: { bg: '#fdf2f8', text: '#9d174d', icon: '#ec4899' },
-  realestate: { bg: '#ecfdf5', text: '#065f46', icon: '#10b981' },
-  freelance: { bg: '#eff6ff', text: '#1e40af', icon: '#3b82f6' },
-  ip: { bg: '#f5f3ff', text: '#5b21b6', icon: '#7c3aed' },
-  court: { bg: '#f8fafc', text: '#334155', icon: '#64748b' },
-  immigration: { bg: '#fefce8', text: '#854d0e', icon: '#eab308' },
-};
-
-/* ─── Typing dots animation ─── */
-const TypingDots = () => (
-  <span className="inline-flex gap-[3px] ml-1">
-    {[0, 1, 2].map(i => (
-      <span key={i} className="w-[5px] h-[5px] rounded-full bg-[#6b7280]"
-        style={{ animation: `jasper-blink 1.4s ease-in-out ${i * 0.2}s infinite` }} />
-    ))}
-  </span>
-);
-
-/* ─── James Avatar ─── */
-const JamesAvatar = ({ size = 24 }) => (
-  <div className="flex-shrink-0 rounded-full bg-[#1a56db] flex items-center justify-center text-white font-medium"
-    style={{ width: size, height: size, fontSize: size * 0.45 }}>
-    J
+const JA = ({ s = 26 }) => (
+  <div style={{ position: 'relative', flexShrink: 0 }}>
+    <div style={{ width: s, height: s, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 600, fontSize: s * 0.42 }}>J</div>
+    <div style={{ position: 'absolute', bottom: 0, right: 0, width: 7, height: 7, borderRadius: '50%', background: '#22c55e', border: '1.5px solid #fff' }} />
   </div>
 );
 
-/* ─── Question Card ─── */
-const QuestionCard = ({ number, text, answer }) => {
-  const answered = !!answer;
-  return (
-    <div className={`flex items-start gap-2.5 px-3 py-2.5 rounded-lg border transition-colors ${answered ? 'bg-[#f0fdf4] border-[#86efac]' : 'bg-white border-[#ebebeb]'}`}
-      data-testid={`question-card-${number}`}>
-      <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0 mt-0.5 ${answered ? 'bg-[#16a34a] text-white' : 'bg-[#1a56db] text-white'}`}>
-        {answered ? <Check size={10} /> : number}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[12px] text-[#333]">{text}</div>
-        {answered && <div className="text-[10px] font-medium text-[#16a34a] mt-0.5">{answer}</div>}
-        {!answered && <div className="text-[10px] text-[#9ca3af] mt-0.5">Pending...</div>}
-      </div>
-    </div>
-  );
+const CATS = [
+  { key: 'employment', name: 'Employment', icon: Briefcase, bg: '#eff6ff', stroke: '#1a56db', count: 22 },
+  { key: 'housing', name: 'Housing', icon: Home, bg: '#f0fdf4', stroke: '#16a34a', count: 18 },
+  { key: 'nda', name: 'NDA', icon: Shield, bg: '#fdf4ff', stroke: '#7c3aed', count: 8 },
+  { key: 'business', name: 'Business', icon: FileText, bg: '#fff7ed', stroke: '#d97706', count: 20 },
+  { key: 'debt', name: 'Debt & Finance', icon: CreditCard, bg: '#fff5f5', stroke: '#dc2626', count: 10 },
+  { key: 'family', name: 'Family', icon: Users, bg: '#f0fdf4', stroke: '#16a34a', count: 12 },
+  { key: 'freelance', name: 'Freelance', icon: Code, bg: '#eff6ff', stroke: '#1a56db', count: 10 },
+  { key: 'consumer', name: 'Consumer', icon: Info, bg: '#fdf4ff', stroke: '#7c3aed', count: 12 },
+];
+
+const ALL_TEMPLATES = [
+  // Employment (22)
+  ...[['Employment Contract Full-Time','Standard full-time employment agreement'],['Employment Contract Part-Time','Part-time employment terms'],['Independent Contractor Agreement','IC agreement with scope of work'],['Freelance Services Agreement','Freelance project agreement'],['Offer Letter','Formal job offer'],['Termination Letter (With Cause)','Dismissal for cause'],['Termination Letter (Without Cause)','Termination without cause'],['Resignation Letter','Formal resignation notice'],['NDA Employee','Employee confidentiality agreement'],['Non-Compete Agreement','Post-employment non-compete'],['Non-Solicitation Agreement','Client/employee non-solicitation'],['Employee Handbook','Company policies and procedures'],['Remote Work Agreement','Remote/hybrid work terms'],['Confidentiality Agreement','General confidentiality terms'],['Performance Improvement Plan','PIP documentation'],['Warning Letter First','First written warning'],['Warning Letter Final','Final warning before termination'],['Severance Agreement','Severance terms and release'],['Reference Letter','Professional reference'],['Promotion Letter','Formal promotion notice'],['Pay Raise Letter','Salary increase confirmation'],['COBRA Notice','Health insurance continuation']].map(([n,d])=>({name:n,desc:d,cat:'employment'})),
+  // Housing (18)
+  ...[['Residential Lease Agreement','Standard residential lease'],['Commercial Lease','Commercial property lease'],['Month-to-Month Lease','Flexible monthly rental'],['Lease Renewal','Lease extension agreement'],['Lease Termination','Formal lease termination'],['Eviction Notice','Legal eviction notice'],['Security Deposit Demand','Deposit return demand'],['Roommate Agreement','Co-tenant living terms'],['Sublease Agreement','Subletting arrangement'],['Notice to Vacate','Tenant departure notice'],['Move-In Checklist','Property condition report'],['Property Management Agreement','PM services contract'],['Short-Term Rental Agreement','Airbnb/short-term lease'],['Rent Increase Notice','Formal rent increase'],['Repair Request Letter','Maintenance demand'],['Habitability Complaint','Living conditions complaint'],['Tenant Rights Letter','Tenant rights assertion'],['HOA Dispute','Homeowner association dispute']].map(([n,d])=>({name:n,desc:d,cat:'housing'})),
+  // NDA (8)
+  ...[['Mutual NDA','Two-way confidentiality'],['One-Way NDA','Unilateral disclosure'],['Employee NDA','Employer-employee NDA'],['Contractor NDA','Independent contractor NDA'],['Partnership NDA','Business partner NDA'],['Investor NDA','Investment discussions NDA'],['Technology NDA','Tech/IP disclosure NDA'],['Trade Secret Agreement','Trade secret protection']].map(([n,d])=>({name:n,desc:d,cat:'nda'})),
+  // Business (20)
+  ...[['Partnership Agreement','Business partnership terms'],['Operating Agreement LLC','LLC operating agreement'],['Shareholder Agreement','Shareholder rights & duties'],['Business Sale Agreement','Sale of business terms'],['Asset Purchase Agreement','Asset acquisition terms'],['Letter of Intent','Preliminary deal terms'],['MOU','Memorandum of Understanding'],['Consulting Agreement','Consulting engagement terms'],['Services Agreement','Professional services contract'],['Software License Agreement','Software licensing terms'],['SaaS Agreement','SaaS subscription terms'],['Terms of Service','Website/app ToS'],['Privacy Policy','Data privacy policy'],['Vendor Agreement','Vendor supply contract'],['Distribution Agreement','Product distribution terms'],['Joint Venture Agreement','JV partnership terms'],['Franchise Agreement','Franchise operations terms'],['Non-Solicitation Business','Business non-solicitation'],['Buy-Sell Agreement','Business buyout terms'],['IP Assignment','IP ownership transfer']].map(([n,d])=>({name:n,desc:d,cat:'business'})),
+  // Freelance (10)
+  ...[['Freelance Contract','General freelance agreement'],['Project Proposal','Formal project proposal'],['Statement of Work','Detailed scope of work'],['Creative Brief','Creative project brief'],['Photography Contract','Photography services'],['Web Design Contract','Web development terms'],['Content Creation Agreement','Content production terms'],['Social Media Contract','Social media management'],['Video Production Agreement','Video production terms'],['Coaching Agreement','Professional coaching terms']].map(([n,d])=>({name:n,desc:d,cat:'freelance'})),
+  // Consumer (12)
+  ...[['Demand Letter General','General legal demand'],['Demand Letter Payment','Payment demand notice'],['Consumer Complaint','Formal consumer complaint'],['Insurance Appeal Letter','Insurance claim appeal'],['Insurance Bad Faith Letter','Bad faith claim notice'],['Warranty Claim','Product warranty claim'],['Refund Demand','Refund request letter'],['Product Liability Letter','Product defect claim'],['Service Complaint','Service quality complaint'],['FDCPA Dispute','Debt collection dispute'],['Credit Dispute Letter','Credit report dispute'],['Identity Theft Affidavit','Identity theft report']].map(([n,d])=>({name:n,desc:d,cat:'consumer'})),
+  // Debt (10)
+  ...[['Debt Validation Letter','Debt verification request'],['Cease and Desist Debt','Stop collection demand'],['Payment Plan Agreement','Structured payment terms'],['Promissory Note','Formal promise to pay'],['Loan Agreement','Personal/business loan'],['Bill of Sale','Property sale receipt'],['Invoice Dispute','Invoice challenge letter'],['Debt Settlement Agreement','Reduced payment agreement'],['Bankruptcy Exemption Letter','Exemption claim letter'],['Judgment Satisfaction','Judgment paid confirmation']].map(([n,d])=>({name:n,desc:d,cat:'debt'})),
+  // Family (12)
+  ...[['Divorce Agreement','Divorce settlement terms'],['Child Custody Agreement','Custody arrangement'],['Child Support Agreement','Support payment terms'],['Prenuptial Agreement','Pre-marriage agreement'],['Cohabitation Agreement','Living together terms'],['Power of Attorney','Legal authority delegation'],['Healthcare Proxy','Medical decision authority'],['Living Will','End-of-life directives'],['Last Will and Testament','Estate distribution'],['Trust Agreement','Trust creation document'],['Guardianship Agreement','Guardian designation'],['Adoption Agreement','Adoption terms and consent']].map(([n,d])=>({name:n,desc:d,cat:'family'})),
+  // Real Estate (10)
+  ...[['Real Estate Purchase Agreement','Property purchase contract'],['Counter Offer Letter','Purchase counter-offer'],['Seller Disclosure','Property condition disclosure'],['Home Inspection Contingency','Inspection condition clause'],['Earnest Money Agreement','Good faith deposit terms'],['Title Dispute','Title ownership dispute'],['Boundary Dispute Letter','Property boundary claim'],['Easement Agreement','Property access rights'],['Quitclaim Deed','Property interest transfer'],['Mortgage Dispute','Mortgage issue complaint']].map(([n,d])=>({name:n,desc:d,cat:'realestate'})),
+  // IP (8)
+  ...[['Copyright Assignment','Copyright transfer'],['Trademark License','Trademark usage license'],['Patent License','Patent usage agreement'],['Work-for-Hire Agreement','IP ownership for hire'],['Open Source License','Open source terms'],['Domain Transfer Agreement','Domain name transfer'],['IP Indemnification','IP liability protection'],['Trade Secret IP','Trade secret assignment']].map(([n,d])=>({name:n,desc:d,cat:'ip'})),
+  // Court (8)
+  ...[['Cease and Desist','General C&D letter'],['Demand for Jury Trial','Jury trial request'],['Small Claims Statement','Small claims filing'],['Witness Statement','Formal witness account'],['Affidavit','Sworn statement'],['Subpoena Response','Subpoena reply letter'],['Court Complaint Letter','Formal court complaint'],['Motion to Dismiss Request','Dismissal request']].map(([n,d])=>({name:n,desc:d,cat:'court'})),
+  // Immigration (5)
+  ...[['Employment Sponsorship Letter','Visa sponsorship support'],['Support Letter','Immigration support'],['Invitation Letter','Visitor invitation'],['Character Reference Letter','Character reference'],['Naturalization Support Letter','Citizenship support']].map(([n,d])=>({name:n,desc:d,cat:'immigration'})),
+];
+
+const FILTER_PILLS = ['all','employment','housing','nda','business','freelance','consumer','debt','family','realestate','ip','court','immigration'];
+const FILTER_LABELS = {all:'All',employment:'Employment',housing:'Housing',nda:'NDA',business:'Business',freelance:'Freelance',consumer:'Consumer',debt:'Debt',family:'Family',realestate:'Real Estate',ip:'IP',court:'Court',immigration:'Immigration'};
+
+const SUGGESTIONS = {
+  en: ['I need an NDA', 'Create a lease agreement', 'Draft a freelance contract', 'Write a demand letter'],
+  fr: ["J'ai besoin d'un CDI", 'Créer un bail', 'Rédiger une lettre de licenciement', 'Contrat freelance'],
+  nl: ['Ik heb een NDA nodig', 'Huurovereenkomst maken', 'Freelance contract opstellen', 'Aanmaningsbrief schrijven'],
 };
 
-/* ─── Document Preview Card ─── */
-const DocumentPreviewCard = ({ content, docId, onEdit, onDownload, onSign }) => {
+const DocumentPreviewCard = ({ content, onEdit, onDownload, onSign }) => {
   const lines = content.split('\n').filter(l => l.trim());
   const title = lines.find(l => l.startsWith('#'))?.replace(/^#+\s*/, '') || 'Legal Document';
-  const clauses = lines.filter(l => /^\d+[\.\)]|^##\s|^Article|^Section|^Clause/i.test(l.trim()));
-  const previewClauses = clauses.slice(0, 3);
-  const remaining = clauses.length > 3 ? clauses.slice(3) : [];
-
+  const clauses = lines.filter(l => /^\d+[\.\)]|^##\s|^Article|^Section|^Clause/i.test(l.trim())).slice(0, 3);
   return (
-    <div className="bg-white border border-[#ebebeb] rounded-xl p-3.5 mt-2" data-testid="document-preview-card">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-2.5">
-        <div className="flex items-start gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#eff6ff] flex items-center justify-center flex-shrink-0">
-            <FileText size={14} className="text-[#1a56db]" />
-          </div>
-          <div>
-            <div className="text-[13px] font-semibold text-[#111827] leading-tight">{title}</div>
-            <div className="text-[11px] text-[#6b7280] mt-0.5">Draft</div>
-          </div>
+    <div style={{ background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 10, padding: 14, marginTop: 8 }} data-testid="document-preview-card">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 7, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FileText size={13} color="#1a56db" /></div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#1a1a2e' }}>{title}</div>
         </div>
-        <span className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-[#f0fdf4] text-[#16a34a] border border-[#86efac] flex-shrink-0">
-          Ready to sign
-        </span>
+        <span style={{ padding: '2px 8px', borderRadius: 10, fontSize: 9, fontWeight: 600, background: '#f0fdf4', color: '#16a34a', border: '0.5px solid #86efac' }}>Ready to sign</span>
       </div>
-
-      {/* Body preview */}
-      <div className="text-[11px] text-[#555] leading-[1.7] mb-3 pl-0.5">
-        {previewClauses.map((c, i) => (
-          <div key={i} className="truncate">{c.replace(/^#+\s*/, '')}</div>
-        ))}
-        {remaining.length > 0 && (
-          <div className="text-[11px] text-[#9ca3af] italic mt-1">
-            + {remaining.length} more clauses: {remaining.slice(0, 4).map(c => c.replace(/^#+\s*|^\d+[\.\)]\s*/g, '').slice(0, 30)).join(', ')}...
-          </div>
-        )}
+      <div style={{ fontSize: 10, color: '#6b7280', lineHeight: 1.6, marginBottom: 10 }}>{clauses.map((c, i) => <div key={i}>{c.replace(/^#+\s*/, '')}</div>)}</div>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+        <button onClick={onSign} data-testid="doc-send-signature" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '7px 0', borderRadius: 20, fontSize: 10, fontWeight: 600, background: '#1a56db', color: '#fff', border: 'none', cursor: 'pointer' }}><Send size={10} />Send for signature</button>
+        <button onClick={onDownload} data-testid="doc-download-pdf" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '7px 0', borderRadius: 20, fontSize: 10, fontWeight: 500, background: '#fff', color: '#1a56db', border: '0.5px solid #1a56db', cursor: 'pointer' }}><Download size={10} />Download PDF</button>
+        <button onClick={onEdit} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 12px', borderRadius: 20, fontSize: 10, fontWeight: 500, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}><Pen size={10} />Edit</button>
       </div>
-
-      {/* Action buttons */}
-      <div className="flex gap-2 mb-2.5">
-        <button onClick={onSign} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-medium bg-[#1a56db] text-white hover:bg-[#1546b3] transition-colors" data-testid="doc-send-signature">
-          <Send size={11} /> Send for signature
-        </button>
-        <button onClick={onDownload} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-medium border border-[#1a56db] text-[#1a56db] hover:bg-[#eff6ff] transition-colors" data-testid="doc-download-pdf">
-          <Download size={11} /> Download PDF
-        </button>
-        <button onClick={onEdit} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-medium text-[#6b7280] hover:bg-[#f5f5f5] transition-colors" data-testid="doc-edit-james">
-          <Pen size={11} /> Edit with James
-        </button>
-      </div>
-
-      {/* HelloSign badge */}
-      <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#f0fdf4] border border-[#86efac]">
-        <Shield size={11} className="text-[#16a34a]" />
-        <span className="text-[10px] text-[#16a34a] font-medium">HelloSign e-signature &middot; Legally binding &middot; Both parties notified</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 8px', borderRadius: 7, background: '#f0fdf4', border: '0.5px solid #86efac' }}>
+        <Shield size={10} color="#16a34a" /><span style={{ fontSize: 9, color: '#16a34a', fontWeight: 500 }}>HelloSign · Legally binding · Both parties notified</span>
       </div>
     </div>
   );
 };
 
-/* ─── Sign Modal ─── */
 const SignModal = ({ onClose, onSend, loading }) => {
   const [signers, setSigners] = useState([{ name: '', email: '' }]);
   const [message, setMessage] = useState('');
-
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" data-testid="sign-modal-overlay">
-      <div className="bg-white rounded-2xl max-w-md w-full p-5" data-testid="sign-modal">
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-sm font-semibold text-[#111827]">Who needs to sign this document?</div>
-          <button onClick={onClose}><X size={16} className="text-[#999]" /></button>
-        </div>
-        <div className="space-y-2.5 mb-3">
-          {signers.map((s, i) => (
-            <div key={i} className="grid grid-cols-2 gap-2">
-              <input className="form-input text-xs py-2" placeholder="Full name" value={s.name}
-                onChange={(e) => { const n = [...signers]; n[i].name = e.target.value; setSigners(n); }}
-                data-testid={`signer-name-${i}`} />
-              <input className="form-input text-xs py-2" placeholder="Email address" value={s.email}
-                onChange={(e) => { const n = [...signers]; n[i].email = e.target.value; setSigners(n); }}
-                data-testid={`signer-email-${i}`} />
-            </div>
-          ))}
-        </div>
-        <button onClick={() => setSigners([...signers, { name: '', email: '' }])} className="text-[11px] text-[#1a56db] hover:underline mb-3" data-testid="add-signer-btn">
-          + Add another signer
-        </button>
-        <textarea className="form-input text-xs py-2 mb-3" rows={2} placeholder="Add a message for signers (optional)"
-          value={message} onChange={(e) => setMessage(e.target.value)} data-testid="sign-message" />
-        <button onClick={() => onSend(signers.filter(s => s.name && s.email), message)} disabled={loading}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs font-medium bg-[#1a56db] text-white hover:bg-[#1546b3] transition-colors disabled:opacity-60"
-          data-testid="confirm-sign-btn">
-          {loading ? <Loader2 size={14} className="animate-spin" /> : <Send size={12} />}
-          Send for signature
-        </button>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
+      <div data-testid="sign-modal" style={{ background: '#fff', borderRadius: 16, maxWidth: 420, width: '100%', padding: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}><div style={{ fontSize: 13, fontWeight: 600 }}>Who needs to sign?</div><button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={16} color="#999" /></button></div>
+        {signers.map((s, i) => (<div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 6 }}><input placeholder="Full name" value={s.name} onChange={e => { const n = [...signers]; n[i].name = e.target.value; setSigners(n); }} style={{ padding: '7px 10px', fontSize: 11, border: '0.5px solid #e2e0db', borderRadius: 7 }} data-testid={`signer-name-${i}`} /><input placeholder="Email" value={s.email} onChange={e => { const n = [...signers]; n[i].email = e.target.value; setSigners(n); }} style={{ padding: '7px 10px', fontSize: 11, border: '0.5px solid #e2e0db', borderRadius: 7 }} data-testid={`signer-email-${i}`} /></div>))}
+        <button onClick={() => setSigners([...signers, { name: '', email: '' }])} style={{ fontSize: 10, color: '#1a56db', background: 'none', border: 'none', cursor: 'pointer', marginBottom: 8 }}>+ Add signer</button>
+        <textarea placeholder="Message for signers (optional)" value={message} onChange={e => setMessage(e.target.value)} style={{ width: '100%', padding: '7px 10px', fontSize: 11, border: '0.5px solid #e2e0db', borderRadius: 7, resize: 'vertical', minHeight: 50, marginBottom: 10 }} data-testid="sign-message" />
+        <button onClick={() => onSend(signers.filter(s => s.name && s.email), message)} disabled={loading} data-testid="confirm-sign-btn" style={{ width: '100%', padding: '10px 0', borderRadius: 20, fontSize: 11, fontWeight: 600, background: '#1a56db', color: '#fff', border: 'none', cursor: 'pointer' }}>{loading ? 'Sending...' : 'Send for signature'}</button>
       </div>
     </div>
   );
 };
 
-/* ─── Main Component ─── */
+/* ═══ MAIN COMPONENT ═══ */
 const DocumentLibrary = () => {
   const { user } = useAuth();
-  const [mode, setMode] = useState('generate'); // 'generate' | 'browse'
+  const lang = (user?.language || 'en').replace(/-.*/, '');
+  const [mode, setMode] = useState(() => localStorage.getItem('jasper_doc_mode') || 'generate');
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -182,456 +119,234 @@ const DocumentLibrary = () => {
   const [signModal, setSignModal] = useState(false);
   const [signLoading, setSignLoading] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
-  const [suggestions, setSuggestions] = useState([
-    'I need an NDA', 'Create a lease agreement', 'Draft a freelance contract', 'Write a demand letter'
-  ]);
-
-  // Browse mode state
-  const [templates, setTemplates] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [activeCat, setActiveCat] = useState('all');
-  const [search, setSearch] = useState('');
-  const [browseLoading, setBrowseLoading] = useState(false);
-
+  const [browseFilter, setBrowseFilter] = useState('all');
+  const [browseSearch, setBrowseSearch] = useState('');
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
   const isPro = user?.plan === 'pro';
+  const suggestions = SUGGESTIONS[lang] || SUGGESTIONS.en;
 
-  const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => { scrollToBottom(); }, [messages, sending]);
-
-  // Fetch recent docs
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, sending]);
+  useEffect(() => { localStorage.setItem('jasper_doc_mode', mode); }, [mode]);
   useEffect(() => {
-    const fetchRecent = async () => {
-      try {
-        const res = await axios.get(`${API}/documents/james/recent`, { withCredentials: true });
-        setRecentDocs(res.data);
-      } catch (e) { /* ok */ }
-    };
-    fetchRecent();
+    (async () => { try { const r = await axios.get(`${API}/documents/james/recent`, { withCredentials: true }); setRecentDocs(r.data); } catch {} })();
   }, [latestDocId]);
-
-  // Fetch templates when switching to browse mode
-  const fetchTemplates = useCallback(async () => {
-    setBrowseLoading(true);
-    try {
-      const res = await axios.get(`${API}/library/templates`, {
-        params: { category: activeCat, search },
-        withCredentials: true
-      });
-      setTemplates(res.data.templates);
-      if (!categories.length) setCategories(res.data.categories);
-    } catch (e) { /* ok */ }
-    setBrowseLoading(false);
-  }, [activeCat, search, categories.length]);
-
-  useEffect(() => {
-    if (mode === 'browse') fetchTemplates();
-  }, [mode, fetchTemplates]);
 
   const sendMessage = async (text) => {
     if (!text.trim() || sending || limitReached) return;
-    const userMsg = { role: 'user', content: text };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages(p => [...p, { role: 'user', content: text }]);
     setInput('');
     setSending(true);
-
     try {
-      const res = await axios.post(`${API}/documents/james/send`, {
-        message: text,
-        conversation_id: convId
-      }, { withCredentials: true });
-
-      if (res.data.limit_reached) {
-        setLimitReached(true);
-        setMessages(prev => [...prev, { role: 'assistant', content: res.data.response, limit: true }]);
-        setSending(false);
-        return;
-      }
-
-      setConvId(res.data.conversation_id);
-
-      const aiContent = res.data.response;
-      const docContent = res.data.document_content;
-      const aiMsg = { role: 'assistant', content: aiContent, document: docContent, docId: res.data.doc_id };
-      setMessages(prev => [...prev, aiMsg]);
-
-      if (docContent) {
-        setLatestDocContent(docContent);
-        setLatestDocId(res.data.doc_id);
-        setSuggestions(['Make the term longer', 'Add a penalty clause', 'Make it one-way', 'Translate to French']);
-      }
-    } catch (err) {
-      const errMsg = err.response?.data?.detail || 'Something went wrong. Please try again.';
-      setMessages(prev => [...prev, { role: 'assistant', content: errMsg }]);
-    }
+      const r = await axios.post(`${API}/documents/james/send`, { message: text, conversation_id: convId }, { withCredentials: true });
+      if (r.data.limit_reached) { setLimitReached(true); setMessages(p => [...p, { role: 'assistant', content: r.data.response, limit: true }]); setSending(false); return; }
+      setConvId(r.data.conversation_id);
+      const doc = r.data.document_content;
+      setMessages(p => [...p, { role: 'assistant', content: r.data.response, document: doc, docId: r.data.doc_id }]);
+      if (doc) { setLatestDocContent(doc); setLatestDocId(r.data.doc_id); }
+    } catch (e) { setMessages(p => [...p, { role: 'assistant', content: e.response?.data?.detail || 'Something went wrong.' }]); }
     setSending(false);
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage(input);
-    }
-  };
+  const handleKeyDown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input); } };
+  const handleDownloadPdf = () => { if (!latestDocContent) return; const w = window.open('', '_blank'); w.document.write(`<html><head><title>Document</title><style>body{font-family:Georgia,serif;max-width:800px;margin:40px auto;padding:20px;line-height:1.8}pre{white-space:pre-wrap}</style></head><body><pre>${latestDocContent}</pre></body></html>`); w.document.close(); w.print(); };
+  const handleSign = async (signers, msg) => { if (!signers.length || !latestDocId) return; setSignLoading(true); try { await axios.post(`${API}/library/sign`, { doc_id: latestDocId, signers, message: msg }, { withCredentials: true }); setSignModal(false); setMessages(p => [...p, { role: 'system', content: 'Signature request sent.' }]); } catch (e) { alert(e.response?.data?.detail || 'Failed'); } setSignLoading(false); };
+  const startNew = () => { setMessages([]); setConvId(null); setLatestDocContent(null); setLatestDocId(null); setLimitReached(false); };
+  const switchToGenerate = (name) => { setMode('generate'); setInput(`I need a ${name}`); setTimeout(() => inputRef.current?.focus(), 100); };
 
-  const handleDownloadPdf = () => {
-    if (!latestDocContent) return;
-    const win = window.open('', '_blank');
-    win.document.write(`<html><head><title>Legal Document</title><style>body{font-family:Georgia,serif;max-width:800px;margin:40px auto;padding:20px;line-height:1.8;color:#111}h1,h2,h3{font-family:-apple-system,sans-serif}pre{white-space:pre-wrap}</style></head><body><pre>${latestDocContent}</pre></body></html>`);
-    win.document.close();
-    win.print();
-  };
+  const filteredTemplates = ALL_TEMPLATES.filter(t => {
+    if (browseFilter !== 'all' && t.cat !== browseFilter) return false;
+    if (browseSearch && !t.name.toLowerCase().includes(browseSearch.toLowerCase()) && !t.desc.toLowerCase().includes(browseSearch.toLowerCase())) return false;
+    return true;
+  });
 
-  const handleSendSignature = async (signers, message) => {
-    if (!signers.length || !latestDocId) return;
-    setSignLoading(true);
-    try {
-      await axios.post(`${API}/library/sign`, {
-        doc_id: latestDocId, signers, message
-      }, { withCredentials: true });
-      setSignModal(false);
-      setMessages(prev => [...prev, { role: 'system', content: 'Signature request sent successfully.' }]);
-    } catch (err) {
-      alert(err.response?.data?.detail || 'Signature request failed');
-    }
-    setSignLoading(false);
-  };
-
-  const handleEditWithJames = () => {
-    inputRef.current?.focus();
-  };
-
-  const switchToGenerateWithTemplate = (templateName) => {
-    setMode('generate');
-    setInput(`I need a ${templateName}`);
-    setTimeout(() => inputRef.current?.focus(), 100);
-  };
-
-  const startNewConversation = () => {
-    setMessages([]);
-    setConvId(null);
-    setLatestDocContent(null);
-    setLatestDocId(null);
-    setLimitReached(false);
-    setSuggestions(['I need an NDA', 'Create a lease agreement', 'Draft a freelance contract', 'Write a demand letter']);
-  };
-
-  // Parse question cards from James messages (multilingual: EN/FR/NL/DE/ES)
-  const parseQuestions = (allMessages) => {
-    const questions = [];
-    // Match: "Question 1 of 4:", "Question 1 sur 4 :", "Vraag 1 van 4:", "Frage 1 von 4:", "Pregunta 1 de 4:"
-    const qRegex = /(?:Question|Vraag|Frage|Pregunta)\s+(\d+)\s+(?:of|sur|van|von|de)\s+(\d+)\s*[:\-–—]\s*(.+?)(?:\n|$)/i;
-    for (const msg of allMessages) {
-      if (msg.role === 'assistant') {
-        const qMatch = msg.content.match(qRegex);
-        if (qMatch) {
-          questions.push({ number: parseInt(qMatch[1]), total: parseInt(qMatch[2]), text: qMatch[3].trim(), answer: null });
-        }
-      }
-      if (msg.role === 'user' && questions.length > 0) {
-        const lastUnanswered = questions.findLast(q => !q.answer);
-        if (lastUnanswered) lastUnanswered.answer = msg.content;
-      }
-    }
-    return questions;
-  };
-
-  const questions = parseQuestions(messages);
-
-  /* ─── RENDER ─── */
   return (
-    <div data-testid="document-creator-page" className="-m-7">
-      <div className="border border-[#ebebeb] rounded-2xl bg-white flex overflow-hidden" style={{ minHeight: '620px' }}>
-
-        {/* ─── LEFT SIDEBAR ─── */}
-        <div className="w-[200px] flex-shrink-0 border-r border-[#ebebeb] bg-[#fafafa] flex flex-col" data-testid="doc-sidebar">
-          <div className="p-4 pb-3">
-            <div className="text-[13px] font-semibold text-[#111827] mb-3">Document Creator</div>
-
-            {/* Mode buttons */}
-            <button onClick={() => { setMode('generate'); }} data-testid="mode-generate"
-              className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-medium mb-1.5 transition-all ${mode === 'generate' ? 'bg-white border border-[#ebebeb] text-[#1a56db] shadow-sm' : 'text-[#6b7280] hover:bg-white'}`}>
-              <Sparkles size={12} className={mode === 'generate' ? 'text-[#1a56db]' : 'text-[#9ca3af]'} />
-              Generate any document
-            </button>
-            <button onClick={() => setMode('browse')} data-testid="mode-browse"
-              className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-medium transition-all ${mode === 'browse' ? 'bg-white border border-[#ebebeb] text-[#1a56db] shadow-sm' : 'text-[#6b7280] hover:bg-white'}`}>
-              <Search size={12} className={mode === 'browse' ? 'text-[#1a56db]' : 'text-[#9ca3af]'} />
-              Browse 158 templates
-            </button>
-          </div>
-
-          <div className="border-t border-[#ebebeb] mx-3" />
-
-          {/* Recent documents */}
-          <div className="p-4 pt-3 flex-1 overflow-y-auto">
-            <div className="text-[10px] font-medium text-[#9ca3af] uppercase tracking-wider mb-2">Recent documents</div>
-            {recentDocs.length === 0 && (
-              <div className="text-[10px] text-[#bbb] italic">No documents yet</div>
-            )}
-            {recentDocs.map((doc) => (
-              <div key={doc.doc_id} className="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-white rounded px-1 -mx-1 transition-colors" data-testid={`recent-doc-${doc.doc_id}`}>
-                <FileText size={11} className="text-[#9ca3af] flex-shrink-0" />
-                <span className="text-[10px] text-[#555] truncate">{doc.document_title || 'Untitled'}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* New conversation button */}
-          {mode === 'generate' && messages.length > 0 && (
-            <div className="p-3 border-t border-[#ebebeb]">
-              <button onClick={startNewConversation} className="w-full text-[10px] font-medium text-[#1a56db] hover:underline" data-testid="new-conversation-btn">
-                + New document
-              </button>
-            </div>
-          )}
+    <div data-testid="document-library-page" style={{ position: 'fixed', inset: 0, display: 'grid', gridTemplateColumns: '220px 1fr', background: '#f8f7f4', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+      {/* ═══ LEFT SIDEBAR ═══ */}
+      <div style={{ background: '#fafaf8', borderRight: '0.5px solid #e2e0db', display: 'flex', flexDirection: 'column' }} data-testid="doc-sidebar">
+        <div style={{ padding: '16px 14px 12px', borderBottom: '0.5px solid #e2e0db' }}>
+          <div style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.5px', color: '#1a1a2e', marginBottom: 14, cursor: 'pointer' }} onClick={() => window.location.href = '/'}>Jas<span style={{ color: '#1a56db' }}>per</span></div>
+          <button onClick={() => { setMode('generate'); }} data-testid="mode-generate"
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', borderRadius: 8, fontSize: 12, border: mode === 'generate' ? '0.5px solid #e2e0db' : '0.5px solid transparent', background: mode === 'generate' ? '#fff' : 'transparent', color: mode === 'generate' ? '#1a56db' : '#6b7280', fontWeight: mode === 'generate' ? 500 : 400, cursor: 'pointer', marginBottom: 4 }}>
+            <Pen size={13} color={mode === 'generate' ? '#1a56db' : '#9ca3af'} />Generate any document
+          </button>
+          <button onClick={() => setMode('browse')} data-testid="mode-browse"
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', borderRadius: 8, fontSize: 12, border: mode === 'browse' ? '0.5px solid #e2e0db' : '0.5px solid transparent', background: mode === 'browse' ? '#fff' : 'transparent', color: mode === 'browse' ? '#1a56db' : '#6b7280', fontWeight: mode === 'browse' ? 500 : 400, cursor: 'pointer', justifyContent: 'space-between' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 9 }}><Search size={13} color={mode === 'browse' ? '#1a56db' : '#9ca3af'} />Browse templates</span>
+            <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 8, background: '#f3f4f6', color: '#9ca3af' }}>158</span>
+          </button>
         </div>
+        <div style={{ padding: '12px 14px', flex: 1, overflowY: 'auto' }}>
+          <div style={{ fontSize: 9, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 8 }}>Recent documents</div>
+          {recentDocs.length === 0 && <div style={{ fontSize: 10, color: '#bbb', fontStyle: 'italic' }}>No documents yet</div>}
+          {recentDocs.slice(0, 3).map(doc => (
+            <div key={doc.doc_id} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 4px', cursor: 'pointer', borderRadius: 5 }} data-testid={`recent-doc-${doc.doc_id}`}>
+              <div style={{ width: 20, height: 20, borderRadius: 4, background: '#fff', border: '0.5px solid #e2e0db', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FileText size={9} color="#9ca3af" /></div>
+              <span style={{ fontSize: 11, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.document_title || 'Untitled'}</span>
+            </div>
+          ))}
+        </div>
+        {mode === 'generate' && messages.length > 0 && (
+          <div style={{ padding: '10px 14px', borderTop: '0.5px solid #e2e0db' }}>
+            <button onClick={startNew} data-testid="new-conversation-btn" style={{ width: '100%', fontSize: 10, fontWeight: 600, color: '#1a56db', background: 'none', border: 'none', cursor: 'pointer' }}>+ New document</button>
+          </div>
+        )}
+      </div>
 
-        {/* ─── MAIN AREA ─── */}
-        <div className="flex-1 flex flex-col min-w-0">
-
-          {mode === 'generate' ? (
-            <>
-              {/* ── Page Title ── */}
-              <div className="px-6 pt-5 pb-0">
-                <h1 className="text-[22px] font-medium tracking-tight leading-[1.15] text-[#111827]" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', letterSpacing: '-0.8px' }}>
-                  Generate any document —<br />
-                  just describe <em className="not-italic text-[#1a56db]">what you need.</em>
-                </h1>
-                <p className="text-[13px] text-[#6b7280] mt-1.5">James drafts it in seconds. Ready to sign.</p>
-              </div>
-
-              {/* ── James Identity Bar ── */}
-              <div className="mx-6 mt-3 mb-3 px-3.5 py-2.5 rounded-xl bg-[#fafafa] border border-[#ebebeb] flex items-center gap-3" data-testid="james-identity-bar">
-                <JamesAvatar size={30} />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[12px] font-medium text-[#111827]">James</div>
-                  <div className="text-[10px] text-[#6b7280]">Senior Legal Advisor &middot; 20 years experience</div>
+      {/* ═══ MAIN AREA ═══ */}
+      <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {mode === 'generate' ? (
+          <>
+            {/* Header */}
+            <div style={{ padding: '28px 32px 0' }}>
+              <h1 style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.7px', lineHeight: 1.1, color: '#1a1a2e', margin: 0 }}>
+                Generate any document —<br />just describe <em style={{ fontStyle: 'normal', color: '#1a56db' }}>what you need.</em>
+              </h1>
+              <p style={{ fontSize: 13, color: '#6b7280', margin: '6px 0 18px' }}>James drafts it in seconds. Ready to sign.</p>
+              {/* James strip */}
+              <div style={{ background: '#fafaf8', border: '0.5px solid #e2e0db', borderRadius: 9, padding: '9px 13px', display: 'flex', alignItems: 'center', gap: 10 }} data-testid="james-identity-bar">
+                <JA />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, fontWeight: 500, color: '#1a1a2e' }}>James · Senior Legal Advisor</div>
+                  <div style={{ fontSize: 10, color: '#6b7280' }}>20 years experience · 847K+ legal sources</div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="px-2 py-0.5 rounded-full text-[9px] text-[#6b7280] bg-[#f0f0f0] border border-[#e5e5e5]">847K+ legal sources</span>
-                  <span className="px-2 py-0.5 rounded-full text-[9px] text-[#6b7280] bg-[#f0f0f0] border border-[#e5e5e5]">US + Belgium</span>
-                  <div className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
-                    <span className="text-[10px] text-[#6b7280]">Available now</span>
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', animation: 'pulse 2s infinite' }} />
+                  <span style={{ fontSize: 10, color: '#16a34a', fontWeight: 500 }}>Available now</span>
                 </div>
               </div>
+            </div>
 
-              {/* ── Chat Messages ── */}
-              <div className="flex-1 overflow-y-auto px-6 pb-2" data-testid="chat-messages-area">
-                {/* Opening message if no messages yet */}
-                {messages.length === 0 && (
-                  <div className="flex gap-2.5 mb-4" data-testid="james-opening-message">
-                    <JamesAvatar />
-                    <div className="max-w-[85%] px-3.5 py-2.5 rounded-[2px_12px_12px_12px] bg-[#fafafa] border border-[#ebebeb] text-[13px] text-[#333] leading-relaxed">
-                      Tell me what document you need — in plain English. I'll ask you a few questions and generate a complete, legally sound document adapted to your situation.
-                      <div className="mt-2 text-[12px] text-[#6b7280]">
-                        Examples: <span className="text-[#333]">'I need an NDA for a new business partner'</span> &middot; <span className="text-[#333]">'Create a lease for my apartment in New York'</span> &middot; <span className="text-[#333]">'I want a freelance contract for a web project'</span>
-                      </div>
+            {/* Chat area */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '18px 32px' }} data-testid="chat-messages-area">
+              {messages.length === 0 && (
+                <>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 14 }} data-testid="james-opening-message">
+                    <JA />
+                    <div style={{ maxWidth: '85%', padding: '11px 14px', borderRadius: '3px 12px 12px 12px', background: '#fafaf8', border: '0.5px solid #e2e0db', fontSize: 12, color: '#374151', lineHeight: 1.65 }}>
+                      Tell me what document you need — in plain English. I'll ask a few questions and generate a complete, legally sound document.
+                      <div style={{ marginTop: 6 }}><span style={{ color: '#1a56db', fontWeight: 500 }}>Examples:</span> 'I need an NDA for a new partner' · 'Create a lease in New York' · 'Write a freelance contract'</div>
                     </div>
                   </div>
-                )}
-
-                {/* Messages */}
-                {messages.map((msg, idx) => {
-                  if (msg.role === 'system') {
-                    return (
-                      <div key={idx} className="text-center text-[11px] text-[#16a34a] my-2 font-medium" data-testid={`system-msg-${idx}`}>
-                        {msg.content}
-                      </div>
-                    );
-                  }
-
-                  if (msg.role === 'user') {
-                    return (
-                      <div key={idx} className="flex justify-end mb-3" data-testid={`user-msg-${idx}`}>
-                        <div className="max-w-[70%] px-3.5 py-2.5 rounded-[12px_2px_12px_12px] bg-[#1a56db] text-white text-[13px] leading-relaxed">
-                          {msg.content}
+                  {/* Category grid */}
+                  <div style={{ paddingLeft: 34 }}>
+                    <div style={{ fontSize: 10, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>Or pick a category</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 7 }}>
+                      {CATS.map(c => (
+                        <div key={c.key} onClick={() => sendMessage(`I need a ${c.name.toLowerCase()} document`)} data-testid={`cat-card-${c.key}`}
+                          style={{ padding: '11px 10px', border: '0.5px solid #e2e0db', borderRadius: 8, cursor: 'pointer', transition: 'all 0.15s' }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.style.background = '#eff6ff'; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e0db'; e.currentTarget.style.background = 'transparent'; }}>
+                          <div style={{ width: 28, height: 28, borderRadius: 7, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 5 }}>
+                            <c.icon size={13} color={c.stroke} />
+                          </div>
+                          <div style={{ fontSize: 10, fontWeight: 500, color: '#1a1a2e', lineHeight: 1.3 }}>{c.name}</div>
+                          <div style={{ fontSize: 9, color: '#9ca3af' }}>{c.count} templates</div>
                         </div>
-                      </div>
-                    );
-                  }
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+              {messages.map((msg, i) => {
+                if (msg.role === 'system') return <div key={i} style={{ textAlign: 'center', fontSize: 11, color: '#16a34a', margin: '8px 0', fontWeight: 500 }}>{msg.content}</div>;
+                if (msg.role === 'user') return (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                    <div style={{ maxWidth: '70%', padding: '11px 14px', borderRadius: '12px 3px 12px 12px', background: '#1a56db', color: '#fff', fontSize: 12, lineHeight: 1.65 }}>{msg.content}</div>
+                  </div>
+                );
+                const dt = stripDocumentTags(msg.content);
+                return (
+                  <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                    <JA />
+                    <div style={{ maxWidth: '85%' }}>
+                      <div style={{ padding: '11px 14px', borderRadius: '3px 12px 12px 12px', background: '#fafaf8', border: '0.5px solid #e2e0db', fontSize: 12, color: '#374151', lineHeight: 1.65, whiteSpace: 'pre-wrap' }} dangerouslySetInnerHTML={{ __html: dt.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#1a56db">$1</strong>').replace(/\n/g, '<br/>') }} />
+                      {msg.document && <DocumentPreviewCard content={msg.document} onEdit={() => inputRef.current?.focus()} onDownload={handleDownloadPdf} onSign={() => setSignModal(true)} />}
+                    </div>
+                  </div>
+                );
+              })}
+              {sending && <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}><JA /><div style={{ padding: '11px 14px', borderRadius: '3px 12px 12px 12px', background: '#fafaf8', border: '0.5px solid #e2e0db', fontSize: 12, color: '#6b7280' }}>{latestDocContent ? 'James is updating the document' : messages.length > 2 ? 'James is drafting your document' : 'James is thinking'}...</div></div>}
+              {limitReached && <div style={{ textAlign: 'center', padding: 16 }}><div style={{ display: 'inline-block', padding: '10px 20px', borderRadius: 10, background: '#fefce8', border: '0.5px solid #fde68a', fontSize: 12, color: '#854d0e' }}><Lock size={12} style={{ display: 'inline', marginRight: 4 }} />3 free documents used. <a href="/settings" style={{ color: '#1a56db', fontWeight: 600 }}>Upgrade to Pro</a></div></div>}
+              <div ref={chatEndRef} />
+            </div>
 
-                  // Assistant message
-                  const displayText = stripDocumentTags(msg.content);
+            {/* Footer */}
+            <div style={{ borderTop: '0.5px solid #e2e0db', background: '#fafaf8', padding: '13px 32px' }} data-testid="input-area">
+              {!limitReached && (
+                <div style={{ display: 'flex', gap: 5, marginBottom: 9, overflowX: 'auto' }} data-testid="suggestion-chips">
+                  {suggestions.map((s, i) => (
+                    <button key={i} onClick={() => sendMessage(s)} data-testid={`suggestion-${i}`}
+                      style={{ flexShrink: 0, padding: '4px 11px', borderRadius: 16, fontSize: 11, border: '0.5px solid #e2e0db', color: '#6b7280', background: '#fff', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.style.color = '#1a56db'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e0db'; e.currentTarget.style.color = '#6b7280'; }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown} disabled={sending || limitReached}
+                  placeholder="Describe the document you need..." data-testid="chat-input"
+                  style={{ flex: 1, background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 9, padding: '10px 13px', fontSize: 12, outline: 'none' }} />
+                <button onClick={() => sendMessage(input)} disabled={!input.trim() || sending || limitReached} data-testid="send-btn"
+                  style={{ width: 34, height: 34, borderRadius: 8, background: '#1a56db', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: !input.trim() || sending ? 0.4 : 1 }}>
+                  <ArrowUp size={15} color="#fff" />
+                </button>
+              </div>
+              <p style={{ fontSize: 9, color: '#9ca3af', textAlign: 'center', marginTop: 8, opacity: 0.55 }}>James generates documents for informational purposes · Not a substitute for legal advice · 158 document types</p>
+            </div>
+          </>
+        ) : (
+          /* ═══ BROWSE MODE ═══ */
+          <>
+            <div style={{ padding: '22px 28px 16px' }}>
+              <div style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.5px', color: '#1a1a2e' }}>158 document templates</div>
+              <div style={{ fontSize: 12, color: '#6b7280', marginTop: 3, marginBottom: 14 }}>Pre-filled by James · Jurisdiction-specific · Ready to sign</div>
+              <div style={{ display: 'flex', alignItems: 'center', border: '0.5px solid #e2e0db', borderRadius: 8, background: '#fafaf8', padding: '0 10px' }}>
+                <Search size={13} color="#9ca3af" style={{ opacity: 0.4 }} />
+                <input value={browseSearch} onChange={e => setBrowseSearch(e.target.value)} placeholder="Search templates..."
+                  style={{ flex: 1, border: 'none', background: 'transparent', padding: '8px 8px', fontSize: 12, color: '#374151', outline: 'none' }} data-testid="browse-search" />
+              </div>
+            </div>
+            {/* Filter pills */}
+            <div style={{ display: 'flex', gap: 4, padding: '10px 28px', borderTop: '0.5px solid #e2e0db', borderBottom: '0.5px solid #e2e0db', overflowX: 'auto' }} data-testid="browse-filter-pills">
+              {FILTER_PILLS.map(f => (
+                <button key={f} onClick={() => setBrowseFilter(f)} data-testid={`filter-pill-${f}`}
+                  style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', background: browseFilter === f ? '#1a56db' : 'transparent', color: browseFilter === f ? '#fff' : '#6b7280', fontWeight: browseFilter === f ? 600 : 400 }}>
+                  {FILTER_LABELS[f]}
+                </button>
+              ))}
+            </div>
+            {/* Template grid */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 28px' }} data-testid="template-grid">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {filteredTemplates.map((t, i) => {
+                  const cat = CATS.find(c => c.key === t.cat) || CATS[0];
                   return (
-                    <div key={idx} className="mb-3" data-testid={`james-msg-${idx}`}>
-                      <div className="flex gap-2.5">
-                        <JamesAvatar />
-                        <div className="max-w-[85%]">
-                          <div className="px-3.5 py-2.5 rounded-[2px_12px_12px_12px] bg-[#fafafa] border border-[#ebebeb] text-[13px] text-[#333] leading-relaxed whitespace-pre-wrap"
-                            dangerouslySetInnerHTML={{
-                              __html: displayText
-                                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-[#1a56db]">$1</strong>')
-                                .replace(/\n/g, '<br/>')
-                            }}
-                          />
-
-                          {/* Document Preview Card */}
-                          {msg.document && (
-                            <DocumentPreviewCard
-                              content={msg.document}
-                              docId={msg.docId}
-                              onEdit={handleEditWithJames}
-                              onDownload={handleDownloadPdf}
-                              onSign={() => setSignModal(true)}
-                            />
-                          )}
-                        </div>
+                    <div key={i} onClick={() => switchToGenerate(t.name)} data-testid={`template-card-${i}`}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '0.5px solid #e2e0db', borderRadius: 9, cursor: 'pointer', transition: 'border-color 0.15s' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.querySelector('.gen-link').style.opacity = 1; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e0db'; e.currentTarget.querySelector('.gen-link').style.opacity = 0; }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 7, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <cat.icon size={14} color={cat.stroke} />
                       </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 500, color: '#1a1a2e' }}>{t.name}</div>
+                        <div style={{ fontSize: 10, color: '#9ca3af' }}>{t.desc}</div>
+                      </div>
+                      <span className="gen-link" style={{ fontSize: 10, color: '#1a56db', fontWeight: 500, opacity: 0, transition: 'opacity 0.15s', whiteSpace: 'nowrap' }}>Generate →</span>
                     </div>
                   );
                 })}
-
-                {/* Question cards */}
-                {questions.length > 0 && (
-                  <div className="ml-9 space-y-1.5 mb-3" data-testid="question-cards">
-                    {questions.map((q) => (
-                      <QuestionCard key={q.number} number={q.number} text={q.text} answer={q.answer} />
-                    ))}
-                  </div>
-                )}
-
-                {/* Typing indicator */}
-                {sending && (
-                  <div className="flex gap-2.5 mb-3" data-testid="typing-indicator">
-                    <JamesAvatar />
-                    <div className="px-3.5 py-2.5 rounded-[2px_12px_12px_12px] bg-[#fafafa] border border-[#ebebeb] text-[12px] text-[#6b7280]">
-                      {latestDocContent ? 'James is updating the document' : messages.length > 2 ? 'James is drafting your document' : 'James is thinking'}
-                      <TypingDots />
-                    </div>
-                  </div>
-                )}
-
-                {/* Free plan limit */}
-                {limitReached && (
-                  <div className="text-center py-4" data-testid="limit-reached">
-                    <div className="inline-block px-5 py-3 rounded-xl bg-[#fefce8] border border-[#fde68a] text-sm text-[#854d0e]">
-                      <Lock size={14} className="inline mr-1.5" />
-                      You've created your 3 free documents.
-                      <a href="/settings" className="text-[#1a56db] font-medium ml-1 hover:underline">Upgrade to Pro</a>
-                    </div>
-                  </div>
-                )}
-
-                <div ref={chatEndRef} />
               </div>
-
-              {/* ── Input Area ── */}
-              <div className="px-6 pb-4 pt-2 bg-[#fafafa] border-t border-[#ebebeb]" data-testid="input-area">
-                {/* Suggestion chips */}
-                {!limitReached && (
-                  <div className="flex gap-1.5 mb-2.5 overflow-x-auto scrollbar-hide" data-testid="suggestion-chips">
-                    {suggestions.map((s, i) => (
-                      <button key={i} onClick={() => sendMessage(s)}
-                        className="flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-medium bg-white border border-[#ebebeb] text-[#555] hover:border-[#1a56db] hover:text-[#1a56db] transition-colors"
-                        data-testid={`suggestion-${i}`}>
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Input box */}
-                <div className="flex items-end gap-2">
-                  <textarea
-                    ref={inputRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    disabled={sending || limitReached}
-                    placeholder="Describe the document you need or request modifications..."
-                    className="flex-1 bg-white border border-[#ebebeb] rounded-xl px-3.5 py-2.5 text-[12px] resize-none focus:outline-none focus:ring-1 focus:ring-[#1a56db] focus:border-transparent transition-all"
-                    rows={1}
-                    style={{ minHeight: '40px', maxHeight: '120px' }}
-                    data-testid="chat-input"
-                  />
-                  <button onClick={() => sendMessage(input)} disabled={!input.trim() || sending || limitReached}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#1a56db] text-white hover:bg-[#1546b3] transition-colors disabled:opacity-40 flex-shrink-0"
-                    data-testid="send-btn">
-                    <ArrowUp size={16} />
-                  </button>
-                </div>
-
-                {/* Disclaimer */}
-                <p className="text-[9px] text-[#9ca3af] text-center mt-2 opacity-60">
-                  James generates documents for informational purposes &middot; Not a substitute for legal advice &middot; 158 document types available
-                </p>
-              </div>
-            </>
-          ) : (
-            /* ─── BROWSE TEMPLATES MODE ─── */
-            <div className="flex-1 overflow-y-auto p-6" data-testid="browse-templates-area">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h1 className="page-title">Document Library</h1>
-                  <p className="page-sub">Generate any legal document in minutes — pre-filled, lawyer-reviewed templates</p>
-                </div>
-                <div className="relative w-56">
-                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#999]" />
-                  <input type="text" placeholder="Search 158+ templates..." className="form-input pl-8 text-xs py-2"
-                    value={search} onChange={(e) => setSearch(e.target.value)} data-testid="library-search" />
-                </div>
-              </div>
-
-              {/* Category tabs */}
-              <div className="flex gap-1.5 overflow-x-auto pb-3 mb-4 scrollbar-hide" data-testid="category-tabs">
-                {categories.map((cat) => (
-                  <button key={cat.id} onClick={() => setActiveCat(cat.id)}
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${activeCat === cat.id ? 'bg-[#1a56db] text-white' : 'bg-[#f5f5f5] text-[#555] hover:bg-[#eee]'}`}
-                    data-testid={`cat-tab-${cat.id}`}>
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Template grid */}
-              {browseLoading ? (
-                <div className="text-center py-12"><Loader2 size={20} className="mx-auto animate-spin text-[#1a56db]" /></div>
-              ) : templates.length === 0 ? (
-                <div className="text-center py-12 text-xs text-[#999]">No templates found</div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5" data-testid="template-grid">
-                  {templates.map((t) => {
-                    const colors = CAT_COLORS[t.cat] || { bg: '#f5f5f5', text: '#555', icon: '#888' };
-                    const locked = !isPro && !t.free;
-                    return (
-                      <div key={t.id} className={`bg-white border border-[#ebebeb] rounded-xl p-3.5 transition-all ${locked ? 'opacity-75' : 'hover:shadow-sm'}`}
-                        data-testid={`template-card-${t.id}`}>
-                        <div className="flex items-start gap-2.5 mb-2.5">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: colors.bg }}>
-                            <FileText size={14} style={{ color: colors.icon }} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1">
-                              <div className="text-[12px] font-medium text-[#111827] truncate">{t.name}</div>
-                              {locked && <Lock size={9} className="text-[#d4a017] flex-shrink-0" />}
-                            </div>
-                            <div className="text-[10px] text-[#777] mt-0.5">{t.desc}</div>
-                          </div>
-                        </div>
-                        <button onClick={() => !locked && switchToGenerateWithTemplate(t.name)} disabled={locked}
-                          className={`w-full text-[11px] py-2 rounded-full font-medium transition-colors ${locked ? 'bg-[#f5f5f5] text-[#aaa] cursor-not-allowed' : 'bg-[#1a56db] text-white hover:bg-[#1546b3]'}`}
-                          data-testid={`generate-btn-${t.id}`}>
-                          {locked ? 'Upgrade to Pro' : 'Generate with James'}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              {filteredTemplates.length === 0 && <div style={{ textAlign: 'center', padding: 40, fontSize: 12, color: '#9ca3af' }}>No templates found</div>}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
-
-      {/* Sign Modal */}
-      {signModal && <SignModal onClose={() => setSignModal(false)} onSend={handleSendSignature} loading={signLoading} />}
+      {signModal && <SignModal onClose={() => setSignModal(false)} onSend={handleSign} loading={signLoading} />}
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
     </div>
   );
 };
