@@ -146,14 +146,19 @@ const Cases = () => {
                     <div className="flex items-center gap-2 text-xs text-[#6b7280]">
                       <span>Risk score: {caseItem.risk_score}/100</span>
                       <span className="w-1 h-1 rounded-full bg-[#d1d5db]"></span>
-                      {caseItem.deadline && (
-                        <>
-                          <span style={{ color: riskColor.text, fontWeight: 500 }}>
-                            {caseItem.deadline_description || `Due ${caseItem.deadline}`}
-                          </span>
-                          <span className="w-1 h-1 rounded-full bg-[#d1d5db]"></span>
-                        </>
-                      )}
+                      {caseItem.deadline && (() => {
+                        const daysLeft = Math.ceil((new Date(caseItem.deadline) - new Date()) / (1000 * 60 * 60 * 24));
+                        const dlColor = daysLeft <= 0 ? '#dc2626' : daysLeft <= 7 ? '#f59e0b' : '#6b7280';
+                        const dlText = daysLeft <= 0 ? 'Deadline passed' : daysLeft === 1 ? '1 day left' : `${daysLeft} days left`;
+                        return (
+                          <>
+                            <span style={{ color: dlColor, fontWeight: 500 }}>
+                              {caseItem.deadline_description || dlText}
+                            </span>
+                            <span className="w-1 h-1 rounded-full bg-[#d1d5db]"></span>
+                          </>
+                        );
+                      })()}
                       <span>Updated {new Date(caseItem.updated_at).toLocaleDateString()}</span>
                     </div>
                   </div>

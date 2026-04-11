@@ -17,7 +17,7 @@ const Lawyers = () => {
   const fetchLawyers = useCallback(async () => {
     try {
       const params = {};
-      if (user?.country) params.country = user.country;
+      if (user?.jurisdiction) params.country = user.jurisdiction;
       const res = await axios.get(`${API}/lawyers`, { params });
       setLawyers(res.data);
     } catch (error) {
@@ -25,7 +25,7 @@ const Lawyers = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.country]);
+  }, [user?.jurisdiction]);
 
   useEffect(() => {
     fetchLawyers();
@@ -46,7 +46,7 @@ const Lawyers = () => {
     return l.specialty.toLowerCase().includes(filter.toLowerCase());
   });
 
-  const isBelgian = user?.country === 'BE';
+  const isBelgian = user?.jurisdiction === 'BE' || user?.country === 'BE';
 
   const filters = isBelgian ? [
     { key: 'all', label: 'Tous' },

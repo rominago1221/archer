@@ -20,7 +20,7 @@ const labels = {
     strength: 'Strength', arguments: 'Key Arguments', vulnerabilities: 'Vulnerabilities',
     outcomePredictor: 'Outcome Predictor', predictOutcome: 'Predict my outcome', predicting: 'Analyzing...',
     predictError: 'Unable to generate prediction — try again', probable: 'Most probable', best: 'Best case', worst: 'Worst case',
-    confidenceLevel: 'Confidence level', keyFactors: 'Key factors',
+    confidenceLevel: 'Confidence level', keyFactors: 'Key factors', recommendation: 'Recommendation',
     responseLetters: 'Response Letters', generateLetter: 'Generate Letter', generating: 'Generating...',
     letterReady: 'Your Response Letter', keyPoints: 'Key points in this letter', warnings: 'Important reminders',
     generateAnother: 'Generate another', copy: 'Copy', copied: 'Copied!', downloadPdf: 'Download PDF', cancel: 'Cancel',
@@ -35,6 +35,7 @@ const labels = {
     caseTimeline: 'Case Timeline', documents: 'Documents', sharedLinks: 'Shared links',
     caseMgmt: 'Case Management', activeShares: 'active shares', noShares: 'No shared links yet',
     upload: 'Upload new document', talkLawyer: 'Talk to a lawyer',
+    eventTitle: (title) => title,
     caseType: (t) => t || 'Other',
     // Multi-document
     multiDocTitle: (n) => `Complete case analysis — ${n} documents`,
@@ -66,7 +67,7 @@ const labels = {
     strength: 'Force', arguments: 'Arguments cles', vulnerabilities: 'Vulnerabilites',
     outcomePredictor: 'Predicteur d\'issue', predictOutcome: 'Predire mon issue', predicting: 'Analyse en cours...',
     predictError: 'Impossible de generer la prediction — reessayez', probable: 'Plus probable', best: 'Meilleur cas', worst: 'Pire cas',
-    confidenceLevel: 'Niveau de confiance', keyFactors: 'Facteurs cles',
+    confidenceLevel: 'Niveau de confiance', keyFactors: 'Facteurs cles', recommendation: 'Recommandation',
     responseLetters: 'Lettres de reponse', generateLetter: 'Generer la lettre', generating: 'Generation...',
     letterReady: 'Votre lettre de reponse', keyPoints: 'Points cles de cette lettre', warnings: 'Rappels importants',
     generateAnother: 'Generer une autre', copy: 'Copier', copied: 'Copie !', downloadPdf: 'Telecharger PDF', cancel: 'Annuler',
@@ -81,6 +82,7 @@ const labels = {
     caseTimeline: 'Chronologie du dossier', documents: 'Documents', sharedLinks: 'Liens partages',
     caseMgmt: 'Gestion du dossier', activeShares: 'partages actifs', noShares: 'Aucun lien partage',
     upload: 'Televerser un nouveau document', talkLawyer: 'Parler a un avocat',
+    eventTitle: (title) => ({ 'Case opened': 'Dossier ouvert', 'Document uploaded': 'Document televerse', 'Document analyzed': 'Document analyse', 'Case updated': 'Dossier mis a jour', 'Share link created': 'Lien de partage cree' }[title] || title),
     caseType: (t) => ({ employment: 'Travail', housing: 'Bail', debt: 'Creance', nda: 'NDA', contract: 'Contrat', consumer: 'Consommateur', family: 'Famille', court: 'Tribunal', penal: 'Penal', commercial: 'Commercial' }[t] || t || 'Autre'),
     // Multi-document
     multiDocTitle: (n) => `Analyse complete du dossier — ${n} documents`,
@@ -112,7 +114,7 @@ const labels = {
     strength: 'Sterkte', arguments: 'Belangrijke argumenten', vulnerabilities: 'Kwetsbaarheden',
     outcomePredictor: 'Uitkomstvoorspeller', predictOutcome: 'Voorspel mijn uitkomst', predicting: 'Analyseren...',
     predictError: 'Kan voorspelling niet genereren — probeer opnieuw', probable: 'Meest waarschijnlijk', best: 'Beste geval', worst: 'Slechtste geval',
-    confidenceLevel: 'Betrouwbaarheidsniveau', keyFactors: 'Belangrijke factoren',
+    confidenceLevel: 'Betrouwbaarheidsniveau', keyFactors: 'Belangrijke factoren', recommendation: 'Aanbeveling',
     responseLetters: 'Antwoordbrieven', generateLetter: 'Brief genereren', generating: 'Genereren...',
     letterReady: 'Uw antwoordbrief', keyPoints: 'Belangrijke punten', warnings: 'Belangrijke herinneringen',
     generateAnother: 'Andere genereren', copy: 'Kopieren', copied: 'Gekopieerd!', downloadPdf: 'PDF downloaden', cancel: 'Annuleren',
@@ -127,6 +129,7 @@ const labels = {
     caseTimeline: 'Dossiertijdlijn', documents: 'Documenten', sharedLinks: 'Gedeelde links',
     caseMgmt: 'Dossierbeheer', activeShares: 'actieve delingen', noShares: 'Nog geen gedeelde links',
     upload: 'Nieuw document uploaden', talkLawyer: 'Spreek met een advocaat',
+    eventTitle: (title) => ({ 'Case opened': 'Dossier geopend', 'Document uploaded': 'Document geüpload', 'Document analyzed': 'Document geanalyseerd', 'Case updated': 'Dossier bijgewerkt', 'Share link created': 'Deellink aangemaakt' }[title] || title),
     caseType: (t) => ({ employment: 'Arbeidsrecht', housing: 'Huurrecht', debt: 'Schuld', nda: 'NDA', contract: 'Contract', consumer: 'Consument', family: 'Familierecht', court: 'Rechtbank', penal: 'Strafrecht', commercial: 'Handelsrecht' }[t] || t || 'Ander'),
     multiDocTitle: (n) => `Volledige dossieranalyse — ${n} documenten`,
     caseNarrative: 'Dossierverhaal', contradictions: 'Tegenstrijdigheden gedetecteerd',
@@ -149,7 +152,7 @@ const labels = {
     strength: 'Starke', arguments: 'Wichtige Argumente', vulnerabilities: 'Schwachstellen',
     outcomePredictor: 'Ergebnisvorhersage', predictOutcome: 'Mein Ergebnis vorhersagen', predicting: 'Analysieren...',
     predictError: 'Vorhersage nicht moglich — erneut versuchen', probable: 'Am wahrscheinlichsten', best: 'Bester Fall', worst: 'Schlimmster Fall',
-    confidenceLevel: 'Vertrauensniveau', keyFactors: 'Wichtige Faktoren',
+    confidenceLevel: 'Vertrauensniveau', keyFactors: 'Wichtige Faktoren', recommendation: 'Empfehlung',
     responseLetters: 'Antwortbriefe', generateLetter: 'Brief erstellen', generating: 'Erstellen...',
     letterReady: 'Ihr Antwortbrief', keyPoints: 'Wichtige Punkte', warnings: 'Wichtige Hinweise',
     generateAnother: 'Anderen erstellen', copy: 'Kopieren', copied: 'Kopiert!', downloadPdf: 'PDF herunterladen', cancel: 'Abbrechen',
@@ -164,6 +167,7 @@ const labels = {
     caseTimeline: 'Fallchronik', documents: 'Dokumente', sharedLinks: 'Geteilte Links',
     caseMgmt: 'Fallverwaltung', activeShares: 'aktive Freigaben', noShares: 'Noch keine geteilten Links',
     upload: 'Neues Dokument hochladen', talkLawyer: 'Mit einem Anwalt sprechen',
+    eventTitle: (title) => ({ 'Case opened': 'Fall eröffnet', 'Document uploaded': 'Dokument hochgeladen', 'Document analyzed': 'Dokument analysiert', 'Case updated': 'Fall aktualisiert', 'Share link created': 'Freigabelink erstellt' }[title] || title),
     caseType: (t) => ({ employment: 'Arbeitsrecht', housing: 'Mietrecht', debt: 'Schulden', nda: 'NDA', contract: 'Vertrag', consumer: 'Verbraucher', family: 'Familienrecht', court: 'Gericht', penal: 'Strafrecht', commercial: 'Handelsrecht' }[t] || t || 'Sonstige'),
     multiDocTitle: (n) => `Vollstandige Fallanalyse — ${n} Dokumente`,
     caseNarrative: 'Fallerzahlung', contradictions: 'Widerspruche erkannt',
@@ -782,16 +786,28 @@ const CaseDetail = () => {
           <div className="space-y-3" data-testid="prediction-result">
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: t.probable, val: prediction.probable_outcome || prediction.cas_probable, color: '#0891b2' },
-                { label: t.best, val: prediction.best_case || prediction.meilleur_cas, color: '#16a34a' },
-                { label: t.worst, val: prediction.worst_case || prediction.pire_cas, color: '#dc2626' },
+                { label: t.best, val: prediction.favorable || prediction.best_case || prediction.meilleur_cas, color: '#16a34a' },
+                { label: t.probable, val: prediction.neutral || prediction.probable_outcome || prediction.cas_probable, color: '#0891b2' },
+                { label: t.worst, val: prediction.unfavorable || prediction.worst_case || prediction.pire_cas, color: '#dc2626' },
               ].map((o, i) => o.val && (
-                <div key={i} className="bg-[#f8f8f8] rounded-xl p-3 text-center">
-                  <div className="text-[10px] text-[#9ca3af] mb-1">{o.label}</div>
-                  <div className="text-xs font-medium" style={{ color: o.color }}>{typeof o.val === 'string' ? o.val : o.val?.description || JSON.stringify(o.val)}</div>
+                <div key={i} className="bg-[#f8f8f8] rounded-xl p-3" data-testid={`prediction-scenario-${i}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-[10px] text-[#9ca3af] font-medium">{o.label}</div>
+                    {o.val?.probability && <div className="text-sm font-bold" style={{ color: o.color }}>{o.val.probability}%</div>}
+                  </div>
+                  <div className="text-xs font-semibold text-[#111827] mb-1">{o.val?.title || (typeof o.val === 'string' ? o.val : '')}</div>
+                  {o.val?.description && <div className="text-[11px] text-[#555] leading-relaxed mb-1.5">{o.val.description}</div>}
+                  {o.val?.likely_result && <div className="text-[10px] text-[#6b7280]">{o.val.likely_result}</div>}
+                  {o.val?.financial_impact && <div className="text-[10px] font-medium mt-1" style={{ color: o.color }}>{o.val.financial_impact}</div>}
+                  {o.val?.timeline && <div className="text-[10px] text-[#9ca3af] mt-0.5">{o.val.timeline}</div>}
                 </div>
               ))}
             </div>
+            {prediction.recommendation && (
+              <div className="p-3 bg-[#eff6ff] border border-[#bfdbfe] rounded-xl text-xs text-[#1d4ed8]" data-testid="prediction-recommendation">
+                <span className="font-medium">{t.recommendation || 'Recommendation'}:</span> {prediction.recommendation}
+              </div>
+            )}
             {prediction.confidence && (
               <div className="text-xs text-[#6b7280]">{t.confidenceLevel}: <span className="font-medium text-[#111]">{prediction.confidence}</span></div>
             )}
@@ -845,7 +861,7 @@ const CaseDetail = () => {
                 <div key={i} className="flex items-start gap-3 text-xs">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#1a56db] mt-1.5 flex-shrink-0"></div>
                   <div>
-                    <div className="text-[#111]">{ev.title}</div>
+                    <div className="text-[#111]">{t.eventTitle(ev.title)}</div>
                     <div className="text-[#9ca3af]">{new Date(ev.created_at).toLocaleDateString()}</div>
                   </div>
                 </div>
