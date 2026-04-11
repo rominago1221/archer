@@ -226,6 +226,7 @@ class Case(BaseModel):
     documents_to_gather: List[dict] = []
     recent_case_law: List[dict] = []
     case_law_updated: Optional[str] = None
+    james_question: Optional[dict] = None
     # Multi-Document Analysis Fields
     case_narrative: Optional[str] = None
     contradictions: List[dict] = []

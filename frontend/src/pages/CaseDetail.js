@@ -28,6 +28,17 @@ const L = {
     caseType: { housing: 'Housing', employment: 'Employment', debt: 'Debt', insurance: 'Insurance', contract: 'Contract', consumer: 'Consumer', family: 'Family', court: 'Court', nda: 'NDA', penal: 'Criminal', commercial: 'Commercial', other: 'Other' },
     analyzing: 'James is analyzing...', reanalyze: 'Re-analyze',
     newCase: 'Open a new case', tagline: 'Your virtual legal cabinet', jamesRole: 'Senior Legal Advisor',
+    overlayTitle: 'What is your problem?', overlaySub: 'James will handle your case immediately.', backCase: 'Back to case',
+    sit: [
+      { icon: '🏠', bg: '#fef3c7', title: 'My landlord is causing problems', desc: 'Eviction, rent, repairs, deposit' },
+      { icon: '⚡', bg: '#fff5f5', title: 'I received a threatening letter', desc: 'Demand letter, attorney, bailiff' },
+      { icon: '💼', bg: '#f0fdf4', title: 'My employer is causing problems', desc: 'Termination, wages, harassment' },
+      { icon: '🛡️', bg: '#fff7ed', title: 'My insurance won\'t pay', desc: 'Claim denial, damages' },
+      { icon: '📄', bg: '#eff6ff', title: 'I signed something worrying', desc: 'Contract, NDA, agreement' },
+      { icon: '⚖️', bg: '#fdf4ff', title: 'I received a court summons', desc: 'Judgment, debt, hearing' },
+      { icon: '💳', bg: '#fff5f5', title: 'A debt collector is harassing me', desc: 'Collector, bailiff, recovery' },
+      { icon: '💬', bg: '#f0fdf4', title: 'Other legal situation', desc: 'Describe your problem to James' },
+    ],
     stat1: '847K+', stat1l: 'live sources', stat2: '20 yrs', stat2l: 'experience', stat3: 'Live', stat3l: 'case law', stat4: '#1', stat4l: 'Legal AI',
     activeCases: 'Active cases', navUpload: 'Upload', navLawyers: 'Lawyers', navDocs: 'Documents', navChat: 'Legal chat', navSettings: 'Settings',
     deadlineIn: 'Deadline in',
@@ -51,6 +62,17 @@ const L = {
     caseType: { housing: 'Logement', employment: 'Emploi', debt: 'Dettes', insurance: 'Assurance', contract: 'Contrat', consumer: 'Consommation', family: 'Famille', court: 'Tribunal', nda: 'NDA', penal: 'Pénal', commercial: 'Commercial', other: 'Autre' },
     analyzing: 'James analyse...', reanalyze: 'Ré-analyser',
     newCase: 'Ouvrir un nouveau dossier', tagline: 'Votre cabinet juridique virtuel', jamesRole: 'Conseiller juridique senior',
+    overlayTitle: 'Quel est votre problème ?', overlaySub: 'James va prendre votre dossier en charge immédiatement.', backCase: 'Retour au dossier',
+    sit: [
+      { icon: '🏠', bg: '#fef3c7', title: 'Mon propriétaire me cause des problèmes', desc: 'Expulsion, loyer, réparations, dépôt' },
+      { icon: '⚡', bg: '#fff5f5', title: 'J\'ai reçu une lettre menaçante', desc: 'Mise en demeure, avocat, huissier' },
+      { icon: '💼', bg: '#f0fdf4', title: 'Mon employeur me pose des problèmes', desc: 'Licenciement, salaires, harcèlement' },
+      { icon: '🛡️', bg: '#fff7ed', title: 'Mon assurance refuse de payer', desc: 'Refus de remboursement, sinistre' },
+      { icon: '📄', bg: '#eff6ff', title: 'J\'ai signé quelque chose d\'inquiétant', desc: 'Contrat, NDA, accord, engagement' },
+      { icon: '⚖️', bg: '#fdf4ff', title: 'J\'ai reçu une convocation au tribunal', desc: 'Jugement, dette, citation, audience' },
+      { icon: '💳', bg: '#fff5f5', title: 'On me réclame une dette', desc: 'Collecteur, huissier, recouvrement' },
+      { icon: '💬', bg: '#f0fdf4', title: 'Autre situation juridique', desc: 'Décrivez votre problème à James' },
+    ],
     stat1: '847K+', stat1l: 'sources live', stat2: '20 ans', stat2l: 'expérience', stat3: 'Live', stat3l: 'jurisprudence', stat4: '#1', stat4l: 'IA juridique',
     activeCases: 'Dossiers actifs', navUpload: 'Téléverser', navLawyers: 'Avocats', navDocs: 'Documents', navChat: 'Chat juridique', navSettings: 'Paramètres',
     deadlineIn: 'Échéance dans',
@@ -74,6 +96,17 @@ const L = {
     caseType: { housing: 'Huisvesting', employment: 'Werk', debt: 'Schulden', insurance: 'Verzekering', contract: 'Contract', consumer: 'Consument', family: 'Familie', court: 'Rechtbank', nda: 'NDA', penal: 'Strafrecht', commercial: 'Commercieel', other: 'Overig' },
     analyzing: 'James analyseert...', reanalyze: 'Heranalyse',
     newCase: 'Nieuw dossier openen', tagline: 'Uw virtueel juridisch kantoor', jamesRole: 'Senior Juridisch Adviseur',
+    overlayTitle: 'Wat is uw probleem?', overlaySub: 'James neemt uw dossier onmiddellijk in behandeling.', backCase: 'Terug naar dossier',
+    sit: [
+      { icon: '🏠', bg: '#fef3c7', title: 'Mijn verhuurder veroorzaakt problemen', desc: 'Uitzetting, huur, reparaties, borg' },
+      { icon: '⚡', bg: '#fff5f5', title: 'Ik heb een dreigbrief ontvangen', desc: 'Aanmaning, advocaat, deurwaarder' },
+      { icon: '💼', bg: '#f0fdf4', title: 'Mijn werkgever veroorzaakt problemen', desc: 'Ontslag, lonen, pesterijen' },
+      { icon: '🛡️', bg: '#fff7ed', title: 'Mijn verzekering weigert te betalen', desc: 'Weigering, schadeclaim' },
+      { icon: '📄', bg: '#eff6ff', title: 'Ik heb iets verontrustends getekend', desc: 'Contract, NDA, overeenkomst' },
+      { icon: '⚖️', bg: '#fdf4ff', title: 'Ik heb een dagvaarding ontvangen', desc: 'Vonnis, schuld, zitting' },
+      { icon: '💳', bg: '#fff5f5', title: 'Er wordt een schuld van mij geëist', desc: 'Incassobureau, deurwaarder' },
+      { icon: '💬', bg: '#f0fdf4', title: 'Andere juridische situatie', desc: 'Beschrijf uw probleem aan James' },
+    ],
     stat1: '847K+', stat1l: 'live bronnen', stat2: '20 jaar', stat2l: 'ervaring', stat3: 'Live', stat3l: 'rechtspraak', stat4: '#1', stat4l: 'Juridische AI',
     activeCases: 'Actieve dossiers', navUpload: 'Uploaden', navLawyers: 'Advocaten', navDocs: 'Documenten', navChat: 'Juridische chat', navSettings: 'Instellingen',
     deadlineIn: 'Deadline in',
@@ -100,6 +133,7 @@ const CaseDetail = () => {
   const [shareModal, setShareModal] = useState(false);
   const [shareLink, setShareLink] = useState('');
   const [answerLoading, setAnswerLoading] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -261,8 +295,7 @@ const CaseDetail = () => {
             })}
           </div>
           <div style={{ padding: 10 }}>
-            <button onClick={() => navigate('/upload')} data-testid="new-case-btn" style={{ width: '100%', padding: '10px 0', background: '#1a56db', color: '#fff', border: 'none', borderRadius: 9, fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Plus size={13} />{t.newCase}</button>
-          </div>
+            <button onClick={() => setShowOverlay(true)} data-testid="new-case-btn" style={{ width: '100%', padding: '10px 0', background: '#1a56db', color: '#fff', border: 'none', borderRadius: 9, fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Plus size={13} />{t.newCase}</button>          </div>
           <button onClick={() => { logout(); navigate('/login'); }} style={{ padding: '8px 14px', fontSize: 9, color: '#9ca3af', background: 'none', border: 'none', borderTop: '0.5px solid #f0ede8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}><LogOut size={10} />{lang === 'fr' ? 'Déconnexion' : lang === 'nl' ? 'Uitloggen' : 'Sign out'}</button>
         </div>
 
@@ -396,7 +429,7 @@ const CaseDetail = () => {
                       </div>
                       <div style={{ background: '#fff5f5', border: '0.5px solid #fca5a5', borderRadius: 9, padding: 10 }}>
                         <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#dc2626', marginBottom: 6 }}>{t.theirArgs}</div>
-                        {(bp.opposing_side?.strongest_arguments || bp.opposing_arguments || []).slice(0, 5).map((a, i) => (
+                        {(bp.opposing_side?.strongest_arguments || bp.opposing_side?.opposing_arguments || bp.opposing_arguments || []).slice(0, 5).map((a, i) => (
                           <div key={i} style={{ fontSize: 10, color: '#374151', padding: '4px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.5, display: 'flex', gap: 6 }}>
                             <span style={{ color: '#dc2626', fontWeight: 600 }}>•</span>
                             <span>{typeof a === 'string' ? a : a.argument || a.text || ''}</span>
@@ -429,10 +462,10 @@ const CaseDetail = () => {
                   <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
                     <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 8 }}>{t.outcomePred}</div>
                     {(Array.isArray(prob) ? prob : [
-                      { label: lang === 'fr' ? 'Accord négocié' : 'Negotiated settlement', pct: prob.settlement || 40, color: '#16a34a' },
-                      { label: lang === 'fr' ? 'Résolution favorable' : 'Full resolution in your favor', pct: prob.favorable || 30, color: '#1a56db' },
-                      { label: lang === 'fr' ? 'Résolution partielle' : 'Partial resolution', pct: prob.partial || 20, color: '#f59e0b' },
-                      { label: lang === 'fr' ? 'Issue défavorable' : 'Unfavorable outcome', pct: prob.unfavorable || 10, color: '#dc2626' },
+                      { label: lang === 'fr' ? 'Résolution favorable' : lang === 'nl' ? 'Gunstige uitkomst' : 'Full resolution in your favor', pct: prob.full_resolution_in_favor || prob.favorable || 0, color: '#16a34a' },
+                      { label: lang === 'fr' ? 'Accord négocié' : lang === 'nl' ? 'Onderhandelde schikking' : 'Negotiated settlement', pct: prob.negotiated_settlement || prob.settlement || 0, color: '#1a56db' },
+                      { label: lang === 'fr' ? 'Résolution partielle' : lang === 'nl' ? 'Gedeeltelijk verlies' : 'Partial loss', pct: prob.partial_loss || prob.partial || 0, color: '#f59e0b' },
+                      { label: lang === 'fr' ? 'Issue défavorable' : lang === 'nl' ? 'Volledig verlies' : 'Full loss', pct: prob.full_loss || prob.unfavorable || 0, color: '#dc2626' },
                     ]).map((o, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                         <div style={{ fontSize: 10, color: '#374151', width: 160, flexShrink: 0 }}>{o.label}</div>
@@ -559,6 +592,43 @@ const CaseDetail = () => {
               ) : (
                 <div style={{ textAlign: 'center', padding: 16 }}><Loader2 size={16} className="animate-spin" style={{ color: '#1a56db' }} /></div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ NEW CASE OVERLAY ═══ */}
+        {showOverlay && (
+          <div data-testid="new-case-overlay" style={{
+            position: 'absolute', inset: 0, background: 'rgba(248,247,244,0.97)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200,
+          }}>
+            <div style={{ background: '#fff', borderRadius: 18, border: '0.5px solid #e2e0db', padding: 24, width: '100%', maxWidth: 680 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff' }}>J</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e' }}>{t.overlayTitle}</div>
+              </div>
+              <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 20 }}>{t.overlaySub}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {t.sit.map((s, i) => (
+                  <div key={i} data-testid={`situation-card-${i}`}
+                    onClick={() => { setShowOverlay(false); navigate('/upload'); }}
+                    style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 10, padding: 11, borderRadius: 10,
+                      border: '0.5px solid #e2e0db', cursor: 'pointer', transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.borderColor = '#bfdbfe'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#e2e0db'; }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 7, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>{s.icon}</div>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 2 }}>{s.title}</div>
+                      <div style={{ fontSize: 9, color: '#6b7280', lineHeight: 1.3 }}>{s.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button data-testid="back-to-case" onClick={() => setShowOverlay(false)} style={{
+                marginTop: 14, fontSize: 10, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer',
+              }}>← {t.backCase}</button>
             </div>
           </div>
         )}
