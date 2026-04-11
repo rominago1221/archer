@@ -5619,7 +5619,7 @@ async def book_attorney_call(body: BookAttorneyCall, current_user: User = Depend
         try:
             stripe_checkout = StripeCheckout(STRIPE_API_KEY)
             origin = body.origin_url or "https://predict-outcome.preview.emergentagent.com"
-            session = stripe_checkout.create_checkout_session(CheckoutSessionRequest(
+            session = await stripe_checkout.create_checkout_session(CheckoutSessionRequest(
                 line_items=[{"price_data": {"currency": "usd", "unit_amount": price * 100, "product_data": {"name": f"Legal consultation with {atty['full_name']}", "description": f"30-minute video session"}}, "quantity": 1}],
                 success_url=f"{origin}/attorney-call-confirmed?call_id={call_id}",
                 cancel_url=f"{origin}/lawyers",

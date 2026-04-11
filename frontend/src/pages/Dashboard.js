@@ -8,14 +8,14 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 /* ─── Situation cards for new case overlay ─── */
 const SITUATIONS = [
-  { icon: '\u{1F3E0}', title: "Mon propri\u00e9taire me cause des probl\u00e8mes", desc: "Expulsion, loyer, r\u00e9parations, d\u00e9p\u00f4t", type: 'housing' },
-  { icon: '\u26A1', title: "J'ai re\u00e7u une lettre mena\u00e7ante", desc: "Mise en demeure, avocat, huissier", type: 'debt' },
-  { icon: '\u{1F4BC}', title: "Mon employeur me pose des probl\u00e8mes", desc: "Licenciement, salaires, harc\u00e8lement", type: 'employment' },
-  { icon: '\u{1F6E1}\uFE0F', title: "Mon assurance refuse de payer", desc: "Refus de remboursement, sinistre", type: 'insurance' },
-  { icon: '\u{1F4C4}', title: "J'ai sign\u00e9 quelque chose d'inqui\u00e9tant", desc: "Contrat, NDA, accord, engagement", type: 'contract' },
-  { icon: '\u2696\uFE0F', title: "J'ai re\u00e7u une convocation au tribunal", desc: "Jugement, dette, citation, audience", type: 'court' },
-  { icon: '\u{1F4B3}', title: "On me r\u00e9clame une dette", desc: "Collecteur, huissier, recouvrement", type: 'debt_collection' },
-  { icon: '\u{1F4AC}', title: "Autre situation juridique", desc: "D\u00e9crivez votre probl\u00e8me \u00e0 James", type: 'other' },
+  { icon: '🏠', title: "Mon propriétaire me cause des problèmes", desc: "Expulsion, loyer, réparations, dépôt", type: 'housing' },
+  { icon: '⚡', title: "J'ai reçu une lettre menaçante", desc: "Mise en demeure, avocat, huissier", type: 'debt' },
+  { icon: '💼', title: "Mon employeur me pose des problèmes", desc: "Licenciement, salaires, harcèlement", type: 'employment' },
+  { icon: '🛡️', title: "Mon assurance refuse de payer", desc: "Refus de remboursement, sinistre", type: 'insurance' },
+  { icon: '📄', title: "J'ai signé quelque chose d'inquiétant", desc: "Contrat, NDA, accord, engagement", type: 'contract' },
+  { icon: '⚖️', title: "J'ai reçu une convocation au tribunal", desc: "Jugement, dette, citation, audience", type: 'court' },
+  { icon: '💳', title: "On me réclame une dette", desc: "Collecteur, huissier, recouvrement", type: 'debt_collection' },
+  { icon: '💬', title: "Autre situation juridique", desc: "Décrivez votre problème à James", type: 'other' },
 ];
 
 /* ─── Risk color helper ─── */
@@ -26,17 +26,17 @@ const riskColor = (score) => {
 };
 
 const riskLevel = (score) => {
-  if (score >= 70) return 'Risque \u00e9lev\u00e9';
-  if (score >= 40) return 'Risque mod\u00e9r\u00e9';
+  if (score >= 70) return 'Risque élevé';
+  if (score >= 40) return 'Risque modéré';
   return 'Risque faible';
 };
 
 const typeLabel = (type) => {
-  const map = { housing: '\u{1F3E0} Dossier logement', employment: '\u{1F4BC} Dossier emploi', debt: '\u26A1 Dossier dette',
-    contract: '\u{1F4C4} Dossier contrat', insurance: '\u{1F6E1}\uFE0F Dossier assurance', court: '\u2696\uFE0F Dossier tribunal',
-    debt_collection: '\u{1F4B3} Dossier recouvrement', consumer: '\u{1F6E1}\uFE0F Dossier consommation', family: '\u{1F3E0} Dossier famille',
-    other: '\u{1F4C4} Dossier juridique' };
-  return map[type] || '\u{1F4C4} Dossier juridique';
+  const map = { housing: '🏠 Dossier logement', employment: '💼 Dossier emploi', debt: '⚡ Dossier dette',
+    contract: '📄 Dossier contrat', insurance: '🛡️ Dossier assurance', court: '⚖️ Dossier tribunal',
+    debt_collection: '💳 Dossier recouvrement', consumer: '🛡️ Dossier consommation', family: '🏠 Dossier famille',
+    other: '📄 Dossier juridique' };
+  return map[type] || '📄 Dossier juridique';
 };
 
 const typeBadgeColor = (type) => {
@@ -92,17 +92,17 @@ const Dashboard = () => {
     setQuestionIndex(0);
     const questions = getQuestionsForType(sit.type);
     setChatMessages([
-      { role: 'james', text: `Je prends votre dossier en charge. ${sit.title.toLowerCase()} \u2014 je connais bien ce type de situation.` },
+      { role: 'james', text: `Je prends votre dossier en charge. ${sit.title.toLowerCase()} — je connais bien ce type de situation.` },
       { role: 'james', text: questions[0] }
     ]);
   };
 
   const getQuestionsForType = (type) => {
     const base = [
-      "Pour commencer, pouvez-vous me d\u00e9crire bri\u00e8vement votre situation en quelques phrases ?",
-      "Quand est-ce que cette situation a commenc\u00e9 ? Y a-t-il une date ou un d\u00e9lai important \u00e0 respecter ?",
-      "Avez-vous d\u00e9j\u00e0 re\u00e7u ou envoy\u00e9 des documents li\u00e9s \u00e0 cette affaire ? (lettres, contrats, emails...)",
-      "Parfait. Si vous avez un document \u00e0 me montrer, t\u00e9l\u00e9versez-le maintenant. Sinon, je lance l'analyse avec ce que vous m'avez dit."
+      "Pour commencer, pouvez-vous me décrire brièvement votre situation en quelques phrases ?",
+      "Quand est-ce que cette situation a commencé ? Y a-t-il une date ou un délai important à respecter ?",
+      "Avez-vous déjà reçu ou envoyé des documents liés à cette affaire ? (lettres, contrats, emails...)",
+      "Parfait. Si vous avez un document à me montrer, téléversez-le maintenant. Sinon, je lance l'analyse avec ce que vous m'avez dit."
     ];
     return base;
   };
@@ -185,7 +185,7 @@ const Dashboard = () => {
               <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', marginLeft: 'auto', animation: 'jcPulse 1.5s infinite' }} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
-              {[{ v: '847K+', l: 'sources live' }, { v: '20 ans', l: "exp\u00e9rience" }, { v: 'Live', l: 'jurisprudence' }, { v: '#1', l: 'IA juridique' }].map((s, i) => (
+              {[{ v: '847K+', l: 'sources live' }, { v: '20 ans', l: "expérience" }, { v: 'Live', l: 'jurisprudence' }, { v: '#1', l: 'IA juridique' }].map((s, i) => (
                 <div key={i} style={{ background: 'rgba(255,255,255,0.8)', borderRadius: '6px', padding: '5px 7px', fontSize: '9px', color: '#1e40af', fontWeight: 500, textAlign: 'center', lineHeight: 1.3 }}>
                   <span style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#1a56db' }}>{s.v}</span>{s.l}
                 </div>
@@ -215,7 +215,7 @@ const Dashboard = () => {
                   </div>
                   {dl !== null && dl <= 14 && (
                     <div style={{ fontSize: '9px', fontWeight: 500, marginTop: '2px', marginLeft: '14px', color: dl <= 3 ? '#dc2626' : dl <= 7 ? '#f59e0b' : '#6b7280' }}>
-                      {dl <= 0 ? 'D\u00e9lai expir\u00e9' : dl <= 3 ? `\u26A1 \u00c9ch\u00e9ance dans ${dl} jour${dl > 1 ? 's' : ''}` : `R\u00e9ponse dans ${dl} jours`}
+                      {dl <= 0 ? 'Délai expiré' : dl <= 3 ? `⚡ Échéance dans ${dl} jour${dl > 1 ? 's' : ''}` : `Réponse dans ${dl} jours`}
                     </div>
                   )}
                 </div>
@@ -241,11 +241,11 @@ const Dashboard = () => {
               <div style={{ position: 'absolute', bottom: '1px', right: '1px', width: '9px', height: '9px', borderRadius: '50%', background: '#22c55e', border: '2px solid #fff' }} />
             </div>
             <div>
-              <div style={{ fontSize: '13px', fontWeight: 600, letterSpacing: '-0.3px' }}>James analyse votre dossier en temps r\u00e9el</div>
-              <div style={{ fontSize: '9px', color: '#6b7280', marginTop: '1px' }}>IA juridique · 20 ans d'exp\u00e9rience senior · Jurisprudence live</div>
+              <div style={{ fontSize: '13px', fontWeight: 600, letterSpacing: '-0.3px' }}>James analyse votre dossier en temps réel</div>
+              <div style={{ fontSize: '9px', color: '#6b7280', marginTop: '1px' }}>IA juridique · 20 ans d'expérience senior · Jurisprudence live</div>
             </div>
             <div style={{ display: 'flex', gap: '5px', marginLeft: 'auto' }}>
-              {['847K+ sources', 'Live', '\u26A1 Action requise'].map((cred, i) => (
+              {['847K+ sources', 'Live', '⚡ Action requise'].map((cred, i) => (
                 <div key={i} style={{ fontSize: '9px', padding: '3px 8px', borderRadius: '20px', fontWeight: 500, whiteSpace: 'nowrap',
                   background: i === 2 ? '#fef3c7' : '#f3f4f6', color: i === 2 ? '#92400e' : '#6b7280', border: i === 2 ? '0.5px solid #fde68a' : '0.5px solid #e5e7eb' }}>
                   {cred}
@@ -265,7 +265,7 @@ const Dashboard = () => {
               {/* Title */}
               <div style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.8px', marginBottom: '3px' }} data-testid="case-title">{sc.title || 'Sans titre'}</div>
               <div style={{ fontSize: '10px', color: '#6b7280', marginBottom: '14px' }}>
-                Ouvert le {new Date(sc.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} · {docCount} document{docCount !== 1 ? 's' : ''} · Mis \u00e0 jour {sc.updated_at ? 'par James' : 'aujourd\'hui'}
+                Ouvert le {new Date(sc.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} · {docCount} document{docCount !== 1 ? 's' : ''} · Mis à jour {sc.updated_at ? 'par James' : 'aujourd\'hui'}
               </div>
 
               {/* Score row */}
@@ -284,7 +284,7 @@ const Dashboard = () => {
                       { v: sc.risk_financial || '—', l: 'Financier' },
                       { v: sc.risk_urgency || '—', l: 'Urgence' },
                       { v: sc.risk_legal_strength || '—', l: 'Juridique' },
-                      { v: sc.risk_complexity || '—', l: 'Complexit\u00e9' },
+                      { v: sc.risk_complexity || '—', l: 'Complexité' },
                     ].map((d, i) => (
                       <div key={i} style={{ background: '#f8f7f4', borderRadius: '7px', padding: '6px', textAlign: 'center' }}>
                         <div style={{ fontSize: '14px', fontWeight: 800, color: riskColor(typeof d.v === 'number' ? d.v : 50) }}>{d.v}</div>
@@ -300,7 +300,7 @@ const Dashboard = () => {
                 <div style={{ background: '#fff', borderRadius: '12px', padding: '14px 18px', marginBottom: '10px', border: '0.5px solid #e2e0db' }} data-testid="james-analysis">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '10px' }}>
                     <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 700, color: '#fff' }}>J</div>
-                    <div style={{ fontSize: '11px', fontWeight: 600 }}>Analyse de James — Mise \u00e0 jour en temps r\u00e9el</div>
+                    <div style={{ fontSize: '11px', fontWeight: 600 }}>Analyse de James — Mise à jour en temps réel</div>
                     <div style={{ fontSize: '9px', color: '#22c55e', fontWeight: 600, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '3px' }}>
                       <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#22c55e', animation: 'jcPulse 1.5s infinite' }} /> LIVE
                     </div>
@@ -308,7 +308,7 @@ const Dashboard = () => {
                   {findings.slice(0, 3).map((f, i) => {
                     const fText = findingText(f);
                     const impact = typeof f === 'object' ? f.impact : null;
-                    const dotColor = impact === 'high' || impact === '\u00e9lev\u00e9' ? '#dc2626' : impact === 'positive' || impact === 'positif' ? '#16a34a' : '#f59e0b';
+                    const dotColor = impact === 'high' || impact === 'élevé' ? '#dc2626' : impact === 'positive' || impact === 'positif' ? '#16a34a' : '#f59e0b';
                     const lawRef = typeof f === 'object' ? (f.legal_reference || f.reference_legale || f.base_legale) : null;
                     const lawName = typeof lawRef === 'object' ? (lawRef.name || lawRef.nom) : lawRef;
                     const lawDesc = typeof lawRef === 'object' ? (lawRef.description || lawRef.implication) : null;
@@ -344,14 +344,14 @@ const Dashboard = () => {
               {/* James question card */}
               {sc.ai_summary && (
                 <div style={{ background: '#fffbeb', border: '0.5px solid #fde68a', borderRadius: '12px', padding: '12px 14px', marginBottom: '10px' }} data-testid="james-question">
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#92400e', marginBottom: '6px' }}>{'\u{1F4AC}'} James a besoin d'une pr\u00e9cision</div>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#92400e', marginBottom: '6px' }}>{'💬'} James a besoin d'une précision</div>
                   <div style={{ fontSize: '11px', color: '#78350f', lineHeight: 1.6, marginBottom: '9px' }}>
-                    Pour approfondir votre d\u00e9fense, j'ai besoin de savoir : <b>avez-vous des documents suppl\u00e9mentaires li\u00e9s \u00e0 cette affaire ?</b> Cela pourrait renforcer significativement votre position.
+                    Pour approfondir votre défense, j'ai besoin de savoir : <b>avez-vous des documents supplémentaires liés à cette affaire ?</b> Cela pourrait renforcer significativement votre position.
                   </div>
                   <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                     <button onClick={() => navigate('/upload')} style={{ fontSize: '10px', padding: '6px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 500, background: '#1a56db', color: '#fff', border: 'none' }} data-testid="james-q-yes">Oui, j'ai des documents</button>
                     <button style={{ fontSize: '10px', padding: '6px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 500, background: '#fff', color: '#374151', border: '0.5px solid #e2e0db' }}>Non, pas pour l'instant</button>
-                    <button onClick={() => navigate('/chat')} style={{ fontSize: '10px', padding: '6px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 500, background: '#fff', color: '#374151', border: '0.5px solid #e2e0db' }}>Parler \u00e0 James</button>
+                    <button onClick={() => navigate('/chat')} style={{ fontSize: '10px', padding: '6px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 500, background: '#fff', color: '#374151', border: '0.5px solid #e2e0db' }}>Parler à James</button>
                   </div>
                 </div>
               )}
@@ -359,8 +359,8 @@ const Dashboard = () => {
           ) : (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '12px' }}>
-                <div style={{ fontSize: '32px', marginBottom: '8px' }}>{'\u{1F4C2}'}</div>
-                Aucun dossier s\u00e9lectionn\u00e9
+                <div style={{ fontSize: '32px', marginBottom: '8px' }}>{'📂'}</div>
+                Aucun dossier sélectionné
                 <div style={{ marginTop: '8px' }}>
                   <button onClick={() => setShowOverlay(true)} style={{ fontSize: '11px', padding: '8px 16px', borderRadius: '8px', background: '#1a56db', color: '#fff', border: 'none', cursor: 'pointer' }}>Ouvrir un nouveau dossier</button>
                 </div>
@@ -378,12 +378,12 @@ const Dashboard = () => {
               {/* Deadline card */}
               {scDaysLeft !== null && scDaysLeft <= 14 && (
                 <div style={{ margin: '10px', padding: '11px', background: scDaysLeft <= 3 ? '#fff5f5' : '#fffbeb', border: `0.5px solid ${scDaysLeft <= 3 ? '#fecaca' : '#fde68a'}`, borderRadius: '9px' }} data-testid="deadline-card">
-                  <div style={{ fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', color: scDaysLeft <= 3 ? '#dc2626' : '#d97706', fontWeight: 700, marginBottom: '3px' }}>{'\u26A1'} \u00c9ch\u00e9ance critique</div>
+                  <div style={{ fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', color: scDaysLeft <= 3 ? '#dc2626' : '#d97706', fontWeight: 700, marginBottom: '3px' }}>{'⚡'} Échéance critique</div>
                   <div style={{ fontSize: '30px', fontWeight: 800, color: scDaysLeft <= 3 ? '#dc2626' : '#d97706', letterSpacing: '-1px', lineHeight: 1 }}>
-                    {scDaysLeft <= 0 ? 'Expir\u00e9' : `${scDaysLeft} jour${scDaysLeft > 1 ? 's' : ''}`}
+                    {scDaysLeft <= 0 ? 'Expiré' : `${scDaysLeft} jour${scDaysLeft > 1 ? 's' : ''}`}
                   </div>
                   <div style={{ fontSize: '9px', color: scDaysLeft <= 3 ? '#991b1b' : '#92400e', marginTop: '2px' }}>
-                    {sc.deadline_description || `R\u00e9pondre avant le ${new Date(sc.deadline).toLocaleDateString('fr-FR')}`}
+                    {sc.deadline_description || `Répondre avant le ${new Date(sc.deadline).toLocaleDateString('fr-FR')}`}
                   </div>
                 </div>
               )}
@@ -414,7 +414,7 @@ const Dashboard = () => {
                     <FileText size={11} color="#1a56db" />
                   </div>
                   <div style={{ fontSize: '10px', color: '#374151', flex: 1 }}>{sc.title?.length > 25 ? sc.title.slice(0, 25) + '...' : sc.title}</div>
-                  <div style={{ fontSize: '8px', background: '#eff6ff', color: '#1d4ed8', padding: '1px 5px', borderRadius: '3px', fontWeight: 600 }}>Cl\u00e9</div>
+                  <div style={{ fontSize: '8px', background: '#eff6ff', color: '#1d4ed8', padding: '1px 5px', borderRadius: '3px', fontWeight: 600 }}>Clé</div>
                 </div>
               ) : (
                 <div style={{ margin: '3px 8px', fontSize: '9px', color: '#9ca3af', padding: '6px' }}>Aucun document</div>
@@ -449,7 +449,7 @@ const Dashboard = () => {
               )}
             </>
           ) : (
-            <div style={{ padding: '20px', textAlign: 'center', fontSize: '10px', color: '#9ca3af' }}>S\u00e9lectionnez un dossier</div>
+            <div style={{ padding: '20px', textAlign: 'center', fontSize: '10px', color: '#9ca3af' }}>Sélectionnez un dossier</div>
           )}
         </div>
 
@@ -461,9 +461,9 @@ const Dashboard = () => {
                 <>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '3px' }}>
                     <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, color: '#fff', flexShrink: 0 }}>J</div>
-                    <div style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.8px' }}>Quel est votre probl\u00e8me ?</div>
+                    <div style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.8px' }}>Quel est votre problème ?</div>
                   </div>
-                  <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '16px', marginLeft: '44px' }}>James va prendre votre dossier en charge imm\u00e9diatement.</div>
+                  <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '16px', marginLeft: '44px' }}>James va prendre votre dossier en charge immédiatement.</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                     {SITUATIONS.map((sit, i) => (
                       <div key={i} onClick={() => handleSituationSelect(sit)}
@@ -480,7 +480,7 @@ const Dashboard = () => {
                     ))}
                   </div>
                   <button onClick={() => setShowOverlay(false)} style={{ marginTop: '12px', textAlign: 'right', fontSize: '10px', color: '#6b7280', cursor: 'pointer', background: 'none', border: 'none', width: '100%' }} data-testid="overlay-back">
-                    {'\u2190'} Retour au dashboard
+                    {'←'} Retour au dashboard
                   </button>
                 </>
               )}
@@ -511,7 +511,7 @@ const Dashboard = () => {
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <input value={chatInput} onChange={e => setChatInput(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') handleChatSend(); }}
-                        placeholder="R\u00e9pondez \u00e0 James..." style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '0.5px solid #e2e0db', fontSize: '11px', outline: 'none' }}
+                        placeholder="Répondez à James..." style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '0.5px solid #e2e0db', fontSize: '11px', outline: 'none' }}
                         data-testid="chat-input-overlay" />
                       <button onClick={handleChatSend} style={{ padding: '8px 14px', borderRadius: '8px', background: '#1a56db', color: '#fff', border: 'none', fontSize: '11px', fontWeight: 500, cursor: 'pointer' }} data-testid="chat-send-overlay">Envoyer</button>
                     </div>
@@ -520,7 +520,7 @@ const Dashboard = () => {
                   {newCaseStep === 'upload' && (
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <button onClick={handleUploadAndAnalyze} style={{ flex: 1, padding: '10px', borderRadius: '8px', background: '#1a56db', color: '#fff', border: 'none', fontSize: '11px', fontWeight: 500, cursor: 'pointer' }} data-testid="upload-doc-btn">
-                        T\u00e9l\u00e9verser un document
+                        Téléverser un document
                       </button>
                       <button onClick={handleSkipUpload} style={{ padding: '10px 14px', borderRadius: '8px', background: '#f5f5f5', color: '#555', border: '0.5px solid #e2e0db', fontSize: '11px', cursor: 'pointer' }} data-testid="skip-upload-btn">
                         Passer
@@ -529,7 +529,7 @@ const Dashboard = () => {
                   )}
 
                   <button onClick={() => { setNewCaseStep('select'); setChatMessages([]); }} style={{ marginTop: '10px', fontSize: '10px', color: '#6b7280', cursor: 'pointer', background: 'none', border: 'none', width: '100%', textAlign: 'right' }}>
-                    {'\u2190'} Changer de situation
+                    {'←'} Changer de situation
                   </button>
                 </>
               )}
