@@ -209,6 +209,11 @@ const labels = {
   },
 };
 
+// Simplified language aliases (after migration from fr-BE -> fr)
+labels['fr'] = labels['fr-BE'];
+labels['nl'] = labels['nl-BE'];
+labels['de'] = labels['de-BE'];
+
 // ========== RISK HISTORY CHART ==========
 const RiskHistoryChart = ({ history, currentScore, t }) => {
   if (!history || history.length === 0) return null;
@@ -641,7 +646,7 @@ const CaseDetail = () => {
         {findings.length > 0 ? (
           <div className="space-y-3">
             {findings.map((finding, i) => {
-              const findingText = finding.text || finding.texte || finding.description || finding.constatation || '';
+              const findingText = finding.text || finding.texte || finding.description || finding.constatation || finding.issue || finding.details || finding.finding || '';
               const impactColor = finding.impact === 'high' ? '#dc2626' : finding.impact === 'medium' ? '#f59e0b' : '#22c55e';
               const impactBg = finding.impact === 'high' ? '#fef2f2' : finding.impact === 'medium' ? '#fffbeb' : '#f0fdf4';
               const legalRef = finding.legal_ref || finding.reference_legale || finding.loi_applicable || '';

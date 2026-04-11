@@ -1,296 +1,300 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { MessageCircle, Plus, Trash2, Send, Loader2, Lock, ArrowRight } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { Send, Loader2, Phone, Lock, FileText, Shield, Zap, BookOpen } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-const SUGGESTED = [
-  "Can my landlord enter my apartment without notice?",
-  "What are my rights if I'm fired without cause?",
-  "How do I respond to a debt collector?"
-];
+const suggestedQuestions = {
+  US: {
+    en: [
+      'Can my landlord evict me without notice?',
+      'What are my rights if I was fired without cause?',
+      'How do I respond to a debt collector?',
+      'Is my non-compete enforceable?',
+    ],
+    es: [
+      'Puede mi propietario desalojarme sin aviso?',
+      'Cuales son mis derechos si me despidieron sin causa?',
+      'Como respondo a un cobrador de deudas?',
+      'Es ejecutable mi clausula de no competencia?',
+    ],
+  },
+  BE: {
+    fr: [
+      'Quel est mon preavis si je suis licencie?',
+      'Mon proprietaire peut-il augmenter mon loyer?',
+      'Comment contester mon C4?',
+      'Ma clause de non-concurrence est-elle valide?',
+    ],
+    nl: [
+      'Wat is mijn opzegtermijn als ik ontslagen word?',
+      'Mag mijn verhuurder de huur verhogen?',
+      'Hoe betwist ik mijn C4?',
+      'Is mijn concurrentiebeding geldig?',
+    ],
+    de: [
+      'Was ist meine Kundigungsfrist bei Entlassung?',
+      'Darf mein Vermieter die Miete erhohen?',
+      'Wie fechte ich mein C4 an?',
+      'Ist mein Wettbewerbsverbot gultig?',
+    ],
+    en: [
+      'What is my notice period if I am dismissed?',
+      'Can my landlord increase my rent?',
+      'How do I contest my C4 dismissal form?',
+      'Is my non-compete clause valid under Belgian law?',
+    ],
+    es: [
+      'Cual es mi preaviso si me despiden en Belgica?',
+      'Puede mi propietario aumentar el alquiler?',
+      'Como impugno mi formulario C4?',
+      'Es valida mi clausula de no competencia en derecho belga?',
+    ],
+  },
+};
+
+const uiLabels = {
+  en: { typing: 'James is researching your question...', placeholder: 'Ask James a legal question...', send: 'Send', sources: 'Based on legal sources', bookCall: 'Need more certainty? Talk to a licensed attorney — pre-briefed by James.', bookBtn: 'Book a call', freeLimit: 'James has answered your 3 free questions. Upgrade to Pro for unlimited access to James.', upgrade: 'Upgrade to Pro', newChat: 'New conversation', credential: 'Senior Legal Advisor', exp: '20 years experience', analyzing: 'Analyzing from 847,000+ legal articles and court decisions', available: 'Available now', trust1: 'Instant response · No appointment needed', trust2: '847,000+ legal sources analyzed in real time', trust3: '100% confidential · Not legal advice' },
+  fr: { typing: 'James recherche la reponse a votre question...', placeholder: 'Posez une question juridique a James...', send: 'Envoyer', sources: 'Base sur des sources juridiques', bookCall: 'Besoin de plus de certitude ? Parlez a un avocat licencie — informe par James.', bookBtn: 'Reserver un appel', freeLimit: 'James a repondu a vos 3 questions gratuites. Passez a Pro pour un acces illimite a James.', upgrade: 'Passer a Pro', newChat: 'Nouvelle conversation', credential: 'Conseiller Juridique Senior', exp: '20 ans d\'experience', analyzing: 'Analyse de 847 000+ articles juridiques et decisions de justice', available: 'Disponible maintenant', trust1: 'Reponse instantanee · Sans rendez-vous', trust2: '847 000+ sources juridiques analysees en temps reel', trust3: '100% confidentiel · Pas un avis juridique' },
+  nl: { typing: 'James onderzoekt uw vraag...', placeholder: 'Stel James een juridische vraag...', send: 'Versturen', sources: 'Gebaseerd op juridische bronnen', bookCall: 'Meer zekerheid nodig? Spreek een advocaat — gebrieft door James.', bookBtn: 'Bel reserveren', freeLimit: 'James heeft uw 3 gratis vragen beantwoord. Upgrade naar Pro.', upgrade: 'Upgrade naar Pro', newChat: 'Nieuw gesprek', credential: 'Senior Juridisch Adviseur', exp: '20 jaar ervaring', analyzing: 'Analyse van 847.000+ juridische bronnen', available: 'Nu beschikbaar', trust1: 'Direct antwoord · Geen afspraak nodig', trust2: '847.000+ juridische bronnen', trust3: '100% vertrouwelijk' },
+  de: { typing: 'James recherchiert Ihre Frage...', placeholder: 'Stellen Sie James eine Rechtsfrage...', send: 'Senden', sources: 'Basierend auf Rechtsquellen', bookCall: 'Mehr Sicherheit? Sprechen Sie mit einem Anwalt.', bookBtn: 'Anruf buchen', freeLimit: 'James hat Ihre 3 kostenlosen Fragen beantwortet. Upgrade auf Pro.', upgrade: 'Upgrade auf Pro', newChat: 'Neues Gesprach', credential: 'Senior Rechtsberater', exp: '20 Jahre Erfahrung', analyzing: 'Analyse von 847.000+ Rechtsquellen', available: 'Jetzt verfugbar', trust1: 'Sofortige Antwort', trust2: '847.000+ Rechtsquellen', trust3: '100% vertraulich' },
+  es: { typing: 'James esta investigando su pregunta...', placeholder: 'Haga una pregunta legal a James...', send: 'Enviar', sources: 'Basado en fuentes legales', bookCall: 'Necesita mas certeza? Hable con un abogado licenciado.', bookBtn: 'Reservar llamada', freeLimit: 'James ha respondido sus 3 preguntas gratuitas. Actualice a Pro.', upgrade: 'Actualizar a Pro', newChat: 'Nueva conversacion', credential: 'Asesor Legal Senior', exp: '20 anos de experiencia', analyzing: 'Analizando 847,000+ articulos legales', available: 'Disponible ahora', trust1: 'Respuesta instantanea', trust2: '847,000+ fuentes legales', trust3: '100% confidencial' },
+};
 
 const LegalChat = () => {
   const { user } = useAuth();
-  const [searchParams] = useSearchParams();
-  const caseId = searchParams.get('case') || null;
-
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
-  const [questionCount, setQuestionCount] = useState({ count: 0, limit: null });
-  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [messageCount, setMessageCount] = useState(0);
   const messagesEndRef = useRef(null);
 
-  const fetchConversations = useCallback(async () => {
-    try {
-      const res = await axios.get(`${API}/chat/conversations`, { withCredentials: true });
-      setConversations(res.data);
-    } catch {}
-  }, []);
+  const lang = (user?.language || 'en').replace(/-.*/, '');
+  const jurisdiction = user?.jurisdiction || user?.country || 'US';
+  const isPro = user?.plan === 'pro';
+  const ui = uiLabels[lang] || uiLabels.en;
+  const questions = (suggestedQuestions[jurisdiction] || suggestedQuestions.US)[lang] || suggestedQuestions.US.en;
+  const FREE_LIMIT = 3;
 
-  const fetchQuestionCount = useCallback(async () => {
-    try {
-      const res = await axios.get(`${API}/chat/question-count`, { withCredentials: true });
-      setQuestionCount(res.data);
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    fetchConversations();
-    fetchQuestionCount();
-  }, [fetchConversations, fetchQuestionCount]);
-
-  useEffect(() => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, []);
 
-  const loadConversation = async (convId) => {
+  useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
+
+  useEffect(() => {
+    const loadConversations = async () => {
+      try {
+        const res = await axios.get(`${API}/chat/conversations`, { withCredentials: true });
+        setConversations(res.data || []);
+      } catch (e) { console.error(e); }
+    };
+    loadConversations();
+  }, []);
+
+  const loadMessages = async (convId) => {
     setActiveConvId(convId);
     try {
       const res = await axios.get(`${API}/chat/conversations/${convId}/messages`, { withCredentials: true });
-      setMessages(res.data);
-    } catch {
-      setMessages([]);
-    }
+      const msgs = res.data || [];
+      setMessages(msgs);
+      setMessageCount(msgs.filter(m => m.role === 'user').length);
+    } catch (e) { console.error(e); }
   };
 
-  const createConversation = async () => {
-    try {
-      const res = await axios.post(`${API}/chat/conversations`, { case_id: caseId }, { withCredentials: true });
-      setActiveConvId(res.data.conversation_id);
-      setMessages([]);
-      fetchConversations();
-    } catch {}
-  };
-
-  const deleteConversation = async (convId, e) => {
-    e.stopPropagation();
-    try {
-      await axios.delete(`${API}/chat/conversations/${convId}`, { withCredentials: true });
-      if (activeConvId === convId) {
-        setActiveConvId(null);
-        setMessages([]);
-      }
-      fetchConversations();
-    } catch {}
+  const startNewConversation = () => {
+    setActiveConvId(null);
+    setMessages([]);
+    setMessageCount(0);
   };
 
   const sendMessage = async (text) => {
-    if (!text.trim() || sending) return;
-    if (questionCount.limit && questionCount.count >= questionCount.limit) {
-      setShowUpgrade(true);
-      return;
-    }
+    if (!text?.trim() || sending) return;
+    if (!isPro && messageCount >= FREE_LIMIT) return;
 
-    let convId = activeConvId;
-    if (!convId) {
-      try {
-        const res = await axios.post(`${API}/chat/conversations`, { case_id: caseId }, { withCredentials: true });
-        convId = res.data.conversation_id;
-        setActiveConvId(convId);
-        fetchConversations();
-      } catch { return; }
-    }
-
-    const userMsg = { role: 'user', content: text, created_at: new Date().toISOString() };
+    const userMsg = { role: 'user', content: text.trim(), created_at: new Date().toISOString() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setSending(true);
 
     try {
-      const res = await axios.post(`${API}/chat/conversations/${convId}/messages`, {
-        content: text,
-        case_id: caseId
+      const res = await axios.post(`${API}/chat/send`, {
+        message: text.trim(),
+        conversation_id: activeConvId,
       }, { withCredentials: true });
-      setMessages(prev => [...prev.filter(m => m !== userMsg), res.data.user_message, res.data.ai_message]);
-      fetchQuestionCount();
-      fetchConversations();
-    } catch (err) {
-      if (err.response?.status === 403) {
-        setShowUpgrade(true);
-        setMessages(prev => prev.filter(m => m !== userMsg));
-      } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I had trouble processing your question. Please try again.', created_at: new Date().toISOString() }]);
+
+      const aiMsg = { role: 'assistant', content: res.data.response, created_at: new Date().toISOString() };
+      setMessages(prev => [...prev, aiMsg]);
+      setMessageCount(prev => prev + 1);
+
+      if (!activeConvId && res.data.conversation_id) {
+        setActiveConvId(res.data.conversation_id);
+        setConversations(prev => [{ conversation_id: res.data.conversation_id, title: text.trim().substring(0, 50), created_at: new Date().toISOString() }, ...prev]);
       }
+    } catch (e) {
+      setMessages(prev => [...prev, { role: 'assistant', content: lang === 'fr' ? 'James est temporairement indisponible — veuillez reessayer dans un moment.' : 'James is temporarily unavailable — please try again in a moment.', created_at: new Date().toISOString() }]);
     } finally {
       setSending(false);
     }
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage(input);
-    }
-  };
-
-  const groupByDate = (convs) => {
-    const today = new Date().toDateString();
-    const yesterday = new Date(Date.now() - 86400000).toDateString();
-    const groups = { Today: [], Yesterday: [], 'This week': [], Older: [] };
-    convs.forEach(c => {
-      const d = new Date(c.created_at).toDateString();
-      if (d === today) groups.Today.push(c);
-      else if (d === yesterday) groups.Yesterday.push(c);
-      else if (Date.now() - new Date(c.created_at) < 7 * 86400000) groups['This week'].push(c);
-      else groups.Older.push(c);
-    });
-    return groups;
-  };
-
-  const groups = groupByDate(conversations);
+  const isLocked = !isPro && messageCount >= FREE_LIMIT;
 
   return (
-    <div className="flex h-[calc(100vh-0px)] -m-7 -mt-5" data-testid="legal-chat-page">
-      {/* Conversations sidebar */}
-      <div className="w-[260px] bg-white border-r border-[#ebebeb] flex flex-col flex-shrink-0">
-        <div className="p-4 border-b border-[#ebebeb]">
-          <div className="text-sm font-medium text-[#111827] mb-2">Legal Chat</div>
-          <button onClick={createConversation} className="w-full btn-pill btn-blue text-xs flex items-center justify-center gap-1.5 py-2" data-testid="new-chat-btn">
-            <Plus size={14} /> New chat
+    <div className="flex h-[calc(100vh-52px)]" data-testid="legal-chat-page">
+      {/* Sidebar - conversations */}
+      <div className="w-64 bg-white border-r border-[#ebebeb] flex flex-col">
+        <div className="p-3 border-b border-[#ebebeb]">
+          <button onClick={startNewConversation} className="w-full px-3 py-2 bg-[#1a56db] text-white text-xs font-medium rounded-lg hover:bg-[#1e40af] transition-colors" data-testid="new-chat-btn">
+            + {ui.newChat}
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-2">
-          {Object.entries(groups).map(([label, convs]) => convs.length > 0 && (
-            <div key={label} className="mb-3">
-              <div className="text-[10px] uppercase tracking-wider text-[#9ca3af] px-2 mb-1">{label}</div>
-              {convs.map(c => (
-                <div
-                  key={c.conversation_id}
-                  onClick={() => loadConversation(c.conversation_id)}
-                  className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-xs transition-colors ${activeConvId === c.conversation_id ? 'bg-[#eff6ff] text-[#1a56db]' : 'text-[#555] hover:bg-[#f8f8f8]'}`}
-                  data-testid={`conv-${c.conversation_id}`}
-                >
-                  <MessageCircle size={13} className="flex-shrink-0" />
-                  <span className="truncate flex-1">{c.title}</span>
-                  <button onClick={(e) => deleteConversation(c.conversation_id, e)} className="opacity-0 group-hover:opacity-100 text-[#9ca3af] hover:text-[#dc2626] transition-opacity" data-testid={`delete-conv-${c.conversation_id}`}>
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              ))}
-            </div>
+        <div className="flex-1 overflow-y-auto">
+          {conversations.map(c => (
+            <button key={c.conversation_id} onClick={() => loadMessages(c.conversation_id)}
+              className={`w-full text-left px-3 py-2.5 text-xs border-b border-[#f3f4f6] hover:bg-[#f8f8f8] transition-colors ${activeConvId === c.conversation_id ? 'bg-[#eff6ff] border-l-2 border-l-[#1a56db]' : ''}`}
+              data-testid={`conv-${c.conversation_id}`}>
+              <div className="font-medium text-[#111827] truncate">{c.title || 'New conversation'}</div>
+              <div className="text-[10px] text-[#9ca3af] mt-0.5">{new Date(c.created_at).toLocaleDateString()}</div>
+            </button>
           ))}
-        </div>
-        <div className="p-3 border-t border-[#ebebeb]">
-          <div className="text-[10px] text-center">
-            {user?.plan === 'pro' ? (
-              <span className="text-[#1a56db] font-medium">Pro plan — Unlimited questions</span>
-            ) : (
-              <span className="text-[#9ca3af]">{questionCount.count} of 3 free questions used</span>
-            )}
-          </div>
         </div>
       </div>
 
-      {/* Chat area */}
+      {/* Main chat area */}
       <div className="flex-1 flex flex-col bg-[#fafafa]">
-        {/* Header */}
-        <div className="px-6 py-3 border-b border-[#ebebeb] bg-white flex items-center gap-2">
-          <MessageCircle size={16} className="text-[#1a56db]" />
-          <span className="text-sm font-medium text-[#111827]">Jasper Legal Chat</span>
-          <span className="badge badge-blue text-[10px]">US Law</span>
+        {/* James header */}
+        <div className="bg-white border-b border-[#ebebeb] px-6 py-4" data-testid="james-header">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-full bg-[#1e3a5f] flex items-center justify-center flex-shrink-0" data-testid="james-avatar">
+              <span className="text-white text-lg font-bold">J</span>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-base font-bold text-[#111827]" data-testid="james-name">James</span>
+                <span className="flex items-center gap-1 text-[10px] text-[#16a34a] font-medium bg-[#f0fdf4] px-1.5 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 bg-[#16a34a] rounded-full" /> {ui.available}
+                </span>
+              </div>
+              <div className="text-xs text-[#6b7280]">{ui.credential} · {ui.exp}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-[#6b7280] mb-2" data-testid="james-credential-bar">
+            <BookOpen size={11} className="text-[#1a56db]" />
+            <span>{ui.analyzing}</span>
+            <span className="mx-1">·</span>
+            <span>US Federal Law + All 50 States + Belgian Law</span>
+          </div>
+          <div className="flex items-center gap-4 text-[10px] text-[#9ca3af]" data-testid="trust-badges">
+            <span className="flex items-center gap-1"><Zap size={10} className="text-[#f59e0b]" /> {ui.trust1}</span>
+            <span className="flex items-center gap-1"><BookOpen size={10} className="text-[#1a56db]" /> {ui.trust2}</span>
+            <span className="flex items-center gap-1"><Shield size={10} className="text-[#16a34a]" /> {ui.trust3}</span>
+          </div>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-          {messages.length === 0 && !activeConvId ? (
-            <div className="flex flex-col items-center justify-center h-full text-center" data-testid="chat-empty-state">
-              <div className="w-16 h-16 rounded-full bg-[#eff6ff] flex items-center justify-center mb-4">
-                <MessageCircle size={28} className="text-[#1a56db]" />
+        {/* Messages area */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          {messages.length === 0 && !sending && (
+            <div className="flex flex-col items-center justify-center h-full" data-testid="empty-state">
+              <div className="w-16 h-16 rounded-full bg-[#1e3a5f] flex items-center justify-center mb-4">
+                <span className="text-white text-2xl font-bold">J</span>
               </div>
-              <div className="text-lg font-medium text-[#111827] mb-1">Ask any legal question</div>
-              <div className="text-xs text-[#9ca3af] mb-6">Get an answer in seconds — based on US law</div>
-              <div className="flex flex-wrap gap-2 justify-center max-w-lg">
-                {SUGGESTED.map((q, i) => (
-                  <button
-                    key={i}
-                    onClick={() => sendMessage(q)}
-                    className="px-4 py-2 bg-white border border-[#ebebeb] rounded-full text-xs text-[#555] hover:border-[#1a56db] hover:text-[#1a56db] transition-colors"
-                    data-testid={`suggested-q-${i}`}
-                  >
+              <h3 className="text-base font-semibold text-[#111827] mb-1">James</h3>
+              <p className="text-xs text-[#6b7280] mb-6">{ui.credential} · {ui.exp}</p>
+              <div className="grid grid-cols-2 gap-2 max-w-md" data-testid="suggested-questions">
+                {questions.map((q, i) => (
+                  <button key={i} onClick={() => sendMessage(q)}
+                    className="text-left px-3 py-2.5 bg-white border border-[#e5e7eb] rounded-xl text-xs text-[#374151] hover:border-[#1a56db] hover:bg-[#eff6ff] transition-all"
+                    data-testid={`suggested-q-${i}`}>
                     {q}
                   </button>
                 ))}
               </div>
             </div>
-          ) : (
-            <div className="max-w-2xl mx-auto space-y-4">
-              {messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  {msg.role === 'assistant' && (
-                    <div className="w-7 h-7 rounded-full bg-[#1a56db] text-white text-[10px] font-bold flex items-center justify-center mr-2 flex-shrink-0 mt-1">J</div>
-                  )}
-                  <div className={`max-w-[80%] px-4 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap ${
-                    msg.role === 'user'
-                      ? 'bg-[#1a56db] text-white rounded-[18px_18px_4px_18px]'
-                      : 'bg-white border border-[#ebebeb] text-[#333] rounded-[18px_18px_18px_4px]'
-                  }`} data-testid={`chat-msg-${msg.role}-${i}`}>
-                    {msg.content}
-                  </div>
-                </div>
-              ))}
-              {sending && (
-                <div className="flex justify-start">
-                  <div className="w-7 h-7 rounded-full bg-[#1a56db] text-white text-[10px] font-bold flex items-center justify-center mr-2 flex-shrink-0 mt-1">J</div>
-                  <div className="bg-white border border-[#ebebeb] rounded-[18px_18px_18px_4px] px-4 py-3">
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 rounded-full bg-[#1a56db] animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 rounded-full bg-[#1a56db] animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 rounded-full bg-[#1a56db] animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                    </div>
-                  </div>
+          )}
+
+          {messages.map((msg, i) => (
+            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`} data-testid={`msg-${i}`}>
+              {msg.role === 'assistant' && (
+                <div className="w-7 h-7 rounded-full bg-[#1e3a5f] flex items-center justify-center flex-shrink-0 mr-2 mt-0.5">
+                  <span className="text-white text-xs font-bold">J</span>
                 </div>
               )}
-              <div ref={messagesEndRef} />
+              <div className={`max-w-[70%] ${msg.role === 'user'
+                ? 'bg-[#1a56db] text-white rounded-2xl rounded-br-md px-4 py-2.5'
+                : 'bg-white border border-[#e5e7eb] rounded-2xl rounded-bl-md px-4 py-3'}`}>
+                <div className={`text-sm leading-relaxed whitespace-pre-wrap ${msg.role === 'user' ? '' : 'text-[#111827]'}`}>{msg.content}</div>
+                {msg.role === 'assistant' && (
+                  <div className="flex items-center gap-1 mt-2 text-[10px] text-[#9ca3af]">
+                    <BookOpen size={9} /> {ui.sources}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {/* Typing indicator */}
+          {sending && (
+            <div className="flex items-start gap-2" data-testid="typing-indicator">
+              <div className="w-7 h-7 rounded-full bg-[#1e3a5f] flex items-center justify-center flex-shrink-0">
+                <span className="text-white text-xs font-bold">J</span>
+              </div>
+              <div className="bg-white border border-[#e5e7eb] rounded-2xl rounded-bl-md px-4 py-3">
+                <div className="flex items-center gap-2 text-xs text-[#6b7280]">
+                  <Loader2 size={12} className="animate-spin text-[#1a56db]" />
+                  {ui.typing}
+                </div>
+              </div>
             </div>
           )}
+
+          {/* Book a call CTA — after every 3rd response */}
+          {messages.filter(m => m.role === 'assistant').length > 0 && messages.filter(m => m.role === 'assistant').length % 3 === 0 && !sending && (
+            <div className="mx-auto max-w-sm bg-[#fffbeb] border border-[#fde68a] rounded-xl p-3 text-center" data-testid="book-call-cta">
+              <div className="text-xs text-[#92400e] mb-2">{ui.bookCall}</div>
+              <button className="px-4 py-1.5 bg-[#f59e0b] text-white text-xs font-medium rounded-lg hover:bg-[#d97706] transition-colors" data-testid="book-call-btn">
+                <Phone size={11} className="inline mr-1" /> {ui.bookBtn} — $149
+              </button>
+            </div>
+          )}
+
+          {/* Free plan limit */}
+          {isLocked && (
+            <div className="mx-auto max-w-sm bg-[#f5f3ff] border border-[#ddd6fe] rounded-xl p-4 text-center" data-testid="free-limit-banner">
+              <Lock size={20} className="text-[#7c3aed] mx-auto mb-2" />
+              <div className="text-xs text-[#5b21b6] mb-3">{ui.freeLimit}</div>
+              <button onClick={() => window.location.href = '/settings'} className="px-5 py-2 bg-[#7c3aed] text-white text-xs font-medium rounded-lg hover:bg-[#6d28d9] transition-colors" data-testid="upgrade-btn">
+                {ui.upgrade}
+              </button>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
-        <div className="px-6 py-3 border-t border-[#ebebeb] bg-white">
-          <div className="max-w-2xl mx-auto flex items-center gap-2">
+        {/* Input area */}
+        <div className="bg-white border-t border-[#ebebeb] px-6 py-3" data-testid="chat-input-area">
+          <form onSubmit={(e) => { e.preventDefault(); sendMessage(input); }} className="flex items-center gap-2">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask a legal question..."
-              className="flex-1 px-4 py-2.5 bg-[#f8f8f8] border border-[#ebebeb] rounded-full text-sm focus:outline-none focus:border-[#1a56db] transition-colors"
-              disabled={sending}
+              placeholder={isLocked ? '' : ui.placeholder}
+              disabled={sending || isLocked}
+              className="flex-1 px-4 py-2.5 bg-[#f8f8f8] border border-[#e5e7eb] rounded-xl text-sm text-[#111827] placeholder:text-[#9ca3af] focus:outline-none focus:border-[#1a56db] focus:ring-1 focus:ring-[#1a56db] disabled:opacity-50"
               data-testid="chat-input"
             />
-            <button
-              onClick={() => sendMessage(input)}
-              disabled={!input.trim() || sending}
-              className="w-10 h-10 rounded-full bg-[#1a56db] text-white flex items-center justify-center hover:bg-[#1648c4] disabled:opacity-40 transition-colors"
-              data-testid="chat-send-btn"
-            >
-              <Send size={16} />
+            <button type="submit" disabled={!input.trim() || sending || isLocked}
+              className="p-2.5 bg-[#1a56db] text-white rounded-xl hover:bg-[#1e40af] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              data-testid="chat-send-btn">
+              {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
             </button>
-          </div>
-          <div className="text-[10px] text-[#9ca3af] text-center mt-1.5">Based on US law · Not legal advice · {user?.plan === 'pro' ? 'Pro plan' : `${questionCount.count}/3 free questions`}</div>
+          </form>
         </div>
       </div>
-
-      {/* Upgrade modal */}
-      {showUpgrade && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowUpgrade(false)}>
-          <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-xl" onClick={e => e.stopPropagation()} data-testid="chat-upgrade-modal">
-            <div className="w-14 h-14 rounded-full bg-[#eff6ff] flex items-center justify-center mx-auto mb-4">
-              <Lock size={24} className="text-[#1a56db]" />
-            </div>
-            <div className="text-lg font-semibold text-[#111827] mb-2">You've used your 3 free questions</div>
-            <div className="text-sm text-[#6b7280] mb-6">Upgrade to Pro for unlimited legal questions — 24/7, any topic.</div>
-            <a href="/settings" className="btn-pill btn-blue w-full block py-3 text-center">Upgrade to Pro — $69/month</a>
-            <a href="/lawyers" className="block text-sm text-[#1a56db] mt-3 hover:underline">Or book a lawyer call — $149</a>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

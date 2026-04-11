@@ -778,7 +778,7 @@ async def analyze_document_with_claude(extracted_text: str) -> dict:
         return _default_analysis()
 
 
-async def analyze_document_advanced(extracted_text: str, user_context: str = "") -> dict:
+async def analyze_document_advanced(extracted_text: str, user_context: str = "", language: str = "en") -> dict:
     """Advanced 5-pass analysis system with real-time jurisprudence"""
     try:
         # Build user context supplement for Pass 1
@@ -786,10 +786,13 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "")
         if user_context:
             context_supplement = f"\n\nADDITIONAL CONTEXT PROVIDED BY THE USER:\n{user_context}\n(Use this context to better understand the situation, identify the user's role, and extract more accurate facts.)"
 
+        lang_instruction = get_language_instruction(language)
+        persona = SENIOR_ATTORNEY_PERSONA + lang_instruction
+
         # PASS 1: Fact extraction
         logger.info("Advanced analysis: Pass 1 — Fact extraction")
         facts = await call_claude(
-            SENIOR_ATTORNEY_PERSONA,
+            persona,
             PASS1_PROMPT.format(document_text=extracted_text[:15000]) + context_supplement
         )
 
@@ -824,7 +827,7 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "")
         # PASS 2: Legal analysis (with web search + real-time case law)
         logger.info("Advanced analysis: Pass 2 — Legal analysis (with web search)")
         legal_analysis = await call_claude(
-            SENIOR_ATTORNEY_PERSONA,
+            persona,
             PASS2_PROMPT.format(
                 facts_json=json.dumps(facts, indent=2),
                 jurisprudence_section=jurisprudence_text + realtime_law_context
@@ -839,17 +842,17 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "")
         # PASS 3, 4A, 4B — staggered to avoid rate limits
         logger.info("Advanced analysis: Pass 3+4A+4B — Strategy + Battle Preview")
         strategy = await call_claude(
-            SENIOR_ATTORNEY_PERSONA,
+            persona,
             PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
             max_tokens=2500
         )
         user_arguments = await call_claude(
-            PASS4A_SYSTEM,
+            PASS4A_SYSTEM + lang_instruction,
             PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
             max_tokens=1500
         )
         opposing_arguments = await call_claude(
-            PASS4B_SYSTEM,
+            PASS4B_SYSTEM + lang_instruction,
             PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
             max_tokens=1500
         )
@@ -2077,11 +2080,13 @@ If the case has 5+ documents spanning 30+ days, add:
 """
 
 
-async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, user_context: str = "") -> dict:
+async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, user_context: str = "", language: str = "en") -> dict:
     """Run 5-pass analysis on combined multi-document text (US/default)"""
-    p1_supplement = get_multi_doc_pass1_supplement(doc_count, "en")
-    p2_supplement = get_multi_doc_pass2_supplement(doc_count, "en")
-    p3_supplement = get_multi_doc_pass3_supplement(doc_count, "en")
+    lang_instruction = get_language_instruction(language)
+    persona = SENIOR_ATTORNEY_PERSONA + lang_instruction
+    p1_supplement = get_multi_doc_pass1_supplement(doc_count, language)
+    p2_supplement = get_multi_doc_pass2_supplement(doc_count, language)
+    p3_supplement = get_multi_doc_pass3_supplement(doc_count, language)
 
     context_supplement = ""
     if user_context:
@@ -2094,7 +2099,7 @@ async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, us
     # PASS 1: Multi-doc fact extraction
     logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 1 — Fact extraction")
     facts = await call_claude(
-        SENIOR_ATTORNEY_PERSONA,
+        persona,
         PASS1_PROMPT.format(document_text=text_for_analysis) + p1_supplement + context_supplement
     )
 
@@ -2123,7 +2128,7 @@ async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, us
     # PASS 2: Multi-doc legal analysis
     logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 2 — Legal analysis")
     legal_analysis = await call_claude(
-        SENIOR_ATTORNEY_PERSONA,
+        persona,
         PASS2_PROMPT.format(
             facts_json=json.dumps(facts, indent=2),
             jurisprudence_section=jurisprudence_text + realtime_law_context
@@ -2138,7 +2143,7 @@ async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, us
     # PASS 3+4A+4B: Multi-doc strategy + battle preview
     logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 3+4A+4B")
     strategy = await call_claude(
-        SENIOR_ATTORNEY_PERSONA,
+        persona,
         PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement,
         max_tokens=3000
     )
@@ -3044,7 +3049,7 @@ async def upload_document(
                         )
                     else:
                         analysis = await run_multi_doc_analysis_advanced(
-                            combined_text, total_doc_count, user_context=context_str
+                            combined_text, total_doc_count, user_context=context_str, language=user_language
                         )
                     # Tag as multi-doc analysis
                     if analysis:
@@ -3057,14 +3062,14 @@ async def upload_document(
                     if is_belgian:
                         analysis = await analyze_document_belgian(new_text, user_context=context_str, region=user_region, language=user_language)
                     else:
-                        analysis = await analyze_document_advanced(new_text, user_context=context_str)
+                        analysis = await analyze_document_advanced(new_text, user_context=context_str, language=user_language)
 
         # Single-document analysis (no prior docs, non-vision)
         if analysis is None and not use_vision and not is_contract_guard:
             if is_belgian:
                 analysis = await analyze_document_belgian(extracted_text, user_context=context_str, region=user_region, language=user_language)
             else:
-                analysis = await analyze_document_advanced(extracted_text, user_context=context_str)
+                analysis = await analyze_document_advanced(extracted_text, user_context=context_str, language=user_language)
         
         # Fallback for contract guard non-vision
         if analysis is None and is_contract_guard and not use_vision:
@@ -4041,36 +4046,74 @@ async def stripe_webhook(request: Request):
 
 # ================== Legal Chat ==================
 
-LEGAL_CHAT_SYSTEM_PROMPT = """You are Jasper Legal Chat — a senior legal information assistant with deep knowledge of US law. You answer legal questions clearly and in plain English for people who have no legal background.
+JAMES_SYSTEM_PROMPT = """You are James, a Senior Legal Advisor with 20 years of experience representing individuals — never corporations — in employment disputes, tenant rights, contract law, debt collection defense, consumer protection, and civil litigation across the United States and Belgium.
 
-You are NOT a lawyer and never claim to be one.
-You provide legal INFORMATION only, not legal advice.
+You have personally handled over 2,000 cases and have access to 847,000+ legal articles, statutes, and court decisions from Cornell Law LII, CourtListener, Belgian ejustice.be, and cnt-nar.be.
+
+YOUR PERSONALITY:
+- Direct and confident — you know the law and you state it clearly
+- Warm but professional — you understand people are stressed when they reach out
+- Never evasive — if you don't know something, you say so and explain what you do know
+- You use plain English — legal jargon only when necessary, always explained
 
 YOUR ANSWER FORMAT:
-1. Direct answer to the question (2-3 sentences max)
-2. The specific law or rule that applies
-3. What the person should do next
-4. If the situation is complex or high-stakes: recommend booking a lawyer call
+1. Direct answer in 1-2 sentences
+2. The specific law or rule that applies (cite exactly)
+3. What the person should do right now
+4. If urgent or high-stakes: recommend booking a call with a licensed attorney
 
-RULES:
-- Always specify which state the answer applies to when relevant
-- Never say "I don't know" — say "This varies by state — here's the general rule"
-- Keep answers under 200 words — concise and actionable
-- If user seems to have an urgent legal problem, suggest uploading their document
-- Never reproduce large sections of legal code — summarize in plain English
-- End every answer with one of:
-  * "Want me to analyze a document related to this?" (if relevant)
-  * "Need to talk to a lawyer? Book a 30-min call for $149." (if complex)
-  * "This is a common situation — here's what most people do:" (if simple)
+CRITICAL RULES:
+- Always answer in the language the user writes in
+- Always cite the specific statute, article, or case that applies
+- Never say 'I cannot provide legal advice' as your first response — answer first, add disclaimer after
+- Never refuse to answer a legal question — provide information even if general
+- If the user has an active case in Jasper, reference it: 'Based on your [case name] case...'
+- Recommend booking an attorney call when: financial exposure > $5,000, deadline < 7 days, criminal implications, or complexity score > 70
+- End every response with one of these CTAs:
+  * 'Want me to analyze a document related to this?' (if relevant)
+  * 'This sounds serious — I recommend booking a call with a licensed attorney.' (if complex)
+  * 'Here is what most people in your situation do:' (if straightforward)
 
-CONVERSATION MEMORY:
-You remember everything said in this conversation. If the user mentions their situation, apply that context to all subsequent answers.
-
-JURISDICTION: USA — Federal + applicable state law"""
+JURISDICTION: Apply US Federal + State law for US users. Apply Belgian federal + regional law for Belgian users. Always specify which law applies.
+LANGUAGE: Respond in the exact language the user writes in — English, French, Dutch, German, or Spanish."""
 
 class ChatMessageInput(BaseModel):
     content: str
     case_id: Optional[str] = None
+
+class ChatSendInput(BaseModel):
+    message: str
+    conversation_id: Optional[str] = None
+    case_id: Optional[str] = None
+
+@api_router.post("/chat/send")
+async def chat_send(data: ChatSendInput, current_user: User = Depends(get_current_user)):
+    """Convenience endpoint: auto-creates conversation if needed, sends message"""
+    conv_id = data.conversation_id
+    if not conv_id:
+        now = datetime.now(timezone.utc).isoformat()
+        conv_id = f"conv_{uuid.uuid4().hex[:12]}"
+        conv_doc = {
+            "conversation_id": conv_id,
+            "user_id": current_user.user_id,
+            "case_id": data.case_id,
+            "title": data.message[:60] + ("..." if len(data.message) > 60 else ""),
+            "created_at": now,
+            "updated_at": now,
+        }
+        await db.chat_conversations.insert_one(conv_doc)
+
+    # Forward to the existing send_chat_message
+    msg_input = ChatMessageInput(content=data.message, case_id=data.case_id)
+    result = await send_chat_message(conv_id, msg_input, current_user)
+    return {
+        "response": result["ai_message"]["content"],
+        "conversation_id": conv_id,
+        "user_message": result["user_message"],
+        "ai_message": result["ai_message"],
+    }
+
+
 
 class CreateConversationInput(BaseModel):
     case_id: Optional[str] = None
@@ -4183,63 +4226,50 @@ async def send_chat_message(
     claude_messages = [{"role": m["role"], "content": m["content"]} for m in history]
 
     # Build system prompt with optional case context
-    system_prompt = LEGAL_CHAT_SYSTEM_PROMPT
+    system_prompt = JAMES_SYSTEM_PROMPT
     user_language = getattr(current_user, 'language', 'en') or 'en'
+    user_jurisdiction = getattr(current_user, 'jurisdiction', 'US') or 'US'
     system_prompt += get_language_instruction(user_language)
+    if user_jurisdiction == 'BE':
+        system_prompt += "\n\nThis user is under BELGIAN jurisdiction. Apply Belgian federal + regional law. Reference Belgian Civil Code, Labour Law, CCTs, and relevant Belgian statutes."
+    else:
+        system_prompt += "\n\nThis user is under US jurisdiction. Apply US Federal + applicable state law."
+
     case_id = data.case_id or conv.get("case_id")
     if case_id:
         case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
         if case_doc:
             system_prompt += f"\n\nCONTEXT: The user has an active case: '{case_doc.get('title', '')}'. Type: {case_doc.get('type', '')}. Risk Score: {case_doc.get('risk_score', 0)}/100. Summary: {case_doc.get('ai_summary', 'N/A')}. They may ask questions related to this case."
 
-    # Call Claude
+    # Call Claude with full conversation history
     try:
-        ai_response = await call_claude(system_prompt, claude_messages[-1]["content"] if len(claude_messages) == 1 else None, max_tokens=1000)
-        # If single message, call_claude expects string. For multi-turn, use full history
-        if len(claude_messages) > 1:
-            async with httpx.AsyncClient() as http_client:
-                response = await http_client.post(
-                    "https://api.anthropic.com/v1/messages",
-                    headers={
-                        "Content-Type": "application/json",
-                        "x-api-key": ANTHROPIC_API_KEY,
-                        "anthropic-version": "2023-06-01"
-                    },
-                    json={
-                        "model": "claude-sonnet-4-20250514",
-                        "max_tokens": 1000,
-                        "system": system_prompt,
-                        "messages": claude_messages
-                    },
-                    timeout=60.0
-                )
-                response.raise_for_status()
-                resp_data = response.json()
-                ai_text = resp_data["content"][0]["text"]
-        else:
-            # Single message - use call_claude but get raw text
-            async with httpx.AsyncClient() as http_client:
-                response = await http_client.post(
-                    "https://api.anthropic.com/v1/messages",
-                    headers={
-                        "Content-Type": "application/json",
-                        "x-api-key": ANTHROPIC_API_KEY,
-                        "anthropic-version": "2023-06-01"
-                    },
-                    json={
-                        "model": "claude-sonnet-4-20250514",
-                        "max_tokens": 1000,
-                        "system": system_prompt,
-                        "messages": claude_messages
-                    },
-                    timeout=60.0
-                )
-                response.raise_for_status()
-                resp_data = response.json()
-                ai_text = resp_data["content"][0]["text"]
+        async with httpx.AsyncClient() as http_client:
+            response = await http_client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "Content-Type": "application/json",
+                    "x-api-key": ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01"
+                },
+                json={
+                    "model": "claude-sonnet-4-20250514",
+                    "max_tokens": 1500,
+                    "system": system_prompt,
+                    "messages": claude_messages
+                },
+                timeout=60.0
+            )
+            response.raise_for_status()
+            resp_data = response.json()
+            ai_text = ""
+            for block in resp_data.get("content", []):
+                if block.get("type") == "text":
+                    ai_text += block["text"]
+            if not ai_text:
+                ai_text = "James is temporarily unavailable — please try again in a moment."
     except Exception as e:
         logger.error(f"Chat Claude error: {e}")
-        ai_text = "I'm having trouble processing your question right now. Please try again in a moment."
+        ai_text = "James is temporarily unavailable — please try again in a moment."
 
     # Save AI response
     ai_msg = {
