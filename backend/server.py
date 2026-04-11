@@ -227,6 +227,10 @@ class Case(BaseModel):
     recent_case_law: List[dict] = []
     case_law_updated: Optional[str] = None
     james_question: Optional[dict] = None
+    opposing_party_name: Optional[str] = None
+    opposing_party_address: Optional[str] = None
+    document_date: Optional[str] = None
+    primary_amount: Optional[float] = None
     # Multi-Document Analysis Fields
     case_narrative: Optional[str] = None
     contradictions: List[dict] = []
@@ -2914,6 +2918,18 @@ def _build_case_update(analysis, case_before, filename, ts):
     a = analysis or {}
     cb = case_before or {}
     rs = a.get("risk_score", {}) if isinstance(a.get("risk_score"), dict) else {}
+    # Extract opposing party info from Pass 1 facts
+    facts = a.get("facts", {})
+    parties = facts.get("parties", {})
+    opposing = parties.get("opposing_party", {})
+    opp_name = opposing.get("name") if isinstance(opposing, dict) else None
+    key_amounts = facts.get("key_amounts", [])
+    doc_date = facts.get("document_date")
+    primary_amount = None
+    if key_amounts and isinstance(key_amounts, list) and len(key_amounts) > 0:
+        first = key_amounts[0]
+        if isinstance(first, dict):
+            primary_amount = first.get("amount")
     return {
         "risk_score": rs.get("total", 0),
         "risk_financial": rs.get("financial", 0),
@@ -2950,6 +2966,11 @@ def _build_case_update(analysis, case_before, filename, ts):
         "master_deadlines": a.get("master_deadlines") or cb.get("master_deadlines", []),
         "multi_doc_summary": a.get("case_narrative") or cb.get("multi_doc_summary"),
         "james_question": a.get("james_question"),
+        # Extracted party/document info for letter auto-fill
+        "opposing_party_name": opp_name or cb.get("opposing_party_name"),
+        "opposing_party_address": cb.get("opposing_party_address"),
+        "document_date": doc_date or cb.get("document_date"),
+        "primary_amount": primary_amount or cb.get("primary_amount"),
         "updated_at": ts
     }
 

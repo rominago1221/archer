@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Download, Loader2 } from 'lucide-react';
+import { X, Download, Loader2, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 import jsPDF from 'jspdf';
 
@@ -8,64 +8,93 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const T = {
   en: {
     header: 'James is drafting your letter',
-    name: 'Your full name', address: 'Your address',
+    name: 'Your full name', address: 'Your address', email: 'Your email',
     recipientName: 'Recipient name', recipientAddress: 'Recipient address',
-    docDate: 'Date of the document', amount: 'Key amount (if relevant)',
+    docDate: 'Date of the document', amount: 'Key amount',
     note: 'Add a personal note for James', noteMax: '200 characters',
     generate: 'Generate letter with James', generating: 'James is writing',
     downloadPdf: 'Download PDF', sendHelloSign: 'Send via HelloSign',
     editJames: 'Edit with James', close: 'Close',
     preview: 'Letter Preview',
+    detected: 'Detected by James from your document',
+    profileLocked: 'From your profile',
+    incompleteProfile: 'Complete your profile to never fill this again',
+    completeProfile: 'Complete profile',
   },
   fr: {
     header: 'James rédige votre lettre',
-    name: 'Votre nom complet', address: 'Votre adresse',
+    name: 'Votre nom complet', address: 'Votre adresse', email: 'Votre email',
     recipientName: 'Nom du destinataire', recipientAddress: 'Adresse du destinataire',
-    docDate: 'Date du document', amount: 'Montant clé (si pertinent)',
+    docDate: 'Date du document', amount: 'Montant clé',
     note: 'Ajoutez une note personnelle pour James', noteMax: '200 caractères',
     generate: 'Générer la lettre avec James', generating: 'James rédige',
     downloadPdf: 'Télécharger PDF', sendHelloSign: 'Envoyer via HelloSign',
     editJames: 'Modifier avec James', close: 'Fermer',
     preview: 'Aperçu de la lettre',
+    detected: 'Détecté par James dans votre document',
+    profileLocked: 'De votre profil',
+    incompleteProfile: 'Complétez votre profil pour ne plus remplir ceci',
+    completeProfile: 'Compléter le profil',
   },
   nl: {
     header: 'James stelt uw brief op',
-    name: 'Uw volledige naam', address: 'Uw adres',
+    name: 'Uw volledige naam', address: 'Uw adres', email: 'Uw email',
     recipientName: 'Naam ontvanger', recipientAddress: 'Adres ontvanger',
-    docDate: 'Datum van het document', amount: 'Belangrijkst bedrag (indien relevant)',
+    docDate: 'Datum van het document', amount: 'Belangrijkst bedrag',
     note: 'Voeg een persoonlijke noot toe voor James', noteMax: '200 tekens',
     generate: 'Genereer brief met James', generating: 'James schrijft',
     downloadPdf: 'Download PDF', sendHelloSign: 'Verstuur via HelloSign',
     editJames: 'Bewerk met James', close: 'Sluiten',
     preview: 'Briefvoorbeeld',
+    detected: 'Gedetecteerd door James uit uw document',
+    profileLocked: 'Van uw profiel',
+    incompleteProfile: 'Vul uw profiel aan zodat u dit nooit meer hoeft in te vullen',
+    completeProfile: 'Profiel aanvullen',
   },
 };
 
-const Field = ({ label, value, onChange, placeholder, multiline, maxLen }) => (
+const Field = ({ label, value, onChange, locked, hint, autoComplete }) => (
   <div style={{ marginBottom: 10 }}>
     <label style={{ fontSize: 10, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 3 }}>{label}</label>
-    {multiline ? (
-      <>
-        <textarea value={value} onChange={e => onChange(e.target.value.slice(0, maxLen || 500))} placeholder={placeholder}
-          style={{ width: '100%', minHeight: 56, padding: '7px 10px', fontSize: 11, border: '0.5px solid #e2e0db', borderRadius: 7, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5, background: '#fafafa', color: '#374151' }} />
-        {maxLen && <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'right' }}>{value.length}/{maxLen}</div>}
-      </>
-    ) : (
-      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        style={{ width: '100%', padding: '7px 10px', fontSize: 11, border: '0.5px solid #e2e0db', borderRadius: 7, background: '#fafafa', color: '#374151' }} />
-    )}
+    <input
+      value={value}
+      onChange={e => !locked && onChange(e.target.value)}
+      readOnly={locked}
+      autoComplete={autoComplete || 'on'}
+      style={{
+        width: '100%', padding: '7px 10px', fontSize: 11,
+        border: '0.5px solid #e2e0db', borderRadius: 7,
+        background: locked ? '#f3f4f6' : '#fafafa',
+        color: locked ? '#6b7280' : '#374151',
+        cursor: locked ? 'default' : 'text',
+      }}
+    />
+    {hint && <div style={{ fontSize: 8, color: '#9ca3af', marginTop: 2, fontStyle: 'italic' }}>{hint}</div>}
   </div>
 );
 
-const LetterFormModal = ({ step, caseId, caseData, userName, lang, onClose, onOpenChat }) => {
+const LetterFormModal = ({ step, caseId, caseData, userName, userEmail, userAddress, lang, onClose, onOpenChat, onNavigate }) => {
   const t = T[lang] || T.en;
+
+  // Determine profile completeness
+  const hasName = !!userName;
+  const hasAddress = !!userAddress;
+  const profileComplete = hasName && hasAddress;
+
+  // Pre-fill from case data (extracted by James)
+  const oppName = caseData?.opposing_party_name || '';
+  const oppAddr = caseData?.opposing_party_address || '';
+  const docDate = caseData?.document_date || '';
+  const amount = caseData?.primary_amount ? String(caseData.primary_amount) : (caseData?.financial_exposure || '');
+
   const [form, setForm] = useState({
     senderName: userName || '',
-    senderAddress: '',
-    recipientName: '',
-    recipientAddress: '',
-    docDate: '',
-    amount: '',
+    senderAddress: userAddress || '',
+    senderEmail: userEmail || '',
+    recipientName: oppName,
+    recipientAddress: oppAddr,
+    docDate: docDate,
+    amount: typeof amount === 'number' ? String(amount) : (amount || ''),
     note: '',
   });
   const [generating, setGenerating] = useState(false);
@@ -101,8 +130,8 @@ const LetterFormModal = ({ step, caseId, caseData, userName, lang, onClose, onOp
     doc.setFontSize(11);
     if (form.senderName) doc.text(form.senderName, 20, 20);
     if (form.senderAddress) doc.text(form.senderAddress, 20, 26);
-    if (form.recipientName) { doc.text(form.recipientName, 120, 20); }
-    if (form.recipientAddress) { doc.text(form.recipientAddress, 120, 26); }
+    if (form.recipientName) doc.text(form.recipientName, 120, 20);
+    if (form.recipientAddress) doc.text(form.recipientAddress, 120, 26);
     doc.setFontSize(12);
     if (letter.subject) doc.text(letter.subject, 20, 42);
     doc.setFontSize(10);
@@ -125,16 +154,48 @@ const LetterFormModal = ({ step, caseId, caseData, userName, lang, onClose, onOp
 
         {!letter ? (
           <>
-            {/* Form */}
+            {/* Incomplete profile banner */}
+            {!profileComplete && (
+              <div data-testid="incomplete-profile-banner" style={{
+                display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', marginBottom: 14,
+                background: '#fef3c7', borderRadius: 8, border: '0.5px solid #fde68a',
+              }}>
+                <AlertTriangle size={14} color="#92400e" />
+                <span style={{ fontSize: 11, color: '#92400e', flex: 1 }}>{t.incompleteProfile}</span>
+                <button onClick={() => { onClose(); onNavigate?.('/settings'); }} data-testid="complete-profile-btn"
+                  style={{ fontSize: 10, color: '#1a56db', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  {t.completeProfile} →
+                </button>
+              </div>
+            )}
+
+            {/* Form — YOUR INFO section */}
+            <div style={{ fontSize: 9, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Your information</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
-              <Field label={t.name} value={form.senderName} onChange={set('senderName')} />
-              <Field label={t.recipientName} value={form.recipientName} onChange={set('recipientName')} />
-              <Field label={t.address} value={form.senderAddress} onChange={set('senderAddress')} />
-              <Field label={t.recipientAddress} value={form.recipientAddress} onChange={set('recipientAddress')} />
-              <Field label={t.docDate} value={form.docDate} onChange={set('docDate')} />
-              <Field label={t.amount} value={form.amount} onChange={set('amount')} />
+              <Field label={t.name} value={form.senderName} onChange={set('senderName')} locked={hasName} hint={hasName ? t.profileLocked : null} />
+              <Field label={t.email} value={form.senderEmail} onChange={set('senderEmail')} locked={!!userEmail} hint={userEmail ? t.profileLocked : null} />
             </div>
-            <Field label={t.note} value={form.note} onChange={set('note')} multiline maxLen={200} placeholder={lang === 'fr' ? 'Contexte supplémentaire pour James...' : 'Additional context for James...'} />
+            <Field label={t.address} value={form.senderAddress} onChange={set('senderAddress')} locked={hasAddress} hint={hasAddress ? t.profileLocked : null} />
+
+            {/* RECIPIENT INFO section */}
+            <div style={{ fontSize: 9, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6, marginTop: 8 }}>Recipient information</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
+              <Field label={t.recipientName} value={form.recipientName} onChange={set('recipientName')} hint={oppName ? t.detected : null} autoComplete="off" />
+              <Field label={t.docDate} value={form.docDate} onChange={set('docDate')} hint={docDate ? t.detected : null} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
+              <Field label={t.recipientAddress} value={form.recipientAddress} onChange={set('recipientAddress')} hint={oppAddr ? t.detected : null} autoComplete="off" />
+              <Field label={t.amount} value={form.amount} onChange={set('amount')} hint={amount ? t.detected : null} />
+            </div>
+
+            {/* Personal note */}
+            <div style={{ marginBottom: 10, marginTop: 4 }}>
+              <label style={{ fontSize: 10, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 3 }}>{t.note}</label>
+              <textarea value={form.note} onChange={e => set('note')(e.target.value.slice(0, 200))}
+                placeholder={lang === 'fr' ? 'Contexte supplémentaire pour James...' : 'Additional context for James...'}
+                style={{ width: '100%', minHeight: 56, padding: '7px 10px', fontSize: 11, border: '0.5px solid #e2e0db', borderRadius: 7, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5, background: '#fafafa', color: '#374151' }} />
+              <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'right' }}>{form.note.length}/200</div>
+            </div>
 
             <button data-testid="generate-letter-btn" onClick={handleGenerate} disabled={generating}
               style={{

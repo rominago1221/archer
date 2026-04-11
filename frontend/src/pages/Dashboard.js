@@ -844,9 +844,12 @@ const Dashboard = () => {
             caseId={selectedId}
             caseData={sc}
             userName={user?.name}
+            userEmail={user?.email}
+            userAddress={user?.address}
             lang={lang}
             onClose={() => setLetterFormStep(null)}
             onOpenChat={(msg) => setChatDrawer({ initial: msg })}
+            onNavigate={(path) => navigate(path)}
           />
         )}
 
