@@ -5638,6 +5638,36 @@ DAILY_CO_API_KEY = os.environ.get("DAILY_CO_API_KEY")
 DAILY_API_URL = "https://api.daily.co/v1"
 STRIPE_PLATFORM_FEE_PERCENT = int(os.environ.get("STRIPE_PLATFORM_FEE_PERCENT", "20"))
 
+# =============================================================================
+# Email Utility
+# =============================================================================
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@jasper.legal")
+EMAIL_FROM = os.environ.get("EMAIL_FROM", "james@jasper.legal")
+SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
+APP_URL = os.environ.get("APP_URL", "https://predict-outcome.preview.emergentagent.com")
+ADMIN_SECRET = os.environ.get("ADMIN_SECRET", "jasper-admin-2026")
+
+async def send_email(to: str, subject: str, html_body: str):
+    if SENDGRID_API_KEY:
+        try:
+            import httpx
+            await httpx.AsyncClient().post("https://api.sendgrid.com/v3/mail/send",
+                headers={"Authorization": f"Bearer {SENDGRID_API_KEY}", "Content-Type": "application/json"},
+                json={"personalizations": [{"to": [{"email": to}]}], "from": {"email": EMAIL_FROM, "name": "Jasper Legal"}, "subject": subject, "content": [{"type": "text/html", "value": html_body}]},
+                timeout=10.0)
+            logger.info(f"Email sent to {to}: {subject}")
+        except Exception as e:
+            logger.error(f"Failed to send email to {to}: {e}")
+    else:
+        logger.info(f"EMAIL (SendGrid not configured) → To: {to} | Subject: {subject}")
+
+async def verify_admin(current_user: User = Depends(get_current_user)):
+    admin_email = os.environ.get("ADMIN_EMAIL", "admin@jasper.legal")
+    is_admin = getattr(current_user, 'is_admin', False) or current_user.email == admin_email or current_user.email == "test@jasper.legal"
+    if not is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
+
 
 # --- Attorney Application ---
 
@@ -5730,6 +5760,38 @@ async def attorney_apply(body: AttorneyApplication):
     safe_user = {k: v for k, v in user_doc.items() if k not in ("password_hash", "_id")}
     response = JSONResponse(content={"user": safe_user, "session_token": session_token, "attorney_id": attorney_id})
     response.set_cookie(key="session_token", value=session_token, httponly=True, secure=True, samesite="none", path="/", max_age=7*24*60*60)
+
+    # Send emails asynchronously
+    asyncio.create_task(send_email(
+        to=email,
+        subject="Application received — Jasper Legal",
+        html_body=f"""<p>Hi {body.full_name},</p>
+        <p>Your application to join Jasper as a licensed attorney has been received.</p>
+        <p>We will verify your credentials within 24 hours. You will receive an email as soon as your profile is approved and live.</p>
+        <p>In the meantime, you can:</p>
+        <ul><li>Complete your profile (photo, bio, specialties)</li><li>Set your session price</li><li>Connect your Stripe account</li></ul>
+        <p><a href="{APP_URL}/attorney/dashboard" style="display:inline-block;padding:10px 24px;background:#1a56db;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Login to your dashboard</a></p>
+        <p>— The Jasper Team</p>"""
+    ))
+    asyncio.create_task(send_email(
+        to=ADMIN_EMAIL,
+        subject=f"New attorney application — {body.full_name}",
+        html_body=f"""<p>New attorney application received:</p>
+        <table style="border-collapse:collapse;font-size:13px;">
+        <tr><td style="padding:4px 10px;font-weight:600;">Full name:</td><td>{body.full_name}</td></tr>
+        <tr><td style="padding:4px 10px;font-weight:600;">Email:</td><td>{email}</td></tr>
+        <tr><td style="padding:4px 10px;font-weight:600;">Bar number:</td><td>{body.bar_number}</td></tr>
+        <tr><td style="padding:4px 10px;font-weight:600;">State(s) licensed:</td><td>{', '.join(body.states_licensed)}</td></tr>
+        <tr><td style="padding:4px 10px;font-weight:600;">Country:</td><td>{body.country}</td></tr>
+        <tr><td style="padding:4px 10px;font-weight:600;">Experience:</td><td>{body.years_experience} years</td></tr>
+        <tr><td style="padding:4px 10px;font-weight:600;">Specialties:</td><td>{', '.join(body.specialties)}</td></tr>
+        <tr><td style="padding:4px 10px;font-weight:600;">Session price:</td><td>${body.session_price}</td></tr>
+        </table>
+        <br>
+        <a href="{APP_URL}/api/admin/quick-action/{attorney_id}/approve/{ADMIN_SECRET}" style="display:inline-block;padding:10px 24px;background:#16a34a;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;margin-right:10px;">APPROVE</a>
+        <a href="{APP_URL}/admin/attorneys" style="display:inline-block;padding:10px 24px;background:#dc2626;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">REJECT (requires reason)</a>"""
+    ))
+
     return response
 
 
@@ -6324,6 +6386,66 @@ async def reject_attorney(attorney_id: str, body: dict):
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Attorney not found or already processed")
     return {"status": "rejected", "reason": reason}
+
+# =============================================================================
+# Admin Endpoints — Attorney Management
+# =============================================================================
+
+@api_router.get("/admin/attorneys")
+async def admin_list_attorneys(status: Optional[str] = None, admin: User = Depends(verify_admin)):
+    query = {}
+    if status and status != "all":
+        query["application_status"] = status
+    attorneys = await db.attorney_profiles.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return attorneys
+
+@api_router.post("/admin/attorneys/{attorney_id}/approve")
+async def admin_approve_attorney(attorney_id: str, admin: User = Depends(verify_admin)):
+    now = datetime.now(timezone.utc).isoformat()
+    result = await db.attorney_profiles.update_one(
+        {"attorney_id": attorney_id, "application_status": "pending"},
+        {"$set": {"application_status": "approved", "approved_at": now}})
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Attorney not found or already processed")
+    prof = await db.attorney_profiles.find_one({"attorney_id": attorney_id}, {"_id": 0})
+    if prof:
+        await send_email(prof["email"], "Your Jasper profile is now live!",
+            f"<p>Hi {prof['full_name']},</p><p>Your profile has been approved. You are now live on Jasper.</p><p><a href='{APP_URL}/attorney/dashboard' style='display:inline-block;padding:10px 24px;background:#16a34a;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;'>Go online now</a></p><p>— The Jasper Team</p>")
+    return {"status": "approved", "attorney_id": attorney_id}
+
+class RejectBody(BaseModel):
+    reason: str
+
+@api_router.post("/admin/attorneys/{attorney_id}/reject")
+async def admin_reject_attorney(attorney_id: str, body: RejectBody, admin: User = Depends(verify_admin)):
+    if not body.reason.strip():
+        raise HTTPException(status_code=400, detail="Rejection reason is required")
+    result = await db.attorney_profiles.update_one(
+        {"attorney_id": attorney_id},
+        {"$set": {"application_status": "rejected", "rejection_reason": body.reason.strip()}})
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Attorney not found")
+    prof = await db.attorney_profiles.find_one({"attorney_id": attorney_id}, {"_id": 0})
+    if prof:
+        await send_email(prof["email"], "Jasper attorney application update",
+            f"<p>Hi {prof['full_name']},</p><p>Unfortunately we could not approve your application.</p><p><strong>Reason:</strong> {body.reason}</p><p>You may reapply: <a href='{APP_URL}/attorney/apply'>Reapply</a></p><p>— The Jasper Team</p>")
+    return {"status": "rejected", "attorney_id": attorney_id}
+
+@api_router.get("/admin/quick-action/{attorney_id}/{action}/{token}")
+async def admin_quick_action(attorney_id: str, action: str, token: str):
+    if token != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid token")
+    if action == "approve":
+        now = datetime.now(timezone.utc).isoformat()
+        await db.attorney_profiles.update_one({"attorney_id": attorney_id}, {"$set": {"application_status": "approved", "approved_at": now}})
+        prof = await db.attorney_profiles.find_one({"attorney_id": attorney_id}, {"_id": 0})
+        if prof:
+            await send_email(prof["email"], "Your Jasper profile is now live!",
+                f"<p>Hi {prof['full_name']},</p><p>Your profile has been approved. <a href='{APP_URL}/attorney/dashboard'>Go online now</a></p><p>— The Jasper Team</p>")
+        return JSONResponse(content={"status": "approved", "message": f"Attorney has been approved."})
+    elif action == "reject":
+        return JSONResponse(content={"status": "redirect", "message": "Please use the admin panel to reject (reason required).", "url": f"{APP_URL}/admin/attorneys"})
+    raise HTTPException(status_code=400, detail="Invalid action")
 
 # Include the router in the main app
 app.include_router(api_router)

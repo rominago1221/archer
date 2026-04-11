@@ -55,7 +55,8 @@ const AttorneyApply = () => {
         graduation_year: form.graduation_year ? parseInt(form.graduation_year) : null
       }, { withCredentials: true });
       if (res.data.session_token) {
-        setSubmitted(true);
+        // Redirect immediately to attorney dashboard
+        window.location.href = '/attorney/dashboard';
       }
     } catch (err) {
       setError(err.response?.data?.detail || 'Application failed. Please try again.');
