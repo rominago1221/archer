@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Briefcase, Home, Users, DollarSign, AlertCircle, Package, Star, Heart, CheckCircle, Plus, Minus } from 'lucide-react';
 import JurisdictionLanguageBar from '../components/JurisdictionLanguageBar';
+import { useAuth } from '../contexts/AuthContext';
 import translations, { getStoredLocale, setStoredLocale, getLocaleFromPrefs } from '../data/landingTranslations';
 
 const catIcons = [FileText, Briefcase, Home, Users, DollarSign, AlertCircle, Package, Star, Heart];
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [openFaq, setOpenFaq] = useState(null);
   const stored = getStoredLocale();
   const [locale, setLocale] = useState(stored);
@@ -34,7 +36,7 @@ const Landing = () => {
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-[#ebebeb] z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '20px', fontWeight: 500, letterSpacing: '-0.5px', color: '#1a56db' }} data-testid="landing-logo">Jasper</div>
+          <div onClick={() => navigate('/')} style={{ fontFamily: 'Outfit, sans-serif', fontSize: '20px', fontWeight: 500, letterSpacing: '-0.5px', color: '#1a56db', cursor: 'pointer' }} data-testid="landing-logo">Jasper</div>
           <div className="hidden md:flex items-center gap-6 text-sm text-[#555]">
             <a href="#how" className="hover:text-[#1a56db]">{t.nav.howItWorks}</a>
             <a href="#attorneys" className="hover:text-[#1a56db]">{t.nav.attorneys}</a>
@@ -49,8 +51,16 @@ const Landing = () => {
               onLanguageChange={handleLanguageChange}
               compact
             />
-            <button onClick={() => navigate('/login')} className="text-sm text-[#555] hover:text-[#1a56db]" data-testid="nav-login-btn">{t.nav.signIn}</button>
-            <button onClick={() => navigate('/signup')} className="px-4 py-2 bg-[#1a56db] text-white text-sm font-medium rounded-full hover:bg-[#1546b3] transition-colors" data-testid="nav-signup-btn">{t.nav.getStarted}</button>
+            {user ? (
+              <button onClick={() => navigate('/dashboard')} className="px-4 py-2 bg-[#1a56db] text-white text-sm font-medium rounded-full hover:bg-[#1546b3] transition-colors" data-testid="nav-dashboard-btn">
+                {locale.includes('fr') ? 'Mon Dashboard' : locale.includes('nl') ? 'Mijn Dashboard' : 'My Dashboard'}
+              </button>
+            ) : (
+              <>
+                <button onClick={() => navigate('/login')} className="text-sm text-[#555] hover:text-[#1a56db]" data-testid="nav-login-btn">{t.nav.signIn}</button>
+                <button onClick={() => navigate('/signup')} className="px-4 py-2 bg-[#1a56db] text-white text-sm font-medium rounded-full hover:bg-[#1546b3] transition-colors" data-testid="nav-signup-btn">{t.nav.getStarted}</button>
+              </>
+            )}
           </div>
         </div>
       </nav>

@@ -199,7 +199,7 @@ const Dashboard = () => {
   const fetchCases = useCallback(async () => {
     try {
       const res = await axios.get(`${API}/cases`, { withCredentials: true });
-      const sorted = (res.data || []).sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0));
+      const sorted = (res.data || []).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
       setCases(sorted);
       if (sorted.length > 0 && !selectedId) setSelectedId(sorted[0].case_id);
       // If any case is still analyzing, poll again in 5 seconds
@@ -251,7 +251,7 @@ const Dashboard = () => {
         }}>
           {/* Logo */}
           <div style={{ padding: '18px 14px 14px', borderBottom: '0.5px solid #f0ede8' }}>
-            <div style={{ fontSize: 19, fontWeight: 500, color: '#1a1a2e', letterSpacing: '0.3px' }}>
+            <div onClick={() => navigate('/')} style={{ fontSize: 19, fontWeight: 500, color: '#1a1a2e', letterSpacing: '0.3px', cursor: 'pointer' }} data-testid="logo-link">
               Jas<span style={{ color: '#1a56db' }}>per</span>
             </div>
             <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 1 }}>{t.tagline}</div>
@@ -377,13 +377,21 @@ const Dashboard = () => {
           <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
             {!sc ? (
               <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>{t.noCase}</div>
-                <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>{t.noCaseSub}</div>
-                <button onClick={() => setShowOverlay(true)} style={{
-                  marginTop: 16, padding: '8px 20px', background: '#1a56db', color: '#fff',
-                  border: 'none', borderRadius: 9, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                }}>{t.newCase}</button>
+                <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>
+                  <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, color: '#fff' }}>J</div>
+                  <div style={{ position: 'absolute', bottom: 2, right: 2, width: 12, height: 12, borderRadius: '50%', background: '#22c55e', border: '2px solid #fff' }} />
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e', marginBottom: 6 }}>
+                  {lang === 'fr' ? 'Bienvenue. Quelle est votre situation juridique ?' : lang === 'nl' ? 'Welkom. Wat is uw juridische situatie?' : 'Welcome. What\'s your legal situation?'}
+                </div>
+                <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 20 }}>
+                  {lang === 'fr' ? 'James analysera n\'importe quel document en 60 secondes.' : lang === 'nl' ? 'James analyseert elk document in 60 seconden.' : 'James will analyze any document in 60 seconds.'}
+                </div>
+                <button onClick={() => setShowOverlay(true)} data-testid="empty-state-new-case-btn" style={{
+                  padding: '12px 32px', background: '#1a56db', color: '#fff',
+                  border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                }}><Plus size={16} />{t.newCase}</button>
               </div>
             ) : isAnalyzing ? (
               <div style={{ textAlign: 'center', padding: '80px 20px' }}>

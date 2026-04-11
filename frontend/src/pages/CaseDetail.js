@@ -248,7 +248,7 @@ const CaseDetail = () => {
         {/* ═══ LEFT SIDEBAR ═══ */}
         <div style={{ background: '#fff', borderRight: '0.5px solid #e2e0db', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ padding: '18px 14px 14px', borderBottom: '0.5px solid #f0ede8' }}>
-            <div style={{ fontSize: 19, fontWeight: 500, color: '#1a1a2e', letterSpacing: '0.3px' }}>Jas<span style={{ color: '#1a56db' }}>per</span></div>
+            <div onClick={() => navigate('/')} style={{ fontSize: 19, fontWeight: 500, color: '#1a1a2e', letterSpacing: '0.3px', cursor: 'pointer' }} data-testid="logo-link">Jas<span style={{ color: '#1a56db' }}>per</span></div>
             <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 1 }}>{t.tagline}</div>
           </div>
           {/* James Card */}
