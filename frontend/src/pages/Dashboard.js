@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { Plus, FileText, Upload, Settings, MessageSquare, Scale, LogOut, BookOpen } from 'lucide-react';
+import { Plus, FileText, Upload, Settings, MessageSquare, Scale, LogOut, BookOpen, Download, Share2, ExternalLink, Loader2, X, ArrowLeft } from 'lucide-react';
+import jsPDF from 'jspdf';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -58,6 +59,14 @@ const L = {
     navDash: 'Dashboard', navUpload: 'Upload', navCases: 'My cases', navLawyers: 'Lawyers', navDocs: 'Documents', navChat: 'Legal chat', navSettings: 'Settings',
     addDoc: 'Add document', talkLawyer: 'Talk to a lawyer',
     responseIn: 'Response in',
+    brief: 'Download brief', share: 'Share',
+    scoreHistory: 'Score History', outcomePred: 'Outcome Predictor',
+    jamesQ: 'James needs clarification',
+    jurisTitle: 'Recent legal updates — relevant to your case', whyMatters: 'Why this matters',
+    riskMonitor: 'Never miss a legal document', riskMonitorSub: 'Connect your inbox — James monitors it and alerts you instantly',
+    connectGmail: 'Connect Gmail', connectOutlook: 'Connect Outlook',
+    shareTitle: 'Share this case — read-only access', shareDesc: 'Generate a secure link', shareCopy: 'Copy link', shareExpiry: 'Link expires in',
+    genLetter: 'Generate letter', downloading: 'Generating...', close: 'Close', downloadPdf: 'Download PDF',
   },
   fr: {
     tagline: 'Votre cabinet juridique virtuel',
@@ -108,6 +117,14 @@ const L = {
     navDash: 'Dashboard', navUpload: 'Téléverser', navCases: 'Mes dossiers', navLawyers: 'Avocats', navDocs: 'Documents', navChat: 'Chat juridique', navSettings: 'Paramètres',
     addDoc: 'Ajouter un document', talkLawyer: 'Parler à un avocat',
     responseIn: 'Réponse dans',
+    brief: 'Télécharger le résumé', share: 'Partager',
+    scoreHistory: 'Historique du score', outcomePred: 'Prédiction d\'issue',
+    jamesQ: 'James a besoin d\'une précision',
+    jurisTitle: 'Jurisprudence récente — pertinente pour votre dossier', whyMatters: 'Pertinence',
+    riskMonitor: 'Ne ratez jamais un document juridique', riskMonitorSub: 'Connectez votre boîte mail — James la surveille et vous alerte instantanément',
+    connectGmail: 'Connecter Gmail', connectOutlook: 'Connecter Outlook',
+    shareTitle: 'Partager ce dossier — accès en lecture seule', shareDesc: 'Générer un lien sécurisé', shareCopy: 'Copier le lien', shareExpiry: 'Lien expire dans',
+    genLetter: 'Générer la lettre', downloading: 'Génération...', close: 'Fermer', downloadPdf: 'Télécharger PDF',
   },
   nl: {
     tagline: 'Uw virtueel juridisch kantoor',
@@ -158,6 +175,14 @@ const L = {
     navDash: 'Dashboard', navUpload: 'Uploaden', navCases: 'Mijn dossiers', navLawyers: 'Advocaten', navDocs: 'Documenten', navChat: 'Juridische chat', navSettings: 'Instellingen',
     addDoc: 'Document toevoegen', talkLawyer: 'Praat met een advocaat',
     responseIn: 'Reactie in',
+    brief: 'Download samenvatting', share: 'Delen',
+    scoreHistory: 'Score Geschiedenis', outcomePred: 'Uitkomstvoorspelling',
+    jamesQ: 'James heeft verduidelijking nodig',
+    jurisTitle: 'Recente rechtspraak — relevant voor uw dossier', whyMatters: 'Waarom dit belangrijk is',
+    riskMonitor: 'Mis nooit een juridisch document', riskMonitorSub: 'Verbind uw inbox — James bewaakt en waarschuwt u direct',
+    connectGmail: 'Verbind Gmail', connectOutlook: 'Verbind Outlook',
+    shareTitle: 'Deel dit dossier — alleen-lezen', shareDesc: 'Genereer een beveiligde link', shareCopy: 'Link kopiëren', shareExpiry: 'Link verloopt in',
+    genLetter: 'Brief genereren', downloading: 'Genereren...', close: 'Sluiten', downloadPdf: 'Download PDF',
   },
 };
 
@@ -195,6 +220,11 @@ const Dashboard = () => {
   const [showOverlay, setShowOverlay] = useState(false);
   const [loading, setLoading] = useState(true);
   const [reanalyzing, setReanalyzing] = useState(false);
+  const [letterModal, setLetterModal] = useState(null);
+  const [letterLoading, setLetterLoading] = useState(false);
+  const [shareModal, setShareModal] = useState(false);
+  const [shareLink, setShareLink] = useState('');
+  const [answerLoading, setAnswerLoading] = useState(false);
 
   const fetchCases = useCallback(async () => {
     try {
@@ -222,6 +252,71 @@ const Dashboard = () => {
     setReanalyzing(false);
   };
 
+  const handleGenerateLetter = async (step) => {
+    setLetterLoading(true);
+    setLetterModal({ step, letter: null });
+    try {
+      const res = await axios.post(`${API}/cases/${selectedId}/generate-action-letter`, {
+        action_title: step.title || '',
+        action_description: step.description || '',
+      }, { withCredentials: true });
+      setLetterModal({ step, letter: res.data });
+    } catch (e) { setLetterModal({ step, letter: { body: 'Letter generation failed. Please try again.' } }); }
+    setLetterLoading(false);
+  };
+
+  const handleDownloadPdf = (letter) => {
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text(letter?.subject || 'Legal Letter', 20, 20);
+    doc.setFontSize(10);
+    const lines = doc.splitTextToSize(letter?.body || '', 170);
+    doc.text(lines, 20, 35);
+    doc.save(`${sc?.title || 'letter'}.pdf`);
+  };
+
+  const handleJamesAnswer = async (answer) => {
+    if (!sc?.james_question || answerLoading) return;
+    setAnswerLoading(true);
+    try {
+      await axios.post(`${API}/cases/${selectedId}/james-answer`, {
+        question: sc.james_question.text,
+        answer: answer,
+      }, { withCredentials: true });
+      await fetchCases();
+    } catch (e) { /* ok */ }
+    setAnswerLoading(false);
+  };
+
+  const handleShare = async () => {
+    setShareModal(true);
+    try {
+      const res = await axios.post(`${API}/cases/${selectedId}/share`, { expires_in_hours: 168 }, { withCredentials: true });
+      setShareLink(`${window.location.origin}/shared/${res.data.share_id}`);
+    } catch (e) { setShareLink(''); }
+  };
+
+  const handleBriefPdf = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(sc?.title || 'Case Brief', 20, 20);
+    doc.setFontSize(10);
+    doc.text(`Risk Score: ${score}/100`, 20, 30);
+    doc.text(`Type: ${t.caseType[sc?.type] || sc?.type || 'Other'}`, 20, 36);
+    if (sc?.ai_summary) {
+      const sumLines = doc.splitTextToSize(sc.ai_summary, 170);
+      doc.text(sumLines, 20, 46);
+    }
+    let y = 60;
+    findings.forEach((f, i) => {
+      const txt = doc.splitTextToSize(`${i + 1}. ${f.text || ''}`, 170);
+      doc.text(txt, 20, y);
+      y += txt.length * 5 + 3;
+      if (y > 270) { doc.addPage(); y = 20; }
+    });
+    doc.save(`${sc?.title || 'case-brief'}.pdf`);
+  };
+
   const sc = cases.find(c => c.case_id === selectedId);
   const isAnalyzing = sc?.status === 'analyzing';
   const findings = sc?.ai_findings || [];
@@ -233,6 +328,10 @@ const Dashboard = () => {
   const scoreColor = riskColor(score);
   const riskText = score >= 70 ? t.riskHigh : score >= 40 ? t.riskMed : score > 0 ? t.riskLow : '—';
   const cType = sc?.type || 'other';
+  const jq = sc?.james_question;
+  const history = sc?.risk_score_history || [];
+  const caseLaw = sc?.recent_case_law || [];
+  const prob = sc?.success_probability;
 
   return (
     <>
@@ -353,20 +452,24 @@ const Dashboard = () => {
 
         {/* ═══ MAIN CENTER ═══ */}
         <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {/* James Banner */}
+          {/* Top Bar with Breadcrumb + Actions */}
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 10, padding: '12px 20px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px',
             background: '#fff', borderBottom: '0.5px solid #f0ede8',
           }}>
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#fff' }}>J</div>
-              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: '50%', background: '#22c55e', border: '2px solid #fff' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff' }}>J</div>
+                <div style={{ position: 'absolute', bottom: 0, right: 0, width: 8, height: 8, borderRadius: '50%', background: '#22c55e', border: '2px solid #fff' }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#1a1a2e' }}>{t.jamesBanner}</div>
+                <div style={{ fontSize: 9, color: '#6b7280' }}>{t.jamesSub}</div>
+              </div>
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>{t.jamesBanner}</div>
-              <div style={{ fontSize: 9, color: '#6b7280', marginTop: 1 }}>{t.jamesSub}</div>
-            </div>
-            <div style={{ display: 'flex', gap: 5, marginLeft: 'auto' }}>
+            <div style={{ display: 'flex', gap: 5 }}>
+              {sc && <button onClick={handleBriefPdf} data-testid="brief-btn" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, padding: '5px 10px', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#374151' }}><Download size={11} />{t.brief}</button>}
+              {sc && <button onClick={handleShare} data-testid="share-btn" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, padding: '5px 10px', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#374151' }}><Share2 size={11} />{t.share}</button>}
               <div style={{ padding: '4px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#eff6ff', color: '#1d4ed8', border: '0.5px solid #bfdbfe' }}>{t.credSources}</div>
               <div style={{ padding: '4px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#f0fdf4', color: '#15803d', border: '0.5px solid #86efac' }}>{t.credLive}</div>
               {sc && score >= 70 && <div style={{ padding: '4px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#fff5f5', color: '#dc2626', border: '0.5px solid #fca5a5' }}>⚡ {t.credUrgent}</div>}
@@ -485,17 +588,122 @@ const Dashboard = () => {
                   })}
                 </div>
 
-                {/* James Question Card */}
-                {sc.key_insight && (
-                  <div style={{ background: '#fffbeb', borderRadius: 12, padding: '12px 14px', border: '0.5px solid #fde68a', marginBottom: 10 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#1a1a2e', marginBottom: 5 }}>💬 {t.questionTitle}</div>
-                    <div style={{ fontSize: 10, color: '#78350f', lineHeight: 1.6 }}>{sc.key_insight}</div>
-                    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                      <button onClick={() => navigate('/upload')} style={{ padding: '5px 14px', background: '#1a56db', color: '#fff', border: 'none', borderRadius: 7, fontSize: 9, fontWeight: 600, cursor: 'pointer' }}>{t.addDoc}</button>
-                      <button onClick={() => navigate('/lawyers')} style={{ padding: '5px 14px', background: '#fff', color: '#374151', border: '0.5px solid #e2e0db', borderRadius: 7, fontSize: 9, fontWeight: 500, cursor: 'pointer' }}>{t.talkLawyer}</button>
+                {/* James Question Card — interactive */}
+                {jq && (
+                  <div data-testid="james-question" style={{ background: '#fffbeb', borderRadius: 12, padding: '12px 14px', border: '0.5px solid #fde68a', marginBottom: 10 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#1a1a2e', marginBottom: 5 }}>💬 {t.jamesQ}</div>
+                    <div style={{ fontSize: 11, color: '#78350f', lineHeight: 1.6, marginBottom: 8 }}>{jq.text}</div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {(jq.options || []).map((opt, i) => (
+                        <button key={i} data-testid={`james-answer-${i}`} onClick={() => handleJamesAnswer(opt)} disabled={answerLoading}
+                          style={{ padding: '6px 14px', background: answerLoading ? '#f3f4f6' : '#fff', color: answerLoading ? '#9ca3af' : '#1a1a2e', border: '0.5px solid #e2e0db', borderRadius: 8, fontSize: 10, fontWeight: 500, cursor: answerLoading ? 'default' : 'pointer' }}>
+                          {opt}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 )}
+                {/* Fallback: key_insight without interactive buttons */}
+                {!jq && sc.key_insight && (
+                  <div style={{ background: '#fffbeb', borderRadius: 12, padding: '12px 14px', border: '0.5px solid #fde68a', marginBottom: 10 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#1a1a2e', marginBottom: 5 }}>💬 {t.questionTitle}</div>
+                    <div style={{ fontSize: 10, color: '#78350f', lineHeight: 1.6 }}>{sc.key_insight}</div>
+                  </div>
+                )}
+
+                {/* Score History */}
+                {history.length > 0 && (
+                  <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 8 }}>{t.scoreHistory}</div>
+                    <svg viewBox="0 0 400 80" style={{ width: '100%', height: 60 }}>
+                      {history.map((h, i) => {
+                        const x = history.length === 1 ? 200 : 20 + (i / (history.length - 1)) * 360;
+                        const y = 75 - (h.score / 100) * 70;
+                        const c = riskColor(h.score);
+                        return <g key={i}>
+                          {i > 0 && <line x1={20 + ((i-1) / (history.length - 1)) * 360} y1={75 - (history[i-1].score / 100) * 70} x2={x} y2={y} stroke={c} strokeWidth="2" />}
+                          <circle cx={x} cy={y} r="4" fill={c} />
+                          <text x={x} y={y - 8} textAnchor="middle" fontSize="8" fill={c}>{h.score}</text>
+                        </g>;
+                      })}
+                    </svg>
+                  </div>
+                )}
+
+                {/* Battle Preview — Horizontal */}
+                {bp && (
+                  <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 10 }}>{t.battleTitle}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      <div style={{ background: '#f0fdf4', border: '0.5px solid #86efac', borderRadius: 9, padding: 10 }}>
+                        <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#16a34a', marginBottom: 6 }}>{t.yourArgs}</div>
+                        {(bp.user_side?.strongest_arguments || bp.user_arguments || []).slice(0, 5).map((a, i) => (
+                          <div key={i} style={{ fontSize: 10, color: '#374151', padding: '4px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.5, display: 'flex', gap: 6 }}>
+                            <span style={{ color: '#16a34a', fontWeight: 600 }}>•</span>
+                            <span>{typeof a === 'string' ? a : a.argument || a.text || ''}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ background: '#fff5f5', border: '0.5px solid #fca5a5', borderRadius: 9, padding: 10 }}>
+                        <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#dc2626', marginBottom: 6 }}>{t.theirArgs}</div>
+                        {(bp.opposing_side?.strongest_arguments || bp.opposing_side?.opposing_arguments || bp.opposing_arguments || []).slice(0, 5).map((a, i) => (
+                          <div key={i} style={{ fontSize: 10, color: '#374151', padding: '4px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.5, display: 'flex', gap: 6 }}>
+                            <span style={{ color: '#dc2626', fontWeight: 600 }}>•</span>
+                            <span>{typeof a === 'string' ? a : a.argument || a.text || ''}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent Jurisprudence */}
+                {caseLaw.length > 0 && (
+                  <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 8 }}>{t.jurisTitle}</div>
+                    {caseLaw.map((cl, i) => (
+                      <div key={i} style={{ padding: '8px 0', borderBottom: i < caseLaw.length - 1 ? '0.5px solid #f3f4f6' : 'none' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', flex: 1 }}>{cl.case_name}</div>
+                          {cl.url && <a href={cl.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={11} color="#1a56db" /></a>}
+                        </div>
+                        <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2 }}>{cl.court} · {cl.date_filed}</div>
+                        {cl.snippet && <div style={{ fontSize: 9, color: '#6b7280', marginTop: 3, lineHeight: 1.4 }}>{cl.snippet.substring(0, 150)}...</div>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Outcome Predictor */}
+                {prob && (
+                  <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 8 }}>{t.outcomePred}</div>
+                    {[
+                      { label: lang === 'fr' ? 'Résolution favorable' : lang === 'nl' ? 'Gunstige uitkomst' : 'Full resolution in your favor', pct: prob.full_resolution_in_favor || prob.favorable || 0, color: '#16a34a' },
+                      { label: lang === 'fr' ? 'Accord négocié' : lang === 'nl' ? 'Onderhandelde schikking' : 'Negotiated settlement', pct: prob.negotiated_settlement || prob.settlement || 0, color: '#1a56db' },
+                      { label: lang === 'fr' ? 'Résolution partielle' : lang === 'nl' ? 'Gedeeltelijk verlies' : 'Partial loss', pct: prob.partial_loss || prob.partial || 0, color: '#f59e0b' },
+                      { label: lang === 'fr' ? 'Issue défavorable' : lang === 'nl' ? 'Volledig verlies' : 'Full loss', pct: prob.full_loss || prob.unfavorable || 0, color: '#dc2626' },
+                    ].map((o, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <div style={{ fontSize: 10, color: '#374151', width: 160, flexShrink: 0 }}>{o.label}</div>
+                        <div style={{ flex: 1, height: 8, background: '#f3f4f6', borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', borderRadius: 4, background: o.color, width: `${o.pct}%`, transition: 'width 0.5s' }} />
+                        </div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: o.color, width: 32, textAlign: 'right' }}>{o.pct}%</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Risk Monitor */}
+                <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 3 }}>{t.riskMonitor}</div>
+                  <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 10 }}>{t.riskMonitorSub}</div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button style={{ flex: 1, padding: '8px 0', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 8, fontSize: 10, fontWeight: 500, color: '#374151', cursor: 'pointer' }}>📧 {t.connectGmail}</button>
+                    <button style={{ flex: 1, padding: '8px 0', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 8, fontSize: 10, fontWeight: 500, color: '#374151', cursor: 'pointer' }}>📨 {t.connectOutlook}</button>
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -526,8 +734,11 @@ const Dashboard = () => {
               {steps.map((s, i) => {
                 const sTitle = typeof s === 'string' ? s : (s.title || s.titre || '');
                 const sDesc = typeof s === 'string' ? '' : (s.description || s.why_important || '');
+                const isBookLawyer = (s.action_type === 'book_lawyer') || sTitle.toLowerCase().includes('attorney') || sTitle.toLowerCase().includes('avocat') || sTitle.toLowerCase().includes('advocaat');
                 return (
-                  <div key={i} data-testid={`action-item-${i}`} style={{
+                  <div key={i} data-testid={`action-item-${i}`}
+                    onClick={() => isBookLawyer ? navigate('/lawyers') : handleGenerateLetter(s)}
+                    style={{
                     margin: '0 8px 4px', padding: '8px 10px', background: '#fff', borderRadius: 8, border: '0.5px solid #e2e0db',
                     display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer',
                   }}
@@ -537,6 +748,7 @@ const Dashboard = () => {
                     <div>
                       <div style={{ fontSize: 10, fontWeight: 600, color: '#1a1a2e' }}>{sTitle}</div>
                       {sDesc && <div style={{ fontSize: 9, color: '#6b7280', marginTop: 1 }}>{sDesc}</div>}
+                      <div style={{ fontSize: 8, color: '#1a56db', marginTop: 2, fontWeight: 500 }}>{isBookLawyer ? (lang === 'fr' ? 'Réserver un appel →' : 'Book a call →') : (lang === 'fr' ? 'Générer la lettre →' : 'Generate letter →')}</div>
                     </div>
                   </div>
                 );
@@ -568,31 +780,61 @@ const Dashboard = () => {
           ) : (
             <div style={{ padding: 8, margin: '0 8px', fontSize: 9, color: '#9ca3af', textAlign: 'center' }}>—</div>
           )}
-
-          {/* Battle Preview */}
-          {bp && (
-            <>
-              <div style={{ padding: '8px 14px 4px', fontSize: 9, fontWeight: 700, color: '#1a1a2e', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Battle Preview</div>
-              <div style={{ margin: 8, padding: 10, background: '#f8f7f4', borderRadius: 9, border: '0.5px solid #e2e0db' }}>
-                <div style={{ fontSize: 9, fontWeight: 600, color: '#1a1a2e', marginBottom: 6 }}>{t.battleTitle}</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-                  <div style={{ background: '#f0fdf4', border: '0.5px solid #86efac', borderRadius: 6, padding: 6 }}>
-                    <div style={{ fontSize: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#16a34a', marginBottom: 3 }}>{t.yourArgs}</div>
-                    {(bp.user_side?.strongest_arguments || bp.user_arguments || bp.our_arguments || []).slice(0, 3).map((a, i) => (
-                      <div key={i} style={{ fontSize: 9, color: '#374151', padding: '2px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.4 }}>{typeof a === 'string' ? a : a.argument || a.text || ''}</div>
-                    ))}
-                  </div>
-                  <div style={{ background: '#fff5f5', border: '0.5px solid #fca5a5', borderRadius: 6, padding: 6 }}>
-                    <div style={{ fontSize: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#dc2626', marginBottom: 3 }}>{t.theirArgs}</div>
-                    {(bp.opposing_side?.strongest_arguments || bp.opposing_arguments || []).slice(0, 3).map((a, i) => (
-                      <div key={i} style={{ fontSize: 9, color: '#374151', padding: '2px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.4 }}>{typeof a === 'string' ? a : a.argument || a.text || ''}</div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
         </div>
+
+        {/* ═══ LETTER MODAL ═══ */}
+        {letterModal && (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+            <div data-testid="letter-modal" style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 600, maxHeight: '80vh', overflow: 'auto', padding: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{letterModal.step?.title || t.genLetter}</div>
+                <button onClick={() => setLetterModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} color="#6b7280" /></button>
+              </div>
+              {letterLoading ? (
+                <div style={{ textAlign: 'center', padding: 40 }}><Loader2 size={20} className="animate-spin" style={{ color: '#1a56db' }} /><div style={{ marginTop: 8, fontSize: 11, color: '#9ca3af' }}>{t.downloading}</div></div>
+              ) : letterModal.letter ? (
+                <>
+                  {letterModal.letter.subject && <div style={{ fontSize: 11, fontWeight: 600, color: '#374151', marginBottom: 4 }}>{letterModal.letter.subject}</div>}
+                  {letterModal.letter.recipient && <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 12 }}>To: {letterModal.letter.recipient}</div>}
+                  <div style={{ fontSize: 11, color: '#374151', lineHeight: 1.7, whiteSpace: 'pre-wrap', padding: 16, background: '#f8f7f4', borderRadius: 10, border: '0.5px solid #e2e0db', marginBottom: 16 }}>{letterModal.letter.body}</div>
+                  {letterModal.letter.legal_citations && (
+                    <div style={{ fontSize: 9, color: '#1d4ed8', marginBottom: 12 }}>
+                      {letterModal.letter.legal_citations.map((c, i) => <span key={i} style={{ display: 'inline-block', padding: '2px 8px', background: '#eff6ff', borderRadius: 4, marginRight: 4, marginBottom: 4 }}>{c}</span>)}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => handleDownloadPdf(letterModal.letter)} data-testid="download-letter-pdf" style={{ flex: 1, padding: '10px 0', background: '#1a56db', color: '#fff', border: 'none', borderRadius: 9, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}><Download size={13} style={{ marginRight: 4 }} />{t.downloadPdf}</button>
+                    <button onClick={() => setLetterModal(null)} style={{ flex: 1, padding: '10px 0', background: '#fff', color: '#374151', border: '0.5px solid #e2e0db', borderRadius: 9, fontSize: 11, fontWeight: 500, cursor: 'pointer' }}>{t.close}</button>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ SHARE MODAL ═══ */}
+        {shareModal && (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+            <div data-testid="share-modal" style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 420, padding: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{t.shareTitle}</div>
+                <button onClick={() => setShareModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} color="#6b7280" /></button>
+              </div>
+              <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 12 }}>{t.shareDesc}</div>
+              {shareLink ? (
+                <>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <input readOnly value={shareLink} style={{ flex: 1, padding: '8px 10px', background: '#f8f7f4', border: '0.5px solid #e2e0db', borderRadius: 7, fontSize: 10, color: '#374151' }} />
+                    <button onClick={() => { navigator.clipboard.writeText(shareLink); }} style={{ padding: '8px 14px', background: '#1a56db', color: '#fff', border: 'none', borderRadius: 7, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>{t.shareCopy}</button>
+                  </div>
+                  <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 6 }}>{t.shareExpiry}: 7 {t.days}</div>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: 16 }}><Loader2 size={16} className="animate-spin" style={{ color: '#1a56db' }} /></div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ═══ OVERLAY ═══ */}
         {showOverlay && (
