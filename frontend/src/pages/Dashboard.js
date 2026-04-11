@@ -9,6 +9,7 @@ import CaseChatDrawer from '../components/CaseChatDrawer';
 import NextActionsPanel from '../components/NextActionsPanel';
 import LetterFormModal from '../components/LetterFormModal';
 import JurisdictionPills from '../components/JurisdictionPills';
+import JurisdictionOnboarding, { hasSeenOnboarding } from '../components/JurisdictionOnboarding';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -235,6 +236,7 @@ const Dashboard = () => {
   const [showAddDoc, setShowAddDoc] = useState(false);
   const [chatDrawer, setChatDrawer] = useState(null);
   const [analysisToast, setAnalysisToast] = useState(null);
+  const [onboarding, setOnboarding] = useState(null);
   const prevSelectedStatusRef = React.useRef(null);
 
   const jurisdiction = user?.jurisdiction || user?.country || 'US';
@@ -243,6 +245,7 @@ const Dashboard = () => {
     if (j === jurisdiction) return;
     updateUser({ jurisdiction: j, country: j });
     try { await axios.put(`${API}/profile`, { jurisdiction: j, country: j }, { withCredentials: true }); } catch (e) {}
+    if (!hasSeenOnboarding(j)) setOnboarding(j);
   };
 
   const fetchCases = useCallback(async () => {
@@ -906,6 +909,15 @@ const Dashboard = () => {
               }}>← {t.backDash}</button>
             </div>
           </div>
+        )}
+
+        {/* ═══ JURISDICTION ONBOARDING ═══ */}
+        {onboarding && (
+          <JurisdictionOnboarding
+            jurisdiction={onboarding}
+            lang={lang}
+            onClose={() => setOnboarding(null)}
+          />
         )}
 
         {/* ═══ ANALYSIS COMPLETE TOAST ═══ */}
