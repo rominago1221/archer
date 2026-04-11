@@ -49,12 +49,16 @@ const ALL_TEMPLATES = [
   ...[['Copyright Assignment','Copyright transfer'],['Trademark License','Trademark usage license'],['Patent License','Patent usage agreement'],['Work-for-Hire Agreement','IP ownership for hire'],['Open Source License','Open source terms'],['Domain Transfer Agreement','Domain name transfer'],['IP Indemnification','IP liability protection'],['Trade Secret IP','Trade secret assignment']].map(([n,d])=>({name:n,desc:d,cat:'ip'})),
   // Court (8)
   ...[['Cease and Desist','General C&D letter'],['Demand for Jury Trial','Jury trial request'],['Small Claims Statement','Small claims filing'],['Witness Statement','Formal witness account'],['Affidavit','Sworn statement'],['Subpoena Response','Subpoena reply letter'],['Court Complaint Letter','Formal court complaint'],['Motion to Dismiss Request','Dismissal request']].map(([n,d])=>({name:n,desc:d,cat:'court'})),
-  // Immigration (5)
-  ...[['Employment Sponsorship Letter','Visa sponsorship support'],['Support Letter','Immigration support'],['Invitation Letter','Visitor invitation'],['Character Reference Letter','Character reference'],['Naturalization Support Letter','Citizenship support']].map(([n,d])=>({name:n,desc:d,cat:'immigration'})),
+  // Immigration (5+3=8)
+  ...[['Employment Sponsorship Letter','Visa sponsorship support'],['Support Letter','Immigration support'],['Invitation Letter','Visitor invitation'],['Character Reference Letter','Character reference'],['Naturalization Support Letter','Citizenship support'],['Asylum Support Letter','Asylum case support'],['Visa Extension Request','Visa renewal request'],['Travel Authorization Letter','Travel permission document']].map(([n,d])=>({name:n,desc:d,cat:'immigration'})),
+  // Government & Tax (7)
+  ...[['Tax Dispute Letter','IRS/tax authority dispute'],['FOIA Request','Freedom of Information request'],['Zoning Variance Request','Zoning exception request'],['Building Permit Appeal','Permit denial appeal'],['Government Complaint','Government agency complaint'],['Whistleblower Statement','Protected disclosure'],['Public Records Request','Public records demand']].map(([n,d])=>({name:n,desc:d,cat:'government'})),
+  // Education (5)
+  ...[['Student Accommodation Letter','Disability accommodation request'],['Academic Appeal Letter','Grade/disciplinary appeal'],['School Transfer Request','Transfer documentation'],['Tuition Dispute Letter','Tuition/fee dispute'],['Internship Agreement','Student internship terms']].map(([n,d])=>({name:n,desc:d,cat:'education'})),
 ];
 
-const FILTER_PILLS = ['all','employment','housing','nda','business','freelance','consumer','debt','family','realestate','ip','court','immigration'];
-const FILTER_LABELS = {all:'All',employment:'Employment',housing:'Housing',nda:'NDA',business:'Business',freelance:'Freelance',consumer:'Consumer',debt:'Debt',family:'Family',realestate:'Real Estate',ip:'IP',court:'Court',immigration:'Immigration'};
+const FILTER_PILLS = ['all','employment','housing','nda','business','freelance','consumer','debt','family','realestate','ip','court','immigration','government','education'];
+const FILTER_LABELS = {all:'All',employment:'Employment',housing:'Housing',nda:'NDA',business:'Business',freelance:'Freelance',consumer:'Consumer',debt:'Debt',family:'Family',realestate:'Real Estate',ip:'IP',court:'Court',immigration:'Immigration',government:'Government',education:'Education'};
 
 const SUGGESTIONS = {
   en: ['I need an NDA', 'Create a lease agreement', 'Draft a freelance contract', 'Write a demand letter'],
