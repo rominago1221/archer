@@ -5,34 +5,32 @@ Build Jasper — a legal tech AI platform for US and Belgian consumers. Upload l
 
 ## Core Architecture
 - **Jurisdiction** (US or BE): Determines which laws apply. Stored as `user.country`.
-- **Language** (en, fr, nl): Determines UI language ONLY. Stored as `user.language`.
+- **Language** (en, fr, nl): Determines UI language ONLY.
 - **Account Type** (client or attorney): Determines dashboard and routing.
 
 ## What's Been Implemented
 
-### Real-Time Post-Upload UI Update (Apr 11 2026) — LATEST
-- 2-second polling when any case has status='analyzing'
-- Re-analyzing banner (blue) when case has existing data being re-analyzed
-- Full spinner only for brand new cases (score = 0)
-- Green toast notification: "Analysis complete — Risk Score updated" (5s auto-dismiss)
-- Auto-update of all sections: Risk Score, findings, Next Actions, Score History
-- onUploadComplete forces local 'analyzing' state for instant polling kickoff
-- No page refresh ever needed
+### Next Actions Redesign + Letter Form Modal (Apr 11 2026) — LATEST
+- **3 action types**: TYPE A (letter - blue envelope, "Generate letter →"), TYPE B (call - purple phone, "Book a call →"), TYPE C (passive - gray clock, no click)
+- Full-width action cards: priority badge, icon, title (13px), description, separator lines
+- **LetterFormModal**: 6 pre-filled form fields (name from profile, address, recipient, date, amount) + personal note (200 chars)
+- After generation: letter preview + Download PDF + Send via HelloSign + "Edit with James →" (opens chat drawer)
+- Reusable NextActionsPanel + LetterFormModal components used on both Dashboard and CaseDetail
+
+### Real-Time Post-Upload UI Update (Apr 11 2026)
+- 2s polling, re-analyzing banner, toast notification, no refresh needed
 
 ### James Clarification Two-Step (Apr 11 2026)
-- Max 1 question with 2-3 clickable buttons + "ask him directly →" link
-- CaseChatDrawer: 400px slide-in from right, pre-loaded with case context
-- Backend chat migrated to emergentintegrations
+- Max 1 question + "ask directly" chat drawer
 
 ### In-Case Document Upload Modal (Apr 11 2026)
-- AddDocumentModal: drag & drop, context textarea, trilingual
+- AddDocumentModal with drag & drop, context field
 
 ### Dashboard 12-Feature Parity (Apr 11 2026)
-- All CaseDetail features on Dashboard: Brief, Share, Score History, Battle Preview, James Q&A, Jurisprudence, Outcome Predictor, Risk Monitor, Letter/Share Modals, New Case Overlay
+- All CaseDetail features on Dashboard
 
 ### Integrations
-- Emergent LlmChat (claude-sonnet-4-20250514), Google OAuth, Object Storage
-- Daily.co, Stripe, CourtListener
+- Emergent LlmChat, Google OAuth, Object Storage, Daily.co, Stripe, CourtListener
 
 ## Prioritized Backlog
 
@@ -40,8 +38,8 @@ Build Jasper — a legal tech AI platform for US and Belgian consumers. Upload l
 - [ ] Refactor server.py (6400+ lines → modular routers)
 
 ### P1
-- [ ] Deadline Alerts (Twilio/SendGrid) — awaiting keys
-- [ ] HelloSign / Dropbox Sign — awaiting keys
+- [ ] Deadline Alerts (Twilio/SendGrid)
+- [ ] HelloSign / Dropbox Sign
 - [ ] Mobile Document Scanner
 
 ### P2-P3
