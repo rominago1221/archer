@@ -2697,12 +2697,15 @@ async def get_cases(
     status: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Get all cases for current user"""
+    """Get all cases for current user, filtered by user's jurisdiction"""
     query = {"user_id": current_user.user_id}
     if status:
         query["status"] = status
+    # Filter by user's current jurisdiction
+    user_jurisdiction = current_user.jurisdiction or current_user.country or "US"
+    query["$or"] = [{"country": user_jurisdiction}, {"country": {"$exists": False}}, {"country": None}]
     
-    cases = await db.cases.find(query, {"_id": 0}).sort("risk_score", -1).to_list(100)
+    cases = await db.cases.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
     
     # Update document counts
     for case in cases:

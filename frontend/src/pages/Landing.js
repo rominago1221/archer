@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { FileText, Briefcase, Home, Users, DollarSign, AlertCircle, Package, Star, Heart, CheckCircle, Plus, Minus } from 'lucide-react';
 import JurisdictionLanguageBar from '../components/JurisdictionLanguageBar';
+import JurisdictionPills from '../components/JurisdictionPills';
 import { useAuth } from '../contexts/AuthContext';
 import translations, { getStoredLocale, setStoredLocale, getLocaleFromPrefs } from '../data/landingTranslations';
 
 const catIcons = [FileText, Briefcase, Home, Users, DollarSign, AlertCircle, Package, Star, Heart];
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -44,12 +47,15 @@ const Landing = () => {
             <a href="#faq" className="hover:text-[#1a56db]">{t.nav.faq}</a>
           </div>
           <div className="flex items-center gap-3">
-            <JurisdictionLanguageBar
+            <JurisdictionPills
               jurisdiction={jurisdiction}
-              language={language}
-              onJurisdictionChange={handleJurisdictionChange}
-              onLanguageChange={handleLanguageChange}
-              compact
+              onSwitch={(j) => {
+                handleJurisdictionChange(j);
+                if (user) {
+                  // Also update user profile
+                  axios.put(`${API}/profile`, { jurisdiction: j, country: j }, { withCredentials: true }).catch(() => {});
+                }
+              }}
             />
             {user ? (
               <button onClick={() => navigate('/dashboard')} className="px-4 py-2 bg-[#1a56db] text-white text-sm font-medium rounded-full hover:bg-[#1546b3] transition-colors" data-testid="nav-dashboard-btn">

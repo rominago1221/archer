@@ -8,6 +8,7 @@ import AddDocumentModal from '../components/AddDocumentModal';
 import CaseChatDrawer from '../components/CaseChatDrawer';
 import NextActionsPanel from '../components/NextActionsPanel';
 import LetterFormModal from '../components/LetterFormModal';
+import JurisdictionPills from '../components/JurisdictionPills';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -217,7 +218,7 @@ const formatDate = (d, lang) => {
 const pulse = `@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`;
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const lang = getLang(user);
   const t = L[lang] || L.en;
@@ -236,6 +237,14 @@ const Dashboard = () => {
   const [analysisToast, setAnalysisToast] = useState(null);
   const prevSelectedStatusRef = React.useRef(null);
 
+  const jurisdiction = user?.jurisdiction || user?.country || 'US';
+
+  const handleJurisdictionSwitch = async (j) => {
+    if (j === jurisdiction) return;
+    updateUser({ jurisdiction: j, country: j });
+    try { await axios.put(`${API}/profile`, { jurisdiction: j, country: j }, { withCredentials: true }); } catch (e) {}
+  };
+
   const fetchCases = useCallback(async () => {
     try {
       const res = await axios.get(`${API}/cases`, { withCredentials: true });
@@ -244,7 +253,15 @@ const Dashboard = () => {
       if (sorted.length > 0 && !selectedId) setSelectedId(sorted[0].case_id);
     } catch (e) { /* ok */ }
     setLoading(false);
-  }, [selectedId]);
+  }, [selectedId, jurisdiction]);
+
+  // Re-fetch and reset selection when jurisdiction changes
+  useEffect(() => {
+    setSelectedId(null);
+    setCases([]);
+    setLoading(true);
+    fetchCases();
+  }, [jurisdiction]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { fetchCases(); }, [fetchCases]);
 
@@ -454,7 +471,17 @@ const Dashboard = () => {
 
         {/* ═══ MAIN CENTER ═══ */}
         <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {/* Top Bar with Breadcrumb + Actions */}
+          {/* Global Top Bar: Back + Jurisdiction + Language */}
+          <div style={{
+            display: 'flex', alignItems: 'center', padding: '6px 20px',
+            background: '#fff', borderBottom: '0.5px solid #f0ede8',
+          }}>
+            <button onClick={() => window.history.back()} data-testid="back-btn" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#9ca3af', fontWeight: 500, marginRight: 12, display: 'flex', alignItems: 'center', gap: 3 }}>← Back</button>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+              <JurisdictionPills jurisdiction={jurisdiction} onSwitch={handleJurisdictionSwitch} />
+            </div>
+          </div>
+          {/* Top Bar with James Banner + Actions */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px',
             background: '#fff', borderBottom: '0.5px solid #f0ede8',

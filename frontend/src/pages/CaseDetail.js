@@ -8,6 +8,7 @@ import AddDocumentModal from '../components/AddDocumentModal';
 import CaseChatDrawer from '../components/CaseChatDrawer';
 import NextActionsPanel from '../components/NextActionsPanel';
 import LetterFormModal from '../components/LetterFormModal';
+import JurisdictionPills from '../components/JurisdictionPills';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -127,10 +128,18 @@ const pulse = `@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`;
 
 const CaseDetail = () => {
   const { caseId } = useParams();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const lang = getLang(user);
   const t = L[lang] || L.en;
+  const jurisdiction = user?.jurisdiction || user?.country || 'US';
+
+  const handleJurisdictionSwitch = async (j) => {
+    if (j === jurisdiction) return;
+    updateUser({ jurisdiction: j, country: j });
+    try { await axios.put(`${API}/profile`, { jurisdiction: j, country: j }, { withCredentials: true }); } catch (e) {}
+    navigate('/dashboard');
+  };
 
   const [caseData, setCaseData] = useState(null);
   const [cases, setCases] = useState([]);
@@ -296,6 +305,16 @@ const CaseDetail = () => {
 
         {/* ═══ MAIN CENTER ═══ */}
         <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {/* Global Top Bar: Back + Jurisdiction */}
+          <div style={{
+            display: 'flex', alignItems: 'center', padding: '6px 20px',
+            background: '#fff', borderBottom: '0.5px solid #f0ede8',
+          }}>
+            <button onClick={() => window.history.back()} data-testid="back-btn-global" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#9ca3af', fontWeight: 500, marginRight: 12, display: 'flex', alignItems: 'center', gap: 3 }}>← Back</button>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+              <JurisdictionPills jurisdiction={jurisdiction} onSwitch={handleJurisdictionSwitch} />
+            </div>
+          </div>
           {/* Breadcrumb + Actions */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', background: '#fff', borderBottom: '0.5px solid #f0ede8' }}>
             <button onClick={() => navigate('/dashboard')} data-testid="back-btn" style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#1a56db', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer' }}><ArrowLeft size={13} />{t.back}</button>
