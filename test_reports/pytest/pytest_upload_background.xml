@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="15" time="500.829" timestamp="2026-04-11T14:52:04.721205+00:00" hostname="agent-env-0841431b-a1a0-46ae-ac71-0fc7947080ac"><testcase classname="backend.tests.test_upload_background_analysis.TestUploadBackgroundAnalysis" name="test_us_user_login" time="60.214"><failure message="AssertionError: Login failed: The preview environment is not responding. It may be starting up.&#10;  &#10;assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_upload_background_analysis.py:69: in test_us_user_login
+    result = self.login_user(US_USER_EMAIL, US_USER_PASSWORD)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_upload_background_analysis.py:37: in login_user
+    assert response.status_code == 200, f"Login failed: {response.text}"
+E   AssertionError: Login failed: The preview environment is not responding. It may be starting up.
+E     
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_upload_background_analysis.TestUploadBackgroundAnalysis" name="test_belgian_user_login" time="35.227" /><testcase classname="backend.tests.test_upload_background_analysis.TestUploadBackgroundAnalysis" name="test_upload_returns_instantly_with_case_id" time="0.988" /><testcase classname="backend.tests.test_upload_background_analysis.TestUploadBackgroundAnalysis" name="test_case_created_immediately_in_database" time="60.107"><failure message="AssertionError: Login failed: The preview environment is not responding. It may be starting up.&#10;  &#10;assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_upload_background_analysis.py:113: in test_case_created_immediately_in_database
+    self.login_user(US_USER_EMAIL, US_USER_PASSWORD)
+backend/tests/test_upload_background_analysis.py:37: in login_user
+    assert response.status_code == 200, f"Login failed: {response.text}"
+E   AssertionError: Login failed: The preview environment is not responding. It may be starting up.
+E     
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_upload_background_analysis.TestUploadBackgroundAnalysis" name="test_upload_with_user_context" time="39.374" /><testcase classname="backend.tests.test_upload_background_analysis.TestUploadBackgroundAnalysis" name="test_dashboard_shows_all_cases" time="60.104"><failure message="AssertionError: Login failed: The preview environment is not responding. It may be starting up.&#10;  &#10;assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_upload_background_analysis.py:154: in test_dashboard_shows_all_cases
+    self.login_user(US_USER_EMAIL, US_USER_PASSWORD)
+backend/tests/test_upload_background_analysis.py:37: in login_user
+    assert response.status_code == 200, f"Login failed: {response.text}"
+E   AssertionError: Login failed: The preview environment is not responding. It may be starting up.
+E     
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_upload_background_analysis.TestUploadBackgroundAnalysis" name="test_dashboard_shows_analyzing_cases" time="60.189"><failure message="AssertionError: Login failed: The preview environment is not responding. It may be starting up.&#10;  &#10;assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_upload_background_analysis.py:173: in test_dashboard_shows_analyzing_cases
+    self.login_user(US_USER_EMAIL, US_USER_PASSWORD)
+backend/tests/test_upload_background_analysis.py:37: in login_user
+    assert response.status_code == 200, f"Login failed: {response.text}"
+E   AssertionError: Login failed: The preview environment is not responding. It may be starting up.
+E     
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_upload_background_analysis.TestUploadBackgroundAnalysis" name="test_case_has_risk_score_and_deadline" time="14.182"><failure message="AssertionError: Login failed: The preview environment is not responding. It may be starting up.&#10;  &#10;assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_upload_background_analysis.py:196: in test_case_has_risk_score_and_deadline
+    self.login_user(US_USER_EMAIL, US_USER_PASSWORD)
+backend/tests/test_upload_background_analysis.py:37: in login_user
+    assert response.status_code == 200, f"Login failed: {response.text}"
+E   AssertionError: Login failed: The preview environment is not responding. It may be starting up.
+E     
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_upload_background_analysis.TestUploadBackgroundAnalysis" name="test_case_has_findings_and_next_steps" time="60.145"><failure message="AssertionError: Login failed: The preview environment is not responding. It may be starting up.&#10;  &#10;assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_upload_background_analysis.py:219: in test_case_has_findings_and_next_steps
+    self.login_user(US_USER_EMAIL, US_USER_PASSWORD)
+backend/tests/test_upload_background_analysis.py:37: in login_user
+    assert response.status_code == 200, f"Login failed: {response.text}"
+E   AssertionError: Login failed: The preview environment is not responding. It may be starting up.
+E     
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_upload_background_analysis.TestUploadBackgroundAnalysis" name="test_case_has_battle_preview" time="13.131" /><testcase classname="backend.tests.test_upload_background_analysis.TestUploadBackgroundAnalysis" name="test_belgian_user_can_upload" time="1.105" /><testcase classname="backend.tests.test_upload_background_analysis.TestUploadBackgroundAnalysis" name="test_belgian_user_dashboard" time="60.101"><failure message="AssertionError: Login failed: The preview environment is not responding. It may be starting up.&#10;  &#10;assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_upload_background_analysis.py:284: in test_belgian_user_dashboard
+    self.login_user(BELGIAN_USER_EMAIL, BELGIAN_USER_PASSWORD)
+backend/tests/test_upload_background_analysis.py:37: in login_user
+    assert response.status_code == 200, f"Login failed: {response.text}"
+E   AssertionError: Login failed: The preview environment is not responding. It may be starting up.
+E     
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_upload_background_analysis.TestUploadBackgroundAnalysis" name="test_contract_guard_upload" time="30.727"><failure message="AssertionError: Upload failed: {&quot;detail&quot;:&quot;Invalid session&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_upload_background_analysis.py:302: in test_contract_guard_upload
+    assert response.status_code == 200, f"Upload failed: {response.text}"
+E   AssertionError: Upload failed: {"detail":"Invalid session"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_upload_background_analysis.TestUploadBackgroundAnalysis" name="test_upload_without_auth_fails" time="0.202" /><testcase classname="backend.tests.test_upload_background_analysis.TestDashboardPolling" name="test_cases_endpoint_returns_status" time="4.876" /></testsuite></testsuites>

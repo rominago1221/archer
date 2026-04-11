@@ -202,6 +202,10 @@ const Dashboard = () => {
       const sorted = (res.data || []).sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0));
       setCases(sorted);
       if (sorted.length > 0 && !selectedId) setSelectedId(sorted[0].case_id);
+      // If any case is still analyzing, poll again in 5 seconds
+      if (sorted.some(c => c.status === 'analyzing')) {
+        setTimeout(() => fetchCases(), 5000);
+      }
     } catch (e) { /* ok */ }
     setLoading(false);
   }, [selectedId]);
@@ -219,6 +223,7 @@ const Dashboard = () => {
   };
 
   const sc = cases.find(c => c.case_id === selectedId);
+  const isAnalyzing = sc?.status === 'analyzing';
   const findings = sc?.ai_findings || [];
   const steps = sc?.ai_next_steps || [];
   const bp = sc?.battle_preview;
@@ -308,11 +313,11 @@ const Dashboard = () => {
                   onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#f8f7f4'; }}
                   onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
-                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: cColor, flexShrink: 0, marginTop: 3 }} />
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: c.status === 'analyzing' ? '#f59e0b' : cColor, flexShrink: 0, marginTop: 3, animation: c.status === 'analyzing' ? 'pulse 1.5s infinite' : 'none' }} />
                     <div style={{ fontSize: 11, fontWeight: 500, color: '#1a1a2e', flex: 1, lineHeight: 1.3 }}>{c.title || 'Untitled'}</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: cColor, marginLeft: 'auto', whiteSpace: 'nowrap' }}>{cScore > 0 ? cScore : '—'}</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: c.status === 'analyzing' ? '#f59e0b' : cColor, marginLeft: 'auto', whiteSpace: 'nowrap' }}>{c.status === 'analyzing' ? '...' : cScore > 0 ? cScore : '—'}</div>
                   </div>
-                  <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2, marginLeft: 14 }}>{cTypeName} · {c.document_count || 0} {t.docCount}</div>
+                  <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2, marginLeft: 14 }}>{c.status === 'analyzing' ? (lang === 'fr' ? 'James analyse...' : lang === 'nl' ? 'James analyseert...' : 'James analyzing...') : `${cTypeName} · ${c.document_count || 0} ${t.docCount}`}</div>
                   {cDl !== null && (
                     <div style={{ fontSize: 9, fontWeight: 500, marginTop: 2, marginLeft: 14, color: cDl <= 3 ? '#dc2626' : cDl <= 14 ? '#f59e0b' : '#6b7280' }}>
                       {cDl <= 0 ? `⚡ ${t.expired}` : `${cDl <= 7 ? '⚡ ' : ''}${t.deadlineIn} ${cDl} ${t.days}`}
@@ -379,6 +384,21 @@ const Dashboard = () => {
                   marginTop: 16, padding: '8px 20px', background: '#1a56db', color: '#fff',
                   border: 'none', borderRadius: 9, fontSize: 11, fontWeight: 600, cursor: 'pointer',
                 }}>{t.newCase}</button>
+              </div>
+            ) : isAnalyzing ? (
+              <div style={{ textAlign: 'center', padding: '80px 20px' }}>
+                <div style={{ fontSize: 40, marginBottom: 12, animation: 'pulse 1.5s infinite' }}>⚖️</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>
+                  {lang === 'fr' ? 'James analyse votre document...' : lang === 'nl' ? 'James analyseert uw document...' : 'James is analyzing your document...'}
+                </div>
+                <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
+                  {lang === 'fr' ? 'Cela prend environ 60 secondes. Les résultats apparaîtront automatiquement.' : lang === 'nl' ? 'Dit duurt ongeveer 60 seconden. Resultaten verschijnen automatisch.' : 'This takes about 60 seconds. Results will appear automatically.'}
+                </div>
+                <div style={{ marginTop: 16, display: 'flex', gap: 4, justifyContent: 'center' }}>
+                  {[0,1,2,3,4].map(i => (
+                    <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#1a56db', animation: `pulse 1.5s infinite ${i*0.3}s` }} />
+                  ))}
+                </div>
               </div>
             ) : (
               <>

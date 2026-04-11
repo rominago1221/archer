@@ -2898,6 +2898,51 @@ Return ONLY this JSON:
 
 # ================== Document Endpoints ==================
 
+
+def _build_case_update(analysis, case_before, filename, ts):
+    """Build the $set dict for updating a case with analysis results"""
+    a = analysis or {}
+    cb = case_before or {}
+    rs = a.get("risk_score", {}) if isinstance(a.get("risk_score"), dict) else {}
+    return {
+        "risk_score": rs.get("total", 0),
+        "risk_financial": rs.get("financial", 0),
+        "risk_urgency": rs.get("urgency", 0),
+        "risk_legal_strength": rs.get("legal_strength", 0),
+        "risk_complexity": rs.get("complexity", 0),
+        "deadline": normalize_deadline(a.get("deadline")),
+        "deadline_description": a.get("deadline_description") or (a.get("deadline", {}).get("description") if isinstance(a.get("deadline"), dict) else None),
+        "financial_exposure": normalize_financial_exposure(a.get("financial_exposure")),
+        "ai_summary": a.get("summary"),
+        "ai_findings": a.get("findings", []),
+        "ai_next_steps": a.get("next_steps", []),
+        "recommend_lawyer": a.get("recommend_lawyer", False),
+        "battle_preview": a.get("battle_preview"),
+        "success_probability": a.get("success_probability"),
+        "procedural_defects": a.get("procedural_defects", []),
+        "applicable_laws": a.get("applicable_laws", []),
+        "financial_exposure_detailed": a.get("financial_exposure_detailed"),
+        "immediate_actions": a.get("immediate_actions", []),
+        "leverage_points": a.get("leverage_points", []),
+        "red_lines": a.get("red_lines", []),
+        "key_insight": a.get("key_insight", ""),
+        "strategy": a.get("strategy"),
+        "lawyer_recommendation": a.get("lawyer_recommendation"),
+        "user_rights": a.get("user_rights", []),
+        "opposing_weaknesses": a.get("opposing_weaknesses", []),
+        "documents_to_gather": a.get("documents_to_gather", []),
+        "recent_case_law": a.get("recent_case_law", []),
+        "case_law_updated": a.get("case_law_updated"),
+        "case_narrative": a.get("case_narrative") or cb.get("case_narrative"),
+        "contradictions": a.get("contradictions") or cb.get("contradictions", []),
+        "opposing_strategy_analysis": a.get("opposing_strategy_analysis") or cb.get("opposing_strategy_analysis"),
+        "cumulative_financial_exposure": a.get("cumulative_financial_exposure") or cb.get("cumulative_financial_exposure"),
+        "master_deadlines": a.get("master_deadlines") or cb.get("master_deadlines", []),
+        "multi_doc_summary": a.get("case_narrative") or cb.get("multi_doc_summary"),
+        "updated_at": ts
+    }
+
+
 @api_router.post("/documents/upload")
 async def upload_document(
     file: UploadFile = File(...),
@@ -2906,7 +2951,7 @@ async def upload_document(
     analysis_mode: Optional[str] = Form("standard"),
     current_user: User = Depends(get_current_user)
 ):
-    """Upload and analyze a document. analysis_mode: 'standard' or 'contract_guard'"""
+    """Upload document → create case immediately → analyze in background"""
     # Check plan restrictions
     if current_user.plan == "free":
         doc_count = await db.documents.count_documents({"user_id": current_user.user_id})
@@ -2976,316 +3021,288 @@ async def upload_document(
     }
     await db.documents.insert_one(doc_record)
     
-    # Analyze with Claude — mode-dependent + country-dependent
-    analysis = None
+    # ── PHASE 1: Create case + document record IMMEDIATELY ──
     is_contract_guard = analysis_mode == "contract_guard"
     user_country = current_user.jurisdiction or "US"
     user_region = current_user.region or ""
     user_language = current_user.language or "en"
     is_belgian = user_country == "BE"
-
-    # Check if this is a multi-document case (existing case with prior docs)
-    existing_doc_count = 0
-    is_multi_doc = False
-    if case_id and not is_contract_guard:
-        existing_doc_count = await db.documents.count_documents({"case_id": case_id, "status": "analyzed"})
-        if existing_doc_count > 0:
-            is_multi_doc = True
-            logger.info(f"Multi-document case detected: {existing_doc_count} existing docs + 1 new for case {case_id}")
-
-    if extracted_text or use_vision:
-        context_str = ""
-        if user_context and user_context.strip():
-            context_str = user_context.strip()[:500]
-        
-        # For vision docs, first extract OCR text so it can be combined with other docs
-        vision_extracted_text = ""
-        if use_vision:
-            # Claude Vision path — for scanned PDFs and image files
-            image_b64_list = []
-            if is_image_file:
-                image_b64_list = [image_file_to_base64(file_bytes, content_type)]
-            elif file_ext == "pdf":
-                image_b64_list = pdf_pages_to_images(file_bytes, max_pages=5)
-            
-            if image_b64_list:
-                try:
-                    if is_contract_guard:
-                        if is_belgian:
-                            cg_system = get_belgian_persona(user_language, user_region) + "\n\nYou are also a CONTRACT REVIEW specialist.\n" + get_language_instruction(user_language)
-                            analysis = await analyze_document_vision(image_b64_list, system_prompt=cg_system, user_context=context_str, language=user_language)
-                        else:
-                            analysis = await analyze_document_vision(image_b64_list, user_context=context_str)
-                    elif not is_multi_doc:
-                        # Single document vision analysis (no prior docs)
-                        if is_belgian:
-                            be_persona = get_belgian_persona(user_language, user_region)
-                            be_system = "Tu es un expert OCR + analyse juridique. Lis d'abord TOUT le texte visible dans les images. Puis analyse le document juridique belge.\n\n" + be_persona + get_language_instruction(user_language)
-                            analysis = await analyze_document_vision(image_b64_list, system_prompt=be_system, user_context=context_str, language=user_language)
-                        else:
-                            analysis = await analyze_document_vision(image_b64_list, user_context=context_str)
-                    else:
-                        # Multi-doc: extract OCR text from vision, then combine below
-                        ocr_prompt = "Read ALL text from this scanned document. Return ONLY the extracted text, nothing else."
-                        ocr_system = "You are an OCR expert. Extract all text from the document image(s). Return only the text content."
-                        if is_belgian:
-                            ocr_system += get_language_instruction(user_language)
-                        ocr_result = await call_claude(ocr_system, ocr_prompt, max_tokens=4000)
-                        if isinstance(ocr_result, dict):
-                            vision_extracted_text = ocr_result.get("text", json.dumps(ocr_result))
-                        elif isinstance(ocr_result, str):
-                            vision_extracted_text = ocr_result
-                        # Update document record with extracted text
-                        await db.documents.update_one(
-                            {"document_id": document_id},
-                            {"$set": {"extracted_text": vision_extracted_text[:50000]}}
-                        )
-                except Exception as e:
-                    logger.error(f"Vision analysis failed: {e}")
-                    analysis = None
-
-        # Multi-document combined analysis
-        if is_multi_doc and not is_contract_guard and analysis is None:
-            new_text = extracted_text or vision_extracted_text
-            if new_text:
-                try:
-                    combined_text, total_doc_count, doc_list = await build_multi_document_context(
-                        case_id, new_doc_text=new_text, new_doc_name=file.filename
-                    )
-                    logger.info(f"Running multi-doc analysis: {total_doc_count} documents combined ({len(combined_text)} chars)")
-                    if is_belgian:
-                        analysis = await run_multi_doc_analysis_belgian(
-                            combined_text, total_doc_count, user_context=context_str,
-                            region=user_region, language=user_language
-                        )
-                    else:
-                        analysis = await run_multi_doc_analysis_advanced(
-                            combined_text, total_doc_count, user_context=context_str, language=user_language
-                        )
-                    # Tag as multi-doc analysis
-                    if analysis:
-                        analysis["_multi_doc"] = True
-                        analysis["_doc_count"] = total_doc_count
-                        analysis["_doc_list"] = doc_list
-                except Exception as e:
-                    logger.error(f"Multi-doc analysis failed, falling back to single-doc: {e}")
-                    # Fallback to single-document analysis
-                    if is_belgian:
-                        analysis = await analyze_document_belgian(new_text, user_context=context_str, region=user_region, language=user_language)
-                    else:
-                        analysis = await analyze_document_advanced(new_text, user_context=context_str, language=user_language)
-
-        # Single-document analysis (no prior docs, non-vision)
-        if analysis is None and not use_vision and not is_contract_guard:
-            if is_belgian:
-                analysis = await analyze_document_belgian(extracted_text, user_context=context_str, region=user_region, language=user_language)
-            else:
-                analysis = await analyze_document_advanced(extracted_text, user_context=context_str, language=user_language)
-        
-        # Fallback for contract guard non-vision
-        if analysis is None and is_contract_guard and not use_vision:
-            if is_belgian:
-                analysis = await analyze_contract_guard(extracted_text, user_context=context_str, country="BE", region=user_region, language=user_language)
-            else:
-                analysis = await analyze_contract_guard(extracted_text, user_context=context_str)
     
-    # Create or update case
-    if case_id and not is_contract_guard:
-        # Update existing case (standard mode only)
-        case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
-        if case_doc and analysis:
-            old_score = case_doc.get("risk_score", 0)
-            new_score = analysis["risk_score"]["total"]
-            
-            history_entry = {
-                "score": new_score,
-                "financial": analysis["risk_score"]["financial"],
-                "urgency": analysis["risk_score"]["urgency"],
-                "legal_strength": analysis["risk_score"]["legal_strength"],
-                "complexity": analysis["risk_score"]["complexity"],
-                "document_name": file.filename,
-                "date": now
-            }
-            
-            await db.cases.update_one(
-                {"case_id": case_id},
-                {
-                    "$set": {
-                        "risk_score": new_score,
-                        "risk_financial": analysis["risk_score"]["financial"],
-                        "risk_urgency": analysis["risk_score"]["urgency"],
-                        "risk_legal_strength": analysis["risk_score"]["legal_strength"],
-                        "risk_complexity": analysis["risk_score"]["complexity"],
-                        "title": analysis.get("suggested_case_title") or case_doc.get("title"),
-                        "type": analysis.get("case_type") or case_doc.get("type"),
-                        "deadline": normalize_deadline(analysis.get("deadline")),
-                        "deadline_description": analysis.get("deadline_description") or (analysis.get("deadline", {}).get("description") if isinstance(analysis.get("deadline"), dict) else None),
-                        "financial_exposure": normalize_financial_exposure(analysis.get("financial_exposure")),
-                        "ai_summary": analysis.get("summary"),
-                        "ai_findings": analysis.get("findings", []),
-                        "ai_next_steps": analysis.get("next_steps", []),
-                        "recommend_lawyer": analysis.get("recommend_lawyer", False),
-                        "battle_preview": analysis.get("battle_preview"),
-                        "success_probability": analysis.get("success_probability"),
-                        "procedural_defects": analysis.get("procedural_defects", []),
-                        "applicable_laws": analysis.get("applicable_laws", []),
-                        "financial_exposure_detailed": analysis.get("financial_exposure_detailed"),
-                        "immediate_actions": analysis.get("immediate_actions", []),
-                        "leverage_points": analysis.get("leverage_points", []),
-                        "red_lines": analysis.get("red_lines", []),
-                        "key_insight": analysis.get("key_insight", ""),
-                        "strategy": analysis.get("strategy"),
-                        "lawyer_recommendation": analysis.get("lawyer_recommendation"),
-                        "user_rights": analysis.get("user_rights", []),
-                        "opposing_weaknesses": analysis.get("opposing_weaknesses", []),
-                        "documents_to_gather": analysis.get("documents_to_gather", []),
-                        "recent_case_law": analysis.get("recent_case_law", []),
-                        "case_law_updated": analysis.get("case_law_updated"),
-                        # Multi-document analysis fields
-                        "case_narrative": analysis.get("case_narrative") or case_doc.get("case_narrative"),
-                        "contradictions": analysis.get("contradictions") or case_doc.get("contradictions", []),
-                        "opposing_strategy_analysis": analysis.get("opposing_strategy_analysis") or case_doc.get("opposing_strategy_analysis"),
-                        "cumulative_financial_exposure": analysis.get("cumulative_financial_exposure") or case_doc.get("cumulative_financial_exposure"),
-                        "master_deadlines": analysis.get("master_deadlines") or case_doc.get("master_deadlines", []),
-                        "multi_doc_summary": analysis.get("case_narrative") or case_doc.get("multi_doc_summary"),
-                        "updated_at": now
-                    },
-                    "$push": {"risk_score_history": history_entry}
-                }
-            )
-            
-            event_doc = {
-                "event_id": f"evt_{uuid.uuid4().hex[:12]}",
-                "case_id": case_id,
-                "event_type": "score_updated",
-                "title": f"Score updated to {new_score}/100",
-                "description": f"Document added — risk {'increased' if new_score > old_score else 'decreased'}",
-                "metadata": {"old_score": old_score, "new_score": new_score},
-                "created_at": now
-            }
-            await db.case_events.insert_one(event_doc)
-    elif is_contract_guard:
-        # Contract Guard mode — store in contract_guard_reviews collection
-        case_id = case_id or f"cg_{uuid.uuid4().hex[:12]}"
-        cg_record = {
-            "review_id": case_id,
-            "user_id": current_user.user_id,
-            "document_id": document_id,
-            "file_name": file.filename,
-            "analysis": analysis,
-            "negotiation_score": analysis.get("negotiation_score", 50) if analysis else 50,
-            "created_at": now
-        }
-        await db.contract_guard_reviews.insert_one(cg_record)
-        await db.documents.update_one(
-            {"document_id": document_id},
-            {"$set": {"case_id": case_id, "analysis_mode": "contract_guard"}}
-        )
-    else:
-        # Create new case (standard mode)
+    # Determine if adding to existing case
+    is_existing_case = case_id is not None and not is_contract_guard
+    
+    if is_contract_guard:
+        # Contract Guard — case_id is review_id
+        if not case_id:
+            case_id = f"cg_{uuid.uuid4().hex[:12]}"
+    elif not case_id:
+        # Create a NEW case immediately (before analysis)
         case_id = f"case_{uuid.uuid4().hex[:12]}"
-        case_title = (analysis.get("suggested_case_title") or "").strip() if analysis else ""
-        if not case_title or case_title == file.filename or len(case_title) < 5:
-            case_type_val = analysis.get("case_type", "other") if analysis else "other"
-            summary = (analysis.get("summary") or "") if analysis else ""
-            case_title = summary[:60].rstrip('.') if summary else f"Legal case — {case_type_val}"
-        case_type = analysis.get("case_type", "other") if analysis else "other"
-        
         case_doc = {
             "case_id": case_id,
             "user_id": current_user.user_id,
-            "title": case_title,
-            "type": case_type,
-            "status": "active",
+            "title": f"Analyzing {file.filename}...",
+            "type": "other",
+            "status": "analyzing",
             "country": user_country,
             "region": user_region,
             "language": user_language,
-            "risk_score": analysis["risk_score"]["total"] if analysis and isinstance(analysis.get("risk_score"), dict) else (analysis.get("risk_score", {}).get("total", 0) if analysis else 0),
-            "risk_financial": analysis["risk_score"]["financial"] if analysis and isinstance(analysis.get("risk_score"), dict) else 0,
-            "risk_urgency": analysis["risk_score"]["urgency"] if analysis and isinstance(analysis.get("risk_score"), dict) else 0,
-            "risk_legal_strength": analysis["risk_score"]["legal_strength"] if analysis and isinstance(analysis.get("risk_score"), dict) else 0,
-            "risk_complexity": analysis["risk_score"]["complexity"] if analysis and isinstance(analysis.get("risk_score"), dict) else 0,
-            "risk_score_history": [{
-                "score": analysis["risk_score"]["total"],
-                "financial": analysis["risk_score"]["financial"],
-                "urgency": analysis["risk_score"]["urgency"],
-                "legal_strength": analysis["risk_score"]["legal_strength"],
-                "complexity": analysis["risk_score"]["complexity"],
-                "document_name": file.filename,
-                "date": now
-            }] if analysis and isinstance(analysis.get("risk_score"), dict) else [],
-            "deadline": normalize_deadline(analysis.get("deadline")) if analysis else None,
-            "deadline_description": (analysis.get("deadline_description") or (analysis.get("deadline", {}).get("description") if isinstance(analysis.get("deadline"), dict) else None)) if analysis else None,
-            "financial_exposure": normalize_financial_exposure(analysis.get("financial_exposure")) if analysis else None,
-            "ai_summary": analysis.get("summary") if analysis else None,
-            "ai_findings": analysis.get("findings", []) if analysis else [],
-            "ai_next_steps": analysis.get("next_steps", []) if analysis else [],
-            "recommend_lawyer": analysis.get("recommend_lawyer", False) if analysis else False,
-            "battle_preview": analysis.get("battle_preview") if analysis else None,
-            "success_probability": analysis.get("success_probability") if analysis else None,
-            "procedural_defects": analysis.get("procedural_defects", []) if analysis else [],
-            "applicable_laws": analysis.get("applicable_laws", []) if analysis else [],
-            "financial_exposure_detailed": analysis.get("financial_exposure_detailed") if analysis else None,
-            "immediate_actions": analysis.get("immediate_actions", []) if analysis else [],
-            "leverage_points": analysis.get("leverage_points", []) if analysis else [],
-            "red_lines": analysis.get("red_lines", []) if analysis else [],
-            "key_insight": analysis.get("key_insight", "") if analysis else "",
-            "strategy": analysis.get("strategy") if analysis else None,
-            "lawyer_recommendation": analysis.get("lawyer_recommendation") if analysis else None,
-            "user_rights": analysis.get("user_rights", []) if analysis else [],
-            "opposing_weaknesses": analysis.get("opposing_weaknesses", []) if analysis else [],
-            "recent_case_law": analysis.get("recent_case_law", []) if analysis else [],
-            "case_law_updated": analysis.get("case_law_updated") if analysis else None,
-            "documents_to_gather": analysis.get("documents_to_gather", []) if analysis else [],
+            "risk_score": 0,
+            "risk_financial": 0, "risk_urgency": 0,
+            "risk_legal_strength": 0, "risk_complexity": 0,
+            "risk_score_history": [],
+            "deadline": None, "deadline_description": None,
+            "financial_exposure": None,
+            "ai_summary": "Analysis in progress...",
+            "ai_findings": [],
+            "ai_next_steps": [],
+            "recommend_lawyer": False,
+            "battle_preview": None,
             "document_count": 1,
-            "created_at": now,
-            "updated_at": now
+            "created_at": now, "updated_at": now
         }
         await db.cases.insert_one(case_doc)
-        
-        await db.documents.update_one(
-            {"document_id": document_id},
-            {"$set": {"case_id": case_id}}
-        )
-        
-        event_doc = {
+        logger.info(f"Case {case_id} created (pending analysis)")
+    
+    # Link document to case
+    await db.documents.update_one(
+        {"document_id": document_id},
+        {"$set": {"case_id": case_id, "status": "analyzing"}}
+    )
+    
+    # Add case_opened event
+    if not is_existing_case and not is_contract_guard:
+        await db.case_events.insert_one({
             "event_id": f"evt_{uuid.uuid4().hex[:12]}",
             "case_id": case_id,
             "event_type": "case_opened",
             "title": "Case opened",
-            "description": f"Document analyzed · {analysis['risk_score']['total'] if analysis else 0}/100" if analysis else "Document uploaded",
+            "description": f"Document uploaded: {file.filename}",
             "metadata": None,
             "created_at": now
-        }
-        await db.case_events.insert_one(event_doc)
+        })
     
-    # Update document status
-    if not is_contract_guard:
-        await db.documents.update_one(
-            {"document_id": document_id},
-            {"$set": {"status": "analyzed", "case_id": case_id}}
-        )
+    # ── PHASE 2: Start background analysis ──
+    async def run_background_analysis():
+        try:
+            analysis = None
+            context_str = (user_context or "").strip()[:500]
+            
+            # Check multi-document status
+            existing_doc_count = 0
+            is_multi_doc = False
+            if is_existing_case:
+                existing_doc_count = await db.documents.count_documents({"case_id": case_id, "status": "analyzed"})
+                if existing_doc_count > 0:
+                    is_multi_doc = True
+                    logger.info(f"Multi-document case: {existing_doc_count} existing + 1 new")
+            
+            if extracted_text or use_vision:
+                # Vision analysis path
+                vision_extracted_text = ""
+                if use_vision:
+                    image_b64_list = []
+                    if is_image_file:
+                        image_b64_list = [image_file_to_base64(file_bytes, content_type)]
+                    elif file_ext == "pdf":
+                        image_b64_list = pdf_pages_to_images(file_bytes, max_pages=5)
+                    
+                    if image_b64_list:
+                        try:
+                            if is_contract_guard:
+                                if is_belgian:
+                                    cg_system = get_belgian_persona(user_language, user_region) + "\n\nYou are also a CONTRACT REVIEW specialist.\n" + get_language_instruction(user_language)
+                                    analysis = await analyze_document_vision(image_b64_list, system_prompt=cg_system, user_context=context_str, language=user_language)
+                                else:
+                                    analysis = await analyze_document_vision(image_b64_list, user_context=context_str)
+                            elif not is_multi_doc:
+                                if is_belgian:
+                                    be_persona = get_belgian_persona(user_language, user_region)
+                                    be_system = "Tu es un expert OCR + analyse juridique. Lis d'abord TOUT le texte visible dans les images. Puis analyse le document juridique belge.\n\n" + be_persona + get_language_instruction(user_language)
+                                    analysis = await analyze_document_vision(image_b64_list, system_prompt=be_system, user_context=context_str, language=user_language)
+                                else:
+                                    analysis = await analyze_document_vision(image_b64_list, user_context=context_str)
+                            else:
+                                ocr_prompt = "Read ALL text from this scanned document. Return ONLY the extracted text, nothing else."
+                                ocr_system = "You are an OCR expert. Extract all text from the document image(s). Return only the text content."
+                                if is_belgian:
+                                    ocr_system += get_language_instruction(user_language)
+                                ocr_result = await call_claude(ocr_system, ocr_prompt, max_tokens=4000)
+                                if isinstance(ocr_result, dict):
+                                    vision_extracted_text = ocr_result.get("text", json.dumps(ocr_result))
+                                elif isinstance(ocr_result, str):
+                                    vision_extracted_text = ocr_result
+                                await db.documents.update_one(
+                                    {"document_id": document_id},
+                                    {"$set": {"extracted_text": vision_extracted_text[:50000]}}
+                                )
+                        except Exception as e:
+                            logger.error(f"Vision analysis failed: {e}")
+                
+                # Multi-document combined analysis
+                if is_multi_doc and not is_contract_guard and analysis is None:
+                    new_text = extracted_text or vision_extracted_text
+                    if new_text:
+                        try:
+                            combined_text, total_doc_count, doc_list = await build_multi_document_context(
+                                case_id, new_doc_text=new_text, new_doc_name=file.filename
+                            )
+                            if is_belgian:
+                                analysis = await run_multi_doc_analysis_belgian(
+                                    combined_text, total_doc_count, user_context=context_str,
+                                    region=user_region, language=user_language
+                                )
+                            else:
+                                analysis = await run_multi_doc_analysis_advanced(
+                                    combined_text, total_doc_count, user_context=context_str, language=user_language
+                                )
+                            if analysis:
+                                analysis["_multi_doc"] = True
+                                analysis["_doc_count"] = total_doc_count
+                                analysis["_doc_list"] = doc_list
+                        except Exception as e:
+                            logger.error(f"Multi-doc analysis failed, fallback: {e}")
+                            if is_belgian:
+                                analysis = await analyze_document_belgian(new_text, user_context=context_str, region=user_region, language=user_language)
+                            else:
+                                analysis = await analyze_document_advanced(new_text, user_context=context_str, language=user_language)
+                
+                # Single-document analysis
+                if analysis is None and not use_vision and not is_contract_guard:
+                    if is_belgian:
+                        analysis = await analyze_document_belgian(extracted_text, user_context=context_str, region=user_region, language=user_language)
+                    else:
+                        analysis = await analyze_document_advanced(extracted_text, user_context=context_str, language=user_language)
+                
+                # Contract guard fallback
+                if analysis is None and is_contract_guard and not use_vision:
+                    if is_belgian:
+                        analysis = await analyze_contract_guard(extracted_text, user_context=context_str, country="BE", region=user_region, language=user_language)
+                    else:
+                        analysis = await analyze_contract_guard(extracted_text, user_context=context_str)
+            
+            # Fallback
+            if analysis is None:
+                analysis = _default_analysis()
+            
+            # ── Save results to database ──
+            bg_now = datetime.now(timezone.utc).isoformat()
+            
+            if is_contract_guard:
+                cg_record = {
+                    "review_id": case_id,
+                    "user_id": current_user.user_id,
+                    "document_id": document_id,
+                    "file_name": file.filename,
+                    "analysis": analysis,
+                    "negotiation_score": analysis.get("negotiation_score", 50) if analysis else 50,
+                    "created_at": bg_now
+                }
+                await db.contract_guard_reviews.insert_one(cg_record)
+                await db.documents.update_one(
+                    {"document_id": document_id},
+                    {"$set": {"status": "analyzed", "analysis_mode": "contract_guard"}}
+                )
+            elif is_existing_case:
+                # Update existing case
+                case_before = await db.cases.find_one({"case_id": case_id}, {"_id": 0})
+                old_score = (case_before or {}).get("risk_score", 0)
+                new_score = analysis["risk_score"]["total"] if isinstance(analysis.get("risk_score"), dict) else 0
+                
+                history_entry = {
+                    "score": new_score,
+                    "financial": analysis.get("risk_score", {}).get("financial", 0),
+                    "urgency": analysis.get("risk_score", {}).get("urgency", 0),
+                    "legal_strength": analysis.get("risk_score", {}).get("legal_strength", 0),
+                    "complexity": analysis.get("risk_score", {}).get("complexity", 0),
+                    "document_name": file.filename,
+                    "date": bg_now
+                }
+                
+                update_fields = _build_case_update(analysis, case_before, file.filename, bg_now)
+                await db.cases.update_one(
+                    {"case_id": case_id},
+                    {"$set": update_fields, "$push": {"risk_score_history": history_entry}, "$inc": {"document_count": 1}}
+                )
+                await db.case_events.insert_one({
+                    "event_id": f"evt_{uuid.uuid4().hex[:12]}",
+                    "case_id": case_id,
+                    "event_type": "score_updated",
+                    "title": f"Score updated to {new_score}/100",
+                    "description": f"Document added — risk {'increased' if new_score > old_score else 'decreased'}",
+                    "metadata": {"old_score": old_score, "new_score": new_score},
+                    "created_at": bg_now
+                })
+                await db.documents.update_one(
+                    {"document_id": document_id},
+                    {"$set": {"status": "analyzed", "case_id": case_id}}
+                )
+            else:
+                # Update the case we already created (from "analyzing" to "active")
+                new_score = analysis["risk_score"]["total"] if isinstance(analysis.get("risk_score"), dict) else 0
+                case_title = (analysis.get("suggested_case_title") or "").strip()
+                if not case_title or case_title == file.filename or len(case_title) < 5:
+                    summary = analysis.get("summary") or ""
+                    case_type_val = analysis.get("case_type", "other")
+                    case_title = summary[:60].rstrip('.') if summary else f"Legal case — {case_type_val}"
+                
+                update_fields = _build_case_update(analysis, {}, file.filename, bg_now)
+                update_fields["title"] = case_title
+                update_fields["type"] = analysis.get("case_type", "other")
+                update_fields["status"] = "active"
+                
+                history_entry = {
+                    "score": new_score,
+                    "financial": analysis.get("risk_score", {}).get("financial", 0),
+                    "urgency": analysis.get("risk_score", {}).get("urgency", 0),
+                    "legal_strength": analysis.get("risk_score", {}).get("legal_strength", 0),
+                    "complexity": analysis.get("risk_score", {}).get("complexity", 0),
+                    "document_name": file.filename,
+                    "date": bg_now
+                }
+                
+                await db.cases.update_one(
+                    {"case_id": case_id},
+                    {"$set": update_fields, "$push": {"risk_score_history": history_entry}}
+                )
+                await db.documents.update_one(
+                    {"document_id": document_id},
+                    {"$set": {"status": "analyzed"}}
+                )
+                await db.case_events.insert_one({
+                    "event_id": f"evt_{uuid.uuid4().hex[:12]}",
+                    "case_id": case_id,
+                    "event_type": "analysis_complete",
+                    "title": "Analysis complete",
+                    "description": f"Risk score: {new_score}/100",
+                    "metadata": None,
+                    "created_at": bg_now
+                })
+            
+            logger.info(f"Background analysis complete for case {case_id}")
+        except Exception as e:
+            logger.error(f"Background analysis failed for case {case_id}: {e}")
+            # Mark case as active even on failure so it shows up
+            await db.cases.update_one(
+                {"case_id": case_id},
+                {"$set": {"status": "active", "ai_summary": "Analysis failed. Click re-analyze to retry.", "updated_at": datetime.now(timezone.utc).isoformat()}}
+            )
+            await db.documents.update_one(
+                {"document_id": document_id},
+                {"$set": {"status": "error"}}
+            )
     
-    # Create document added event (standard mode only)
-    if not is_contract_guard:
-        doc_event = {
-            "event_id": f"evt_{uuid.uuid4().hex[:12]}",
-            "case_id": case_id,
-            "event_type": "document_added",
-            "title": "Document uploaded",
-            "description": file.filename,
-            "metadata": None,
-            "created_at": now
-        }
-        await db.case_events.insert_one(doc_event)
+    # Fire background analysis
+    asyncio.create_task(run_background_analysis())
     
+    # ── Return IMMEDIATELY with case_id ──
     return {
         "document_id": document_id,
         "case_id": case_id,
-        "analysis": analysis,
+        "analysis": None,
         "analysis_mode": analysis_mode,
         "file_name": file.filename,
-        "status": "analyzed",
+        "status": "analyzing",
         "vision_mode": use_vision
     }
 

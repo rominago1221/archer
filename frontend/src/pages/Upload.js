@@ -115,6 +115,12 @@ const Upload = () => {
       const response = await uploadPromise;
       setUploadStage('done');
       await delay(400);
+      
+      // Auto-redirect to dashboard — case was created and analysis runs in background
+      if (response.data?.case_id) {
+        navigate('/dashboard');
+        return;
+      }
       setResult(response.data);
     } catch (err) {
       console.error('Upload error:', err);
