@@ -1,71 +1,66 @@
 # Jasper - Legal Tech AI Platform PRD
 
 ## Original Problem Statement
-Build Jasper — a legal tech AI platform for US and Belgian consumers. Upload legal documents, get AI risk analysis, manage cases, chat with AI attorney James, and connect with real lawyers. Now includes a complete Attorney Portal, James Document Creator, and a redesigned Virtual Legal Cabinet Dashboard.
+Build Jasper — a legal tech AI platform for US and Belgian consumers. Upload legal documents, get AI risk analysis, manage cases, chat with AI attorney James, and connect with real lawyers. Features a Virtual Legal Cabinet Dashboard, Attorney Portal, and James Document Creator.
 
 ## Core Architecture
-- **Jurisdiction** (US or BE): Determines which laws apply. Stored as `user.jurisdiction` / `user.country`.
+- **Jurisdiction** (US or BE): Determines which laws apply. Stored as `user.country`.
 - **Language** (en, fr, nl, de, es): Determines UI language ONLY. Stored as `user.language`.
 - **Account Type** (client or attorney): Determines dashboard and routing.
-- Both jurisdiction and language are independent and visible on every page.
+- Layout is 100% identical for all countries — only text and applicable law change.
 
 ## What's Been Implemented
 
-### Virtual Legal Cabinet Dashboard (Apr 11 2026) — LATEST
+### Critical Bug Fixes (Apr 11 2026) — LATEST
+- **Claude API**: Switched from direct httpx calls to Emergent LlmChat integration (`emergentintegrations.llm.chat`). No more 429 rate limiting. Uses `claude-4-sonnet-20250514` model.
+- **CourtListener filtering**: Now filters by case type AND jurisdiction/state. Returns empty for unknown types (no more random unrelated cases).
+- **Default analysis**: Changed from fake 50/50/50/50 to 0/0/0/0 with clear "analysis failed" messaging.
+- **Re-analyze endpoint**: `POST /api/cases/{case_id}/reanalyze` to retry analysis.
+- **Battle preview**: Dashboard now accesses `user_side.strongest_arguments` correctly.
+- Tested: 13/13 backend + all frontend features pass (iteration_25.json)
+
+### Virtual Legal Cabinet Dashboard (Apr 11 2026)
 - **3-column layout**: Left sidebar (260px) + Main area (1fr) + Right panel (240px)
-- **Left sidebar**: Jasper logo, James AI card (avatar, role, 4 stat boxes), navigation links, active cases list with risk colors/deadlines, "Open a new case" button, sign out
-- **Main center**: James banner with credential pills, case type badge, title, metadata, Risk Score (big number + progress bar + 4 dimensions: Financial/Urgency/Legal/Complexity), James Analysis findings with legal references, question card
-- **Right panel**: Overview header, critical deadline card (red), numbered next actions, documents section, Battle Preview mini-card (your args vs their args)
-- **New Case Overlay**: 8 situation cards in user's language (EN/FR/NL), navigates to upload
-- **Language system**: Full EN/FR/NL translations for all dashboard text
-- **Re-analyze endpoint**: POST /api/cases/{case_id}/reanalyze
-- **Default analysis fix**: Changed from fake 50/50/50/50 to 0/0/0/0 with "Re-analyze" prompt
+- **Left sidebar**: Jasper logo, James AI card, navigation links, active cases list, "Open a new case" button, sign out
+- **Center**: James banner with credential pills, case view with risk score (4 dimensions), AI findings with statute citations, question card
+- **Right panel**: Critical deadline card, numbered next actions, documents, Battle Preview
+- **New Case Overlay**: 8 situation cards in EN/FR/NL
+- **Language system**: Full EN/FR/NL translations
 - Tested: 41/41 features pass (iteration_24.json)
 
 ### Attorney Portal (Apr 11 2026)
-- Dual Login System, 7-step Attorney Application/Onboarding
-- Attorney Dashboard, Calls, Cases, Legal Research, Profile Editor, Earnings, Settings
-- Public Attorney Profile with booking, Daily.co Video Calls, AI Case Brief
-- Stripe Connect routing, Attorney Route Guard
+- Dual Login, 7-step onboarding, Attorney Dashboard, Daily.co Video, Stripe Connect routing
 
-### James Conversational Document Creator (Apr 11 2026)
-- Two-column layout: sidebar + conversational main area
-- Backend: POST /api/documents/james/send, GET /conversations, /recent, /messages
+### James Document Creator (Apr 11 2026)
+- Conversational document generation via chat interface
 
 ### Core Features
-- Document upload & AI analysis (PDF, DOCX, TXT, EML, images)
+- Document upload & 5-pass AI analysis (PDF, DOCX, TXT, EML, images)
 - Claude Vision OCR, Risk Score + History Graph
-- Legal Battle Preview, Outcome Predictor, Response Letters
-- Case Sharing, Contract Guard, Document Library, Document Scanner
-- Legal Chat (James AI Attorney), Multi-Document Analysis
+- Battle Preview, Outcome Predictor, Response Letters
+- Case Sharing, Contract Guard, Document Library, Legal Chat
 
 ### Integrations
 - Emergent Google OAuth, Object Storage
-- Anthropic Claude (claude-sonnet-4-20250514) with Vision + web_search
+- **Emergent LlmChat** (claude-4-sonnet-20250514) — via `emergentintegrations.llm.chat`
 - Daily.co Video Calls
-- Stripe Checkout + planned Connect
-- CourtListener API, pymupdf, python-docx, jsPDF
-
-## Known Issues
-- Claude API rate limits (429) cause analysis to fall back to defaults. This is transient.
-- CourtListener recent case law filtering depends on AI analysis producing correct case_type.
+- Stripe Checkout
+- CourtListener API (filtered by jurisdiction + case type)
 
 ## Prioritized Backlog
 
 ### P0 (Critical)
-- [ ] Refactor server.py (6000+ lines -> modular routers: routes/auth.py, routes/cases.py, routes/attorney.py, etc.)
+- [ ] Refactor server.py (6200+ lines -> modular routers)
 
 ### P1 (High)
-- [ ] Stripe Connect OAuth for attorney payouts (80/20 split)
+- [ ] Stripe Connect OAuth for attorney payouts
 - [ ] HelloSign / Dropbox Sign (e-signature) — needs user API key
 - [ ] Email notifications (SendGrid/Resend) — needs API keys
-- [ ] Mobile Document Scanner (Camera integration)
+- [ ] Mobile Document Scanner (Camera)
 
 ### P2 (Medium)
 - [ ] Deadline Alerts (SMS/Email) — needs Twilio + SendGrid keys
-- [ ] Full UI translation pass for all pages (FR/NL/DE/ES)
+- [ ] Full UI translation for all pages (FR/NL/DE/ES)
 
 ### P3 (Future)
-- [ ] Multi-Country expansion
-- [ ] Post-call client rating flow
-- [ ] Attorney application admin panel
+- [ ] Multi-Country expansion, Post-call client rating, Attorney admin panel
