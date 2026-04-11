@@ -1,7 +1,7 @@
 # Jasper - Legal Tech AI Platform PRD
 
 ## Original Problem Statement
-Build Jasper — a legal tech AI platform for US and Belgian consumers. Upload legal documents, get AI risk analysis, manage cases, chat with AI attorney James, and connect with real lawyers. Features a Virtual Legal Cabinet Dashboard, Attorney Portal, and James Document Creator.
+Build Jasper — a legal tech AI platform for US and Belgian consumers. Upload legal documents, get AI risk analysis, manage cases, chat with AI attorney James, and connect with real lawyers.
 
 ## Core Architecture
 - **Jurisdiction** (US or BE): Determines which laws apply. Stored as `user.country`.
@@ -10,36 +10,37 @@ Build Jasper — a legal tech AI platform for US and Belgian consumers. Upload l
 
 ## What's Been Implemented
 
-### In-Case Document Upload Modal (Apr 11 2026) — LATEST
-- "Add document" button on Dashboard + CaseDetail now opens AddDocumentModal (never redirects to /upload)
-- Modal features: drag & drop upload zone (PDF/Word/JPEG/PNG/scan, 20MB max), context textarea (500 chars), "Analyze with James" + "Cancel" buttons
-- After upload: modal closes, James re-runs full 5-pass analysis in background, case refreshes automatically
-- Trilingual: EN/FR/NL
+### James Clarification Two-Step (Apr 11 2026) — LATEST
+- STEP 1: James Question Card shows max 1 question with 2-3 clickable buttons
+- Below buttons: "James has more questions — ask him directly →" link (EN/FR/NL)
+- STEP 2: Link opens CaseChatDrawer (400px slide-in from right)
+- Chat pre-loaded with full case context, James continues naturally
+- User never leaves the case page
+- Backend chat migrated from httpx to emergentintegrations (no more 429 errors)
 
-### Dashboard 12-Feature Parity with CaseDetail (Apr 11 2026)
-All 12 features on both Dashboard and CaseDetail:
-Download Brief, Share, Score History Graph, Horizontal Battle Preview, James Q&A, Jurisprudence, Outcome Predictor, Risk Monitor, Next Actions with Generate letter/Book a call, Letter/Share Modals, PDF Brief, New Case Overlay
+### In-Case Document Upload Modal (Apr 11 2026)
+- AddDocumentModal: drag & drop (PDF/Word/JPEG, 20MB), context textarea, trilingual
+
+### Dashboard 12-Feature Parity (Apr 11 2026)
+- All features: Brief, Share, Score History, Battle Preview, James Q&A, Jurisprudence, Outcome Predictor, Risk Monitor, Letter/Share Modals, New Case Overlay
 
 ### UX Fixes (Apr 11 2026)
-- After login → most recent case auto-selected
-- Empty state: James avatar welcome
-- Logo click → / on all pages
-- "My Dashboard" button on landing when logged in
+- Post-login auto-select, James welcome empty state, logo → home, My Dashboard button
 
 ### Integrations
-- Emergent LlmChat (claude-sonnet-4-20250514), Emergent Google OAuth, Object Storage
-- Daily.co Video Calls, Stripe Checkout, CourtListener API
+- Emergent LlmChat (claude-sonnet-4-20250514), Google OAuth, Object Storage
+- Daily.co, Stripe, CourtListener
 
 ## Prioritized Backlog
 
-### P0 (Critical)
-- [ ] Refactor server.py (6300+ lines -> modular routers)
+### P0
+- [ ] Refactor server.py (6300+ lines → modular routers)
 
-### P1 (High)
+### P1
 - [ ] Deadline Alerts (Twilio/SendGrid) — awaiting keys
 - [ ] HelloSign / Dropbox Sign — awaiting keys
 - [ ] Mobile Document Scanner
 - [ ] Stripe Connect for attorney payouts
 
 ### P2-P3
-- [ ] Email notifications, Full UI translation, Multi-country expansion, Post-call rating
+- [ ] Email notifications, Full UI translation, Multi-country expansion
