@@ -7,30 +7,25 @@ Build Jasper — a legal tech AI platform for US and Belgian consumers. Upload l
 - **Jurisdiction** (US or BE): Determines which laws apply. Stored as `user.jurisdiction`.
 - **Language** (en, fr, nl): Determines UI language ONLY. Stored as `user.language`.
 - **Account Type** (client or attorney): Determines dashboard and routing.
-- Jurisdiction and language are **independent**: a Belgian user can use the app in English (Belgian law still applies).
+- Jurisdiction and language are independent.
 
 ## What's Been Implemented
 
-### Jurisdiction Switching + Back Button (Apr 11 2026) — LATEST
-- **Jurisdiction pills**: 🇺🇸 United States / 🇧🇪 Belgium — always visible center-top on Dashboard, CaseDetail, and Landing pages
-- Active pill: dark background (#0a0a0f), white text. Inactive: transparent, gray text
-- Instant switch: updates user profile (DB + session), reloads sidebar cases filtered by jurisdiction
-- Backend `GET /api/cases` filters by `user.jurisdiction` with `$or` backward compat for legacy cases
-- CaseDetail → switching jurisdiction redirects to /dashboard
-- **Back button**: "← Back" top-left on every page using `window.history.back()`
+### Jurisdiction Onboarding (Apr 11 2026) — LATEST
+- 2-step educational overlay on first jurisdiction switch
+- Step 1: "Welcome to [X] Law" — 3 cards (Housing, Employment, Debt differences)
+- Step 2: "How James adapts" — 3 cards (Legal references, Languages, Court systems)
+- Content in EN/FR/NL for both US and Belgium
+- localStorage tracks seen state — shows only once per jurisdiction
+
+### Jurisdiction Switching + Back Button (Apr 11 2026)
+- 🇺🇸/🇧🇪 pills always visible, backend filters cases by jurisdiction
 
 ### Next Actions Redesign + Letter Form Modal (Apr 11 2026)
-- 3 action types: TYPE A (letter/blue), TYPE B (call/purple), TYPE C (passive/gray)
-- LetterFormModal with pre-filled fields, letter generation, PDF download, HelloSign, Edit with James
+- 3 action types (letter/call/passive) + LetterFormModal with pre-fill
 
-### Real-Time Post-Upload UI Update (Apr 11 2026)
-- 2s polling, re-analyzing banner, toast notification
-
-### James Clarification Two-Step (Apr 11 2026)
-- Max 1 question + "ask directly" chat drawer
-
-### In-Case Document Upload Modal (Apr 11 2026)
-- AddDocumentModal with drag & drop, context field
+### Real-Time Post-Upload + James Clarification + In-Case Upload (Apr 11 2026)
+- 2s polling, re-analyzing banner, toast, James chat drawer, AddDocumentModal
 
 ### Integrations
 - Emergent LlmChat, Google OAuth, Object Storage, Daily.co, Stripe, CourtListener
