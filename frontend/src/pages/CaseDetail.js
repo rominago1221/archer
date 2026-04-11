@@ -1,1031 +1,569 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { Scale, Shield, Clock, Zap, FileText, ChevronDown, ChevronUp, Loader2, ExternalLink, AlertCircle, CheckCircle, Sword, Target, TrendingUp, TrendingDown, Mail, X, Copy, Download, Link2, Share2, Camera } from 'lucide-react';
+import axios from 'axios';
+import { ArrowLeft, Download, Share2, FileText, Plus, Scale, ExternalLink, Loader2, Upload, MessageSquare, Settings, BookOpen, LogOut, ChevronRight, X } from 'lucide-react';
+import jsPDF from 'jspdf';
 
-const API = process.env.REACT_APP_BACKEND_URL + '/api';
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-// ========== TRANSLATIONS ==========
-const labels = {
+/* ── Language ── */
+const L = {
   en: {
-    riskScore: 'Jasper Risk Score', evolution: 'Score evolution', financial: 'Financial', urgency: 'Urgency',
-    legalStrength: 'Legal Strength', complexity: 'Complexity', actionIn: (d) => d > 0 ? `Action required in ${d} day${d !== 1 ? 's' : ''}` : null,
-    deadlinePassed: 'DEADLINE PASSED — Immediate action required',
-    updatedWith: 'Updated with latest document',
-    aiAnalysis: 'Jasper AI Analysis', findings: 'Key Findings', noFindings: 'No findings yet. Upload a document to get your analysis.',
-    legalRef: 'Legal reference', jurisprudence: 'Jurisprudence',
-    nextSteps: 'Recommended next steps', keyInsight: 'Key Insight',
-    battlePreview: 'Legal Battle Preview', yourPosition: 'Your Position', opposingSide: 'Opposing Side',
-    strength: 'Strength', arguments: 'Key Arguments', vulnerabilities: 'Vulnerabilities',
-    outcomePredictor: 'Outcome Predictor', predictOutcome: 'Predict my outcome', predicting: 'Analyzing...',
-    predictError: 'Unable to generate prediction — try again', probable: 'Most probable', best: 'Best case', worst: 'Worst case',
-    confidenceLevel: 'Confidence level', keyFactors: 'Key factors', recommendation: 'Recommendation',
-    responseLetters: 'Response Letters', generateLetter: 'Generate Letter', generating: 'Generating...',
-    letterReady: 'Your Response Letter', keyPoints: 'Key points in this letter', warnings: 'Important reminders',
-    generateAnother: 'Generate another', copy: 'Copy', copied: 'Copied!', downloadPdf: 'Download PDF', cancel: 'Cancel',
-    caseDetails: 'Case details will be included automatically', yourAddress: 'Your address (optional)',
-    opposingName: 'Opposing party name', opposingAddress: 'Opposing party address (optional)',
-    additionalContext: 'Additional context (optional)',
-    shareCase: 'Share this case', shareDesc: 'Generate a read-only link. Anyone with the link can view this case analysis.',
-    expiresIn: 'Expires in', msgRecipient: 'Message for recipient (optional)',
-    shareDisclaimer: 'Recipients can view your case analysis but cannot download your documents or see your personal information.',
-    generateLink: 'Generate secure link', generatingLink: 'Generating...', linkGenerated: 'Link generated!',
-    linkExpires: (h) => `Link expires in ${h} hours`,
-    caseTimeline: 'Case Timeline', documents: 'Documents', sharedLinks: 'Shared links',
-    caseMgmt: 'Case Management', activeShares: 'active shares', noShares: 'No shared links yet',
-    upload: 'Upload new document', talkLawyer: 'Talk to a lawyer',
-    eventTitle: (title) => title,
-    caseType: (t) => t || 'Other',
-    // Multi-document
-    multiDocTitle: (n) => `Complete case analysis — ${n} documents`,
-    caseNarrative: 'Case narrative',
-    contradictions: 'Contradictions detected',
-    contradictionAlert: 'Contradiction detected',
-    docSays: (d) => `${d} states:`,
-    defenseValue: 'Defense value',
-    opposingStrategy: 'Opposing party strategy assessment',
-    masterDeadlines: 'All deadlines across documents',
-    patternAnalysis: 'Opposing party pattern analysis',
-    caseBrief: 'Case Brief',
-    downloadBrief: 'Download Case Brief',
-    generatingBrief: 'Generating brief...',
-    briefDesc: 'Comprehensive case summary suitable for sharing with an external lawyer',
-    cumulativeExposure: 'Cumulative financial exposure',
-    scoreWas: 'was',
-    scoreNow: 'now',
+    back: 'My Cases', brief: 'Download brief', share: 'Share', addDoc: 'Add document', talkLawyer: 'Talk to a lawyer',
+    riskLabel: 'Jasper Risk Score', riskHigh: 'High risk', riskMed: 'Medium risk', riskLow: 'Low risk',
+    dimFin: 'Financial', dimUrg: 'Urgency', dimLeg: 'Legal', dimCom: 'Complexity',
+    analysisTitle: 'James Analysis — Real-time update', live: 'Live',
+    battleTitle: 'Legal Battle Preview — James vs Opposing Counsel', yourArgs: 'Your arguments', theirArgs: 'Their arguments',
+    nextActions: 'Next actions', documents: 'Documents', keyDoc: 'Key',
+    critDeadline: 'Critical deadline', days: 'days', expired: 'Expired', before: 'Before',
+    overview: 'Overview', scoreHistory: 'Score History', outcomePred: 'Outcome Predictor',
+    jamesQ: 'James needs clarification',
+    jurisTitle: 'Recent legal updates — relevant to your case', whyMatters: 'Why this matters for your case',
+    riskMonitor: 'Never miss a legal document', riskMonitorSub: 'Connect your inbox — James monitors it and alerts you instantly',
+    connectGmail: 'Connect Gmail', connectOutlook: 'Connect Outlook', connected: 'connected — Risk Monitor active',
+    shareTitle: 'Share this case — read-only access', shareDesc: 'Generate a secure link', shareCopy: 'Copy link', shareExpiry: 'Link expires in',
+    genLetter: 'Generate letter', downloading: 'Generating...', close: 'Close', downloadPdf: 'Download PDF',
+    openedOn: 'Opened', docCount: 'documents', updatedBy: 'Updated by James',
+    caseType: { housing: 'Housing', employment: 'Employment', debt: 'Debt', insurance: 'Insurance', contract: 'Contract', consumer: 'Consumer', family: 'Family', court: 'Court', nda: 'NDA', penal: 'Criminal', commercial: 'Commercial', other: 'Other' },
+    analyzing: 'James is analyzing...', reanalyze: 'Re-analyze',
+    newCase: 'Open a new case', tagline: 'Your virtual legal cabinet', jamesRole: 'Senior Legal Advisor',
+    stat1: '847K+', stat1l: 'live sources', stat2: '20 yrs', stat2l: 'experience', stat3: 'Live', stat3l: 'case law', stat4: '#1', stat4l: 'Legal AI',
+    activeCases: 'Active cases', navUpload: 'Upload', navLawyers: 'Lawyers', navDocs: 'Documents', navChat: 'Legal chat', navSettings: 'Settings',
+    deadlineIn: 'Deadline in',
   },
-  'fr-BE': {
-    riskScore: 'Score de Risque Jasper', evolution: 'Evolution du score', financial: 'Financier', urgency: 'Urgence',
-    legalStrength: 'Solidite juridique', complexity: 'Complexite', actionIn: (d) => d > 0 ? `Action requise dans ${d} jour${d !== 1 ? 's' : ''}` : null,
-    deadlinePassed: 'DELAI DEPASSE — Action immediate requise',
-    updatedWith: 'Mis a jour avec le dernier document',
-    aiAnalysis: 'Analyse IA Jasper', findings: 'Constatations cles', noFindings: 'Aucune constatation. Telechargez un document pour obtenir votre analyse.',
-    legalRef: 'Reference legale', jurisprudence: 'Jurisprudence',
-    nextSteps: 'Prochaines etapes recommandees', keyInsight: 'Point cle',
-    battlePreview: 'Apercu du litige', yourPosition: 'Votre position', opposingSide: 'Partie adverse',
-    strength: 'Force', arguments: 'Arguments cles', vulnerabilities: 'Vulnerabilites',
-    outcomePredictor: 'Predicteur d\'issue', predictOutcome: 'Predire mon issue', predicting: 'Analyse en cours...',
-    predictError: 'Impossible de generer la prediction — reessayez', probable: 'Plus probable', best: 'Meilleur cas', worst: 'Pire cas',
-    confidenceLevel: 'Niveau de confiance', keyFactors: 'Facteurs cles', recommendation: 'Recommandation',
-    responseLetters: 'Lettres de reponse', generateLetter: 'Generer la lettre', generating: 'Generation...',
-    letterReady: 'Votre lettre de reponse', keyPoints: 'Points cles de cette lettre', warnings: 'Rappels importants',
-    generateAnother: 'Generer une autre', copy: 'Copier', copied: 'Copie !', downloadPdf: 'Telecharger PDF', cancel: 'Annuler',
-    caseDetails: 'Les details du dossier seront inclus automatiquement', yourAddress: 'Votre adresse (optionnel)',
-    opposingName: 'Nom de la partie adverse', opposingAddress: 'Adresse de la partie adverse (optionnel)',
-    additionalContext: 'Contexte supplementaire (optionnel)',
-    shareCase: 'Partager ce dossier', shareDesc: 'Generez un lien en lecture seule. Toute personne disposant du lien pourra consulter cette analyse.',
-    expiresIn: 'Expire dans', msgRecipient: 'Message pour le destinataire (optionnel)',
-    shareDisclaimer: 'Les destinataires peuvent consulter votre analyse mais ne peuvent pas telecharger vos documents ni voir vos informations personnelles.',
-    generateLink: 'Generer un lien securise', generatingLink: 'Generation...', linkGenerated: 'Lien genere !',
-    linkExpires: (h) => `Le lien expire dans ${h} heures`,
-    caseTimeline: 'Chronologie du dossier', documents: 'Documents', sharedLinks: 'Liens partages',
-    caseMgmt: 'Gestion du dossier', activeShares: 'partages actifs', noShares: 'Aucun lien partage',
-    upload: 'Televerser un nouveau document', talkLawyer: 'Parler a un avocat',
-    eventTitle: (title) => ({ 'Case opened': 'Dossier ouvert', 'Document uploaded': 'Document televerse', 'Document analyzed': 'Document analyse', 'Case updated': 'Dossier mis a jour', 'Share link created': 'Lien de partage cree' }[title] || title),
-    caseType: (t) => ({ employment: 'Travail', housing: 'Bail', debt: 'Creance', nda: 'NDA', contract: 'Contrat', consumer: 'Consommateur', family: 'Famille', court: 'Tribunal', penal: 'Penal', commercial: 'Commercial' }[t] || t || 'Autre'),
-    // Multi-document
-    multiDocTitle: (n) => `Analyse complete du dossier — ${n} documents`,
-    caseNarrative: 'Recit du dossier',
-    contradictions: 'Contradictions detectees',
-    contradictionAlert: 'Contradiction detectee',
-    docSays: (d) => `${d} indique :`,
-    defenseValue: 'Valeur de defense',
-    opposingStrategy: 'Analyse de la strategie adverse',
-    masterDeadlines: 'Tous les delais du dossier',
-    patternAnalysis: 'Analyse du comportement de la partie adverse',
-    caseBrief: 'Dossier juridique',
-    downloadBrief: 'Telecharger le dossier juridique',
-    generatingBrief: 'Generation du dossier...',
-    briefDesc: 'Resume complet du dossier a partager avec un avocat externe',
-    cumulativeExposure: 'Exposition financiere cumulee',
-    scoreWas: 'etait',
-    scoreNow: 'maintenant',
+  fr: {
+    back: 'Mes dossiers', brief: 'Télécharger le résumé', share: 'Partager', addDoc: 'Ajouter un document', talkLawyer: 'Parler à un avocat',
+    riskLabel: 'Score de risque Jasper', riskHigh: 'Risque élevé', riskMed: 'Risque modéré', riskLow: 'Risque faible',
+    dimFin: 'Financier', dimUrg: 'Urgence', dimLeg: 'Juridique', dimCom: 'Complexité',
+    analysisTitle: 'Analyse de James — Mise à jour en temps réel', live: 'Live',
+    battleTitle: 'Aperçu juridique — James vs Avocat adverse', yourArgs: 'Vos arguments', theirArgs: 'Leurs arguments',
+    nextActions: 'Prochaines actions', documents: 'Documents', keyDoc: 'Clé',
+    critDeadline: 'Échéance critique', days: 'jours', expired: 'Expiré', before: 'Avant le',
+    overview: 'Vue d\'ensemble', scoreHistory: 'Historique du score', outcomePred: 'Prédiction d\'issue',
+    jamesQ: 'James a besoin d\'une précision',
+    jurisTitle: 'Jurisprudence récente — pertinente pour votre dossier', whyMatters: 'Pertinence pour votre dossier',
+    riskMonitor: 'Ne ratez jamais un document juridique', riskMonitorSub: 'Connectez votre boîte mail — James la surveille et vous alerte instantanément',
+    connectGmail: 'Connecter Gmail', connectOutlook: 'Connecter Outlook', connected: 'connecté — Risk Monitor actif',
+    shareTitle: 'Partager ce dossier — accès en lecture seule', shareDesc: 'Générer un lien sécurisé', shareCopy: 'Copier le lien', shareExpiry: 'Lien expire dans',
+    genLetter: 'Générer la lettre', downloading: 'Génération...', close: 'Fermer', downloadPdf: 'Télécharger PDF',
+    openedOn: 'Ouvert le', docCount: 'documents', updatedBy: 'Mis à jour par James',
+    caseType: { housing: 'Logement', employment: 'Emploi', debt: 'Dettes', insurance: 'Assurance', contract: 'Contrat', consumer: 'Consommation', family: 'Famille', court: 'Tribunal', nda: 'NDA', penal: 'Pénal', commercial: 'Commercial', other: 'Autre' },
+    analyzing: 'James analyse...', reanalyze: 'Ré-analyser',
+    newCase: 'Ouvrir un nouveau dossier', tagline: 'Votre cabinet juridique virtuel', jamesRole: 'Conseiller juridique senior',
+    stat1: '847K+', stat1l: 'sources live', stat2: '20 ans', stat2l: 'expérience', stat3: 'Live', stat3l: 'jurisprudence', stat4: '#1', stat4l: 'IA juridique',
+    activeCases: 'Dossiers actifs', navUpload: 'Téléverser', navLawyers: 'Avocats', navDocs: 'Documents', navChat: 'Chat juridique', navSettings: 'Paramètres',
+    deadlineIn: 'Échéance dans',
   },
-  'nl-BE': {
-    riskScore: 'Jasper Risicoscore', evolution: 'Score-evolutie', financial: 'Financieel', urgency: 'Urgentie',
-    legalStrength: 'Juridische sterkte', complexity: 'Complexiteit', actionIn: (d) => d > 0 ? `Actie vereist binnen ${d} dag${d !== 1 ? 'en' : ''}` : null,
-    deadlinePassed: 'DEADLINE VERSTREKEN — Onmiddellijke actie vereist',
-    updatedWith: 'Bijgewerkt met laatste document',
-    aiAnalysis: 'Jasper AI-analyse', findings: 'Belangrijke bevindingen', noFindings: 'Nog geen bevindingen. Upload een document om uw analyse te krijgen.',
-    legalRef: 'Juridische referentie', jurisprudence: 'Rechtspraak',
-    nextSteps: 'Aanbevolen volgende stappen', keyInsight: 'Belangrijk inzicht',
-    battlePreview: 'Juridisch geschil overzicht', yourPosition: 'Uw positie', opposingSide: 'Tegenpartij',
-    strength: 'Sterkte', arguments: 'Belangrijke argumenten', vulnerabilities: 'Kwetsbaarheden',
-    outcomePredictor: 'Uitkomstvoorspeller', predictOutcome: 'Voorspel mijn uitkomst', predicting: 'Analyseren...',
-    predictError: 'Kan voorspelling niet genereren — probeer opnieuw', probable: 'Meest waarschijnlijk', best: 'Beste geval', worst: 'Slechtste geval',
-    confidenceLevel: 'Betrouwbaarheidsniveau', keyFactors: 'Belangrijke factoren', recommendation: 'Aanbeveling',
-    responseLetters: 'Antwoordbrieven', generateLetter: 'Brief genereren', generating: 'Genereren...',
-    letterReady: 'Uw antwoordbrief', keyPoints: 'Belangrijke punten', warnings: 'Belangrijke herinneringen',
-    generateAnother: 'Andere genereren', copy: 'Kopieren', copied: 'Gekopieerd!', downloadPdf: 'PDF downloaden', cancel: 'Annuleren',
-    caseDetails: 'Dossierdetails worden automatisch opgenomen', yourAddress: 'Uw adres (optioneel)',
-    opposingName: 'Naam tegenpartij', opposingAddress: 'Adres tegenpartij (optioneel)',
-    additionalContext: 'Extra context (optioneel)',
-    shareCase: 'Dit dossier delen', shareDesc: 'Genereer een alleen-lezen link.',
-    expiresIn: 'Verloopt over', msgRecipient: 'Bericht voor ontvanger (optioneel)',
-    shareDisclaimer: 'Ontvangers kunnen uw analyse bekijken maar geen documenten downloaden.',
-    generateLink: 'Beveiligde link genereren', generatingLink: 'Genereren...', linkGenerated: 'Link gegenereerd!',
-    linkExpires: (h) => `Link verloopt over ${h} uur`,
-    caseTimeline: 'Dossiertijdlijn', documents: 'Documenten', sharedLinks: 'Gedeelde links',
-    caseMgmt: 'Dossierbeheer', activeShares: 'actieve delingen', noShares: 'Nog geen gedeelde links',
-    upload: 'Nieuw document uploaden', talkLawyer: 'Spreek met een advocaat',
-    eventTitle: (title) => ({ 'Case opened': 'Dossier geopend', 'Document uploaded': 'Document geüpload', 'Document analyzed': 'Document geanalyseerd', 'Case updated': 'Dossier bijgewerkt', 'Share link created': 'Deellink aangemaakt' }[title] || title),
-    caseType: (t) => ({ employment: 'Arbeidsrecht', housing: 'Huurrecht', debt: 'Schuld', nda: 'NDA', contract: 'Contract', consumer: 'Consument', family: 'Familierecht', court: 'Rechtbank', penal: 'Strafrecht', commercial: 'Handelsrecht' }[t] || t || 'Ander'),
-    multiDocTitle: (n) => `Volledige dossieranalyse — ${n} documenten`,
-    caseNarrative: 'Dossierverhaal', contradictions: 'Tegenstrijdigheden gedetecteerd',
-    contradictionAlert: 'Tegenstrijdigheid gedetecteerd', docSays: (d) => `${d} stelt:`,
-    defenseValue: 'Verdedigingswaarde', opposingStrategy: 'Strategie-analyse tegenpartij',
-    masterDeadlines: 'Alle termijnen', patternAnalysis: 'Patroonanalyse tegenpartij',
-    caseBrief: 'Juridisch dossier', downloadBrief: 'Dossier downloaden',
-    generatingBrief: 'Dossier genereren...', briefDesc: 'Samenvatting voor externe advocaat',
-    cumulativeExposure: 'Cumulatieve financiele blootstelling', scoreWas: 'was', scoreNow: 'nu',
-  },
-  'de-BE': {
-    riskScore: 'Jasper Risikobewertung', evolution: 'Score-Entwicklung', financial: 'Finanziell', urgency: 'Dringlichkeit',
-    legalStrength: 'Rechtliche Starke', complexity: 'Komplexitat', actionIn: (d) => d > 0 ? `Handlung erforderlich in ${d} Tag${d !== 1 ? 'en' : ''}` : null,
-    deadlinePassed: 'FRIST ABGELAUFEN — Sofortiges Handeln erforderlich',
-    updatedWith: 'Aktualisiert mit neuestem Dokument',
-    aiAnalysis: 'Jasper KI-Analyse', findings: 'Wichtige Feststellungen', noFindings: 'Noch keine Feststellungen. Laden Sie ein Dokument hoch.',
-    legalRef: 'Rechtsgrundlage', jurisprudence: 'Rechtsprechung',
-    nextSteps: 'Empfohlene nachste Schritte', keyInsight: 'Wichtige Erkenntnis',
-    battlePreview: 'Rechtsstreit-Vorschau', yourPosition: 'Ihre Position', opposingSide: 'Gegenseite',
-    strength: 'Starke', arguments: 'Wichtige Argumente', vulnerabilities: 'Schwachstellen',
-    outcomePredictor: 'Ergebnisvorhersage', predictOutcome: 'Mein Ergebnis vorhersagen', predicting: 'Analysieren...',
-    predictError: 'Vorhersage nicht moglich — erneut versuchen', probable: 'Am wahrscheinlichsten', best: 'Bester Fall', worst: 'Schlimmster Fall',
-    confidenceLevel: 'Vertrauensniveau', keyFactors: 'Wichtige Faktoren', recommendation: 'Empfehlung',
-    responseLetters: 'Antwortbriefe', generateLetter: 'Brief erstellen', generating: 'Erstellen...',
-    letterReady: 'Ihr Antwortbrief', keyPoints: 'Wichtige Punkte', warnings: 'Wichtige Hinweise',
-    generateAnother: 'Anderen erstellen', copy: 'Kopieren', copied: 'Kopiert!', downloadPdf: 'PDF herunterladen', cancel: 'Abbrechen',
-    caseDetails: 'Falldetails werden automatisch einbezogen', yourAddress: 'Ihre Adresse (optional)',
-    opposingName: 'Name der Gegenpartei', opposingAddress: 'Adresse der Gegenpartei (optional)',
-    additionalContext: 'Zusatzlicher Kontext (optional)',
-    shareCase: 'Diesen Fall teilen', shareDesc: 'Erstellen Sie einen Nur-Lesen-Link.',
-    expiresIn: 'Lauft ab in', msgRecipient: 'Nachricht fur Empfanger (optional)',
-    shareDisclaimer: 'Empfanger konnen Ihre Analyse einsehen, aber keine Dokumente herunterladen.',
-    generateLink: 'Sicheren Link erstellen', generatingLink: 'Erstellen...', linkGenerated: 'Link erstellt!',
-    linkExpires: (h) => `Link lauft in ${h} Stunden ab`,
-    caseTimeline: 'Fallchronik', documents: 'Dokumente', sharedLinks: 'Geteilte Links',
-    caseMgmt: 'Fallverwaltung', activeShares: 'aktive Freigaben', noShares: 'Noch keine geteilten Links',
-    upload: 'Neues Dokument hochladen', talkLawyer: 'Mit einem Anwalt sprechen',
-    eventTitle: (title) => ({ 'Case opened': 'Fall eröffnet', 'Document uploaded': 'Dokument hochgeladen', 'Document analyzed': 'Dokument analysiert', 'Case updated': 'Fall aktualisiert', 'Share link created': 'Freigabelink erstellt' }[title] || title),
-    caseType: (t) => ({ employment: 'Arbeitsrecht', housing: 'Mietrecht', debt: 'Schulden', nda: 'NDA', contract: 'Vertrag', consumer: 'Verbraucher', family: 'Familienrecht', court: 'Gericht', penal: 'Strafrecht', commercial: 'Handelsrecht' }[t] || t || 'Sonstige'),
-    multiDocTitle: (n) => `Vollstandige Fallanalyse — ${n} Dokumente`,
-    caseNarrative: 'Fallerzahlung', contradictions: 'Widerspruche erkannt',
-    contradictionAlert: 'Widerspruch erkannt', docSays: (d) => `${d} besagt:`,
-    defenseValue: 'Verteidigungswert', opposingStrategy: 'Strategieanalyse der Gegenseite',
-    masterDeadlines: 'Alle Fristen', patternAnalysis: 'Musteranalyse der Gegenseite',
-    caseBrief: 'Rechtsdossier', downloadBrief: 'Dossier herunterladen',
-    generatingBrief: 'Dossier erstellen...', briefDesc: 'Zusammenfassung fur externen Anwalt',
-    cumulativeExposure: 'Kumulative finanzielle Belastung', scoreWas: 'war', scoreNow: 'jetzt',
-  },
-  'es': {
-    riskScore: 'Puntuacion de Riesgo Jasper', riskLevel: (s) => s >= 75 ? 'RIESGO CRITICO' : s >= 50 ? 'RIESGO ALTO' : s >= 25 ? 'RIESGO MODERADO' : 'RIESGO BAJO',
-    aiAnalysis: 'Analisis IA Jasper', keyInsight: 'Insight clave',
-    keyFindings: 'Hallazgos clave', findingTypes: { critical: 'Critico', violation: 'Violacion', risk: 'Riesgo', info: 'Info', advantage: 'Ventaja' },
-    legalRef: 'Referencia legal', jurisprudence: 'Jurisprudencia',
-    nextSteps: 'Proximos pasos recomendados', priority: 'Prioridad',
-    battlePreview: 'Vista previa del litigio', yourPosition: 'Su posicion', opposingSide: 'Parte contraria',
-    outcome: 'Predictor de resultado', predictBtn: 'Predecir mi resultado', predicting: 'Analizando...',
-    scenarioLabels: { best_case: 'Mejor caso', likely: 'Probable', worst_case: 'Peor caso' },
-    deadlineAlert: (d) => d <= 0 ? 'PLAZO VENCIDO — Accion inmediata requerida' : `Accion requerida en ${d} dias`,
-    riskDimensions: { financial: 'Financiero', urgency: 'Urgencia', legal_strength: 'Fuerza legal', complexity: 'Complejidad' },
-    responseLetter: 'Cartas de Respuesta Jasper', letterDesc: 'Generar cartas de respuesta profesionales basadas en su caso.',
-    generateLetter: 'Generar carta',
-    letterLabels: { your_address: 'Su direccion', opposing_name: 'Nombre parte contraria', opposing_address: 'Direccion parte contraria', context: 'Contexto adicional' },
-    generating: 'Generando...', letterGenerated: 'Carta generada', downloadPDF: 'Descargar PDF', copyText: 'Copiar',
-    shareCase: 'Compartir caso', shareDesc: 'Crear enlace de solo lectura.',
-    expiresIn: 'Expira en', msgRecipient: 'Mensaje para destinatario (opcional)',
-    shareDisclaimer: 'Los destinatarios pueden ver su analisis pero no descargar documentos.',
-    generateLink: 'Crear enlace seguro', generatingLink: 'Creando...', linkGenerated: 'Enlace creado!',
-    linkExpires: (h) => `El enlace expira en ${h} horas`,
-    caseTimeline: 'Cronologia del caso', documents: 'Documentos', sharedLinks: 'Enlaces compartidos',
-    caseMgmt: 'Gestion del caso', activeShares: 'compartidos activos', noShares: 'Sin enlaces compartidos',
-    upload: 'Subir nuevo documento', talkLawyer: 'Hablar con un abogado',
-    caseType: (t) => ({ employment: 'Laboral', housing: 'Vivienda', debt: 'Deuda', nda: 'NDA', contract: 'Contrato', consumer: 'Consumidor', family: 'Familia', court: 'Tribunal', penal: 'Penal', commercial: 'Comercial' }[t] || t || 'Otro'),
-    multiDocTitle: (n) => `Analisis completo del caso — ${n} documentos`,
-    caseNarrative: 'Narrativa del caso', contradictions: 'Contradicciones detectadas',
-    contradictionAlert: 'Contradiccion detectada', docSays: (d) => `${d} dice:`,
-    defenseValue: 'Valor de defensa', opposingStrategy: 'Analisis estrategia adversa',
-    masterDeadlines: 'Todos los plazos', patternAnalysis: 'Analisis de patron adversario',
-    caseBrief: 'Expediente juridico', downloadBrief: 'Descargar expediente',
-    generatingBrief: 'Generando expediente...', briefDesc: 'Resumen completo para compartir con un abogado externo',
-    cumulativeExposure: 'Exposicion financiera acumulada', scoreWas: 'era', scoreNow: 'ahora',
+  nl: {
+    back: 'Mijn dossiers', brief: 'Download samenvatting', share: 'Delen', addDoc: 'Document toevoegen', talkLawyer: 'Praat met een advocaat',
+    riskLabel: 'Jasper Risicoscore', riskHigh: 'Hoog risico', riskMed: 'Gemiddeld risico', riskLow: 'Laag risico',
+    dimFin: 'Financieel', dimUrg: 'Urgentie', dimLeg: 'Juridisch', dimCom: 'Complexiteit',
+    analysisTitle: 'Analyse van James — Realtime update', live: 'Live',
+    battleTitle: 'Juridisch overzicht — James vs Tegenpartij', yourArgs: 'Uw argumenten', theirArgs: 'Hun argumenten',
+    nextActions: 'Volgende acties', documents: 'Documenten', keyDoc: 'Sleutel',
+    critDeadline: 'Kritieke deadline', days: 'dagen', expired: 'Verlopen', before: 'Voor',
+    overview: 'Overzicht', scoreHistory: 'Score Geschiedenis', outcomePred: 'Uitkomstvoorspelling',
+    jamesQ: 'James heeft verduidelijking nodig',
+    jurisTitle: 'Recente rechtspraak — relevant voor uw dossier', whyMatters: 'Waarom dit belangrijk is',
+    riskMonitor: 'Mis nooit een juridisch document', riskMonitorSub: 'Verbind uw inbox — James bewaakt en waarschuwt u direct',
+    connectGmail: 'Verbind Gmail', connectOutlook: 'Verbind Outlook', connected: 'verbonden — Risk Monitor actief',
+    shareTitle: 'Deel dit dossier — alleen-lezen', shareDesc: 'Genereer een beveiligde link', shareCopy: 'Link kopiëren', shareExpiry: 'Link verloopt in',
+    genLetter: 'Brief genereren', downloading: 'Genereren...', close: 'Sluiten', downloadPdf: 'Download PDF',
+    openedOn: 'Geopend op', docCount: 'documenten', updatedBy: 'Bijgewerkt door James',
+    caseType: { housing: 'Huisvesting', employment: 'Werk', debt: 'Schulden', insurance: 'Verzekering', contract: 'Contract', consumer: 'Consument', family: 'Familie', court: 'Rechtbank', nda: 'NDA', penal: 'Strafrecht', commercial: 'Commercieel', other: 'Overig' },
+    analyzing: 'James analyseert...', reanalyze: 'Heranalyse',
+    newCase: 'Nieuw dossier openen', tagline: 'Uw virtueel juridisch kantoor', jamesRole: 'Senior Juridisch Adviseur',
+    stat1: '847K+', stat1l: 'live bronnen', stat2: '20 jaar', stat2l: 'ervaring', stat3: 'Live', stat3l: 'rechtspraak', stat4: '#1', stat4l: 'Juridische AI',
+    activeCases: 'Actieve dossiers', navUpload: 'Uploaden', navLawyers: 'Advocaten', navDocs: 'Documenten', navChat: 'Juridische chat', navSettings: 'Instellingen',
+    deadlineIn: 'Deadline in',
   },
 };
+const getLang = (u) => { const l = u?.language || 'en'; return l === 'nl' ? 'nl' : (l === 'fr' || l === 'fr-BE') ? 'fr' : 'en'; };
+const riskColor = (s) => s >= 70 ? '#dc2626' : s >= 40 ? '#f59e0b' : s > 0 ? '#16a34a' : '#9ca3af';
+const daysUntil = (d) => d ? Math.ceil((new Date(d) - new Date()) / 86400000) : null;
+const fmtDate = (d, l) => d ? new Date(d).toLocaleDateString(l === 'fr' ? 'fr-FR' : l === 'nl' ? 'nl-BE' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+const pulse = `@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`;
 
-// Simplified language aliases (after migration from fr-BE -> fr)
-labels['fr'] = labels['fr-BE'];
-labels['nl'] = labels['nl-BE'];
-labels['de'] = labels['de-BE'];
-
-// ========== RISK HISTORY CHART ==========
-const RiskHistoryChart = ({ history, currentScore, t }) => {
-  if (!history || history.length === 0) return null;
-  const maxScore = 100;
-  const points = history.map((h, i) => ({ x: (i / Math.max(history.length - 1, 1)) * 100, y: 100 - (h.score / maxScore) * 100 }));
-  const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  return (
-    <div className="mt-3" data-testid="risk-history-chart">
-      <div className="text-[10px] text-[#9ca3af] mb-2">{t.evolution}</div>
-      <svg viewBox="-5 -5 110 60" className="w-full h-16">
-        <path d={pathD} fill="none" stroke="#1a56db" strokeWidth="1.5" strokeLinecap="round" />
-        {points.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="2.5" fill={i === points.length - 1 ? '#1a56db' : '#93c5fd'} />)}
-      </svg>
-    </div>
-  );
-};
-
-// ========== MAIN COMPONENT ==========
 const CaseDetail = () => {
   const { caseId } = useParams();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const lang = getLang(user);
+  const t = L[lang] || L.en;
+
   const [caseData, setCaseData] = useState(null);
+  const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [events, setEvents] = useState([]);
-  const [showOutcome, setShowOutcome] = useState(false);
-  const [prediction, setPrediction] = useState(null);
-  const [predicting, setPredicting] = useState(false);
-  const [predictError, setPredictError] = useState(false);
-  const [letterTypes, setLetterTypes] = useState([]);
-  const [selectedLetterType, setSelectedLetterType] = useState(null);
-  const [showLetterModal, setShowLetterModal] = useState(false);
-  const [generatingLetter, setGeneratingLetter] = useState(false);
-  const [generatedLetter, setGeneratedLetter] = useState(null);
-  const [letterForm, setLetterForm] = useState({ user_address: '', opposing_party_name: '', opposing_party_address: '', additional_context: '' });
-  const [copied, setCopied] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [shareExpiry, setShareExpiry] = useState(48);
-  const [shareMessage, setShareMessage] = useState('');
-  const [sharing, setSharing] = useState(false);
-  const [shareLink, setShareLink] = useState(null);
-  const [shareLinkCopied, setShareLinkCopied] = useState(false);
-  const [activeShares, setActiveShares] = useState([]);
-  const [generatingBrief, setGeneratingBrief] = useState(false);
+  const [letterModal, setLetterModal] = useState(null);
+  const [letterLoading, setLetterLoading] = useState(false);
+  const [shareModal, setShareModal] = useState(false);
+  const [shareLink, setShareLink] = useState('');
+  const [answerLoading, setAnswerLoading] = useState(false);
 
-  const userLang = (user?.language || 'en').replace(/-.*/, '');
-  const t = labels[userLang] || labels[user?.language] || labels['en'];
-
-  const fetchCase = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const [caseRes, eventsRes, sharesRes] = await Promise.all([
+      const [caseRes, casesRes] = await Promise.all([
         axios.get(`${API}/cases/${caseId}`, { withCredentials: true }),
-        axios.get(`${API}/cases/${caseId}/events`, { withCredentials: true }).catch(() => ({ data: [] })),
-        axios.get(`${API}/cases/${caseId}/shares`, { withCredentials: true }).catch(() => ({ data: [] })),
+        axios.get(`${API}/cases`, { withCredentials: true }),
       ]);
       setCaseData(caseRes.data);
-      setEvents(eventsRes.data || []);
-      setActiveShares(sharesRes.data || []);
+      setCases((casesRes.data || []).sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0)));
+    } catch (e) { /* ok */ }
+    setLoading(false);
+  }, [caseId]);
 
-      const userCountry = user?.country || caseRes.data?.country || 'US';
-      const caseType = caseRes.data?.type || 'other';
-      const ltRes = await axios.get(`${API}/letters/types/${caseType}?country=${userCountry}`, { withCredentials: true }).catch(() => ({ data: { letter_types: [] } }));
-      setLetterTypes(ltRes.data?.letter_types || ltRes.data || []);
-    } catch (err) {
-      console.error('Failed to load case:', err);
-    } finally {
-      setLoading(false);
+  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    if (caseData?.status === 'analyzing') {
+      const interval = setInterval(fetchData, 5000);
+      return () => clearInterval(interval);
     }
-  }, [caseId, user]);
+  }, [caseData?.status, fetchData]);
 
-  useEffect(() => { fetchCase(); }, [fetchCase]);
+  const sc = caseData;
+  const score = sc?.risk_score || 0;
+  const scoreColor = riskColor(score);
+  const riskText = score >= 70 ? t.riskHigh : score >= 40 ? t.riskMed : score > 0 ? t.riskLow : '—';
+  const findings = sc?.ai_findings || [];
+  const steps = sc?.ai_next_steps || [];
+  const bp = sc?.battle_preview;
+  const dl = daysUntil(sc?.deadline);
+  const jq = sc?.james_question;
+  const history = sc?.risk_score_history || [];
+  const caseLaw = sc?.recent_case_law || [];
+  const prob = sc?.success_probability;
 
-  const handlePredict = async () => {
-    setPredicting(true);
-    setPredictError(false);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
+  const handleGenerateLetter = async (step) => {
+    setLetterLoading(true);
+    setLetterModal({ step, letter: null });
     try {
-      const res = await axios.post(`${API}/cases/${caseId}/predict-outcome`, {}, { withCredentials: true, signal: controller.signal });
-      setPrediction(res.data);
-    } catch (err) {
-      console.error('Prediction failed:', err);
-      setPredictError(true);
-    } finally {
-      clearTimeout(timeout);
-      setPredicting(false);
-    }
-  };
-
-  const submitLetterGeneration = async () => {
-    if (!selectedLetterType) return;
-    setGeneratingLetter(true);
-    try {
-      const res = await axios.post(`${API}/letters/generate`, {
-        case_id: caseId,
-        letter_type: selectedLetterType.id,
-        user_name: user?.name || '',
-        user_address: letterForm.user_address || undefined,
-        opposing_party_name: letterForm.opposing_party_name || undefined,
-        opposing_party_address: letterForm.opposing_party_address || undefined,
-        additional_context: letterForm.additional_context || undefined,
+      const res = await axios.post(`${API}/cases/${caseId}/generate-action-letter`, {
+        action_title: step.title || '',
+        action_description: step.description || '',
       }, { withCredentials: true });
-      setGeneratedLetter(res.data);
-    } catch (err) {
-      alert(err.response?.data?.detail || 'Failed to generate letter');
-    } finally {
-      setGeneratingLetter(false);
-    }
+      setLetterModal({ step, letter: res.data });
+    } catch (e) { setLetterModal({ step, letter: { body: 'Letter generation failed. Please try again.' } }); }
+    setLetterLoading(false);
   };
 
-  const copyToClipboard = () => {
-    if (!generatedLetter) return;
-    const text = `${generatedLetter.subject}\n\n${generatedLetter.letter_body?.replace(/\\n/g, '\n')}`;
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleDownloadPdf = (letter) => {
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text(letter?.subject || 'Legal Letter', 20, 20);
+    doc.setFontSize(10);
+    const lines = doc.splitTextToSize(letter?.body || '', 170);
+    doc.text(lines, 20, 35);
+    doc.save(`${sc?.title || 'letter'}.pdf`);
   };
 
-  const downloadAsPDF = () => {
-    if (!generatedLetter) return;
-    import('jspdf').then(({ jsPDF }) => {
-      const doc = new jsPDF();
-      doc.setFontSize(14);
-      doc.text(generatedLetter.subject || '', 20, 20);
-      doc.setFontSize(10);
-      const body = generatedLetter.letter_body?.replace(/\\n/g, '\n') || '';
-      const lines = doc.splitTextToSize(body, 170);
-      doc.text(lines, 20, 35);
-      doc.save(`letter_${caseId}.pdf`);
-    });
-  };
-
-  const downloadCaseBrief = async () => {
-    setGeneratingBrief(true);
+  const handleJamesAnswer = async (answer) => {
+    if (!jq || answerLoading) return;
+    setAnswerLoading(true);
     try {
-      const res = await axios.get(`${API}/cases/${caseId}/brief`, { withCredentials: true });
-      const brief = res.data;
-      import('jspdf').then(({ jsPDF }) => {
-        const doc = new jsPDF();
-        let y = 20;
-        const addText = (text, size = 10, bold = false) => {
-          doc.setFontSize(size);
-          if (bold) doc.setFont(undefined, 'bold');
-          else doc.setFont(undefined, 'normal');
-          const lines = doc.splitTextToSize(text || '', 170);
-          if (y + lines.length * (size * 0.5) > 275) { doc.addPage(); y = 20; }
-          doc.text(lines, 20, y);
-          y += lines.length * (size * 0.5) + 4;
-        };
-        addText(`CASE BRIEF — ${brief.case_title || caseData?.title || ''}`, 16, true);
-        addText(`Generated: ${new Date().toLocaleDateString()}`, 8);
-        y += 4;
-        addText('EXECUTIVE SUMMARY', 12, true);
-        addText(brief.executive_summary || '');
-        y += 4;
-        if (brief.document_timeline?.length) {
-          addText('DOCUMENT TIMELINE', 12, true);
-          brief.document_timeline.forEach(d => addText(`${d.date} — ${d.document}: ${d.key_event}`));
-        }
-        y += 4;
-        if (brief.key_legal_issues?.length) {
-          addText('KEY LEGAL ISSUES', 12, true);
-          brief.key_legal_issues.forEach(i => addText(`[${i.severity}] ${i.issue} — ${i.applicable_law || ''}`));
-        }
-        y += 4;
-        if (brief.risk_assessment) {
-          addText('RISK ASSESSMENT', 12, true);
-          addText(`Score: ${brief.risk_assessment.score}/100 (${brief.risk_assessment.trend})`);
-          addText(brief.risk_assessment.explanation || '');
-        }
-        y += 4;
-        addText('RECOMMENDED STRATEGY', 12, true);
-        addText(brief.recommended_strategy || '');
-        y += 4;
-        if (brief.legal_references?.length) {
-          addText('LEGAL REFERENCES', 12, true);
-          brief.legal_references.forEach(r => addText(`${r.reference} — ${r.relevance}`));
-        }
-        y += 4;
-        addText('CONCLUSION', 12, true);
-        addText(brief.conclusion || '');
-        y += 8;
-        addText('This brief is generated by Jasper AI and is for informational purposes only.', 8);
-        doc.save(`case_brief_${caseId}.pdf`);
-      });
-    } catch (err) {
-      console.error('Brief generation failed:', err);
-      alert('Failed to generate case brief');
-    } finally {
-      setGeneratingBrief(false);
+      await axios.post(`${API}/cases/${caseId}/james-answer`, {
+        question: jq.text,
+        answer: answer,
+      }, { withCredentials: true });
+      await fetchData();
+    } catch (e) { /* ok */ }
+    setAnswerLoading(false);
+  };
+
+  const handleShare = async () => {
+    setShareModal(true);
+    try {
+      const res = await axios.post(`${API}/cases/${caseId}/share`, { expires_in_hours: 168 }, { withCredentials: true });
+      setShareLink(`${window.location.origin}/shared/${res.data.share_id}`);
+    } catch (e) { setShareLink(''); }
+  };
+
+  const handleBriefPdf = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(sc?.title || 'Case Brief', 20, 20);
+    doc.setFontSize(10);
+    doc.text(`Risk Score: ${score}/100`, 20, 30);
+    doc.text(`Type: ${t.caseType[sc?.type] || sc?.type || 'Other'}`, 20, 36);
+    if (sc?.ai_summary) {
+      const sumLines = doc.splitTextToSize(sc.ai_summary, 170);
+      doc.text(sumLines, 20, 46);
     }
+    let y = 60;
+    findings.forEach((f, i) => {
+      const txt = doc.splitTextToSize(`${i + 1}. ${f.text || ''}`, 170);
+      doc.text(txt, 20, y);
+      y += txt.length * 5 + 3;
+      if (y > 270) { doc.addPage(); y = 20; }
+    });
+    doc.save(`${sc?.title || 'case-brief'}.pdf`);
   };
 
-
-  const getRiskColor = (score) => {
-    if (score >= 75) return '#dc2626';
-    if (score >= 50) return '#f59e0b';
-    if (score >= 25) return '#3b82f6';
-    return '#22c55e';
-  };
-
-  const getDimensionColor = (score) => {
-    if (score >= 70) return '#dc2626';
-    if (score >= 40) return '#f59e0b';
-    return '#22c55e';
-  };
-
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <Loader2 size={24} className="animate-spin text-[#1a56db]" />
-    </div>
-  );
-
-  if (!caseData) return (
-    <div className="text-center py-20">
-      <div className="text-sm text-[#6b7280]">Case not found</div>
-    </div>
-  );
-
-  const findings = caseData.ai_findings || [];
-  const nextSteps = caseData.ai_next_steps || [];
-  const battlePreview = caseData.battle_preview;
-  const daysUntil = caseData.deadline ? Math.ceil((new Date(caseData.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
-  const isMultiDoc = (caseData.document_count || 0) > 1;
-  const contradictions = caseData.contradictions || [];
-  const masterDeadlines = caseData.master_deadlines || [];
-  const riskHistory = caseData.risk_score_history || [];
-  const scoreDirection = riskHistory.length >= 2 ? (riskHistory[riskHistory.length - 1]?.score > riskHistory[riskHistory.length - 2]?.score ? 'up' : riskHistory[riskHistory.length - 1]?.score < riskHistory[riskHistory.length - 2]?.score ? 'down' : 'stable') : 'stable';
-  const isComplexCase = (caseData.document_count || 0) >= 5;
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}><Loader2 size={20} className="animate-spin" style={{ color: '#1a56db' }} /></div>;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-12" data-testid="case-detail-page">
+    <>
+      <style>{pulse}</style>
+      <div data-testid="case-detail-page" style={{
+        position: 'fixed', inset: 0, zIndex: 50,
+        display: 'grid', gridTemplateColumns: '260px 1fr 240px',
+        background: '#f8f7f4', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        overflow: 'hidden',
+      }}>
 
-      {/* HEADER */}
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="text-[10px] text-[#1a56db] uppercase tracking-wider font-medium mb-1" data-testid="case-type-label">{t.caseType(caseData.type)}</div>
-          <h1 className="text-xl font-semibold text-[#111827] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="case-title">{caseData.title}</h1>
-          {daysUntil !== null && (
-            <div className={`flex items-center gap-1.5 text-xs font-medium ${daysUntil <= 0 ? 'text-[#dc2626]' : daysUntil <= 7 ? 'text-[#f59e0b]' : 'text-[#6b7280]'}`} data-testid="deadline-indicator">
-              <Clock size={12} />
-              {daysUntil <= 0 ? t.deadlinePassed : t.actionIn(daysUntil)}
+        {/* ═══ LEFT SIDEBAR ═══ */}
+        <div style={{ background: '#fff', borderRight: '0.5px solid #e2e0db', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ padding: '18px 14px 14px', borderBottom: '0.5px solid #f0ede8' }}>
+            <div style={{ fontSize: 19, fontWeight: 500, color: '#1a1a2e', letterSpacing: '0.3px' }}>Jas<span style={{ color: '#1a56db' }}>per</span></div>
+            <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 1 }}>{t.tagline}</div>
+          </div>
+          {/* James Card */}
+          <div style={{ margin: 10, padding: 11, background: '#eff6ff', borderRadius: 11, border: '0.5px solid #bfdbfe' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 8 }}>
+              <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', flexShrink: 0 }}>J</div>
+              <div><div style={{ fontSize: 12, fontWeight: 700, color: '#1e40af' }}>James</div><div style={{ fontSize: 9, color: '#3b82f6' }}>{t.jamesRole}</div></div>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', marginLeft: 'auto', animation: 'pulse 1.5s infinite' }} />
             </div>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => setShowShareModal(true)} className="btn-pill btn-outline text-xs flex items-center gap-1.5" data-testid="share-btn">
-            <Share2 size={13} /> {activeShares.length > 0 && <span className="text-[#1a56db]">{activeShares.length}</span>}
-          </button>
-          <button onClick={() => navigate('/upload')} className="btn-pill btn-blue text-xs flex items-center gap-1.5" data-testid="upload-btn">
-            <FileText size={13} /> {t.upload}
-          </button>
-        </div>
-      </div>
-
-      {/* MULTI-DOCUMENT CASE SUMMARY — only when 2+ documents */}
-      {isMultiDoc && (
-        <div className="card p-5 border-l-4 border-l-[#1a56db] bg-gradient-to-r from-[#eff6ff] to-white" data-testid="multi-doc-summary">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <FileText size={16} className="text-[#1a56db]" />
-              <span className="text-sm font-semibold text-[#111827]" data-testid="multi-doc-title">{t.multiDocTitle(caseData.document_count)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {scoreDirection !== 'stable' && riskHistory.length >= 2 && (
-                <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${scoreDirection === 'up' ? 'bg-[#fef2f2] text-[#dc2626]' : 'bg-[#f0fdf4] text-[#16a34a]'}`} data-testid="score-trend">
-                  {scoreDirection === 'up' ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                  {t.scoreWas} {riskHistory[0]?.score} → {t.scoreNow} {riskHistory[riskHistory.length - 1]?.score}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+              {[[t.stat1, t.stat1l], [t.stat2, t.stat2l], [t.stat3, t.stat3l], [t.stat4, t.stat4l]].map(([v, l], i) => (
+                <div key={i} style={{ background: 'rgba(255,255,255,0.8)', borderRadius: 6, padding: '5px 7px', fontSize: 9, color: '#1e40af', fontWeight: 500, textAlign: 'center', lineHeight: 1.3 }}>
+                  <span style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#1a56db' }}>{v}</span>{l}
                 </div>
-              )}
-              {isComplexCase && (
-                <button
-                  onClick={downloadCaseBrief}
-                  disabled={generatingBrief}
-                  className="btn-pill btn-blue text-xs flex items-center gap-1.5"
-                  data-testid="download-brief-btn"
-                >
-                  {generatingBrief ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
-                  {generatingBrief ? t.generatingBrief : t.downloadBrief}
-                </button>
-              )}
+              ))}
             </div>
           </div>
-
-          {/* Case Narrative */}
-          {caseData.case_narrative && (
-            <div className="mb-4 p-3 bg-white rounded-xl border border-[#e5e7eb]" data-testid="case-narrative">
-              <div className="text-[10px] font-semibold text-[#1a56db] uppercase tracking-wider mb-1.5">{t.caseNarrative}</div>
-              <div className="text-sm text-[#374151] leading-relaxed">{caseData.case_narrative}</div>
-            </div>
-          )}
-
-          {/* Cumulative Financial Exposure */}
-          {caseData.cumulative_financial_exposure && (
-            <div className="mb-4 flex items-center gap-2 p-2.5 bg-[#fffbeb] border border-[#fde68a] rounded-xl" data-testid="cumulative-exposure">
-              <Scale size={14} className="text-[#d97706] flex-shrink-0" />
-              <span className="text-xs font-medium text-[#92400e]">{t.cumulativeExposure}: </span>
-              <span className="text-xs text-[#b45309]">{caseData.cumulative_financial_exposure}</span>
-            </div>
-          )}
-
-          {/* Contradictions */}
-          {contradictions.length > 0 && (
-            <div className="mb-4" data-testid="contradictions-section">
-              <div className="text-[10px] font-semibold text-[#dc2626] uppercase tracking-wider mb-2">{t.contradictions}</div>
-              <div className="space-y-2">
-                {contradictions.map((c, i) => (
-                  <div key={i} className="p-3 bg-[#fef2f2] border border-[#fecaca] rounded-xl" data-testid={`contradiction-${i}`}>
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <AlertCircle size={13} className="text-[#dc2626]" />
-                      <span className="text-xs font-semibold text-[#dc2626]">{t.contradictionAlert}</span>
-                      {c.defense_value && (
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ml-auto ${c.defense_value === 'high' ? 'bg-[#dcfce7] text-[#16a34a]' : c.defense_value === 'medium' ? 'bg-[#fef9c3] text-[#a16207]' : 'bg-[#f3f4f6] text-[#6b7280]'}`}>
-                          {t.defenseValue}: {c.defense_value}
-                        </span>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="p-2 bg-white rounded-lg">
-                        <div className="text-[10px] text-[#6b7280] mb-0.5">{t.docSays(c.doc_a || 'Document A')}</div>
-                        <div className="text-xs text-[#111827]">{c.claim_a}</div>
-                      </div>
-                      <div className="p-2 bg-white rounded-lg">
-                        <div className="text-[10px] text-[#6b7280] mb-0.5">{t.docSays(c.doc_b || 'Document B')}</div>
-                        <div className="text-xs text-[#111827]">{c.claim_b}</div>
-                      </div>
-                    </div>
-                    {c.significance && <div className="mt-2 text-xs text-[#7f1d1d] italic">{c.significance}</div>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Master Deadlines */}
-          {masterDeadlines.length > 0 && (
-            <div className="mb-4" data-testid="master-deadlines">
-              <div className="text-[10px] font-semibold text-[#111827] uppercase tracking-wider mb-2">{t.masterDeadlines}</div>
-              <div className="space-y-1.5">
-                {masterDeadlines.map((dl, i) => {
-                  const isPast = dl.status === 'passed' || (dl.date && new Date(dl.date) < new Date());
-                  const isUrgent = dl.status === 'urgent';
-                  return (
-                    <div key={i} className={`flex items-center gap-3 p-2 rounded-lg text-xs ${isPast ? 'bg-[#fef2f2] text-[#dc2626]' : isUrgent ? 'bg-[#fffbeb] text-[#d97706]' : 'bg-[#f8f8f8] text-[#374151]'}`} data-testid={`master-deadline-${i}`}>
-                      <Clock size={12} className="flex-shrink-0" />
-                      <span className="font-medium">{dl.date}</span>
-                      <span className="flex-1">{dl.description}</span>
-                      <span className="text-[10px] opacity-70">{dl.source_document}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Opposing Strategy Analysis */}
-          {caseData.opposing_strategy_analysis && (
-            <div className="p-3 bg-[#f5f3ff] border border-[#ddd6fe] rounded-xl" data-testid="opposing-strategy">
-              <div className="text-[10px] font-semibold text-[#7c3aed] uppercase tracking-wider mb-1.5">{t.opposingStrategy}</div>
-              <div className="text-xs text-[#4c1d95] leading-relaxed">{caseData.opposing_strategy_analysis}</div>
-            </div>
-          )}
-
-          {/* Pattern Analysis — only for 5+ docs */}
-          {isComplexCase && caseData.multi_doc_summary && (
-            <div className="mt-3 p-3 bg-[#faf5ff] border border-[#e9d5ff] rounded-xl" data-testid="pattern-analysis">
-              <div className="text-[10px] font-semibold text-[#9333ea] uppercase tracking-wider mb-1.5">{t.patternAnalysis}</div>
-              <div className="text-xs text-[#581c87] leading-relaxed">{caseData.multi_doc_summary}</div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* RISK SCORE CARD */}
-      <div className="card p-5" data-testid="risk-score-card">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Shield size={16} className="text-[#1a56db]" />
-            <span className="text-sm font-medium text-[#111827]">{t.riskScore}</span>
-          </div>
-          <div className="text-xs text-[#9ca3af]">{t.updatedWith}</div>
-        </div>
-        <div className="grid grid-cols-5 gap-4 items-center">
-          <div className="col-span-1 text-center">
-            <div className="text-4xl font-bold" style={{ color: getRiskColor(caseData.risk_score) }} data-testid="risk-score-value">{caseData.risk_score}</div>
-            <div className="text-xs text-[#9ca3af]">/ 100</div>
-          </div>
-          <div className="col-span-4 grid grid-cols-4 gap-3">
-            {[
-              { key: 'financial', val: caseData.risk_financial, icon: <Scale size={12} /> },
-              { key: 'urgency', val: caseData.risk_urgency, icon: <Clock size={12} /> },
-              { key: 'legalStrength', val: caseData.risk_legal_strength, icon: <Shield size={12} /> },
-              { key: 'complexity', val: caseData.risk_complexity, icon: <Zap size={12} /> },
-            ].map(d => (
-              <div key={d.key} className="text-center">
-                <div className="text-lg font-semibold" style={{ color: getDimensionColor(d.val) }}>{d.val || 0}</div>
-                <div className="text-[10px] text-[#9ca3af] flex items-center justify-center gap-1">{d.icon} {t[d.key]}</div>
-                <div className="h-1 bg-[#f3f4f6] rounded-full mt-1">
-                  <div className="h-full rounded-full" style={{ width: `${d.val || 0}%`, backgroundColor: getDimensionColor(d.val) }}></div>
-                </div>
-              </div>
+          {/* Nav */}
+          <div style={{ padding: '4px 10px', display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            {[{ icon: <Upload size={10} />, label: t.navUpload, to: '/upload' }, { icon: <Scale size={10} />, label: t.navLawyers, to: '/lawyers' }, { icon: <BookOpen size={10} />, label: t.navDocs, to: '/documents' }, { icon: <MessageSquare size={10} />, label: t.navChat, to: '/chat' }, { icon: <Settings size={10} />, label: t.navSettings, to: '/settings' }].map((n, i) => (
+              <button key={i} onClick={() => navigate(n.to)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 7px', fontSize: 9, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 5 }}>{n.icon}{n.label}</button>
             ))}
           </div>
-        </div>
-        <RiskHistoryChart history={caseData.risk_score_history} currentScore={caseData.risk_score} t={t} />
-      </div>
-
-      {/* AI ANALYSIS — FINDINGS */}
-      <div className="card p-5" data-testid="ai-analysis-section">
-        <div className="flex items-center gap-2 mb-4">
-          <Scale size={16} className="text-[#1a56db]" />
-          <span className="text-sm font-medium text-[#111827]">{t.aiAnalysis}</span>
-        </div>
-
-        {caseData.ai_summary && (
-          <div className="mb-4 p-3 bg-[#f8f8f8] rounded-xl text-sm text-[#444] leading-relaxed" data-testid="case-summary">
-            {caseData.ai_summary}
-          </div>
-        )}
-
-        {caseData.key_insight && (
-          <div className="mb-4 p-3 bg-[#eff6ff] border border-[#bfdbfe] rounded-xl" data-testid="key-insight">
-            <div className="text-[10px] text-[#1d4ed8] font-semibold uppercase tracking-wider mb-1">{t.keyInsight}</div>
-            <div className="text-sm text-[#1e40af] leading-relaxed">{caseData.key_insight}</div>
-          </div>
-        )}
-
-        <div className="text-xs font-semibold text-[#111827] mb-3">{t.findings}</div>
-
-        {findings.length > 0 ? (
-          <div className="space-y-3">
-            {findings.map((finding, i) => {
-              const findingText = finding.text || finding.texte || finding.description || finding.constatation || finding.issue || finding.details || finding.finding || '';
-              const impactColor = finding.impact === 'high' ? '#dc2626' : finding.impact === 'medium' ? '#f59e0b' : '#22c55e';
-              const impactBg = finding.impact === 'high' ? '#fef2f2' : finding.impact === 'medium' ? '#fffbeb' : '#f0fdf4';
-              const legalRef = finding.legal_ref || finding.reference_legale || finding.loi_applicable || '';
-              const juris = finding.jurisprudence || finding.jurisprudence_applicable || '';
+          {/* Cases */}
+          <div style={{ padding: '8px 14px 4px', fontSize: 9, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t.activeCases}</div>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {cases.map(c => {
+              const isActive = c.case_id === caseId;
+              const cScore = c.risk_score || 0;
+              const cColor = riskColor(cScore);
+              const cDl = daysUntil(c.deadline);
               return (
-                <div key={i} className="p-3 rounded-xl border border-[#ebebeb]" data-testid={`finding-${i}`}>
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ backgroundColor: impactBg }}>
-                      {finding.type === 'opportunity' ? <TrendingUp size={12} style={{ color: '#22c55e' }} /> :
-                       finding.type === 'risk' ? <TrendingDown size={12} style={{ color: impactColor }} /> :
-                       <AlertCircle size={12} style={{ color: impactColor }} />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-[#111827] leading-relaxed mb-1.5" data-testid={`finding-text-${i}`}>{findingText}</div>
-                      {(legalRef || juris) && (
-                        <div className="space-y-1 mt-2">
-                          {legalRef && (
-                            <div className="flex items-start gap-1.5 text-[11px]" data-testid={`finding-legal-ref-${i}`}>
-                              <Scale size={10} className="text-[#6366f1] mt-0.5 flex-shrink-0" />
-                              <span className="text-[#6366f1] font-medium">{t.legalRef}:</span>
-                              <span className="text-[#555]">{legalRef}</span>
-                            </div>
-                          )}
-                          {juris && (
-                            <div className="flex items-start gap-1.5 text-[11px]" data-testid={`finding-juris-${i}`}>
-                              <FileText size={10} className="text-[#8b5cf6] mt-0.5 flex-shrink-0" />
-                              <span className="text-[#8b5cf6] font-medium">{t.jurisprudence}:</span>
-                              <span className="text-[#555]">{juris}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: impactBg, color: impactColor }}>
-                      {finding.impact}
-                    </span>
+                <div key={c.case_id} onClick={() => navigate(`/cases/${c.case_id}`)} data-testid={`sidebar-case-${c.case_id}`}
+                  style={{ margin: '2px 7px', padding: 9, borderRadius: 9, cursor: 'pointer', border: isActive ? '0.5px solid #bfdbfe' : '0.5px solid transparent', background: isActive ? '#eff6ff' : 'transparent' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: cColor, flexShrink: 0, marginTop: 3 }} />
+                    <div style={{ fontSize: 11, fontWeight: 500, color: '#1a1a2e', flex: 1, lineHeight: 1.3 }}>{c.title || 'Untitled'}</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: cColor }}>{cScore > 0 ? cScore : '—'}</div>
                   </div>
+                  <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2, marginLeft: 14 }}>{t.caseType[c.type] || c.type || 'Other'} · {c.document_count || 0} {t.docCount}</div>
+                  {cDl !== null && cDl <= 14 && <div style={{ fontSize: 9, fontWeight: 500, marginTop: 2, marginLeft: 14, color: cDl <= 3 ? '#dc2626' : '#f59e0b' }}>{cDl <= 0 ? `⚡ ${t.expired}` : `${t.deadlineIn} ${cDl} ${t.days}`}</div>}
                 </div>
               );
             })}
           </div>
-        ) : (
-          <div className="text-sm text-[#9ca3af] py-4 text-center">{t.noFindings}</div>
-        )}
-      </div>
-
-      {/* NEXT STEPS */}
-      {nextSteps.length > 0 && (
-        <div className="card p-5" data-testid="next-steps-section">
-          <div className="flex items-center gap-2 mb-4">
-            <Target size={16} className="text-[#16a34a]" />
-            <span className="text-sm font-medium text-[#111827]">{t.nextSteps}</span>
+          <div style={{ padding: 10 }}>
+            <button onClick={() => navigate('/upload')} data-testid="new-case-btn" style={{ width: '100%', padding: '10px 0', background: '#1a56db', color: '#fff', border: 'none', borderRadius: 9, fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Plus size={13} />{t.newCase}</button>
           </div>
-          <div className="space-y-3">
-            {nextSteps.map((step, i) => (
-              <div key={i} className="flex items-start gap-3" data-testid={`next-step-${i}`}>
-                <div className="w-6 h-6 rounded-full bg-[#f0fdf4] flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold text-[#16a34a]">{i + 1}</div>
-                <div>
-                  <div className="text-sm font-medium text-[#111827]">{step.title || step.titre || ''}</div>
-                  <div className="text-xs text-[#6b7280] mt-0.5">{step.description || step.desc || ''}</div>
-                  {step.deadline && <div className="text-[10px] text-[#f59e0b] mt-1 font-medium">{step.deadline}</div>}
-                </div>
+          <button onClick={() => { logout(); navigate('/login'); }} style={{ padding: '8px 14px', fontSize: 9, color: '#9ca3af', background: 'none', border: 'none', borderTop: '0.5px solid #f0ede8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}><LogOut size={10} />{lang === 'fr' ? 'Déconnexion' : lang === 'nl' ? 'Uitloggen' : 'Sign out'}</button>
+        </div>
+
+        {/* ═══ MAIN CENTER ═══ */}
+        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {/* Breadcrumb + Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', background: '#fff', borderBottom: '0.5px solid #f0ede8' }}>
+            <button onClick={() => navigate('/dashboard')} data-testid="back-btn" style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#1a56db', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer' }}><ArrowLeft size={13} />{t.back}</button>
+            <div style={{ display: 'flex', gap: 5 }}>
+              <button onClick={handleBriefPdf} data-testid="brief-btn" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, padding: '5px 10px', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#374151' }}><Download size={11} />{t.brief}</button>
+              <button onClick={handleShare} data-testid="share-btn" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, padding: '5px 10px', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#374151' }}><Share2 size={11} />{t.share}</button>
+              <button onClick={() => navigate('/upload')} style={{ fontSize: 9, padding: '5px 10px', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#374151' }}>{t.addDoc}</button>
+              <button onClick={() => navigate('/lawyers')} style={{ fontSize: 9, padding: '5px 10px', background: '#1a56db', border: 'none', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#fff' }}>{t.talkLawyer}</button>
+            </div>
+          </div>
+
+          {/* Scrollable content */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+            {!sc ? (
+              <div style={{ textAlign: 'center', padding: '80px 20px', color: '#9ca3af' }}>Case not found</div>
+            ) : sc.status === 'analyzing' ? (
+              <div style={{ textAlign: 'center', padding: '80px 20px' }}>
+                <div style={{ fontSize: 40, marginBottom: 12, animation: 'pulse 1.5s infinite' }}>⚖️</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>{t.analyzing}</div>
+                <div style={{ marginTop: 16, display: 'flex', gap: 4, justifyContent: 'center' }}>{[0,1,2,3,4].map(i => <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#1a56db', animation: `pulse 1.5s infinite ${i*0.3}s` }} />)}</div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* BATTLE PREVIEW */}
-      {battlePreview && (battlePreview.user_side || battlePreview.opposing_side) && (
-        <div className="card p-5" data-testid="battle-preview-section">
-          <div className="flex items-center gap-2 mb-4">
-            <Sword size={16} className="text-[#7c3aed]" />
-            <span className="text-sm font-medium text-[#111827]">{t.battlePreview}</span>
-          </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            {battlePreview.user_side && (
-              <div className="bg-[#eff6ff] rounded-xl p-4">
-                <div className="text-xs font-semibold text-[#1d4ed8] mb-2">{t.yourPosition}</div>
-                {battlePreview.user_side.strength && <div className="text-xs text-[#6b7280] mb-2">{t.strength}: <span className="font-medium text-[#1d4ed8]">{battlePreview.user_side.strength}/10</span></div>}
-                <div className="text-xs text-[#111] mb-2">{battlePreview.user_side.summary || ''}</div>
-                {battlePreview.user_side.arguments && (
-                  <div className="space-y-1 mb-2">
-                    <div className="text-[10px] font-medium text-[#1d4ed8]">{t.arguments}:</div>
-                    {(battlePreview.user_side.arguments || []).map((a, i) => <div key={i} className="text-[11px] text-[#555] flex items-start gap-1"><CheckCircle size={10} className="text-[#1d4ed8] mt-0.5 flex-shrink-0" />{typeof a === 'string' ? a : a.argument || a.text || ''}</div>)}
-                  </div>
-                )}
-              </div>
-            )}
-            {battlePreview.opposing_side && (
-              <div className="bg-[#fef2f2] rounded-xl p-4">
-                <div className="text-xs font-semibold text-[#dc2626] mb-2">{t.opposingSide}</div>
-                {battlePreview.opposing_side.strength && <div className="text-xs text-[#6b7280] mb-2">{t.strength}: <span className="font-medium text-[#dc2626]">{battlePreview.opposing_side.strength}/10</span></div>}
-                <div className="text-xs text-[#111] mb-2">{battlePreview.opposing_side.summary || ''}</div>
-                {battlePreview.opposing_side.vulnerabilities && (
-                  <div className="space-y-1">
-                    <div className="text-[10px] font-medium text-[#dc2626]">{t.vulnerabilities}:</div>
-                    {(battlePreview.opposing_side.vulnerabilities || []).map((v, i) => <div key={i} className="text-[11px] text-[#555] flex items-start gap-1"><AlertCircle size={10} className="text-[#dc2626] mt-0.5 flex-shrink-0" />{typeof v === 'string' ? v : v.vulnerability || v.text || ''}</div>)}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* OUTCOME PREDICTOR */}
-      <div className="card p-5" data-testid="outcome-predictor-section">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <TrendingUp size={16} className="text-[#0891b2]" />
-            <span className="text-sm font-medium text-[#111827]">{t.outcomePredictor}</span>
-          </div>
-          {!prediction && !predicting && !predictError && (
-            <button onClick={handlePredict} className="btn-pill btn-outline text-xs flex items-center gap-1.5" data-testid="predict-btn">
-              <Zap size={12} /> {t.predictOutcome}
-            </button>
-          )}
-        </div>
-        {predicting && (
-          <div className="text-center py-6">
-            <Loader2 size={20} className="animate-spin text-[#0891b2] mx-auto mb-2" />
-            <div className="text-xs text-[#6b7280]">{t.predicting}</div>
-          </div>
-        )}
-        {predictError && (
-          <div className="text-center py-4" data-testid="predict-error">
-            <div className="text-sm text-[#dc2626] mb-2">{t.predictError}</div>
-            <button onClick={handlePredict} className="btn-pill btn-outline text-xs">{t.predictOutcome}</button>
-          </div>
-        )}
-        {prediction && (
-          <div className="space-y-3" data-testid="prediction-result">
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: t.best, val: prediction.favorable || prediction.best_case || prediction.meilleur_cas, color: '#16a34a' },
-                { label: t.probable, val: prediction.neutral || prediction.probable_outcome || prediction.cas_probable, color: '#0891b2' },
-                { label: t.worst, val: prediction.unfavorable || prediction.worst_case || prediction.pire_cas, color: '#dc2626' },
-              ].map((o, i) => o.val && (
-                <div key={i} className="bg-[#f8f8f8] rounded-xl p-3" data-testid={`prediction-scenario-${i}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-[10px] text-[#9ca3af] font-medium">{o.label}</div>
-                    {o.val?.probability && <div className="text-sm font-bold" style={{ color: o.color }}>{o.val.probability}%</div>}
-                  </div>
-                  <div className="text-xs font-semibold text-[#111827] mb-1">{o.val?.title || (typeof o.val === 'string' ? o.val : '')}</div>
-                  {o.val?.description && <div className="text-[11px] text-[#555] leading-relaxed mb-1.5">{o.val.description}</div>}
-                  {o.val?.likely_result && <div className="text-[10px] text-[#6b7280]">{o.val.likely_result}</div>}
-                  {o.val?.financial_impact && <div className="text-[10px] font-medium mt-1" style={{ color: o.color }}>{o.val.financial_impact}</div>}
-                  {o.val?.timeline && <div className="text-[10px] text-[#9ca3af] mt-0.5">{o.val.timeline}</div>}
-                </div>
-              ))}
-            </div>
-            {prediction.recommendation && (
-              <div className="p-3 bg-[#eff6ff] border border-[#bfdbfe] rounded-xl text-xs text-[#1d4ed8]" data-testid="prediction-recommendation">
-                <span className="font-medium">{t.recommendation || 'Recommendation'}:</span> {prediction.recommendation}
-              </div>
-            )}
-            {prediction.confidence && (
-              <div className="text-xs text-[#6b7280]">{t.confidenceLevel}: <span className="font-medium text-[#111]">{prediction.confidence}</span></div>
-            )}
-            {prediction.key_factors && (
-              <div>
-                <div className="text-xs font-medium text-[#111] mb-1">{t.keyFactors}:</div>
-                <div className="space-y-1">
-                  {(prediction.key_factors || []).map((f, i) => (
-                    <div key={i} className="text-xs text-[#555] flex items-start gap-1.5">
-                      <span className="w-1 h-1 rounded-full bg-[#0891b2] mt-1.5 flex-shrink-0"></span>
-                      {typeof f === 'string' ? f : f.factor || f.text || ''}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* RESPONSE LETTERS */}
-      {letterTypes.length > 0 && (
-        <div className="card p-5" data-testid="response-letters-section">
-          <div className="flex items-center gap-2 mb-4">
-            <Mail size={16} className="text-[#1a56db]" />
-            <span className="text-sm font-medium text-[#111827]">{t.responseLetters}</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {letterTypes.map((lt, i) => (
-              <button
-                key={i}
-                onClick={() => { setSelectedLetterType(lt); setShowLetterModal(true); setGeneratedLetter(null); }}
-                className="text-left p-3 rounded-xl border border-[#ebebeb] hover:border-[#93c5fd] hover:bg-[#fafafa] transition-all"
-                data-testid={`letter-type-${i}`}
-              >
-                <div className="text-sm font-medium text-[#111827] mb-1">{lt.label}</div>
-                <div className="text-xs text-[#6b7280] leading-relaxed">{lt.desc}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* TIMELINE + DOCUMENTS */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="card p-5">
-          <div className="text-sm font-medium text-[#111827] mb-3">{t.caseTimeline}</div>
-          {events.length > 0 ? (
-            <div className="space-y-3">
-              {events.slice(0, 10).map((ev, i) => (
-                <div key={i} className="flex items-start gap-3 text-xs">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#1a56db] mt-1.5 flex-shrink-0"></div>
-                  <div>
-                    <div className="text-[#111]">{t.eventTitle(ev.title)}</div>
-                    <div className="text-[#9ca3af]">{new Date(ev.created_at).toLocaleDateString()}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : <div className="text-xs text-[#9ca3af]">No events yet</div>}
-        </div>
-        <div className="card p-5">
-          <div className="text-sm font-medium text-[#111827] mb-3">{t.caseMgmt}</div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs text-[#6b7280]">
-              <span>{t.documents}</span>
-              <span>{caseData.document_count || 0}</span>
-            </div>
-            <div className="flex items-center justify-between text-xs text-[#6b7280]">
-              <span>{t.sharedLinks}</span>
-              <span>{activeShares.length} {t.activeShares}</span>
-            </div>
-            <button onClick={() => navigate('/lawyers')} className="w-full mt-2 btn-pill btn-outline text-xs py-2">{t.talkLawyer}</button>
-          </div>
-        </div>
-      </div>
-
-      {/* LETTER MODAL */}
-      {showLetterModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="px-5 py-4 border-b border-[#ebebeb] flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-[#111827]">
-                  {generatedLetter ? t.letterReady : `${t.generateLetter}: ${selectedLetterType?.label}`}
-                </div>
-                <div className="text-xs text-[#6b7280]">{selectedLetterType?.desc}</div>
-              </div>
-              <button onClick={() => { setShowLetterModal(false); setGeneratedLetter(null); }} className="w-8 h-8 rounded-full hover:bg-[#f5f5f5] flex items-center justify-center">
-                <X size={18} className="text-[#6b7280]" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-auto p-5">
-              {!generatedLetter ? (
-                <div className="space-y-4">
-                  <div className="bg-[#eff6ff] rounded-xl p-4">
-                    <div className="text-xs font-medium text-[#1d4ed8] mb-2">{t.caseDetails}:</div>
-                    <div className="text-xs text-[#3b82f6] space-y-1">
-                      <div>• {caseData.title}</div>
-                      <div>• Risk Score: {caseData.risk_score}/100</div>
-                      {caseData.financial_exposure && <div>• {caseData.financial_exposure}</div>}
-                      {caseData.deadline && <div>• {caseData.deadline}</div>}
-                    </div>
-                  </div>
-                  <div><label className="form-label">{t.yourAddress}</label><input type="text" className="form-input" value={letterForm.user_address} onChange={(e) => setLetterForm({ ...letterForm, user_address: e.target.value })} /></div>
-                  <div><label className="form-label">{t.opposingName}</label><input type="text" className="form-input" value={letterForm.opposing_party_name} onChange={(e) => setLetterForm({ ...letterForm, opposing_party_name: e.target.value })} /></div>
-                  <div><label className="form-label">{t.opposingAddress}</label><input type="text" className="form-input" value={letterForm.opposing_party_address} onChange={(e) => setLetterForm({ ...letterForm, opposing_party_address: e.target.value })} /></div>
-                  <div><label className="form-label">{t.additionalContext}</label><textarea className="form-input min-h-[80px]" value={letterForm.additional_context} onChange={(e) => setLetterForm({ ...letterForm, additional_context: e.target.value })} /></div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="bg-[#fafafa] rounded-xl p-5 border border-[#ebebeb]">
-                    <div className="text-xs font-medium text-[#1a56db] mb-2">{generatedLetter.subject}</div>
-                    <div className="text-xs text-[#444] whitespace-pre-wrap leading-relaxed" style={{ fontFamily: 'Georgia, serif' }}>
-                      {generatedLetter.letter_body?.replace(/\\n/g, '\n')}
-                    </div>
-                  </div>
-                  {generatedLetter.key_points && (
-                    <div className="bg-[#f0fdf4] rounded-xl p-4">
-                      <div className="text-xs font-medium text-[#16a34a] mb-2">{t.keyPoints}:</div>
-                      <ul className="space-y-1">{generatedLetter.key_points.map((p, i) => <li key={i} className="text-xs text-[#15803d] flex items-start gap-2"><CheckCircle size={12} className="text-[#16a34a] mt-0.5 flex-shrink-0" />{p}</li>)}</ul>
-                    </div>
-                  )}
-                  {generatedLetter.warnings && (
-                    <div className="bg-[#fffbeb] rounded-xl p-4">
-                      <div className="text-xs font-medium text-[#d97706] mb-2">{t.warnings}:</div>
-                      <ul className="space-y-1">{generatedLetter.warnings.map((w, i) => <li key={i} className="text-xs text-[#b45309] flex items-start gap-2"><AlertCircle size={12} className="text-[#d97706] mt-0.5 flex-shrink-0" />{w}</li>)}</ul>
-                    </div>
-                  )}
-                  {generatedLetter.disclaimer && <div className="text-[10px] text-[#9ca3af] leading-relaxed">{generatedLetter.disclaimer}</div>}
-                </div>
-              )}
-            </div>
-            <div className="px-5 py-4 border-t border-[#ebebeb] flex items-center justify-between bg-[#fafafa]">
-              {!generatedLetter ? (
-                <>
-                  <button onClick={() => setShowLetterModal(false)} className="btn-pill btn-outline">{t.cancel}</button>
-                  <button onClick={submitLetterGeneration} disabled={generatingLetter} className="btn-pill btn-blue flex items-center gap-2" data-testid="generate-letter-btn">
-                    {generatingLetter ? <><Loader2 size={16} className="animate-spin" /> {t.generating}</> : <><Mail size={16} /> {t.generateLetter}</>}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button onClick={() => setGeneratedLetter(null)} className="btn-pill btn-outline">{t.generateAnother}</button>
-                  <div className="flex gap-2">
-                    <button onClick={copyToClipboard} className="btn-pill btn-outline flex items-center gap-2" data-testid="copy-letter-btn"><Copy size={16} /> {copied ? t.copied : t.copy}</button>
-                    <button onClick={downloadAsPDF} className="btn-pill btn-blue flex items-center gap-2" data-testid="download-letter-btn"><Download size={16} /> {t.downloadPdf}</button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* SHARE MODAL */}
-      {showShareModal && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => { setShowShareModal(false); setShareLink(null); }}>
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl" onClick={e => e.stopPropagation()} data-testid="share-modal">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-sm font-medium">{t.shareCase}</div>
-              <button onClick={() => { setShowShareModal(false); setShareLink(null); }}><X size={16} className="text-[#9ca3af]" /></button>
-            </div>
-            {!shareLink ? (
-              <>
-                <div className="text-xs text-[#6b7280] mb-4">{t.shareDesc}</div>
-                <div className="mb-3">
-                  <div className="text-[11px] text-[#9ca3af] mb-1.5">{t.expiresIn}</div>
-                  <div className="flex gap-2">
-                    {[{h: 24, l: '24h'}, {h: 48, l: '48h'}, {h: 168, l: '7d'}, {h: 720, l: '30d'}].map(opt => (
-                      <button key={opt.h} onClick={() => setShareExpiry(opt.h)}
-                        className={`flex-1 py-2 text-xs rounded-lg border transition-colors ${shareExpiry === opt.h ? 'bg-[#eff6ff] border-[#1a56db] text-[#1a56db]' : 'border-[#ebebeb] text-[#555] hover:border-[#93c5fd]'}`}
-                        data-testid={`expiry-${opt.h}`}
-                      >{opt.l}</button>
-                    ))}
-                  </div>
-                </div>
-                <div className="mb-4">
-                  <div className="text-[11px] text-[#9ca3af] mb-1.5">{t.msgRecipient}</div>
-                  <input value={shareMessage} onChange={e => setShareMessage(e.target.value)} className="w-full px-3 py-2 text-xs border border-[#ebebeb] rounded-lg focus:outline-none focus:border-[#1a56db]" data-testid="share-message-input" />
-                </div>
-                <div className="text-[10px] text-[#9ca3af] mb-4">{t.shareDisclaimer}</div>
-                <button onClick={async () => {
-                  setSharing(true);
-                  try {
-                    const res = await axios.post(`${API}/cases/${caseId}/share`, { expiry_hours: shareExpiry, message: shareMessage || null }, { withCredentials: true });
-                    setShareLink(`${window.location.origin}/shared/${res.data.token}`);
-                    const sharesRes = await axios.get(`${API}/cases/${caseId}/shares`, { withCredentials: true });
-                    setActiveShares(sharesRes.data || []);
-                  } catch (err) {
-                    alert(err.response?.data?.detail || 'Failed');
-                  } finally { setSharing(false); }
-                }} disabled={sharing} className="w-full btn-pill btn-blue py-2.5 flex items-center justify-center gap-2" data-testid="generate-link-btn">
-                  {sharing ? <Loader2 size={14} className="animate-spin" /> : <Link2 size={14} />}
-                  {sharing ? t.generatingLink : t.generateLink}
-                </button>
-              </>
             ) : (
               <>
-                <div className="text-xs text-[#16a34a] flex items-center gap-1.5 mb-3"><CheckCircle size={14} /> {t.linkGenerated}</div>
-                <div className="flex items-center gap-2 mb-4">
-                  <input value={shareLink} readOnly className="flex-1 px-3 py-2 text-xs bg-[#f8f8f8] border border-[#ebebeb] rounded-lg" data-testid="share-link-input" />
-                  <button onClick={() => { navigator.clipboard.writeText(shareLink); setShareLinkCopied(true); setTimeout(() => setShareLinkCopied(false), 2000); }}
-                    className="btn-pill btn-blue text-xs" data-testid="copy-share-link-btn">
-                    {shareLinkCopied ? t.copied : t.copy}
-                  </button>
+                {/* Case type + title */}
+                <div style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#fffbeb', border: '0.5px solid #fde68a', color: '#92400e', marginBottom: 8 }}>
+                  {t.caseType[sc.type] || sc.type || 'Other'}
                 </div>
-                <div className="flex gap-2 mb-3">
-                  <a href={`https://wa.me/?text=${encodeURIComponent(shareLink)}`} target="_blank" rel="noopener noreferrer" className="flex-1 btn-pill btn-outline text-xs text-center py-2">WhatsApp</a>
-                  <a href={`mailto:?body=${encodeURIComponent(shareLink)}`} className="flex-1 btn-pill btn-outline text-xs text-center py-2">Email</a>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e', marginBottom: 4 }}>{sc.title}</div>
+                <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 14 }}>
+                  {t.openedOn} {fmtDate(sc.created_at, lang)} · {sc.document_count || 0} {t.docCount} · {t.updatedBy}
                 </div>
-                <div className="text-[10px] text-[#9ca3af]">{t.linkExpires(shareExpiry)}</div>
+
+                {/* Risk Score */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 14, alignItems: 'center', background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
+                  <div>
+                    <div style={{ fontSize: 9, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 5 }}>{t.riskLabel}</div>
+                    <div data-testid="risk-score-big" style={{ fontSize: 52, fontWeight: 800, letterSpacing: -2, lineHeight: 1, color: scoreColor }}>{score || '—'}</div>
+                    <div style={{ fontSize: 9, color: scoreColor, fontWeight: 600, marginTop: 2 }}>{riskText}</div>
+                  </div>
+                  <div>
+                    <div style={{ height: 5, background: '#f3f4f6', borderRadius: 3, overflow: 'hidden', marginBottom: 9 }}>
+                      <div style={{ height: '100%', borderRadius: 3, background: scoreColor, width: `${score}%`, transition: 'width 0.5s' }} />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
+                      {[[sc.risk_financial, t.dimFin], [sc.risk_urgency, t.dimUrg], [sc.risk_legal_strength, t.dimLeg], [sc.risk_complexity, t.dimCom]].map(([v, label], i) => (
+                        <div key={i} style={{ background: '#f8f7f4', borderRadius: 7, padding: 6, textAlign: 'center' }}>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: riskColor(v || 0) }}>{v || '—'}</div>
+                          <div style={{ fontSize: 8, color: '#9ca3af', marginTop: 1 }}>{label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Score History */}
+                {history.length > 0 && (
+                  <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 8 }}>{t.scoreHistory}</div>
+                    <svg viewBox="0 0 400 80" style={{ width: '100%', height: 60 }}>
+                      {history.map((h, i) => {
+                        const x = history.length === 1 ? 200 : 20 + (i / (history.length - 1)) * 360;
+                        const y = 75 - (h.score / 100) * 70;
+                        const c = riskColor(h.score);
+                        return <g key={i}>
+                          {i > 0 && <line x1={20 + ((i-1) / (history.length - 1)) * 360} y1={75 - (history[i-1].score / 100) * 70} x2={x} y2={y} stroke={c} strokeWidth="2" />}
+                          <circle cx={x} cy={y} r="4" fill={c} />
+                          <text x={x} y={y - 8} textAnchor="middle" fontSize="8" fill={c}>{h.score}</text>
+                        </g>;
+                      })}
+                    </svg>
+                  </div>
+                )}
+
+                {/* James Analysis */}
+                <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff' }}>J</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e' }}>{t.analysisTitle}</div>
+                    <div style={{ marginLeft: 'auto', fontSize: 9, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e', animation: 'pulse 1.5s infinite' }} />{t.live}
+                    </div>
+                  </div>
+                  {findings.map((f, i) => {
+                    const fColor = f.impact === 'high' || f.type === 'risk' ? '#dc2626' : f.impact === 'low' || f.type === 'opportunity' ? '#16a34a' : '#f59e0b';
+                    return (
+                      <div key={i} style={{ padding: '9px 0', borderBottom: i < findings.length - 1 ? '0.5px solid #f3f4f6' : 'none', display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: fColor, flexShrink: 0, marginTop: 4 }} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 11, color: '#374151', lineHeight: 1.55 }} dangerouslySetInnerHTML={{ __html: (f.text || '').replace(/\*\*(.*?)\*\*/g, '<b style="color:#1a1a2e;font-weight:600">$1</b>') }} />
+                          {f.legal_ref && <div style={{ marginTop: 5, padding: '5px 9px', background: '#eff6ff', borderLeft: '2px solid #1a56db', borderRadius: '0 5px 5px 0' }}><div style={{ fontSize: 9, fontWeight: 600, color: '#1d4ed8' }}>{f.legal_ref}</div></div>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* James Question Card */}
+                {jq && (
+                  <div data-testid="james-question" style={{ background: '#fffbeb', borderRadius: 12, padding: '12px 14px', border: '0.5px solid #fde68a', marginBottom: 10 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#1a1a2e', marginBottom: 5 }}>💬 {t.jamesQ}</div>
+                    <div style={{ fontSize: 11, color: '#78350f', lineHeight: 1.6, marginBottom: 8 }}>{jq.text}</div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {(jq.options || []).map((opt, i) => (
+                        <button key={i} data-testid={`james-answer-${i}`} onClick={() => handleJamesAnswer(opt)} disabled={answerLoading}
+                          style={{ padding: '6px 14px', background: answerLoading ? '#f3f4f6' : '#fff', color: answerLoading ? '#9ca3af' : '#1a1a2e', border: '0.5px solid #e2e0db', borderRadius: 8, fontSize: 10, fontWeight: 500, cursor: answerLoading ? 'default' : 'pointer' }}>
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Battle Preview — Horizontal */}
+                {bp && (
+                  <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 10 }}>{t.battleTitle}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      <div style={{ background: '#f0fdf4', border: '0.5px solid #86efac', borderRadius: 9, padding: 10 }}>
+                        <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#16a34a', marginBottom: 6 }}>{t.yourArgs}</div>
+                        {(bp.user_side?.strongest_arguments || bp.user_arguments || []).slice(0, 5).map((a, i) => (
+                          <div key={i} style={{ fontSize: 10, color: '#374151', padding: '4px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.5, display: 'flex', gap: 6 }}>
+                            <span style={{ color: '#16a34a', fontWeight: 600 }}>•</span>
+                            <span>{typeof a === 'string' ? a : a.argument || a.text || ''}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ background: '#fff5f5', border: '0.5px solid #fca5a5', borderRadius: 9, padding: 10 }}>
+                        <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#dc2626', marginBottom: 6 }}>{t.theirArgs}</div>
+                        {(bp.opposing_side?.strongest_arguments || bp.opposing_arguments || []).slice(0, 5).map((a, i) => (
+                          <div key={i} style={{ fontSize: 10, color: '#374151', padding: '4px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.5, display: 'flex', gap: 6 }}>
+                            <span style={{ color: '#dc2626', fontWeight: 600 }}>•</span>
+                            <span>{typeof a === 'string' ? a : a.argument || a.text || ''}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent Jurisprudence */}
+                {caseLaw.length > 0 && (
+                  <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 8 }}>{t.jurisTitle}</div>
+                    {caseLaw.map((cl, i) => (
+                      <div key={i} style={{ padding: '8px 0', borderBottom: i < caseLaw.length - 1 ? '0.5px solid #f3f4f6' : 'none' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', flex: 1 }}>{cl.case_name}</div>
+                          {cl.url && <a href={cl.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={11} color="#1a56db" /></a>}
+                        </div>
+                        <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2 }}>{cl.court} · {cl.date_filed}</div>
+                        {cl.snippet && <div style={{ fontSize: 9, color: '#6b7280', marginTop: 3, lineHeight: 1.4 }}>{cl.snippet.substring(0, 150)}...</div>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Outcome Predictor */}
+                {prob && (
+                  <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 8 }}>{t.outcomePred}</div>
+                    {(Array.isArray(prob) ? prob : [
+                      { label: lang === 'fr' ? 'Accord négocié' : 'Negotiated settlement', pct: prob.settlement || 40, color: '#16a34a' },
+                      { label: lang === 'fr' ? 'Résolution favorable' : 'Full resolution in your favor', pct: prob.favorable || 30, color: '#1a56db' },
+                      { label: lang === 'fr' ? 'Résolution partielle' : 'Partial resolution', pct: prob.partial || 20, color: '#f59e0b' },
+                      { label: lang === 'fr' ? 'Issue défavorable' : 'Unfavorable outcome', pct: prob.unfavorable || 10, color: '#dc2626' },
+                    ]).map((o, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <div style={{ fontSize: 10, color: '#374151', width: 160, flexShrink: 0 }}>{o.label}</div>
+                        <div style={{ flex: 1, height: 8, background: '#f3f4f6', borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', borderRadius: 4, background: o.color, width: `${o.pct}%`, transition: 'width 0.5s' }} />
+                        </div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: o.color, width: 32, textAlign: 'right' }}>{o.pct}%</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Risk Monitor */}
+                <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 3 }}>{t.riskMonitor}</div>
+                  <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 10 }}>{t.riskMonitorSub}</div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button style={{ flex: 1, padding: '8px 0', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 8, fontSize: 10, fontWeight: 500, color: '#374151', cursor: 'pointer' }}>📧 {t.connectGmail}</button>
+                    <button style={{ flex: 1, padding: '8px 0', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 8, fontSize: 10, fontWeight: 500, color: '#374151', cursor: 'pointer' }}>📨 {t.connectOutlook}</button>
+                  </div>
+                </div>
               </>
             )}
           </div>
         </div>
-      )}
-    </div>
+
+        {/* ═══ RIGHT PANEL ═══ */}
+        <div data-testid="right-panel" style={{ background: '#fff', borderLeft: '0.5px solid #e2e0db', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+          <div style={{ padding: '14px 14px 8px', fontSize: 10, fontWeight: 700, color: '#1a1a2e', letterSpacing: '0.3px' }}>{t.overview}</div>
+
+          {/* Deadline */}
+          {sc?.deadline && (
+            <div style={{ margin: '0 8px 8px', padding: 11, background: '#fff5f5', borderRadius: 9, border: '0.5px solid #fca5a5' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.3px' }}>⚡ {t.critDeadline}</div>
+              <div style={{ fontSize: 30, fontWeight: 800, color: '#dc2626', margin: '4px 0 2px' }}>{dl !== null ? (dl <= 0 ? t.expired : `${dl} ${t.days}`) : '—'}</div>
+              <div style={{ fontSize: 9, color: '#991b1b' }}>{t.before} {fmtDate(sc.deadline, lang)}</div>
+            </div>
+          )}
+
+          {/* Next Actions */}
+          {steps.length > 0 && (
+            <>
+              <div style={{ padding: '8px 14px 4px', fontSize: 9, fontWeight: 700, color: '#1a1a2e', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.nextActions}</div>
+              {steps.map((s, i) => {
+                const sTitle = typeof s === 'string' ? s : (s.title || s.titre || '');
+                const sDesc = typeof s === 'string' ? '' : (s.description || '');
+                const isBookLawyer = (s.action_type === 'book_lawyer') || sTitle.toLowerCase().includes('attorney') || sTitle.toLowerCase().includes('avocat') || sTitle.toLowerCase().includes('advocaat');
+                return (
+                  <div key={i} data-testid={`action-item-${i}`}
+                    onClick={() => isBookLawyer ? navigate('/lawyers') : handleGenerateLetter(s)}
+                    style={{ margin: '0 8px 4px', padding: '8px 10px', background: '#fff', borderRadius: 8, border: '0.5px solid #e2e0db', display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.borderColor = '#1a56db'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#e2e0db'; }}>
+                    <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#1a56db', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 600, color: '#1a1a2e' }}>{sTitle}</div>
+                      {sDesc && <div style={{ fontSize: 9, color: '#6b7280', marginTop: 1 }}>{sDesc}</div>}
+                      <div style={{ fontSize: 8, color: '#1a56db', marginTop: 2, fontWeight: 500 }}>{isBookLawyer ? (lang === 'fr' ? 'Réserver un appel →' : 'Book a call →') : (lang === 'fr' ? 'Générer la lettre →' : 'Generate letter →')}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
+
+          {/* Documents */}
+          <div style={{ padding: '8px 14px 4px', fontSize: 9, fontWeight: 700, color: '#1a1a2e', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.documents}</div>
+          <div style={{ margin: '0 8px' }}>
+            <div style={{ padding: '6px 8px', borderRadius: 7, border: '0.5px solid #e2e0db', display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+              <div style={{ width: 22, height: 22, borderRadius: 4, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FileText size={11} color="#1a56db" /></div>
+              <div style={{ fontSize: 10, color: '#374151', fontWeight: 500, flex: 1 }}>{sc?.document_count || 0} {t.docCount}</div>
+              <div style={{ fontSize: 9, color: '#1d4ed8', fontWeight: 600 }}>{t.keyDoc}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* ═══ LETTER MODAL ═══ */}
+        {letterModal && (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+            <div data-testid="letter-modal" style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 600, maxHeight: '80vh', overflow: 'auto', padding: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{letterModal.step?.title || t.genLetter}</div>
+                <button onClick={() => setLetterModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} color="#6b7280" /></button>
+              </div>
+              {letterLoading ? (
+                <div style={{ textAlign: 'center', padding: 40 }}><Loader2 size={20} className="animate-spin" style={{ color: '#1a56db' }} /><div style={{ marginTop: 8, fontSize: 11, color: '#9ca3af' }}>{t.downloading}</div></div>
+              ) : letterModal.letter ? (
+                <>
+                  {letterModal.letter.subject && <div style={{ fontSize: 11, fontWeight: 600, color: '#374151', marginBottom: 4 }}>{letterModal.letter.subject}</div>}
+                  {letterModal.letter.recipient && <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 12 }}>To: {letterModal.letter.recipient}</div>}
+                  <div style={{ fontSize: 11, color: '#374151', lineHeight: 1.7, whiteSpace: 'pre-wrap', padding: 16, background: '#f8f7f4', borderRadius: 10, border: '0.5px solid #e2e0db', marginBottom: 16 }}>{letterModal.letter.body}</div>
+                  {letterModal.letter.legal_citations && (
+                    <div style={{ fontSize: 9, color: '#1d4ed8', marginBottom: 12 }}>
+                      {letterModal.letter.legal_citations.map((c, i) => <span key={i} style={{ display: 'inline-block', padding: '2px 8px', background: '#eff6ff', borderRadius: 4, marginRight: 4, marginBottom: 4 }}>{c}</span>)}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => handleDownloadPdf(letterModal.letter)} data-testid="download-letter-pdf" style={{ flex: 1, padding: '10px 0', background: '#1a56db', color: '#fff', border: 'none', borderRadius: 9, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}><Download size={13} style={{ marginRight: 4 }} />{t.downloadPdf}</button>
+                    <button onClick={() => setLetterModal(null)} style={{ flex: 1, padding: '10px 0', background: '#fff', color: '#374151', border: '0.5px solid #e2e0db', borderRadius: 9, fontSize: 11, fontWeight: 500, cursor: 'pointer' }}>{t.close}</button>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ SHARE MODAL ═══ */}
+        {shareModal && (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+            <div data-testid="share-modal" style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 420, padding: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{t.shareTitle}</div>
+                <button onClick={() => setShareModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} color="#6b7280" /></button>
+              </div>
+              <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 12 }}>{t.shareDesc}</div>
+              {shareLink ? (
+                <>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <input readOnly value={shareLink} style={{ flex: 1, padding: '8px 10px', background: '#f8f7f4', border: '0.5px solid #e2e0db', borderRadius: 7, fontSize: 10, color: '#374151' }} />
+                    <button onClick={() => { navigator.clipboard.writeText(shareLink); }} style={{ padding: '8px 14px', background: '#1a56db', color: '#fff', border: 'none', borderRadius: 7, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>{t.shareCopy}</button>
+                  </div>
+                  <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 6 }}>{t.shareExpiry}: 7 {t.days}</div>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: 16 }}><Loader2 size={16} className="animate-spin" style={{ color: '#1a56db' }} /></div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 

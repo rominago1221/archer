@@ -595,9 +595,13 @@ Return ONLY this JSON — no other text:
     "partial_loss": 18,
     "full_loss": 5
   }},
-  "key_insight": "The most important thing the user must know in one sentence"
+  "key_insight": "The most important thing the user must know in one sentence",
+  "james_question": {{
+    "text": "A specific clarifying question that references something found in the document (e.g. 'The notice mentions a $150 fee — did you agree to this fee in your lease?')",
+    "options": ["Yes, it is in my lease", "No, I never agreed to this", "I am not sure"]
+  }}
 }}
-Exactly 3 next_steps."""
+Exactly 3 next_steps. The next_steps must include letter_template field with a brief description of what letter to generate."""
 
 PASS4A_SYSTEM = """You are a senior attorney representing the user. Your job is to make the STRONGEST possible case for your client. Find every argument, every procedural defect, every legal protection that benefits your client. Be aggressive and thorough."""
 
@@ -915,6 +919,7 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
             "lawyer_recommendation": strategy.get("lawyer_recommendation"),
             "success_probability": strategy.get("success_probability"),
             "key_insight": strategy.get("key_insight", ""),
+            "james_question": strategy.get("james_question"),
             "battle_preview": {
                 "user_side": user_arguments,
                 "opposing_side": opposing_arguments
@@ -2939,6 +2944,7 @@ def _build_case_update(analysis, case_before, filename, ts):
         "cumulative_financial_exposure": a.get("cumulative_financial_exposure") or cb.get("cumulative_financial_exposure"),
         "master_deadlines": a.get("master_deadlines") or cb.get("master_deadlines", []),
         "multi_doc_summary": a.get("case_narrative") or cb.get("multi_doc_summary"),
+        "james_question": a.get("james_question"),
         "updated_at": ts
     }
 
@@ -3422,6 +3428,152 @@ async def download_document(
         raise HTTPException(status_code=500, detail="Download failed")
 
 # ================== Letter Generation Endpoints ==================
+
+
+@api_router.post("/cases/{case_id}/james-answer")
+async def james_answer(case_id: str, body: dict, current_user: User = Depends(get_current_user)):
+    """Process user answer to James's question, update analysis"""
+    case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+    
+    question = body.get("question", "")
+    answer = body.get("answer", "")
+    if not answer:
+        raise HTTPException(status_code=400, detail="Answer required")
+    
+    user_language = current_user.language or case_doc.get("language", "en")
+    lang_note = ""
+    if user_language.startswith("fr"):
+        lang_note = "Respond entirely in French."
+    elif user_language.startswith("nl"):
+        lang_note = "Respond entirely in Dutch."
+    elif user_language.startswith("de"):
+        lang_note = "Respond entirely in German."
+    
+    system = f"""You are James, a senior legal AI advisor. The user answered your clarifying question about their legal case.
+Based on this new information, provide an updated assessment.
+{lang_note}
+Return JSON:
+{{
+  "impact_summary": "One sentence explaining how this answer changes the analysis",
+  "risk_adjustment": number (-15 to +15, how much to adjust the risk score),
+  "new_finding": {{
+    "text": "New finding based on the user's answer",
+    "impact": "high|medium|low",
+    "type": "risk|opportunity|neutral",
+    "legal_ref": "Relevant legal reference if applicable"
+  }},
+  "next_question": {{
+    "text": "The NEXT most important question James should ask (cite specific details from the case)",
+    "options": ["Answer option 1", "Answer option 2", "Answer option 3"]
+  }} or null if no more questions needed,
+  "updated_next_steps": [
+    {{"title": "Specific action", "description": "Why and how"}}
+  ]
+}}"""
+    
+    user_msg = f"""Case: {case_doc.get('title', '')}
+Case type: {case_doc.get('type', '')}
+Current risk score: {case_doc.get('risk_score', 0)}/100
+Current findings: {json.dumps(case_doc.get('ai_findings', [])[:3], default=str)}
+
+James asked: "{question}"
+User answered: "{answer}"
+
+Analyze the impact of this answer on the case."""
+    
+    try:
+        result = await call_claude(system, user_msg, max_tokens=1500)
+    except Exception as e:
+        logger.error(f"James Q&A error: {e}")
+        raise HTTPException(status_code=500, detail="Analysis failed")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Apply risk adjustment
+    old_score = case_doc.get("risk_score", 0)
+    adj = result.get("risk_adjustment", 0)
+    new_score = max(0, min(100, old_score + adj))
+    
+    # Build update
+    update = {"$set": {"risk_score": new_score, "updated_at": now}}
+    
+    new_finding = result.get("new_finding")
+    if new_finding:
+        update.setdefault("$push", {})["ai_findings"] = new_finding
+    
+    updated_steps = result.get("updated_next_steps")
+    if updated_steps:
+        update["$set"]["ai_next_steps"] = updated_steps
+    
+    next_q = result.get("next_question")
+    if next_q:
+        update["$set"]["james_question"] = next_q
+    else:
+        update["$set"]["james_question"] = None
+    
+    # Store Q&A in history
+    qa_entry = {"question": question, "answer": answer, "impact": result.get("impact_summary", ""), "timestamp": now}
+    update.setdefault("$push", {})["james_qa_history"] = qa_entry
+    
+    await db.cases.update_one({"case_id": case_id}, update)
+    
+    result["new_risk_score"] = new_score
+    result["old_risk_score"] = old_score
+    return result
+
+
+@api_router.post("/cases/{case_id}/generate-action-letter")
+async def generate_action_letter(case_id: str, body: dict, current_user: User = Depends(get_current_user)):
+    """Generate a letter for a specific next action"""
+    case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+    
+    action_title = body.get("action_title", "")
+    action_description = body.get("action_description", "")
+    user_language = current_user.language or case_doc.get("language", "en")
+    
+    lang_note = ""
+    if user_language.startswith("fr"):
+        lang_note = "Write the letter entirely in French. Use formal French legal style."
+    elif user_language.startswith("nl"):
+        lang_note = "Write the letter entirely in Dutch. Use formal Dutch legal style."
+    elif user_language.startswith("de"):
+        lang_note = "Write the letter entirely in German."
+    
+    system = f"""You are James, a senior legal attorney drafting a formal legal letter for a client.
+{lang_note}
+The letter must be professional, cite specific laws and statutes, and be ready to send.
+Use the case details to fill in all specific information (names, addresses, dates, amounts).
+Return JSON:
+{{
+  "subject": "Letter subject line",
+  "recipient": "To whom this letter is addressed",
+  "body": "Complete letter text with proper formatting. Use \\n for line breaks.",
+  "legal_citations": ["List of laws/statutes cited"],
+  "deadline_mentioned": "Any deadline mentioned in the letter or null"
+}}"""
+    
+    user_msg = f"""Case: {case_doc.get('title', '')}
+Type: {case_doc.get('type', '')}
+Findings: {json.dumps(case_doc.get('ai_findings', [])[:5], default=str)}
+Applicable laws: {json.dumps(case_doc.get('applicable_laws', []), default=str)}
+
+Action requested: {action_title}
+Description: {action_description}
+
+Generate a complete, ready-to-send legal letter for this action."""
+    
+    try:
+        letter = await call_claude(system, user_msg, max_tokens=2500)
+        return letter
+    except Exception as e:
+        logger.error(f"Letter generation error: {e}")
+        raise HTTPException(status_code=500, detail="Letter generation failed")
+
+
 
 @api_router.get("/letters/types/{case_type}")
 async def get_letter_types(case_type: str, country: str = "US"):
