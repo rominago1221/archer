@@ -6117,6 +6117,27 @@ async def startup_event():
         })
         logger.info("Test attorney seeded: attorney@jasper.com / attorney123")
 
+    # Seed Pro test accounts
+    for acct in [
+        {"email": "test@jasper.legal", "name": "Alex Thompson", "country": "US", "jurisdiction": "US", "language": "en"},
+        {"email": "belgium@jasper.legal", "name": "Marie Dupont", "country": "BE", "jurisdiction": "BE", "language": "fr"},
+    ]:
+        existing = await db.users.find_one({"email": acct["email"]})
+        if not existing:
+            uid = f"user_{uuid.uuid4().hex[:12]}"
+            now = datetime.now(timezone.utc).isoformat()
+            await db.users.insert_one({
+                "user_id": uid, "email": acct["email"], "name": acct["name"],
+                "picture": None, "password_hash": hash_password("JasperPro2026!"),
+                "auth_provider": "email", "plan": "pro", "country": acct["country"],
+                "jurisdiction": acct["jurisdiction"], "language": acct["language"],
+                "account_type": "client", "created_at": now,
+                "free_call_used": False, "free_analyses_used": 0,
+                "notif_risk_score": True, "notif_deadlines": True, "notif_calls": True,
+                "notif_lawyers": False, "notif_promo": False, "data_sharing": True, "improve_ai": True,
+            })
+            logger.info(f"Pro test account seeded: {acct['email']}")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
