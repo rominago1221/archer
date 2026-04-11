@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthCallback from './components/AuthCallback';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
+import AttorneyLayout from './components/AttorneyLayout';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -20,6 +21,16 @@ import LegalChat from './pages/LegalChat';
 import SharedCase from './pages/SharedCase';
 import DocumentLibrary from './pages/DocumentLibrary';
 import FloatingChatButton from './components/FloatingChatButton';
+import AttorneyApply from './pages/AttorneyApply';
+import AttorneyDashboard from './pages/AttorneyDashboard';
+import AttorneyCalls from './pages/AttorneyCalls';
+import AttorneyCases from './pages/AttorneyCases';
+import AttorneyResearch from './pages/AttorneyResearch';
+import AttorneyProfile from './pages/AttorneyProfile';
+import AttorneyEarnings from './pages/AttorneyEarnings';
+import AttorneySettings from './pages/AttorneySettings';
+import PublicAttorneyProfile from './pages/PublicAttorneyProfile';
+import VideoCall from './pages/VideoCall';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -34,12 +45,19 @@ const useKeepAlive = () => {
   }, []);
 };
 
+// Attorney route guard
+const AttorneyRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.account_type !== 'attorney') return <Navigate to="/dashboard" replace />;
+  return children;
+};
+
 // Component to handle session_id in URL hash
 const AppRouter = () => {
   const location = useLocation();
   
-  // Check URL fragment for session_id - this MUST be synchronous during render
-  // to prevent race conditions with ProtectedRoute
   if (location.hash?.includes('session_id=')) {
     return <AuthCallback />;
   }
@@ -51,14 +69,27 @@ const AppRouter = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/shared/:token" element={<SharedCase />} />
+      <Route path="/attorney/apply" element={<AttorneyApply />} />
+      <Route path="/attorneys/:slug" element={<PublicAttorneyProfile />} />
       
-      {/* Protected routes with Layout */}
-      <Route path="/" element={
-        <ProtectedRoute>
-          <Layout />
-        </ProtectedRoute>
-      }>
-        {/* Removed index redirect - landing page is at / */}
+      {/* Attorney protected routes */}
+      <Route path="/attorney" element={<AttorneyRoute><AttorneyLayout /></AttorneyRoute>}>
+        <Route path="dashboard" element={<AttorneyDashboard />} />
+        <Route path="calls" element={<AttorneyCalls />} />
+        <Route path="calls/:callId" element={<AttorneyCalls />} />
+        <Route path="cases" element={<AttorneyCases />} />
+        <Route path="research" element={<AttorneyResearch />} />
+        <Route path="profile" element={<AttorneyProfile />} />
+        <Route path="earnings" element={<AttorneyEarnings />} />
+        <Route path="settings" element={<AttorneySettings />} />
+      </Route>
+
+      {/* Video call (both attorney and client) */}
+      <Route path="/video-call/:callId" element={<ProtectedRoute><VideoCall /></ProtectedRoute>} />
+      <Route path="/attorney-call-confirmed" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
+
+      {/* Client protected routes with Layout */}
+      <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="cases" element={<Cases />} />
         <Route path="cases/:caseId" element={<CaseDetail />} />

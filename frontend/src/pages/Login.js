@@ -1,155 +1,134 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Scale, User, ArrowLeft } from 'lucide-react';
 
 const Login = () => {
-  const { initiateGoogleLogin, loginWithEmail, isAuthenticated, error, clearError } = useAuth();
   const navigate = useNavigate();
+  const { loginWithEmail, initiateGoogleLogin, error, clearError } = useAuth();
+  const [accountType, setAccountType] = useState(null); // null | 'client' | 'attorney'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [localError, setLocalError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  React.useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
-    }
-  }, [isAuthenticated, navigate]);
-
-  React.useEffect(() => {
-    clearError();
-  }, []);
-
-  const handleEmailLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setLocalError('');
-    if (!email.trim() || !password.trim()) {
-      setLocalError('Please enter your email and password');
-      return;
-    }
-    setIsLoading(true);
+    setLoading(true);
+    clearError();
     try {
-      await loginWithEmail(email, password);
-      navigate('/dashboard', { replace: true });
-    } catch (err) {
-      setLocalError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
+      const user = await loginWithEmail(email, password);
+      if (user?.account_type === 'attorney') {
+        navigate('/attorney/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (err) { /* error is set by AuthContext */ }
+    setLoading(false);
   };
 
-  const displayError = localError || error;
-
   return (
-    <div className="auth-wrap">
-      <div className="auth-card">
-        <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '28px', fontWeight: 500, letterSpacing: '-0.5px', color: '#1a56db', textAlign: 'center', marginBottom: '24px' }} data-testid="login-logo">
-          Jasper
-        </div>
-        <div className="text-xl font-semibold text-center text-[#111827] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
-          Welcome back
-        </div>
-        <div className="text-sm text-[#6b7280] text-center mb-6">
-          Sign in to your account
+    <div className="min-h-screen bg-[#fafafa] flex items-center justify-center p-4" data-testid="login-page">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-semibold text-[#111827] tracking-tight">Jasper</h1>
+          <p className="text-xs text-[#6b7280] mt-1">Legal protection powered by AI</p>
         </div>
 
-        {displayError && (
-          <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700" data-testid="login-error">
-            {displayError}
-          </div>
-        )}
+        <div className="bg-white border border-[#ebebeb] rounded-2xl p-6">
+          {!accountType ? (
+            /* ─── Account Type Selection ─── */
+            <div data-testid="account-type-selector">
+              <h2 className="text-[15px] font-semibold text-[#111827] text-center mb-5">How would you like to sign in?</h2>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <button
+                  onClick={() => setAccountType('client')}
+                  className="flex flex-col items-center gap-2.5 p-5 rounded-[14px] border border-[#e5e5e5] bg-white hover:border-[#1a56db] hover:bg-[#eff6ff] transition-all group"
+                  data-testid="select-client-btn"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-[#eff6ff] flex items-center justify-center group-hover:bg-white transition-colors">
+                    <User size={18} className="text-[#1a56db]" />
+                  </div>
+                  <div className="text-[13px] font-semibold text-[#111827]">I'm a client</div>
+                  <div className="text-[10px] text-[#6b7280] text-center leading-snug">Analyze documents, talk to attorneys, protect yourself</div>
+                </button>
+                <button
+                  onClick={() => setAccountType('attorney')}
+                  className="flex flex-col items-center gap-2.5 p-5 rounded-[14px] border border-[#e5e5e5] bg-white hover:border-[#1a56db] hover:bg-[#eff6ff] transition-all group"
+                  data-testid="select-attorney-btn"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-[#eff6ff] flex items-center justify-center group-hover:bg-white transition-colors">
+                    <Scale size={18} className="text-[#1a56db]" />
+                  </div>
+                  <div className="text-[13px] font-semibold text-[#111827]">I'm an attorney</div>
+                  <div className="text-[10px] text-[#6b7280] text-center leading-snug">Join Jasper to receive pre-qualified clients</div>
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* ─── Login Form ─── */
+            <div data-testid="login-form">
+              <button onClick={() => { setAccountType(null); clearError(); }} className="flex items-center gap-1 text-[11px] text-[#6b7280] hover:text-[#1a56db] mb-4" data-testid="back-to-selector">
+                <ArrowLeft size={12} /> Back
+              </button>
+              <h2 className="text-[15px] font-semibold text-[#111827] mb-1">
+                {accountType === 'client' ? 'Client sign in' : 'Attorney sign in'}
+              </h2>
+              <p className="text-[11px] text-[#6b7280] mb-5">
+                {accountType === 'client' ? 'Access your cases and documents' : 'Access your attorney dashboard'}
+              </p>
 
-        <form onSubmit={handleEmailLogin} className="space-y-4">
-          <div>
-            <label className="form-label">Email</label>
-            <input
-              type="email"
-              className="form-input"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              data-testid="login-email-input"
-            />
-          </div>
-          <div>
-            <label className="form-label">Password</label>
-            <input
-              type="password"
-              className="form-input"
-              placeholder="Min. 8 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              data-testid="login-password-input"
-            />
-          </div>
+              {error && (
+                <div className="bg-[#fef2f2] border border-[#fecaca] rounded-lg px-3 py-2 text-[11px] text-[#dc2626] mb-4" data-testid="login-error">
+                  {error}
+                </div>
+              )}
 
-          <button
-            type="submit"
-            className="w-full btn-pill btn-blue py-3 flex items-center justify-center gap-2"
-            data-testid="login-submit-btn"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            ) : 'Sign in'}
-          </button>
-        </form>
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <div>
+                  <label className="text-[11px] font-medium text-[#555] block mb-1">Email</label>
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
+                    className="w-full px-3 py-2.5 text-xs border border-[#e5e5e5] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1a56db] focus:border-transparent"
+                    placeholder="you@example.com" data-testid="login-email-input" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-medium text-[#555] block mb-1">Password</label>
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
+                    className="w-full px-3 py-2.5 text-xs border border-[#e5e5e5] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1a56db] focus:border-transparent"
+                    placeholder="Min 8 characters" data-testid="login-password-input" />
+                </div>
+                <button type="submit" disabled={loading}
+                  className="w-full py-2.5 rounded-lg bg-[#1a56db] text-white text-xs font-medium hover:bg-[#1546b3] transition-colors disabled:opacity-60"
+                  data-testid="login-submit-btn">
+                  {loading ? 'Signing in...' : 'Sign in'}
+                </button>
+              </form>
 
-        <div className="relative my-5">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-[#ebebeb]"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-[#9ca3af]">or continue with</span>
-          </div>
-        </div>
+              {accountType === 'client' && (
+                <>
+                  <div className="flex items-center gap-3 my-4">
+                    <div className="flex-1 h-px bg-[#ebebeb]" />
+                    <span className="text-[10px] text-[#9ca3af]">or</span>
+                    <div className="flex-1 h-px bg-[#ebebeb]" />
+                  </div>
+                  <button onClick={initiateGoogleLogin}
+                    className="w-full py-2.5 rounded-lg border border-[#e5e5e5] text-[#333] text-xs font-medium hover:bg-[#f5f5f5] transition-colors flex items-center justify-center gap-2"
+                    data-testid="google-login-btn">
+                    <svg viewBox="0 0 24 24" width="14" height="14"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                    Continue with Google
+                  </button>
+                </>
+              )}
 
-        <div className="space-y-3">
-          {/* Google */}
-          <button
-            onClick={initiateGoogleLogin}
-            className="w-full py-3 px-4 bg-[#f5f5f5] text-[#333] rounded-[24px] text-sm font-medium hover:bg-[#eee] transition-colors flex items-center justify-center gap-3"
-            data-testid="google-login-btn"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Continue with Google
-          </button>
-
-          {/* Apple */}
-          <button
-            onClick={() => setLocalError('Apple Sign In requires Apple Developer credentials. Please configure them in Settings.')}
-            className="w-full py-3 px-4 bg-[#000000] text-white rounded-[24px] text-sm font-medium hover:bg-[#1a1a1a] transition-colors flex items-center justify-center gap-3"
-            data-testid="apple-login-btn"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
-              <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.53-3.23 0-1.44.62-2.2.44-3.06-.4C3.79 16.17 4.36 9.02 8.55 8.8c1.18.06 2 .7 2.72.75.98-.2 1.92-.77 2.98-.7 1.27.1 2.23.58 2.86 1.48-2.63 1.57-2.01 5.01.36 5.97-.48 1.28-.72 1.85-1.42 2.98zM12.12 8.74c-.14-2.35 1.76-4.38 3.93-4.54.32 2.63-2.33 4.72-3.93 4.54z"/>
-            </svg>
-            Continue with Apple
-          </button>
-
-          {/* Facebook */}
-          <button
-            onClick={() => setLocalError('Facebook Login requires Facebook App credentials. Please configure them in Settings.')}
-            className="w-full py-3 px-4 bg-[#1877F2] text-white rounded-[24px] text-sm font-medium hover:bg-[#166fe5] transition-colors flex items-center justify-center gap-3"
-            data-testid="facebook-login-btn"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-            </svg>
-            Continue with Facebook
-          </button>
-        </div>
-
-        <div className="text-center text-sm text-[#6b7280] mt-5">
-          Don't have an account?{' '}
-          <Link to="/signup" className="font-medium text-[#1a56db] hover:underline" data-testid="signup-link">
-            Sign up free
-          </Link>
+              <div className="text-center mt-4">
+                {accountType === 'client' ? (
+                  <a href="/signup" className="text-[11px] text-[#1a56db] hover:underline" data-testid="signup-link">New client? Sign up free</a>
+                ) : (
+                  <a href="/attorney/apply" className="text-[11px] text-[#1a56db] hover:underline" data-testid="attorney-apply-link">New attorney? Apply to join Jasper</a>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
