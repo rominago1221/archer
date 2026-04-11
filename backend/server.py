@@ -4927,6 +4927,243 @@ async def send_for_signature(body: SignatureRequest, current_user: User = Depend
     return {"status": "error", "message": "HelloSign integration not yet configured"}
 
 
+# ================== James Document Creator (Conversational) ==================
+
+JAMES_DOC_CREATOR_PROMPT = """You are James, a Senior Legal Advisor with 20 years of experience. You are helping the user create a legal document. You have generated legal documents for thousands of clients across employment, housing, contracts, consumer protection, and business law.
+
+YOUR APPROACH:
+1. Identify the exact document type needed from the user's description
+2. Ask 3-5 targeted questions to collect necessary information
+3. Generate a complete, legally sound document once all info is collected
+4. Offer to modify any clause the user requests
+
+WHEN ASKING QUESTIONS:
+- Ask one question at a time, conversationally
+- Number each question (Question 1 of 4, etc.)
+- Keep questions under 15 words
+- Accept informal answers ('2 years', 'New York', 'both parties')
+
+WHEN GENERATING THE DOCUMENT:
+- Generate the COMPLETE document — not a template with blanks
+- All parties, dates, amounts, and terms must be filled in
+- Include all standard clauses for the document type
+- Add jurisdiction-specific clauses based on the state/country
+- Format with clear section headers and numbered clauses
+- Include signature lines at the bottom
+- When you generate the document, wrap it in <DOCUMENT> and </DOCUMENT> tags so the frontend can extract it
+
+DOCUMENT QUALITY STANDARDS:
+- Every clause must be legally enforceable in the specified jurisdiction
+- Include carve-outs and protections that favor the user
+- Flag any unusual or risky clauses in your message
+- Never generate a document without knowing: parties, jurisdiction, and purpose
+
+AFTER GENERATION:
+- Explain in one sentence what protective features you included
+- Offer 4 specific modification options as suggestions
+- If user asks to modify, update the specific clause and confirm the change
+- Always re-wrap the updated full document in <DOCUMENT> and </DOCUMENT> tags
+
+JURISDICTION: Apply laws of {jurisdiction}
+LANGUAGE: Respond in {language}"""
+
+
+class JamesDocMessage(BaseModel):
+    message: str
+    conversation_id: Optional[str] = None
+
+
+@api_router.post("/documents/james/send")
+async def james_doc_send(data: JamesDocMessage, current_user: User = Depends(get_current_user)):
+    """James conversational document creator — send message and get AI response"""
+    conv_id = data.conversation_id
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Create new conversation if needed
+    if not conv_id:
+        conv_id = f"jdoc_{uuid.uuid4().hex[:12]}"
+        conv_doc = {
+            "conversation_id": conv_id,
+            "user_id": current_user.user_id,
+            "type": "document_creator",
+            "title": data.message[:60] + ("..." if len(data.message) > 60 else ""),
+            "created_at": now,
+            "updated_at": now,
+        }
+        await db.james_doc_conversations.insert_one(conv_doc)
+
+    # Free plan: limit to 3 generated documents
+    if current_user.plan == "free":
+        doc_count = await db.generated_documents.count_documents({
+            "user_id": current_user.user_id,
+            "created_via": "james_conversation"
+        })
+        if doc_count >= 3:
+            return {
+                "response": "You've created your 3 free documents. Upgrade to Pro for unlimited document creation with James.",
+                "conversation_id": conv_id,
+                "limit_reached": True
+            }
+
+    # Save user message
+    user_msg = {
+        "message_id": f"msg_{uuid.uuid4().hex[:12]}",
+        "conversation_id": conv_id,
+        "role": "user",
+        "content": data.message,
+        "created_at": now
+    }
+    await db.james_doc_messages.insert_one(user_msg)
+
+    # Build conversation history
+    history = await db.james_doc_messages.find(
+        {"conversation_id": conv_id},
+        {"_id": 0, "role": 1, "content": 1}
+    ).sort("created_at", 1).to_list(100)
+
+    claude_messages = [{"role": m["role"], "content": m["content"]} for m in history]
+
+    # Build system prompt
+    user_language = getattr(current_user, 'language', 'en') or 'en'
+    user_jurisdiction = getattr(current_user, 'jurisdiction', 'US') or 'US'
+    lang_map = {"en": "English", "fr": "French", "fr-BE": "French", "nl": "Dutch", "nl-BE": "Dutch", "de": "German", "de-BE": "German", "es": "Spanish"}
+    lang_name = lang_map.get(user_language, "English")
+
+    jurisdiction_text = "US Federal + applicable state law" if user_jurisdiction == "US" else "Belgian federal + regional law"
+    system = JAMES_DOC_CREATOR_PROMPT.format(jurisdiction=jurisdiction_text, language=lang_name)
+    system += get_language_instruction(user_language)
+
+    # Call Claude
+    try:
+        async with httpx.AsyncClient() as http_client:
+            response = await http_client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "Content-Type": "application/json",
+                    "x-api-key": ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01"
+                },
+                json={
+                    "model": "claude-sonnet-4-20250514",
+                    "max_tokens": 4096,
+                    "system": system,
+                    "messages": claude_messages
+                },
+                timeout=120.0
+            )
+            response.raise_for_status()
+            resp_data = response.json()
+            ai_text = ""
+            for block in resp_data.get("content", []):
+                if block.get("type") == "text":
+                    ai_text += block["text"]
+            if not ai_text:
+                ai_text = "James is temporarily unavailable. Please try again."
+    except Exception as e:
+        logger.error(f"James doc creator error: {e}")
+        ai_text = "James is temporarily unavailable. Please try again."
+
+    # Save AI response
+    ai_msg = {
+        "message_id": f"msg_{uuid.uuid4().hex[:12]}",
+        "conversation_id": conv_id,
+        "role": "assistant",
+        "content": ai_text,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.james_doc_messages.insert_one(ai_msg)
+    await db.james_doc_conversations.update_one(
+        {"conversation_id": conv_id},
+        {"$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+
+    # Check if document was generated (contains <DOCUMENT> tags)
+    has_document = "<DOCUMENT>" in ai_text and "</DOCUMENT>" in ai_text
+    document_content = None
+    if has_document:
+        import re
+        doc_match = re.search(r"<DOCUMENT>(.*?)</DOCUMENT>", ai_text, re.DOTALL)
+        if doc_match:
+            document_content = doc_match.group(1).strip()
+            # Extract title from first line of document or first heading
+            doc_lines = [l.strip() for l in document_content.split('\n') if l.strip()]
+            doc_title = doc_lines[0].lstrip('#').strip() if doc_lines else "Legal Document"
+            if len(doc_title) > 100:
+                doc_title = doc_title[:100]
+            # Get first user message as fallback context
+            first_msg = await db.james_doc_messages.find_one(
+                {"conversation_id": conv_id, "role": "user"},
+                {"_id": 0, "content": 1}
+            )
+            first_request = first_msg["content"][:80] if first_msg else ""
+            # Save to generated_documents
+            doc_id = f"jdoc_{uuid.uuid4().hex[:12]}"
+            doc_record = {
+                "doc_id": doc_id,
+                "user_id": current_user.user_id,
+                "created_via": "james_conversation",
+                "conversation_id": conv_id,
+                "document_title": doc_title,
+                "original_request": first_request,
+                "generated_content": document_content,
+                "jurisdiction": jurisdiction_text,
+                "signature_status": "draft",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.generated_documents.insert_one(doc_record)
+            # Update conversation with doc reference
+            await db.james_doc_conversations.update_one(
+                {"conversation_id": conv_id},
+                {"$set": {"last_doc_id": doc_id, "document_title": doc_title}}
+            )
+
+    _doc_id = doc_id if (has_document and document_content) else None
+    return {
+        "response": ai_text,
+        "conversation_id": conv_id,
+        "has_document": has_document,
+        "document_content": document_content,
+        "doc_id": _doc_id,
+        "limit_reached": False
+    }
+
+
+@api_router.get("/documents/james/conversations")
+async def get_james_doc_conversations(current_user: User = Depends(get_current_user)):
+    """Get user's recent James document conversations"""
+    convs = await db.james_doc_conversations.find(
+        {"user_id": current_user.user_id},
+        {"_id": 0}
+    ).sort("updated_at", -1).to_list(20)
+    return convs
+
+
+@api_router.get("/documents/james/conversations/{conversation_id}/messages")
+async def get_james_doc_messages(conversation_id: str, current_user: User = Depends(get_current_user)):
+    """Get messages for a James document conversation"""
+    conv = await db.james_doc_conversations.find_one(
+        {"conversation_id": conversation_id, "user_id": current_user.user_id},
+        {"_id": 0}
+    )
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    messages = await db.james_doc_messages.find(
+        {"conversation_id": conversation_id},
+        {"_id": 0}
+    ).sort("created_at", 1).to_list(200)
+    return messages
+
+
+@api_router.get("/documents/james/recent")
+async def get_recent_generated_docs(current_user: User = Depends(get_current_user)):
+    """Get last 5 generated documents for sidebar"""
+    docs = await db.generated_documents.find(
+        {"user_id": current_user.user_id, "created_via": "james_conversation"},
+        {"_id": 0, "doc_id": 1, "document_title": 1, "created_at": 1, "signature_status": 1}
+    ).sort("created_at", -1).to_list(5)
+    return docs
+
+
 # ================== Risk Monitor — Email Surveillance (MOCKED) ==================
 
 @api_router.get("/risk-monitor/status")
