@@ -71,7 +71,7 @@ const DocumentPreviewCard = ({ content, onEdit, onDownload, onSign }) => {
   const title = lines.find(l => l.startsWith('#'))?.replace(/^#+\s*/, '') || 'Legal Document';
   const clauses = lines.filter(l => /^\d+[\.\)]|^##\s|^Article|^Section|^Clause/i.test(l.trim())).slice(0, 3);
   return (
-    <div style={{ background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 10, padding: 14, marginTop: 8 }} data-testid="document-preview-card">
+    <div style={{ background: '#fff', border: '1px solid #e2e0db', borderRadius: 10, padding: 14, marginTop: 8 }} data-testid="document-preview-card">
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 28, height: 28, borderRadius: 7, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FileText size={13} color="#1a56db" /></div>
@@ -82,7 +82,7 @@ const DocumentPreviewCard = ({ content, onEdit, onDownload, onSign }) => {
       <div style={{ fontSize: 10, color: '#6b7280', lineHeight: 1.6, marginBottom: 10 }}>{clauses.map((c, i) => <div key={i}>{c.replace(/^#+\s*/, '')}</div>)}</div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
         <button onClick={onSign} data-testid="doc-send-signature" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '7px 0', borderRadius: 20, fontSize: 10, fontWeight: 600, background: '#1a56db', color: '#fff', border: 'none', cursor: 'pointer' }}><Send size={10} />Send for signature</button>
-        <button onClick={onDownload} data-testid="doc-download-pdf" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '7px 0', borderRadius: 20, fontSize: 10, fontWeight: 500, background: '#fff', color: '#1a56db', border: '0.5px solid #1a56db', cursor: 'pointer' }}><Download size={10} />Download PDF</button>
+        <button onClick={onDownload} data-testid="doc-download-pdf" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '7px 0', borderRadius: 20, fontSize: 10, fontWeight: 500, background: '#fff', color: '#1a56db', border: '1px solid #1a56db', cursor: 'pointer' }}><Download size={10} />Download PDF</button>
         <button onClick={onEdit} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 12px', borderRadius: 20, fontSize: 10, fontWeight: 500, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}><Pen size={10} />Edit</button>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 8px', borderRadius: 7, background: '#f0fdf4', border: '0.5px solid #86efac' }}>
@@ -165,17 +165,17 @@ const DocumentLibrary = () => {
   });
 
   return (
-    <div data-testid="document-library-page" style={{ position: 'fixed', inset: 0, display: 'grid', gridTemplateColumns: '220px 1fr', background: '#f8f7f4', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+    <div data-testid="document-library-page" style={{ position: 'fixed', inset: 0, display: 'grid', gridTemplateColumns: '220px 1fr', background: '#f4f4f1', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
       {/* ═══ LEFT SIDEBAR ═══ */}
-      <div style={{ background: '#fafaf8', borderRight: '0.5px solid #e2e0db', display: 'flex', flexDirection: 'column' }} data-testid="doc-sidebar">
-        <div style={{ padding: '16px 14px 12px', borderBottom: '0.5px solid #e2e0db' }}>
+      <div style={{ background: '#fafaf8', borderRight: '1px solid #e2e0db', display: 'flex', flexDirection: 'column' }} data-testid="doc-sidebar">
+        <div style={{ padding: '16px 14px 12px', borderBottom: '1px solid #e2e0db' }}>
           <div style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.5px', color: '#1a1a2e', marginBottom: 14, cursor: 'pointer' }} onClick={() => window.location.href = '/'}>Jas<span style={{ color: '#1a56db' }}>per</span></div>
           <button onClick={() => { setMode('generate'); }} data-testid="mode-generate"
-            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', borderRadius: 8, fontSize: 12, border: mode === 'generate' ? '0.5px solid #e2e0db' : '0.5px solid transparent', background: mode === 'generate' ? '#fff' : 'transparent', color: mode === 'generate' ? '#1a56db' : '#6b7280', fontWeight: mode === 'generate' ? 500 : 400, cursor: 'pointer', marginBottom: 4 }}>
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', borderRadius: 8, fontSize: 12, border: mode === 'generate' ? '1px solid #e2e0db' : '1px solid transparent', background: mode === 'generate' ? '#fff' : 'transparent', color: mode === 'generate' ? '#1a56db' : '#6b7280', fontWeight: mode === 'generate' ? 500 : 400, cursor: 'pointer', marginBottom: 4 }}>
             <Pen size={13} color={mode === 'generate' ? '#1a56db' : '#9ca3af'} />Generate any document
           </button>
           <button onClick={() => setMode('browse')} data-testid="mode-browse"
-            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', borderRadius: 8, fontSize: 12, border: mode === 'browse' ? '0.5px solid #e2e0db' : '0.5px solid transparent', background: mode === 'browse' ? '#fff' : 'transparent', color: mode === 'browse' ? '#1a56db' : '#6b7280', fontWeight: mode === 'browse' ? 500 : 400, cursor: 'pointer', justifyContent: 'space-between' }}>
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', borderRadius: 8, fontSize: 12, border: mode === 'browse' ? '1px solid #e2e0db' : '1px solid transparent', background: mode === 'browse' ? '#fff' : 'transparent', color: mode === 'browse' ? '#1a56db' : '#6b7280', fontWeight: mode === 'browse' ? 500 : 400, cursor: 'pointer', justifyContent: 'space-between' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 9 }}><Search size={13} color={mode === 'browse' ? '#1a56db' : '#9ca3af'} />Browse templates</span>
             <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 8, background: '#f3f4f6', color: '#9ca3af' }}>158</span>
           </button>
@@ -185,13 +185,13 @@ const DocumentLibrary = () => {
           {recentDocs.length === 0 && <div style={{ fontSize: 10, color: '#bbb', fontStyle: 'italic' }}>No documents yet</div>}
           {recentDocs.slice(0, 3).map(doc => (
             <div key={doc.doc_id} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 4px', cursor: 'pointer', borderRadius: 5 }} data-testid={`recent-doc-${doc.doc_id}`}>
-              <div style={{ width: 20, height: 20, borderRadius: 4, background: '#fff', border: '0.5px solid #e2e0db', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FileText size={9} color="#9ca3af" /></div>
+              <div style={{ width: 20, height: 20, borderRadius: 4, background: '#fff', border: '1px solid #e2e0db', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FileText size={9} color="#9ca3af" /></div>
               <span style={{ fontSize: 11, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.document_title || 'Untitled'}</span>
             </div>
           ))}
         </div>
         {mode === 'generate' && messages.length > 0 && (
-          <div style={{ padding: '10px 14px', borderTop: '0.5px solid #e2e0db' }}>
+          <div style={{ padding: '10px 14px', borderTop: '1px solid #e2e0db' }}>
             <button onClick={startNew} data-testid="new-conversation-btn" style={{ width: '100%', fontSize: 10, fontWeight: 600, color: '#1a56db', background: 'none', border: 'none', cursor: 'pointer' }}>+ New document</button>
           </div>
         )}
@@ -208,7 +208,7 @@ const DocumentLibrary = () => {
               </h1>
               <p style={{ fontSize: 13, color: '#6b7280', margin: '6px 0 18px' }}>James drafts it in seconds. Ready to sign.</p>
               {/* James strip */}
-              <div style={{ background: '#fafaf8', border: '0.5px solid #e2e0db', borderRadius: 9, padding: '9px 13px', display: 'flex', alignItems: 'center', gap: 10 }} data-testid="james-identity-bar">
+              <div style={{ background: '#ffffff', border: '1px solid #e2e0db', borderLeft: '3px solid #1a56db', borderRadius: 9, padding: '9px 13px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 2 }} data-testid="james-identity-bar">
                 <JA />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, fontWeight: 500, color: '#1a1a2e' }}>James · Senior Legal Advisor</div>
@@ -227,7 +227,7 @@ const DocumentLibrary = () => {
                 <>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 14 }} data-testid="james-opening-message">
                     <JA />
-                    <div style={{ maxWidth: '85%', padding: '11px 14px', borderRadius: '3px 12px 12px 12px', background: '#fafaf8', border: '0.5px solid #e2e0db', fontSize: 12, color: '#374151', lineHeight: 1.65 }}>
+                    <div style={{ maxWidth: '85%', padding: '11px 14px', borderRadius: '3px 12px 12px 12px', background: '#ffffff', border: '1px solid #d1d5db', fontSize: 12, color: '#374151', lineHeight: 1.65 }}>
                       Tell me what document you need — in plain English. I'll ask a few questions and generate a complete, legally sound document.
                       <div style={{ marginTop: 6 }}><span style={{ color: '#1a56db', fontWeight: 500 }}>Examples:</span> 'I need an NDA for a new partner' · 'Create a lease in New York' · 'Write a freelance contract'</div>
                     </div>
@@ -238,9 +238,9 @@ const DocumentLibrary = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 7 }}>
                       {CATS.map(c => (
                         <div key={c.key} onClick={() => sendMessage(`I need a ${c.name.toLowerCase()} document`)} data-testid={`cat-card-${c.key}`}
-                          style={{ padding: '11px 10px', border: '0.5px solid #e2e0db', borderRadius: 8, cursor: 'pointer', transition: 'all 0.15s' }}
-                          onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.style.background = '#eff6ff'; }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e0db'; e.currentTarget.style.background = 'transparent'; }}>
+                          style={{ padding: '11px 10px', border: '1px solid #e2e0db', borderRadius: 8, cursor: 'pointer', transition: 'all 0.15s', background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
+                          onMouseEnter={e => { e.currentTarget.style.border = '1.5px solid #1a56db'; e.currentTarget.style.background = '#eff6ff'; }}
+                          onMouseLeave={e => { e.currentTarget.style.border = '1px solid #e2e0db'; e.currentTarget.style.background = '#ffffff'; }}>
                           <div style={{ width: 28, height: 28, borderRadius: 7, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 5 }}>
                             <c.icon size={13} color={c.stroke} />
                           </div>
@@ -264,24 +264,24 @@ const DocumentLibrary = () => {
                   <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                     <JA />
                     <div style={{ maxWidth: '85%' }}>
-                      <div style={{ padding: '11px 14px', borderRadius: '3px 12px 12px 12px', background: '#fafaf8', border: '0.5px solid #e2e0db', fontSize: 12, color: '#374151', lineHeight: 1.65, whiteSpace: 'pre-wrap' }} dangerouslySetInnerHTML={{ __html: dt.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#1a56db">$1</strong>').replace(/\n/g, '<br/>') }} />
+                      <div style={{ padding: '11px 14px', borderRadius: '3px 12px 12px 12px', background: '#ffffff', border: '1px solid #d1d5db', fontSize: 12, color: '#374151', lineHeight: 1.65, whiteSpace: 'pre-wrap' }} dangerouslySetInnerHTML={{ __html: dt.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#1a56db">$1</strong>').replace(/\n/g, '<br/>') }} />
                       {msg.document && <DocumentPreviewCard content={msg.document} onEdit={() => inputRef.current?.focus()} onDownload={handleDownloadPdf} onSign={() => setSignModal(true)} />}
                     </div>
                   </div>
                 );
               })}
-              {sending && <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}><JA /><div style={{ padding: '11px 14px', borderRadius: '3px 12px 12px 12px', background: '#fafaf8', border: '0.5px solid #e2e0db', fontSize: 12, color: '#6b7280' }}>{latestDocContent ? 'James is updating the document' : messages.length > 2 ? 'James is drafting your document' : 'James is thinking'}...</div></div>}
+              {sending && <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}><JA /><div style={{ padding: '11px 14px', borderRadius: '3px 12px 12px 12px', background: '#ffffff', border: '1px solid #d1d5db', fontSize: 12, color: '#6b7280' }}>{latestDocContent ? 'James is updating the document' : messages.length > 2 ? 'James is drafting your document' : 'James is thinking'}...</div></div>}
               {limitReached && <div style={{ textAlign: 'center', padding: 16 }}><div style={{ display: 'inline-block', padding: '10px 20px', borderRadius: 10, background: '#fefce8', border: '0.5px solid #fde68a', fontSize: 12, color: '#854d0e' }}><Lock size={12} style={{ display: 'inline', marginRight: 4 }} />3 free documents used. <a href="/settings" style={{ color: '#1a56db', fontWeight: 600 }}>Upgrade to Pro</a></div></div>}
               <div ref={chatEndRef} />
             </div>
 
             {/* Footer */}
-            <div style={{ borderTop: '0.5px solid #e2e0db', background: '#fafaf8', padding: '13px 32px' }} data-testid="input-area">
+            <div style={{ borderTop: '1px solid #e2e0db', background: '#f4f4f1', padding: '13px 32px' }} data-testid="input-area">
               {!limitReached && (
                 <div style={{ display: 'flex', gap: 5, marginBottom: 9, overflowX: 'auto' }} data-testid="suggestion-chips">
                   {suggestions.map((s, i) => (
                     <button key={i} onClick={() => sendMessage(s)} data-testid={`suggestion-${i}`}
-                      style={{ flexShrink: 0, padding: '4px 11px', borderRadius: 16, fontSize: 11, border: '0.5px solid #e2e0db', color: '#6b7280', background: '#fff', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      style={{ flexShrink: 0, padding: '4px 11px', borderRadius: 16, fontSize: 11, border: '1px solid #e2e0db', color: '#6b7280', background: '#fff', cursor: 'pointer', whiteSpace: 'nowrap' }}
                       onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.style.color = '#1a56db'; }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e0db'; e.currentTarget.style.color = '#6b7280'; }}>
                       {s}
@@ -292,7 +292,7 @@ const DocumentLibrary = () => {
               <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
                 <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown} disabled={sending || limitReached}
                   placeholder="Describe the document you need..." data-testid="chat-input"
-                  style={{ flex: 1, background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 9, padding: '10px 13px', fontSize: 12, outline: 'none' }} />
+                  style={{ flex: 1, background: '#ffffff', border: '1px solid #d1d5db', borderRadius: 9, padding: '10px 13px', fontSize: 12, outline: 'none' }} />
                 <button onClick={() => sendMessage(input)} disabled={!input.trim() || sending || limitReached} data-testid="send-btn"
                   style={{ width: 34, height: 34, borderRadius: 8, background: '#1a56db', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: !input.trim() || sending ? 0.4 : 1 }}>
                   <ArrowUp size={15} color="#fff" />
@@ -307,14 +307,14 @@ const DocumentLibrary = () => {
             <div style={{ padding: '22px 28px 16px' }}>
               <div style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.5px', color: '#1a1a2e' }}>158 document templates</div>
               <div style={{ fontSize: 12, color: '#6b7280', marginTop: 3, marginBottom: 14 }}>Pre-filled by James · Jurisdiction-specific · Ready to sign</div>
-              <div style={{ display: 'flex', alignItems: 'center', border: '0.5px solid #e2e0db', borderRadius: 8, background: '#fafaf8', padding: '0 10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #d1d5db', borderRadius: 8, background: '#ffffff', padding: '0 10px' }}>
                 <Search size={13} color="#9ca3af" style={{ opacity: 0.4 }} />
                 <input value={browseSearch} onChange={e => setBrowseSearch(e.target.value)} placeholder="Search templates..."
                   style={{ flex: 1, border: 'none', background: 'transparent', padding: '8px 8px', fontSize: 12, color: '#374151', outline: 'none' }} data-testid="browse-search" />
               </div>
             </div>
             {/* Filter pills */}
-            <div style={{ display: 'flex', gap: 4, padding: '10px 28px', borderTop: '0.5px solid #e2e0db', borderBottom: '0.5px solid #e2e0db', overflowX: 'auto' }} data-testid="browse-filter-pills">
+            <div style={{ display: 'flex', gap: 4, padding: '10px 28px', borderTop: '1px solid #e2e0db', borderBottom: '1px solid #e2e0db', overflowX: 'auto' }} data-testid="browse-filter-pills">
               {FILTER_PILLS.map(f => (
                 <button key={f} onClick={() => setBrowseFilter(f)} data-testid={`filter-pill-${f}`}
                   style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', background: browseFilter === f ? '#1a56db' : 'transparent', color: browseFilter === f ? '#fff' : '#6b7280', fontWeight: browseFilter === f ? 600 : 400 }}>
@@ -329,9 +329,9 @@ const DocumentLibrary = () => {
                   const cat = CATS.find(c => c.key === t.cat) || CATS[0];
                   return (
                     <div key={i} onClick={() => switchToGenerate(t.name)} data-testid={`template-card-${i}`}
-                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '0.5px solid #e2e0db', borderRadius: 9, cursor: 'pointer', transition: 'border-color 0.15s' }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.querySelector('.gen-link').style.opacity = 1; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e0db'; e.currentTarget.querySelector('.gen-link').style.opacity = 0; }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '1px solid #e2e0db', borderRadius: 9, cursor: 'pointer', transition: 'all 0.15s', background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
+                      onMouseEnter={e => { e.currentTarget.style.border = '1.5px solid #1a56db'; e.currentTarget.style.background = '#eff6ff'; e.currentTarget.querySelector('.gen-link').style.opacity = 1; }}
+                      onMouseLeave={e => { e.currentTarget.style.border = '1px solid #e2e0db'; e.currentTarget.style.background = '#ffffff'; e.currentTarget.querySelector('.gen-link').style.opacity = 0; }}>
                       <div style={{ width: 32, height: 32, borderRadius: 7, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <cat.icon size={14} color={cat.stroke} />
                       </div>
