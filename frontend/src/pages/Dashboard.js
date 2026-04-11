@@ -2,542 +2,608 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { Plus, FileText, Loader2 } from 'lucide-react';
+import { Plus, FileText, Upload, Settings, MessageSquare, Scale, LogOut, BookOpen } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-/* ─── Situation cards for new case overlay ─── */
-const SITUATIONS = [
-  { icon: '🏠', title: "Mon propriétaire me cause des problèmes", desc: "Expulsion, loyer, réparations, dépôt", type: 'housing' },
-  { icon: '⚡', title: "J'ai reçu une lettre menaçante", desc: "Mise en demeure, avocat, huissier", type: 'debt' },
-  { icon: '💼', title: "Mon employeur me pose des problèmes", desc: "Licenciement, salaires, harcèlement", type: 'employment' },
-  { icon: '🛡️', title: "Mon assurance refuse de payer", desc: "Refus de remboursement, sinistre", type: 'insurance' },
-  { icon: '📄', title: "J'ai signé quelque chose d'inquiétant", desc: "Contrat, NDA, accord, engagement", type: 'contract' },
-  { icon: '⚖️', title: "J'ai reçu une convocation au tribunal", desc: "Jugement, dette, citation, audience", type: 'court' },
-  { icon: '💳', title: "On me réclame une dette", desc: "Collecteur, huissier, recouvrement", type: 'debt_collection' },
-  { icon: '💬', title: "Autre situation juridique", desc: "Décrivez votre problème à James", type: 'other' },
-];
-
-/* ─── Risk color helper ─── */
-const riskColor = (score) => {
-  if (score >= 70) return '#dc2626';
-  if (score >= 40) return '#f59e0b';
-  return '#16a34a';
+/* ── Language ── */
+const L = {
+  en: {
+    tagline: 'Your virtual legal cabinet',
+    jamesRole: 'Senior Legal Advisor',
+    stat1: '847K+', stat1l: 'live sources',
+    stat2: '20 yrs', stat2l: 'experience',
+    stat3: 'Live', stat3l: 'case law',
+    stat4: '#1', stat4l: 'Legal AI',
+    activeCases: 'Active cases',
+    newCase: 'Open a new case',
+    jamesBanner: 'James is analyzing your case in real time',
+    jamesSub: 'Legal AI · 20 years senior experience · Live case law',
+    credSources: '847K+ sources', credLive: 'Live', credUrgent: 'Urgent',
+    riskLabel: 'Jasper Risk Score',
+    riskHigh: 'High risk', riskMed: 'Medium risk', riskLow: 'Low risk',
+    dimFin: 'Financial', dimUrg: 'Urgency', dimLeg: 'Legal', dimCom: 'Complexity',
+    analysisTitle: 'James Analysis — Real-time update',
+    live: 'Live',
+    questionTitle: 'James needs clarification',
+    questionFallback: 'Upload additional documents to strengthen your case analysis.',
+    btnYes: 'Yes', btnNo: 'No', btnPartial: 'Partially',
+    overview: 'Overview',
+    critDeadline: 'Critical deadline',
+    days: 'days', expired: 'Expired', before: 'Before',
+    nextActions: 'Next actions',
+    documents: 'Documents', keyDoc: 'Key',
+    battleTitle: 'James vs Opposing counsel',
+    yourArgs: 'Your arguments', theirArgs: 'Their arguments',
+    overlayTitle: 'What is your problem?',
+    overlaySub: 'James will handle your case immediately.',
+    backDash: 'Back to dashboard',
+    // 8 situations (EN for USA)
+    sit: [
+      { icon: '🏠', bg: '#fef3c7', title: 'My landlord is causing problems', desc: 'Eviction, rent, repairs, deposit' },
+      { icon: '⚡', bg: '#fff5f5', title: 'I received a threatening letter', desc: 'Demand letter, attorney, bailiff' },
+      { icon: '💼', bg: '#f0fdf4', title: 'My employer is causing problems', desc: 'Termination, wages, harassment' },
+      { icon: '🛡️', bg: '#fff7ed', title: 'My insurance won\'t pay', desc: 'Claim denial, damages' },
+      { icon: '📄', bg: '#eff6ff', title: 'I signed something worrying', desc: 'Contract, NDA, agreement' },
+      { icon: '⚖️', bg: '#fdf4ff', title: 'I received a court summons', desc: 'Judgment, debt, hearing' },
+      { icon: '💳', bg: '#fff5f5', title: 'A debt collector is harassing me', desc: 'Collector, bailiff, recovery' },
+      { icon: '💬', bg: '#f0fdf4', title: 'Other legal situation', desc: 'Describe your problem to James' },
+    ],
+    noCase: 'No active case selected',
+    noCaseSub: 'Select a case from the sidebar or open a new one.',
+    openedOn: 'Opened', docCount: 'documents', updatedBy: 'Updated by James',
+    caseType: { housing: 'Housing', employment: 'Employment', debt: 'Debt', insurance: 'Insurance', contract: 'Contract', consumer: 'Consumer', family: 'Family', court: 'Court', nda: 'NDA', penal: 'Criminal', commercial: 'Commercial', other: 'Other' },
+    caseEmoji: { housing: '🏠', employment: '💼', debt: '💳', insurance: '🛡️', contract: '📄', consumer: '🛒', family: '👨‍👩‍👧', court: '⚖️', nda: '📄', penal: '⚖️', commercial: '🏢', other: '📋' },
+    deadlineIn: 'Deadline in',
+    navDash: 'Dashboard', navUpload: 'Upload', navCases: 'My cases', navLawyers: 'Lawyers', navDocs: 'Documents', navChat: 'Legal chat', navSettings: 'Settings',
+    addDoc: 'Add document', talkLawyer: 'Talk to a lawyer',
+    responseIn: 'Response in',
+  },
+  fr: {
+    tagline: 'Votre cabinet juridique virtuel',
+    jamesRole: 'Conseiller juridique senior',
+    stat1: '847K+', stat1l: 'sources live',
+    stat2: '20 ans', stat2l: 'expérience',
+    stat3: 'Live', stat3l: 'jurisprudence',
+    stat4: '#1', stat4l: 'IA juridique',
+    activeCases: 'Dossiers actifs',
+    newCase: 'Ouvrir un nouveau dossier',
+    jamesBanner: 'James analyse votre dossier en temps réel',
+    jamesSub: 'IA juridique · 20 ans d\'expérience senior · Jurisprudence live',
+    credSources: '847K+ sources', credLive: 'Live', credUrgent: 'Urgent',
+    riskLabel: 'Score de risque Jasper',
+    riskHigh: 'Risque élevé', riskMed: 'Risque modéré', riskLow: 'Risque faible',
+    dimFin: 'Financier', dimUrg: 'Urgence', dimLeg: 'Juridique', dimCom: 'Complexité',
+    analysisTitle: 'Analyse de James — Mise à jour en temps réel',
+    live: 'Live',
+    questionTitle: 'James a besoin d\'une précision',
+    questionFallback: 'Téléversez des documents supplémentaires pour renforcer l\'analyse de votre dossier.',
+    btnYes: 'Oui', btnNo: 'Non', btnPartial: 'Partiellement',
+    overview: 'Vue d\'ensemble',
+    critDeadline: 'Échéance critique',
+    days: 'jours', expired: 'Expiré', before: 'Avant le',
+    nextActions: 'Prochaines actions',
+    documents: 'Documents', keyDoc: 'Clé',
+    battleTitle: 'James vs Avocat adverse',
+    yourArgs: 'Vos arguments', theirArgs: 'Leurs arguments',
+    overlayTitle: 'Quel est votre problème ?',
+    overlaySub: 'James va prendre votre dossier en charge immédiatement.',
+    backDash: 'Retour au dashboard',
+    sit: [
+      { icon: '🏠', bg: '#fef3c7', title: 'Mon propriétaire me cause des problèmes', desc: 'Expulsion, loyer, réparations, dépôt' },
+      { icon: '⚡', bg: '#fff5f5', title: 'J\'ai reçu une lettre menaçante', desc: 'Mise en demeure, avocat, huissier' },
+      { icon: '💼', bg: '#f0fdf4', title: 'Mon employeur me pose des problèmes', desc: 'Licenciement, salaires, harcèlement' },
+      { icon: '🛡️', bg: '#fff7ed', title: 'Mon assurance refuse de payer', desc: 'Refus de remboursement, sinistre' },
+      { icon: '📄', bg: '#eff6ff', title: 'J\'ai signé quelque chose d\'inquiétant', desc: 'Contrat, NDA, accord, engagement' },
+      { icon: '⚖️', bg: '#fdf4ff', title: 'J\'ai reçu une convocation au tribunal', desc: 'Jugement, dette, citation, audience' },
+      { icon: '💳', bg: '#fff5f5', title: 'On me réclame une dette', desc: 'Collecteur, huissier, recouvrement' },
+      { icon: '💬', bg: '#f0fdf4', title: 'Autre situation juridique', desc: 'Décrivez votre problème à James' },
+    ],
+    noCase: 'Aucun dossier actif sélectionné',
+    noCaseSub: 'Sélectionnez un dossier dans la barre latérale ou ouvrez-en un nouveau.',
+    openedOn: 'Ouvert le', docCount: 'documents', updatedBy: 'Mis à jour par James',
+    caseType: { housing: 'Logement', employment: 'Emploi', debt: 'Dettes', insurance: 'Assurance', contract: 'Contrat', consumer: 'Consommation', family: 'Famille', court: 'Tribunal', nda: 'NDA', penal: 'Pénal', commercial: 'Commercial', other: 'Autre' },
+    caseEmoji: { housing: '🏠', employment: '💼', debt: '💳', insurance: '🛡️', contract: '📄', consumer: '🛒', family: '👨‍👩‍👧', court: '⚖️', nda: '📄', penal: '⚖️', commercial: '🏢', other: '📋' },
+    deadlineIn: 'Échéance dans',
+    navDash: 'Dashboard', navUpload: 'Téléverser', navCases: 'Mes dossiers', navLawyers: 'Avocats', navDocs: 'Documents', navChat: 'Chat juridique', navSettings: 'Paramètres',
+    addDoc: 'Ajouter un document', talkLawyer: 'Parler à un avocat',
+    responseIn: 'Réponse dans',
+  },
+  nl: {
+    tagline: 'Uw virtueel juridisch kantoor',
+    jamesRole: 'Senior Juridisch Adviseur',
+    stat1: '847K+', stat1l: 'live bronnen',
+    stat2: '20 jaar', stat2l: 'ervaring',
+    stat3: 'Live', stat3l: 'rechtspraak',
+    stat4: '#1', stat4l: 'Juridische AI',
+    activeCases: 'Actieve dossiers',
+    newCase: 'Nieuw dossier openen',
+    jamesBanner: 'James analyseert uw dossier in realtime',
+    jamesSub: 'Juridische AI · 20 jaar seniorervaring · Live rechtspraak',
+    credSources: '847K+ bronnen', credLive: 'Live', credUrgent: 'Dringend',
+    riskLabel: 'Jasper Risicoscore',
+    riskHigh: 'Hoog risico', riskMed: 'Gemiddeld risico', riskLow: 'Laag risico',
+    dimFin: 'Financieel', dimUrg: 'Urgentie', dimLeg: 'Juridisch', dimCom: 'Complexiteit',
+    analysisTitle: 'Analyse van James — Realtime update',
+    live: 'Live',
+    questionTitle: 'James heeft verduidelijking nodig',
+    questionFallback: 'Upload extra documenten om uw dossieranalyse te versterken.',
+    btnYes: 'Ja', btnNo: 'Nee', btnPartial: 'Gedeeltelijk',
+    overview: 'Overzicht',
+    critDeadline: 'Kritieke deadline',
+    days: 'dagen', expired: 'Verlopen', before: 'Voor',
+    nextActions: 'Volgende acties',
+    documents: 'Documenten', keyDoc: 'Sleutel',
+    battleTitle: 'James vs Tegenpartij',
+    yourArgs: 'Uw argumenten', theirArgs: 'Hun argumenten',
+    overlayTitle: 'Wat is uw probleem?',
+    overlaySub: 'James neemt uw dossier onmiddellijk in behandeling.',
+    backDash: 'Terug naar dashboard',
+    sit: [
+      { icon: '🏠', bg: '#fef3c7', title: 'Mijn verhuurder veroorzaakt problemen', desc: 'Uitzetting, huur, reparaties, borg' },
+      { icon: '⚡', bg: '#fff5f5', title: 'Ik heb een dreigbrief ontvangen', desc: 'Aanmaning, advocaat, deurwaarder' },
+      { icon: '💼', bg: '#f0fdf4', title: 'Mijn werkgever veroorzaakt problemen', desc: 'Ontslag, lonen, pesterijen' },
+      { icon: '🛡️', bg: '#fff7ed', title: 'Mijn verzekering weigert te betalen', desc: 'Weigering, schadeclaim' },
+      { icon: '📄', bg: '#eff6ff', title: 'Ik heb iets verontrustends getekend', desc: 'Contract, NDA, overeenkomst' },
+      { icon: '⚖️', bg: '#fdf4ff', title: 'Ik heb een dagvaarding ontvangen', desc: 'Vonnis, schuld, zitting' },
+      { icon: '💳', bg: '#fff5f5', title: 'Er wordt een schuld van mij geëist', desc: 'Incassobureau, deurwaarder' },
+      { icon: '💬', bg: '#f0fdf4', title: 'Andere juridische situatie', desc: 'Beschrijf uw probleem aan James' },
+    ],
+    noCase: 'Geen actief dossier geselecteerd',
+    noCaseSub: 'Selecteer een dossier in de zijbalk of open een nieuw dossier.',
+    openedOn: 'Geopend op', docCount: 'documenten', updatedBy: 'Bijgewerkt door James',
+    caseType: { housing: 'Huisvesting', employment: 'Werk', debt: 'Schulden', insurance: 'Verzekering', contract: 'Contract', consumer: 'Consument', family: 'Familie', court: 'Rechtbank', nda: 'NDA', penal: 'Strafrecht', commercial: 'Commercieel', other: 'Overig' },
+    caseEmoji: { housing: '🏠', employment: '💼', debt: '💳', insurance: '🛡️', contract: '📄', consumer: '🛒', family: '👨‍👩‍👧', court: '⚖️', nda: '📄', penal: '⚖️', commercial: '🏢', other: '📋' },
+    deadlineIn: 'Deadline in',
+    navDash: 'Dashboard', navUpload: 'Uploaden', navCases: 'Mijn dossiers', navLawyers: 'Advocaten', navDocs: 'Documenten', navChat: 'Juridische chat', navSettings: 'Instellingen',
+    addDoc: 'Document toevoegen', talkLawyer: 'Praat met een advocaat',
+    responseIn: 'Reactie in',
+  },
 };
 
-const riskLevel = (score) => {
-  if (score >= 70) return 'Risque élevé';
-  if (score >= 40) return 'Risque modéré';
-  return 'Risque faible';
+const getLang = (u) => {
+  const lang = u?.language || 'en';
+  if (lang === 'nl') return 'nl';
+  if (lang === 'fr' || lang === 'fr-BE') return 'fr';
+  return 'en';
 };
 
-const typeLabel = (type) => {
-  const map = { housing: '🏠 Dossier logement', employment: '💼 Dossier emploi', debt: '⚡ Dossier dette',
-    contract: '📄 Dossier contrat', insurance: '🛡️ Dossier assurance', court: '⚖️ Dossier tribunal',
-    debt_collection: '💳 Dossier recouvrement', consumer: '🛡️ Dossier consommation', family: '🏠 Dossier famille',
-    other: '📄 Dossier juridique' };
-  return map[type] || '📄 Dossier juridique';
+/* ── Helpers ── */
+const riskColor = (s) => s >= 70 ? '#dc2626' : s >= 40 ? '#f59e0b' : s > 0 ? '#16a34a' : '#9ca3af';
+const daysUntil = (d) => { if (!d) return null; return Math.ceil((new Date(d) - new Date()) / 86400000); };
+
+const formatDate = (d, lang) => {
+  if (!d) return '';
+  const dt = new Date(d);
+  return lang === 'en'
+    ? dt.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+    : lang === 'nl'
+      ? dt.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' })
+      : dt.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 };
 
-const typeBadgeColor = (type) => {
-  const map = { housing: { bg: '#fef3c7', text: '#92400e', border: '#fde68a' }, employment: { bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' },
-    debt: { bg: '#fef2f2', text: '#991b1b', border: '#fecaca' }, contract: { bg: '#f5f3ff', text: '#5b21b6', border: '#ddd6fe' },
-    insurance: { bg: '#f0fdf4', text: '#166534', border: '#86efac' } };
-  return map[type] || { bg: '#f5f5f5', text: '#555', border: '#e5e5e5' };
-};
+const pulse = `@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`;
 
-/* ─── Finding text extractor ─── */
-const findingText = (f) => {
-  if (typeof f === 'string') return f;
-  return f.text || f.texte || f.description || f.constatation || f.issue || f.details || f.finding || JSON.stringify(f);
-};
-
-/* ─── Main Dashboard ─── */
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const lang = getLang(user);
+  const t = L[lang] || L.en;
+
   const [cases, setCases] = useState([]);
-  const [selectedCase, setSelectedCase] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState(null);
   const [showOverlay, setShowOverlay] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [reanalyzing, setReanalyzing] = useState(false);
 
-  // New case flow state
-  const [newCaseStep, setNewCaseStep] = useState('select'); // 'select' | 'chat' | 'upload' | 'analyzing'
-  const [selectedSituation, setSelectedSituation] = useState(null);
-  const [chatMessages, setChatMessages] = useState([]);
-  const [chatInput, setChatInput] = useState('');
-  const [chatSending, setChatSending] = useState(false);
-  const [questionIndex, setQuestionIndex] = useState(0);
+  const fetchCases = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API}/cases`, { withCredentials: true });
+      const sorted = (res.data || []).sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0));
+      setCases(sorted);
+      if (sorted.length > 0 && !selectedId) setSelectedId(sorted[0].case_id);
+    } catch (e) { /* ok */ }
+    setLoading(false);
+  }, [selectedId]);
 
-  // Load cases
-  useEffect(() => {
-    const fetchCases = async () => {
-      try {
-        const res = await axios.get(`${API}/cases`, { withCredentials: true });
-        const sorted = res.data.sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0));
-        setCases(sorted);
-        if (sorted.length > 0) setSelectedCase(sorted[0]);
-      } catch (e) { /* ok */ }
-      setLoading(false);
-    };
-    fetchCases();
-  }, []);
+  useEffect(() => { fetchCases(); }, [fetchCases]);
 
-  const selectCase = (c) => setSelectedCase(c);
-
-  // New case: situation selected -> James asks questions
-  const handleSituationSelect = (sit) => {
-    setSelectedSituation(sit);
-    setNewCaseStep('chat');
-    setQuestionIndex(0);
-    const questions = getQuestionsForType(sit.type);
-    setChatMessages([
-      { role: 'james', text: `Je prends votre dossier en charge. ${sit.title.toLowerCase()} — je connais bien ce type de situation.` },
-      { role: 'james', text: questions[0] }
-    ]);
+  const handleReanalyze = async () => {
+    if (!selectedId || reanalyzing) return;
+    setReanalyzing(true);
+    try {
+      await axios.post(`${API}/cases/${selectedId}/reanalyze`, {}, { withCredentials: true });
+      await fetchCases();
+    } catch (e) { /* rate limit or other error */ }
+    setReanalyzing(false);
   };
 
-  const getQuestionsForType = (type) => {
-    const base = [
-      "Pour commencer, pouvez-vous me décrire brièvement votre situation en quelques phrases ?",
-      "Quand est-ce que cette situation a commencé ? Y a-t-il une date ou un délai important à respecter ?",
-      "Avez-vous déjà reçu ou envoyé des documents liés à cette affaire ? (lettres, contrats, emails...)",
-      "Parfait. Si vous avez un document à me montrer, téléversez-le maintenant. Sinon, je lance l'analyse avec ce que vous m'avez dit."
-    ];
-    return base;
-  };
-
-  const handleChatSend = () => {
-    if (!chatInput.trim() || chatSending) return;
-    const text = chatInput.trim();
-    setChatInput('');
-    setChatMessages(prev => [...prev, { role: 'user', text }]);
-
-    const questions = getQuestionsForType(selectedSituation?.type);
-    const nextQ = questionIndex + 1;
-
-    if (nextQ < questions.length - 1) {
-      setQuestionIndex(nextQ);
-      setTimeout(() => {
-        setChatMessages(prev => [...prev, { role: 'james', text: questions[nextQ] }]);
-      }, 600);
-    } else {
-      // Last question = upload prompt
-      setTimeout(() => {
-        setChatMessages(prev => [...prev, { role: 'james', text: questions[questions.length - 1] }]);
-        setNewCaseStep('upload');
-      }, 600);
-    }
-  };
-
-  const handleUploadAndAnalyze = () => {
-    // Navigate to upload page to use existing upload flow
-    setShowOverlay(false);
-    navigate('/upload');
-  };
-
-  const handleSkipUpload = () => {
-    setShowOverlay(false);
-    navigate('/upload');
-  };
-
-  // ─── Derived data for selected case ───
-  const sc = selectedCase;
-  const scColor = sc ? riskColor(sc.risk_score || 0) : '#999';
-  const scDaysLeft = sc?.deadline ? Math.ceil((new Date(sc.deadline) - new Date()) / 86400000) : null;
+  const sc = cases.find(c => c.case_id === selectedId);
   const findings = sc?.ai_findings || [];
-  const nextSteps = sc?.ai_next_steps || sc?.immediate_actions || [];
-  const battle = sc?.battle_preview || {};
-  const userArgs = battle?.user_side?.strong_arguments || [];
-  const oppArgs = battle?.opposing_side?.strong_arguments || battle?.opposing_side?.arguments_probables || [];
-  const laws = sc?.applicable_laws || [];
-  const docs = []; // We'll show doc_count from case
-  const docCount = sc?.document_count || 0;
-
-  if (loading) {
-    return <div className="-m-7 flex items-center justify-center" style={{ height: '680px', background: '#f8f7f4' }}><Loader2 size={20} className="animate-spin text-[#1a56db]" /></div>;
-  }
+  const steps = sc?.ai_next_steps || [];
+  const bp = sc?.battle_preview;
+  const docs = []; // documents are displayed from findings context
+  const dl = daysUntil(sc?.deadline);
+  const score = sc?.risk_score || 0;
+  const scoreColor = riskColor(score);
+  const riskText = score >= 70 ? t.riskHigh : score >= 40 ? t.riskMed : score > 0 ? t.riskLow : '—';
+  const cType = sc?.type || 'other';
 
   return (
-    <div className="-m-7" data-testid="dashboard-cabinet">
-      <style>{`
-        @keyframes jcPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-      `}</style>
+    <>
+      <style>{pulse}</style>
+      <div data-testid="dashboard-page" style={{
+        position: 'fixed', inset: 0, zIndex: 50,
+        display: 'grid', gridTemplateColumns: '260px 1fr 240px',
+        background: '#f8f7f4', borderRadius: 0, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        overflow: 'hidden',
+      }}>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 240px', height: '680px', background: '#f8f7f4', borderRadius: '16px', overflow: 'hidden', border: '0.5px solid #e2e0db', width: '100%', position: 'relative', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: '#1a1a2e' }}>
-
-        {/* ════════ LEFT SIDEBAR ════════ */}
-        <div style={{ background: '#fff', borderRight: '0.5px solid #e2e0db', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} data-testid="cabinet-sidebar">
+        {/* ═══ LEFT SIDEBAR ═══ */}
+        <div data-testid="left-sidebar" style={{
+          background: '#fff', borderRight: '0.5px solid #e2e0db',
+          display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        }}>
           {/* Logo */}
           <div style={{ padding: '18px 14px 14px', borderBottom: '0.5px solid #f0ede8' }}>
-            <div style={{ fontSize: '19px', fontWeight: 600, letterSpacing: '-0.8px', marginBottom: '1px' }}>Jas<span style={{ color: '#1a56db' }}>per</span></div>
-            <div style={{ fontSize: '9px', color: '#9ca3af', letterSpacing: '0.3px' }}>Votre cabinet juridique virtuel</div>
+            <div style={{ fontSize: 19, fontWeight: 500, color: '#1a1a2e', letterSpacing: '0.3px' }}>
+              Jas<span style={{ color: '#1a56db' }}>per</span>
+            </div>
+            <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 1 }}>{t.tagline}</div>
           </div>
 
-          {/* James card */}
-          <div style={{ margin: '10px', padding: '11px', background: '#eff6ff', borderRadius: '11px', border: '0.5px solid #bfdbfe' }} data-testid="james-card">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '8px' }}>
-              <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, color: '#fff', flexShrink: 0 }}>J</div>
+          {/* James Card */}
+          <div style={{ margin: 10, padding: 11, background: '#eff6ff', borderRadius: 11, border: '0.5px solid #bfdbfe' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 8 }}>
+              <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', flexShrink: 0 }}>J</div>
               <div>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: '#1e40af' }}>James</div>
-                <div style={{ fontSize: '9px', color: '#3b82f6' }}>Senior Legal Advisor</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#1e40af' }}>James</div>
+                <div style={{ fontSize: 9, color: '#3b82f6' }}>{t.jamesRole}</div>
               </div>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', marginLeft: 'auto', animation: 'jcPulse 1.5s infinite' }} />
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', marginLeft: 'auto', animation: 'pulse 1.5s infinite' }} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
-              {[{ v: '847K+', l: 'sources live' }, { v: '20 ans', l: "expérience" }, { v: 'Live', l: 'jurisprudence' }, { v: '#1', l: 'IA juridique' }].map((s, i) => (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.8)', borderRadius: '6px', padding: '5px 7px', fontSize: '9px', color: '#1e40af', fontWeight: 500, textAlign: 'center', lineHeight: 1.3 }}>
-                  <span style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#1a56db' }}>{s.v}</span>{s.l}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+              {[[t.stat1, t.stat1l], [t.stat2, t.stat2l], [t.stat3, t.stat3l], [t.stat4, t.stat4l]].map(([v, l], i) => (
+                <div key={i} style={{ background: 'rgba(255,255,255,0.8)', borderRadius: 6, padding: '5px 7px', fontSize: 9, color: '#1e40af', fontWeight: 500, textAlign: 'center', lineHeight: 1.3 }}>
+                  <span style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#1a56db' }}>{v}</span>{l}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Active cases */}
-          <div style={{ padding: '8px 14px 4px', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#9ca3af', fontWeight: 600 }}>Dossiers actifs</div>
+          {/* Nav Links (compact) */}
+          <div style={{ padding: '4px 10px', display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            {[
+              { icon: <Upload size={10} />, label: t.navUpload, to: '/upload' },
+              { icon: <Scale size={10} />, label: t.navLawyers, to: '/lawyers' },
+              { icon: <BookOpen size={10} />, label: t.navDocs, to: '/documents' },
+              { icon: <MessageSquare size={10} />, label: t.navChat, to: '/chat' },
+              { icon: <Settings size={10} />, label: t.navSettings, to: '/settings' },
+            ].map((n, i) => (
+              <button key={i} onClick={() => navigate(n.to)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 7px', fontSize: 9, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 5 }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#f8f7f4'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}>
+                {n.icon}{n.label}
+              </button>
+            ))}
+          </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-            {cases.slice(0, 8).map((c) => {
-              const isActive = sc?.case_id === c.case_id;
-              const color = riskColor(c.risk_score || 0);
-              const dl = c.deadline ? Math.ceil((new Date(c.deadline) - new Date()) / 86400000) : null;
+          {/* Active Cases Section */}
+          <div style={{ padding: '8px 14px 4px', fontSize: 9, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t.activeCases}</div>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {cases.map(c => {
+              const isActive = c.case_id === selectedId;
+              const cScore = c.risk_score || 0;
+              const cColor = riskColor(cScore);
+              const cDl = daysUntil(c.deadline);
+              const cTypeName = t.caseType[c.type] || t.caseType.other;
               return (
-                <div key={c.case_id} onClick={() => selectCase(c)}
-                  style={{ margin: '2px 7px', padding: '9px', borderRadius: '9px', cursor: 'pointer', border: `0.5px solid ${isActive ? '#bfdbfe' : 'transparent'}`, background: isActive ? '#eff6ff' : 'transparent', transition: 'background 0.1s' }}
-                  data-testid={`sidebar-case-${c.case_id}`}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '7px' }}>
-                    <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: color, flexShrink: 0, marginTop: '3px' }} />
-                    <div style={{ fontSize: '11px', fontWeight: 500, flex: 1, lineHeight: 1.3 }}>{c.title || 'Sans titre'}</div>
-                    <div style={{ fontSize: '12px', fontWeight: 800, color, whiteSpace: 'nowrap', marginLeft: 'auto' }}>{c.risk_score || '—'}</div>
+                <div key={c.case_id} data-testid={`case-item-${c.case_id}`}
+                  onClick={() => setSelectedId(c.case_id)}
+                  style={{
+                    margin: '2px 7px', padding: 9, borderRadius: 9, cursor: 'pointer',
+                    border: isActive ? '0.5px solid #bfdbfe' : '0.5px solid transparent',
+                    background: isActive ? '#eff6ff' : 'transparent',
+                  }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#f8f7f4'; }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: cColor, flexShrink: 0, marginTop: 3 }} />
+                    <div style={{ fontSize: 11, fontWeight: 500, color: '#1a1a2e', flex: 1, lineHeight: 1.3 }}>{c.title || 'Untitled'}</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: cColor, marginLeft: 'auto', whiteSpace: 'nowrap' }}>{cScore > 0 ? cScore : '—'}</div>
                   </div>
-                  <div style={{ fontSize: '9px', color: '#9ca3af', marginTop: '2px', marginLeft: '14px' }}>
-                    {(c.type || 'Autre').charAt(0).toUpperCase() + (c.type || 'autre').slice(1)} · {c.document_count || 0} document{(c.document_count || 0) !== 1 ? 's' : ''}
-                  </div>
-                  {dl !== null && dl <= 14 && (
-                    <div style={{ fontSize: '9px', fontWeight: 500, marginTop: '2px', marginLeft: '14px', color: dl <= 3 ? '#dc2626' : dl <= 7 ? '#f59e0b' : '#6b7280' }}>
-                      {dl <= 0 ? 'Délai expiré' : dl <= 3 ? `⚡ Échéance dans ${dl} jour${dl > 1 ? 's' : ''}` : `Réponse dans ${dl} jours`}
+                  <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2, marginLeft: 14 }}>{cTypeName} · {c.document_count || 0} {t.docCount}</div>
+                  {cDl !== null && (
+                    <div style={{ fontSize: 9, fontWeight: 500, marginTop: 2, marginLeft: 14, color: cDl <= 3 ? '#dc2626' : cDl <= 14 ? '#f59e0b' : '#6b7280' }}>
+                      {cDl <= 0 ? `⚡ ${t.expired}` : `${cDl <= 7 ? '⚡ ' : ''}${t.deadlineIn} ${cDl} ${t.days}`}
                     </div>
                   )}
                 </div>
               );
             })}
+            {cases.length === 0 && !loading && (
+              <div style={{ padding: '20px 14px', textAlign: 'center', fontSize: 9, color: '#9ca3af' }}>{t.noCase}</div>
+            )}
           </div>
 
-          {/* Spacer + New case button */}
-          <div style={{ flex: '0 0 auto' }} />
-          <button onClick={() => { setShowOverlay(true); setNewCaseStep('select'); setSelectedSituation(null); setChatMessages([]); }}
-            style={{ margin: '10px', padding: '10px', background: '#1a56db', color: '#fff', borderRadius: '9px', fontSize: '11px', fontWeight: 500, cursor: 'pointer', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', border: 'none', width: 'calc(100% - 20px)' }}
-            data-testid="new-case-btn">
-            <Plus size={13} strokeWidth={2.5} /> Ouvrir un nouveau dossier
+          {/* Spacer + New Case Button */}
+          <div style={{ padding: 10 }}>
+            <button data-testid="new-case-btn" onClick={() => setShowOverlay(true)} style={{
+              width: '100%', padding: '10px 0', background: '#1a56db', color: '#fff',
+              border: 'none', borderRadius: 9, fontSize: 11, fontWeight: 600,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}>
+              <Plus size={13} />{t.newCase}
+            </button>
+          </div>
+
+          {/* Logout */}
+          <button onClick={() => { logout(); navigate('/login'); }} style={{
+            padding: '8px 14px', fontSize: 9, color: '#9ca3af', background: 'none', border: 'none',
+            borderTop: '0.5px solid #f0ede8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            <LogOut size={10} />{lang === 'fr' ? 'Déconnexion' : lang === 'nl' ? 'Uitloggen' : 'Sign out'}
           </button>
         </div>
 
-        {/* ════════ MAIN AREA ════════ */}
+        {/* ═══ MAIN CENTER ═══ */}
         <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          {/* James banner */}
-          <div style={{ padding: '12px 20px', background: '#fff', borderBottom: '0.5px solid #e2e0db', display: 'flex', alignItems: 'center', gap: '12px' }} data-testid="james-banner">
-            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: 700, color: '#fff', flexShrink: 0, position: 'relative' }}>
-              J
-              <div style={{ position: 'absolute', bottom: '1px', right: '1px', width: '9px', height: '9px', borderRadius: '50%', background: '#22c55e', border: '2px solid #fff' }} />
+          {/* James Banner */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10, padding: '12px 20px',
+            background: '#fff', borderBottom: '0.5px solid #f0ede8',
+          }}>
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#fff' }}>J</div>
+              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: '50%', background: '#22c55e', border: '2px solid #fff' }} />
             </div>
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: 600, letterSpacing: '-0.3px' }}>James analyse votre dossier en temps réel</div>
-              <div style={{ fontSize: '9px', color: '#6b7280', marginTop: '1px' }}>IA juridique · 20 ans d'expérience senior · Jurisprudence live</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>{t.jamesBanner}</div>
+              <div style={{ fontSize: 9, color: '#6b7280', marginTop: 1 }}>{t.jamesSub}</div>
             </div>
-            <div style={{ display: 'flex', gap: '5px', marginLeft: 'auto' }}>
-              {['847K+ sources', 'Live', '⚡ Action requise'].map((cred, i) => (
-                <div key={i} style={{ fontSize: '9px', padding: '3px 8px', borderRadius: '20px', fontWeight: 500, whiteSpace: 'nowrap',
-                  background: i === 2 ? '#fef3c7' : '#f3f4f6', color: i === 2 ? '#92400e' : '#6b7280', border: i === 2 ? '0.5px solid #fde68a' : '0.5px solid #e5e7eb' }}>
-                  {cred}
-                </div>
-              ))}
+            <div style={{ display: 'flex', gap: 5, marginLeft: 'auto' }}>
+              <div style={{ padding: '4px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#eff6ff', color: '#1d4ed8', border: '0.5px solid #bfdbfe' }}>{t.credSources}</div>
+              <div style={{ padding: '4px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#f0fdf4', color: '#15803d', border: '0.5px solid #86efac' }}>{t.credLive}</div>
+              {sc && score >= 70 && <div style={{ padding: '4px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#fff5f5', color: '#dc2626', border: '0.5px solid #fca5a5' }}>⚡ {t.credUrgent}</div>}
             </div>
           </div>
 
-          {/* Case view */}
-          {sc ? (
-            <div style={{ flex: 1, padding: '18px 20px', overflowY: 'auto' }} data-testid="case-view">
-              {/* Type badge */}
-              {(() => { const bc = typeBadgeColor(sc.type); return (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '9px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px', marginBottom: '9px', textTransform: 'uppercase', letterSpacing: '0.5px', background: bc.bg, color: bc.text, border: `0.5px solid ${bc.border}` }}>{typeLabel(sc.type)}</div>
-              ); })()}
-
-              {/* Title */}
-              <div style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.8px', marginBottom: '3px' }} data-testid="case-title">{sc.title || 'Sans titre'}</div>
-              <div style={{ fontSize: '10px', color: '#6b7280', marginBottom: '14px' }}>
-                Ouvert le {new Date(sc.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} · {docCount} document{docCount !== 1 ? 's' : ''} · Mis à jour {sc.updated_at ? 'par James' : 'aujourd\'hui'}
+          {/* Case View */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+            {!sc ? (
+              <div style={{ textAlign: 'center', padding: '80px 20px' }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>{t.noCase}</div>
+                <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>{t.noCaseSub}</div>
+                <button onClick={() => setShowOverlay(true)} style={{
+                  marginTop: 16, padding: '8px 20px', background: '#1a56db', color: '#fff',
+                  border: 'none', borderRadius: 9, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                }}>{t.newCase}</button>
               </div>
-
-              {/* Score row */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '14px', alignItems: 'center', background: '#fff', borderRadius: '12px', padding: '14px 18px', marginBottom: '10px', border: '0.5px solid #e2e0db' }} data-testid="score-row">
-                <div>
-                  <div style={{ fontSize: '9px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '5px' }}>Score de risque Jasper</div>
-                  <div style={{ fontSize: '52px', fontWeight: 800, letterSpacing: '-2px', lineHeight: 1, color: scColor }} data-testid="risk-score-big">{sc.risk_score || '—'}</div>
-                  <div style={{ fontSize: '9px', fontWeight: 600, color: scColor, marginTop: '2px' }}>{riskLevel(sc.risk_score || 0)}</div>
+            ) : (
+              <>
+                {/* Case type badge + title */}
+                <div style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#fffbeb', border: '0.5px solid #fde68a', color: '#92400e', marginBottom: 8 }}>
+                  {(t.caseEmoji[cType] || '📋')} {lang === 'fr' ? 'Dossier' : lang === 'nl' ? 'Dossier' : 'Case'} {t.caseType[cType] || cType}
                 </div>
-                <div>
-                  <div style={{ height: '5px', background: '#f3f4f6', borderRadius: '3px', overflow: 'hidden', marginBottom: '9px' }}>
-                    <div style={{ height: '100%', borderRadius: '3px', background: scColor, width: `${sc.risk_score || 0}%` }} />
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '5px' }}>
-                    {[
-                      { v: sc.risk_financial || '—', l: 'Financier' },
-                      { v: sc.risk_urgency || '—', l: 'Urgence' },
-                      { v: sc.risk_legal_strength || '—', l: 'Juridique' },
-                      { v: sc.risk_complexity || '—', l: 'Complexité' },
-                    ].map((d, i) => (
-                      <div key={i} style={{ background: '#f8f7f4', borderRadius: '7px', padding: '6px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '14px', fontWeight: 800, color: riskColor(typeof d.v === 'number' ? d.v : 50) }}>{d.v}</div>
-                        <div style={{ fontSize: '8px', color: '#9ca3af', marginTop: '1px' }}>{d.l}</div>
-                      </div>
-                    ))}
-                  </div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e', marginBottom: 4 }}>{sc.title}</div>
+                <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>{t.openedOn} {formatDate(sc.created_at, lang)}</span>
+                  <span style={{ color: '#d1d5db' }}>·</span>
+                  <span>{sc.document_count || 0} {t.docCount}</span>
+                  <span style={{ color: '#d1d5db' }}>·</span>
+                  <span>{t.updatedBy}</span>
+                  <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                    <button onClick={() => navigate('/upload')} style={{ fontSize: 9, padding: '4px 10px', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#374151' }} data-testid="add-doc-btn">{t.addDoc}</button>
+                    <button onClick={() => navigate('/lawyers')} style={{ fontSize: 9, padding: '4px 10px', background: '#1a56db', border: 'none', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#fff' }} data-testid="talk-lawyer-btn">{t.talkLawyer}</button>
+                    {score <= 0 && <button onClick={handleReanalyze} disabled={reanalyzing} style={{ fontSize: 9, padding: '4px 10px', background: reanalyzing ? '#9ca3af' : '#16a34a', border: 'none', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#fff' }} data-testid="reanalyze-btn">{reanalyzing ? '...' : (lang === 'fr' ? 'Ré-analyser' : lang === 'nl' ? 'Heranalyse' : 'Re-analyze')}</button>}
+                  </span>
                 </div>
-              </div>
 
-              {/* James Analysis */}
-              {findings.length > 0 && (
-                <div style={{ background: '#fff', borderRadius: '12px', padding: '14px 18px', marginBottom: '10px', border: '0.5px solid #e2e0db' }} data-testid="james-analysis">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '10px' }}>
-                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: 700, color: '#fff' }}>J</div>
-                    <div style={{ fontSize: '11px', fontWeight: 600 }}>Analyse de James — Mise à jour en temps réel</div>
-                    <div style={{ fontSize: '9px', color: '#22c55e', fontWeight: 600, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                      <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#22c55e', animation: 'jcPulse 1.5s infinite' }} /> LIVE
+                {/* Risk Score Row */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 14, alignItems: 'center', background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
+                  <div>
+                    <div style={{ fontSize: 9, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 5 }}>{t.riskLabel}</div>
+                    <div data-testid="risk-score-big" style={{ fontSize: 52, fontWeight: 800, letterSpacing: -2, lineHeight: 1, color: scoreColor }}>{score || '—'}</div>
+                    <div style={{ fontSize: 9, color: scoreColor, fontWeight: 600, marginTop: 2 }}>{riskText}</div>
+                  </div>
+                  <div>
+                    <div style={{ height: 5, background: '#f3f4f6', borderRadius: 3, overflow: 'hidden', marginBottom: 9 }}>
+                      <div style={{ height: '100%', borderRadius: 3, background: scoreColor, width: `${score}%`, transition: 'width 0.5s' }} />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
+                      {[
+                        [sc.risk_financial, t.dimFin],
+                        [sc.risk_urgency, t.dimUrg],
+                        [sc.risk_legal_strength, t.dimLeg],
+                        [sc.risk_complexity, t.dimCom],
+                      ].map(([v, label], i) => (
+                        <div key={i} style={{ background: '#f8f7f4', borderRadius: 7, padding: 6, textAlign: 'center' }}>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: riskColor(v || 0) }}>{v || '—'}</div>
+                          <div style={{ fontSize: 8, color: '#9ca3af', marginTop: 1 }}>{label}</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  {findings.slice(0, 3).map((f, i) => {
-                    const fText = findingText(f);
-                    const impact = typeof f === 'object' ? f.impact : null;
-                    const dotColor = impact === 'high' || impact === 'élevé' ? '#dc2626' : impact === 'positive' || impact === 'positif' ? '#16a34a' : '#f59e0b';
-                    const lawRef = typeof f === 'object' ? (f.legal_reference || f.reference_legale || f.base_legale) : null;
-                    const lawName = typeof lawRef === 'object' ? (lawRef.name || lawRef.nom) : lawRef;
-                    const lawDesc = typeof lawRef === 'object' ? (lawRef.description || lawRef.implication) : null;
+                </div>
+
+                {/* James Analysis */}
+                <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff' }}>J</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e' }}>{t.analysisTitle}</div>
+                    <div style={{ marginLeft: 'auto', fontSize: 9, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e', animation: 'pulse 1.5s infinite' }} />
+                      {t.live}
+                    </div>
+                  </div>
+                  {findings.length === 0 && <div style={{ fontSize: 11, color: '#9ca3af', padding: '10px 0' }}>{t.questionFallback}</div>}
+                  {findings.map((f, i) => {
+                    const fColor = f.impact === 'high' || f.type === 'risk' ? '#dc2626' : f.impact === 'low' || f.type === 'opportunity' ? '#16a34a' : '#f59e0b';
                     return (
-                      <div key={i} style={{ padding: '9px 0', borderBottom: i < Math.min(findings.length, 3) - 1 ? '0.5px solid #f3f4f6' : 'none', display: 'flex', alignItems: 'flex-start', gap: '7px' }}>
-                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, flexShrink: 0, marginTop: '4px' }} />
+                      <div key={i} style={{ padding: '9px 0', borderBottom: i < findings.length - 1 ? '0.5px solid #f3f4f6' : 'none', display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: fColor, flexShrink: 0, marginTop: 4 }} />
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: '11px', color: '#374151', lineHeight: 1.55 }} dangerouslySetInnerHTML={{ __html: fText.replace(/\*\*(.*?)\*\*/g, '<b style="color:#1a1a2e;font-weight:600">$1</b>') }} />
-                          {lawName && (
-                            <div style={{ marginTop: '5px', padding: '5px 9px', background: '#eff6ff', borderLeft: '2px solid #1a56db', borderRadius: '0 5px 5px 0' }}>
-                              <div style={{ fontSize: '9px', fontWeight: 600, color: '#1d4ed8' }}>{lawName}</div>
-                              {lawDesc && <div style={{ fontSize: '8px', color: '#3b82f6', marginTop: '1px' }}>{lawDesc}</div>}
+                          <div style={{ fontSize: 11, color: '#374151', lineHeight: 1.55 }} dangerouslySetInnerHTML={{ __html: (f.text || '').replace(/\*\*(.*?)\*\*/g, '<b style="color:#1a1a2e;font-weight:600">$1</b>') }} />
+                          {f.legal_ref && (
+                            <div style={{ marginTop: 5, padding: '5px 9px', background: '#eff6ff', borderLeft: '2px solid #1a56db', borderRadius: '0 5px 5px 0' }}>
+                              <div style={{ fontSize: 9, fontWeight: 600, color: '#1d4ed8' }}>{f.legal_ref}</div>
+                              {f.jurisprudence && <div style={{ fontSize: 8, color: '#3b82f6', marginTop: 1 }}>{f.jurisprudence}</div>}
                             </div>
                           )}
                         </div>
                       </div>
                     );
                   })}
-                  {/* Applicable laws from case data */}
-                  {laws.length > 0 && findings.every(f => !f.legal_reference && !f.reference_legale) && (
-                    <div style={{ marginTop: '8px' }}>
-                      {laws.slice(0, 2).map((law, i) => (
-                        <div key={i} style={{ marginTop: '5px', padding: '5px 9px', background: '#eff6ff', borderLeft: '2px solid #1a56db', borderRadius: '0 5px 5px 0' }}>
-                          <div style={{ fontSize: '9px', fontWeight: 600, color: '#1d4ed8' }}>{typeof law === 'string' ? law : law.name || law.nom || law.reference}</div>
-                          {typeof law === 'object' && (law.description || law.implication) && <div style={{ fontSize: '8px', color: '#3b82f6', marginTop: '1px' }}>{law.description || law.implication}</div>}
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
-              )}
 
-              {/* James question card */}
-              {sc.ai_summary && (
-                <div style={{ background: '#fffbeb', border: '0.5px solid #fde68a', borderRadius: '12px', padding: '12px 14px', marginBottom: '10px' }} data-testid="james-question">
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#92400e', marginBottom: '6px' }}>{'💬'} James a besoin d'une précision</div>
-                  <div style={{ fontSize: '11px', color: '#78350f', lineHeight: 1.6, marginBottom: '9px' }}>
-                    Pour approfondir votre défense, j'ai besoin de savoir : <b>avez-vous des documents supplémentaires liés à cette affaire ?</b> Cela pourrait renforcer significativement votre position.
+                {/* James Question Card */}
+                {sc.key_insight && (
+                  <div style={{ background: '#fffbeb', borderRadius: 12, padding: '12px 14px', border: '0.5px solid #fde68a', marginBottom: 10 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#1a1a2e', marginBottom: 5 }}>💬 {t.questionTitle}</div>
+                    <div style={{ fontSize: 10, color: '#78350f', lineHeight: 1.6 }}>{sc.key_insight}</div>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                      <button onClick={() => navigate('/upload')} style={{ padding: '5px 14px', background: '#1a56db', color: '#fff', border: 'none', borderRadius: 7, fontSize: 9, fontWeight: 600, cursor: 'pointer' }}>{t.addDoc}</button>
+                      <button onClick={() => navigate('/lawyers')} style={{ padding: '5px 14px', background: '#fff', color: '#374151', border: '0.5px solid #e2e0db', borderRadius: 7, fontSize: 9, fontWeight: 500, cursor: 'pointer' }}>{t.talkLawyer}</button>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                    <button onClick={() => navigate('/upload')} style={{ fontSize: '10px', padding: '6px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 500, background: '#1a56db', color: '#fff', border: 'none' }} data-testid="james-q-yes">Oui, j'ai des documents</button>
-                    <button style={{ fontSize: '10px', padding: '6px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 500, background: '#fff', color: '#374151', border: '0.5px solid #e2e0db' }}>Non, pas pour l'instant</button>
-                    <button onClick={() => navigate('/chat')} style={{ fontSize: '10px', padding: '6px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 500, background: '#fff', color: '#374151', border: '0.5px solid #e2e0db' }}>Parler à James</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '12px' }}>
-                <div style={{ fontSize: '32px', marginBottom: '8px' }}>{'📂'}</div>
-                Aucun dossier sélectionné
-                <div style={{ marginTop: '8px' }}>
-                  <button onClick={() => setShowOverlay(true)} style={{ fontSize: '11px', padding: '8px 16px', borderRadius: '8px', background: '#1a56db', color: '#fff', border: 'none', cursor: 'pointer' }}>Ouvrir un nouveau dossier</button>
-                </div>
-              </div>
-            </div>
-          )}
+                )}
+              </>
+            )}
+          </div>
         </div>
 
-        {/* ════════ RIGHT PANEL ════════ */}
-        <div style={{ background: '#fff', borderLeft: '0.5px solid #e2e0db', display: 'flex', flexDirection: 'column', overflowY: 'auto' }} data-testid="right-panel">
-          <div style={{ padding: '14px', borderBottom: '0.5px solid #f0ede8', fontSize: '11px', fontWeight: 600 }}>Vue d'ensemble</div>
+        {/* ═══ RIGHT PANEL ═══ */}
+        <div data-testid="right-panel" style={{
+          background: '#fff', borderLeft: '0.5px solid #e2e0db',
+          display: 'flex', flexDirection: 'column', overflowY: 'auto',
+        }}>
+          <div style={{ padding: '14px 14px 8px', fontSize: 10, fontWeight: 700, color: '#1a1a2e', letterSpacing: '0.3px' }}>{t.overview}</div>
 
-          {sc ? (
+          {/* Deadline */}
+          {sc && sc.deadline && (
+            <div style={{ margin: '0 8px 8px', padding: 11, background: '#fff5f5', borderRadius: 9, border: '0.5px solid #fca5a5' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.3px' }}>⚡ {t.critDeadline}</div>
+              <div style={{ fontSize: 30, fontWeight: 800, color: '#dc2626', margin: '4px 0 2px' }}>
+                {dl !== null ? (dl <= 0 ? t.expired : `${dl} ${t.days}`) : '—'}
+              </div>
+              <div style={{ fontSize: 9, color: '#991b1b' }}>{t.before} {formatDate(sc.deadline, lang)}</div>
+            </div>
+          )}
+
+          {/* Next Actions */}
+          {steps.length > 0 && (
             <>
-              {/* Deadline card */}
-              {scDaysLeft !== null && scDaysLeft <= 14 && (
-                <div style={{ margin: '10px', padding: '11px', background: scDaysLeft <= 3 ? '#fff5f5' : '#fffbeb', border: `0.5px solid ${scDaysLeft <= 3 ? '#fecaca' : '#fde68a'}`, borderRadius: '9px' }} data-testid="deadline-card">
-                  <div style={{ fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', color: scDaysLeft <= 3 ? '#dc2626' : '#d97706', fontWeight: 700, marginBottom: '3px' }}>{'⚡'} Échéance critique</div>
-                  <div style={{ fontSize: '30px', fontWeight: 800, color: scDaysLeft <= 3 ? '#dc2626' : '#d97706', letterSpacing: '-1px', lineHeight: 1 }}>
-                    {scDaysLeft <= 0 ? 'Expiré' : `${scDaysLeft} jour${scDaysLeft > 1 ? 's' : ''}`}
+              <div style={{ padding: '8px 14px 4px', fontSize: 9, fontWeight: 700, color: '#1a1a2e', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.nextActions}</div>
+              {steps.map((s, i) => {
+                const sTitle = typeof s === 'string' ? s : (s.title || s.titre || '');
+                const sDesc = typeof s === 'string' ? '' : (s.description || s.why_important || '');
+                return (
+                  <div key={i} data-testid={`action-item-${i}`} style={{
+                    margin: '0 8px 4px', padding: '8px 10px', background: '#fff', borderRadius: 8, border: '0.5px solid #e2e0db',
+                    display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer',
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.borderColor = '#1a56db'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#e2e0db'; }}>
+                    <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#1a56db', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 600, color: '#1a1a2e' }}>{sTitle}</div>
+                      {sDesc && <div style={{ fontSize: 9, color: '#6b7280', marginTop: 1 }}>{sDesc}</div>}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '9px', color: scDaysLeft <= 3 ? '#991b1b' : '#92400e', marginTop: '2px' }}>
-                    {sc.deadline_description || `Répondre avant le ${new Date(sc.deadline).toLocaleDateString('fr-FR')}`}
-                  </div>
-                </div>
-              )}
+                );
+              })}
+            </>
+          )}
 
-              {/* Next actions */}
-              {nextSteps.length > 0 && (
-                <>
-                  <div style={{ padding: '9px 12px 3px', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', color: '#9ca3af', fontWeight: 600 }}>Prochaines actions</div>
-                  {nextSteps.slice(0, 3).map((step, i) => {
-                    const stepText = typeof step === 'string' ? step : step.action || step.titre || step.title || JSON.stringify(step);
-                    const stepDesc = typeof step === 'object' ? (step.description || step.detail || step.why || step.pourquoi || '') : '';
-                    return (
-                      <div key={i} style={{ margin: '3px 8px', padding: '8px 10px', borderRadius: '8px', border: '0.5px solid #e2e0db', cursor: 'pointer' }} data-testid={`action-${i}`}>
-                        <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#1a56db', color: '#fff', fontSize: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '3px' }}>{i + 1}</div>
-                        <div style={{ fontSize: '10px', fontWeight: 500 }}>{stepText.length > 80 ? stepText.slice(0, 80) + '...' : stepText}</div>
-                        {stepDesc && <div style={{ fontSize: '9px', color: '#6b7280', marginTop: '1px' }}>{stepDesc.length > 60 ? stepDesc.slice(0, 60) + '...' : stepDesc}</div>}
-                      </div>
-                    );
-                  })}
-                </>
-              )}
-
-              {/* Documents */}
-              <div style={{ padding: '9px 12px 3px', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', color: '#9ca3af', fontWeight: 600 }}>Documents</div>
-              {docCount > 0 ? (
-                <div onClick={() => navigate(`/cases/${sc.case_id}`)} style={{ margin: '3px 8px', padding: '6px 8px', borderRadius: '7px', border: '0.5px solid #e2e0db', display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer' }}>
-                  <div style={{ width: '22px', height: '22px', borderRadius: '4px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          {/* Documents */}
+          <div style={{ padding: '8px 14px 4px', fontSize: 9, fontWeight: 700, color: '#1a1a2e', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.documents}</div>
+          {sc ? (
+            <div style={{ margin: '0 8px' }}>
+              {(sc.document_count || 0) > 0 ? (
+                <div onClick={() => navigate(`/cases/${sc.case_id}`)} style={{
+                  padding: '6px 8px', borderRadius: 7, border: '0.5px solid #e2e0db',
+                  display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', marginBottom: 4,
+                }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#f8f7f4'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
+                  <div style={{ width: 22, height: 22, borderRadius: 4, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <FileText size={11} color="#1a56db" />
                   </div>
-                  <div style={{ fontSize: '10px', color: '#374151', flex: 1 }}>{sc.title?.length > 25 ? sc.title.slice(0, 25) + '...' : sc.title}</div>
-                  <div style={{ fontSize: '8px', background: '#eff6ff', color: '#1d4ed8', padding: '1px 5px', borderRadius: '3px', fontWeight: 600 }}>Clé</div>
+                  <div style={{ fontSize: 10, color: '#374151', fontWeight: 500, flex: 1 }}>{sc.document_count || 0} {t.docCount}</div>
+                  <div style={{ fontSize: 9, color: '#1d4ed8', fontWeight: 600 }}>{t.keyDoc}</div>
                 </div>
               ) : (
-                <div style={{ margin: '3px 8px', fontSize: '9px', color: '#9ca3af', padding: '6px' }}>Aucun document</div>
+                <div style={{ padding: 8, fontSize: 9, color: '#9ca3af', textAlign: 'center' }}>—</div>
               )}
-
-              {/* Battle Preview */}
-              {(userArgs.length > 0 || oppArgs.length > 0) && (
-                <>
-                  <div style={{ padding: '9px 12px 3px', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', color: '#9ca3af', fontWeight: 600 }}>Battle Preview</div>
-                  <div style={{ margin: '8px', padding: '10px', background: '#f8f7f4', borderRadius: '9px', border: '0.5px solid #e2e0db' }} data-testid="battle-mini">
-                    <div style={{ fontSize: '9px', fontWeight: 600, marginBottom: '6px' }}>James vs Avocat adverse</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
-                      {/* Your arguments */}
-                      <div style={{ borderRadius: '6px', padding: '6px', background: '#f0fdf4', border: '0.5px solid #86efac' }}>
-                        <div style={{ fontSize: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#16a34a', marginBottom: '3px' }}>Vos arguments</div>
-                        {userArgs.slice(0, 3).map((a, i) => {
-                          const argText = typeof a === 'string' ? a : a.argument || a.titre || '';
-                          return <div key={i} style={{ fontSize: '9px', color: '#374151', padding: '2px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.05)' : 'none', lineHeight: 1.4 }}>{argText.length > 50 ? argText.slice(0, 50) + '...' : argText}</div>;
-                        })}
-                      </div>
-                      {/* Their arguments */}
-                      <div style={{ borderRadius: '6px', padding: '6px', background: '#fff5f5', border: '0.5px solid #fca5a5' }}>
-                        <div style={{ fontSize: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#dc2626', marginBottom: '3px' }}>Leurs arguments</div>
-                        {oppArgs.slice(0, 3).map((a, i) => {
-                          const argText = typeof a === 'string' ? a : a.argument || a.titre || '';
-                          return <div key={i} style={{ fontSize: '9px', color: '#374151', padding: '2px 0', borderBottom: i < 2 ? '0.5px solid rgba(0,0,0,0.05)' : 'none', lineHeight: 1.4 }}>{argText.length > 50 ? argText.slice(0, 50) + '...' : argText}</div>;
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </>
+            </div>
           ) : (
-            <div style={{ padding: '20px', textAlign: 'center', fontSize: '10px', color: '#9ca3af' }}>Sélectionnez un dossier</div>
+            <div style={{ padding: 8, margin: '0 8px', fontSize: 9, color: '#9ca3af', textAlign: 'center' }}>—</div>
+          )}
+
+          {/* Battle Preview */}
+          {bp && (
+            <>
+              <div style={{ padding: '8px 14px 4px', fontSize: 9, fontWeight: 700, color: '#1a1a2e', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Battle Preview</div>
+              <div style={{ margin: 8, padding: 10, background: '#f8f7f4', borderRadius: 9, border: '0.5px solid #e2e0db' }}>
+                <div style={{ fontSize: 9, fontWeight: 600, color: '#1a1a2e', marginBottom: 6 }}>{t.battleTitle}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                  <div style={{ background: '#f0fdf4', border: '0.5px solid #86efac', borderRadius: 6, padding: 6 }}>
+                    <div style={{ fontSize: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#16a34a', marginBottom: 3 }}>{t.yourArgs}</div>
+                    {(bp.user_arguments || bp.our_arguments || []).slice(0, 3).map((a, i) => (
+                      <div key={i} style={{ fontSize: 9, color: '#374151', padding: '2px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.4 }}>{typeof a === 'string' ? a : a.argument || a.text || ''}</div>
+                    ))}
+                  </div>
+                  <div style={{ background: '#fff5f5', border: '0.5px solid #fca5a5', borderRadius: 6, padding: 6 }}>
+                    <div style={{ fontSize: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#dc2626', marginBottom: 3 }}>{t.theirArgs}</div>
+                    {(bp.opposing_arguments || []).slice(0, 3).map((a, i) => (
+                      <div key={i} style={{ fontSize: 9, color: '#374151', padding: '2px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.4 }}>{typeof a === 'string' ? a : a.argument || a.text || ''}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </div>
 
-        {/* ════════ NEW CASE OVERLAY ════════ */}
+        {/* ═══ OVERLAY ═══ */}
         {showOverlay && (
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(248,247,244,0.97)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }} data-testid="new-case-overlay">
-            <div style={{ background: '#fff', borderRadius: '18px', padding: '24px', maxWidth: '480px', width: '100%', border: '0.5px solid #e2e0db', margin: '16px' }}>
-              {newCaseStep === 'select' && (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '3px' }}>
-                    <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, color: '#fff', flexShrink: 0 }}>J</div>
-                    <div style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.8px' }}>Quel est votre problème ?</div>
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '16px', marginLeft: '44px' }}>James va prendre votre dossier en charge immédiatement.</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                    {SITUATIONS.map((sit, i) => (
-                      <div key={i} onClick={() => handleSituationSelect(sit)}
-                        style={{ padding: '11px', borderRadius: '10px', border: '0.5px solid #e2e0db', cursor: 'pointer', transition: 'all 0.15s', display: 'flex', alignItems: 'flex-start', gap: '8px' }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.style.background = '#eff6ff'; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e0db'; e.currentTarget.style.background = 'transparent'; }}
-                        data-testid={`situation-${sit.type}`}>
-                        <div style={{ width: '28px', height: '28px', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '13px' }}>{sit.icon}</div>
-                        <div>
-                          <div style={{ fontSize: '10px', fontWeight: 600, marginBottom: '2px', lineHeight: 1.3 }}>{sit.title}</div>
-                          <div style={{ fontSize: '9px', color: '#6b7280', lineHeight: 1.3 }}>{sit.desc}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <button onClick={() => setShowOverlay(false)} style={{ marginTop: '12px', textAlign: 'right', fontSize: '10px', color: '#6b7280', cursor: 'pointer', background: 'none', border: 'none', width: '100%' }} data-testid="overlay-back">
-                    {'←'} Retour au dashboard
-                  </button>
-                </>
-              )}
-
-              {(newCaseStep === 'chat' || newCaseStep === 'upload') && (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                    <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, color: '#fff', flexShrink: 0 }}>J</div>
+          <div data-testid="new-case-overlay" style={{
+            position: 'absolute', inset: 0, background: 'rgba(248,247,244,0.97)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10,
+          }}>
+            <div style={{ background: '#fff', borderRadius: 18, border: '0.5px solid #e2e0db', padding: 24, width: '100%', maxWidth: 680 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff' }}>J</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e' }}>{t.overlayTitle}</div>
+              </div>
+              <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 20 }}>{t.overlaySub}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {t.sit.map((s, i) => (
+                  <div key={i} data-testid={`situation-card-${i}`}
+                    onClick={() => { setShowOverlay(false); navigate('/upload'); }}
+                    style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 10, padding: 11, borderRadius: 10,
+                      border: '0.5px solid #e2e0db', cursor: 'pointer', transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.borderColor = '#bfdbfe'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#e2e0db'; }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 7, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>{s.icon}</div>
                     <div>
-                      <div style={{ fontSize: '14px', fontWeight: 700, letterSpacing: '-0.5px' }}>{selectedSituation?.title}</div>
-                      <div style={{ fontSize: '9px', color: '#6b7280' }}>James prend en charge votre dossier</div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 2 }}>{s.title}</div>
+                      <div style={{ fontSize: 9, color: '#6b7280', lineHeight: 1.3 }}>{s.desc}</div>
                     </div>
                   </div>
-
-                  {/* Chat messages */}
-                  <div style={{ maxHeight: '260px', overflowY: 'auto', marginBottom: '12px' }}>
-                    {chatMessages.map((m, i) => (
-                      <div key={i} style={{ marginBottom: '8px', display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                        <div style={{ maxWidth: '85%', padding: '8px 12px', borderRadius: m.role === 'user' ? '12px 2px 12px 12px' : '2px 12px 12px 12px', fontSize: '11px', lineHeight: 1.5,
-                          background: m.role === 'user' ? '#1a56db' : '#f8f7f4', color: m.role === 'user' ? '#fff' : '#374151', border: m.role === 'user' ? 'none' : '0.5px solid #e2e0db' }}>
-                          {m.text}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {newCaseStep === 'chat' && (
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <input value={chatInput} onChange={e => setChatInput(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') handleChatSend(); }}
-                        placeholder="Répondez à James..." style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '0.5px solid #e2e0db', fontSize: '11px', outline: 'none' }}
-                        data-testid="chat-input-overlay" />
-                      <button onClick={handleChatSend} style={{ padding: '8px 14px', borderRadius: '8px', background: '#1a56db', color: '#fff', border: 'none', fontSize: '11px', fontWeight: 500, cursor: 'pointer' }} data-testid="chat-send-overlay">Envoyer</button>
-                    </div>
-                  )}
-
-                  {newCaseStep === 'upload' && (
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button onClick={handleUploadAndAnalyze} style={{ flex: 1, padding: '10px', borderRadius: '8px', background: '#1a56db', color: '#fff', border: 'none', fontSize: '11px', fontWeight: 500, cursor: 'pointer' }} data-testid="upload-doc-btn">
-                        Téléverser un document
-                      </button>
-                      <button onClick={handleSkipUpload} style={{ padding: '10px 14px', borderRadius: '8px', background: '#f5f5f5', color: '#555', border: '0.5px solid #e2e0db', fontSize: '11px', cursor: 'pointer' }} data-testid="skip-upload-btn">
-                        Passer
-                      </button>
-                    </div>
-                  )}
-
-                  <button onClick={() => { setNewCaseStep('select'); setChatMessages([]); }} style={{ marginTop: '10px', fontSize: '10px', color: '#6b7280', cursor: 'pointer', background: 'none', border: 'none', width: '100%', textAlign: 'right' }}>
-                    {'←'} Changer de situation
-                  </button>
-                </>
-              )}
+                ))}
+              </div>
+              <button data-testid="back-to-dashboard" onClick={() => setShowOverlay(false)} style={{
+                marginTop: 14, fontSize: 10, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer',
+              }}>← {t.backDash}</button>
             </div>
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 };
 

@@ -940,22 +940,22 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
 
 
 def _default_analysis():
-    """Return default analysis on error"""
+    """Return default analysis on error — indicates AI analysis failed, not placeholder content"""
     return {
         "document_type": "other",
         "case_type": "other",
         "suggested_case_title": "Document Analysis",
-        "risk_score": {"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50},
-        "risk_level": "medium",
+        "risk_score": {"total": 0, "financial": 0, "urgency": 0, "legal_strength": 0, "complexity": 0},
+        "risk_level": "unknown",
         "deadline": None,
         "deadline_description": None,
-        "summary": "Document uploaded for analysis. Please review the document details.",
+        "summary": "AI analysis could not be completed. Please re-upload or try again.",
         "financial_exposure": None,
-        "findings": [{"text": "Document requires manual review", "impact": "medium", "type": "neutral"}],
+        "findings": [{"text": "AI analysis failed — please re-upload this document or click 'Re-analyze' to retry.", "impact": "high", "type": "risk"}],
         "next_steps": [
-            {"title": "Review document", "description": "Manually review the uploaded document", "action_type": "no_action"},
-            {"title": "Add more context", "description": "Upload related documents for better analysis", "action_type": "upload_document"},
-            {"title": "Consult a lawyer", "description": "Get professional legal advice", "action_type": "book_lawyer"}
+            {"title": "Re-analyze this document", "description": "Click re-analyze to retry the AI analysis on this document", "action_type": "no_action"},
+            {"title": "Upload a clearer version", "description": "If the document was blurry or corrupted, upload a better copy", "action_type": "upload_document"},
+            {"title": "Talk to a lawyer", "description": "A licensed attorney can review your document directly", "action_type": "book_lawyer"}
         ],
         "recommend_lawyer": False,
         "disclaimer": "This analysis provides legal information only, not legal advice."
@@ -3280,6 +3280,94 @@ async def upload_document(
         "status": "analyzed",
         "vision_mode": use_vision
     }
+
+
+@api_router.post("/cases/{case_id}/reanalyze")
+async def reanalyze_case(case_id: str, current_user: User = Depends(get_current_user)):
+    """Re-analyze all documents in a case with the latest AI prompts"""
+    case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+    
+    # Get the most recent document for this case
+    doc = await db.documents.find_one(
+        {"case_id": case_id, "user_id": current_user.user_id},
+        {"_id": 0},
+        sort=[("created_at", -1)]
+    )
+    if not doc or not doc.get("extracted_text"):
+        raise HTTPException(status_code=400, detail="No analyzable document found in this case")
+    
+    extracted_text = doc["extracted_text"]
+    user_country = getattr(current_user, 'country', None) or getattr(current_user, 'jurisdiction', 'US')
+    user_language = getattr(current_user, 'language', 'en') or 'en'
+    user_region = getattr(current_user, 'region', '') or ''
+    
+    try:
+        if user_country == "BE":
+            analysis = await analyze_document_belgian(extracted_text, region=user_region, language=user_language)
+        else:
+            analysis = await analyze_document_advanced(extracted_text, language=user_language)
+    except Exception as e:
+        logger.error(f"Re-analysis failed: {e}")
+        raise HTTPException(status_code=500, detail="Re-analysis failed. Please try again.")
+    
+    if not analysis:
+        raise HTTPException(status_code=500, detail="Analysis returned no results")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    new_score = analysis["risk_score"]["total"] if isinstance(analysis.get("risk_score"), dict) else 0
+    
+    await db.cases.update_one(
+        {"case_id": case_id},
+        {"$set": {
+            "risk_score": new_score,
+            "risk_financial": analysis["risk_score"]["financial"],
+            "risk_urgency": analysis["risk_score"]["urgency"],
+            "risk_legal_strength": analysis["risk_score"]["legal_strength"],
+            "risk_complexity": analysis["risk_score"]["complexity"],
+            "title": analysis.get("suggested_case_title") or case_doc.get("title"),
+            "type": analysis.get("case_type") or case_doc.get("type"),
+            "deadline": normalize_deadline(analysis.get("deadline")),
+            "deadline_description": analysis.get("deadline_description"),
+            "financial_exposure": normalize_financial_exposure(analysis.get("financial_exposure")),
+            "ai_summary": analysis.get("summary"),
+            "ai_findings": analysis.get("findings", []),
+            "ai_next_steps": analysis.get("next_steps", []),
+            "recommend_lawyer": analysis.get("recommend_lawyer", False),
+            "battle_preview": analysis.get("battle_preview"),
+            "success_probability": analysis.get("success_probability"),
+            "procedural_defects": analysis.get("procedural_defects", []),
+            "applicable_laws": analysis.get("applicable_laws", []),
+            "financial_exposure_detailed": analysis.get("financial_exposure_detailed"),
+            "immediate_actions": analysis.get("immediate_actions", []),
+            "leverage_points": analysis.get("leverage_points", []),
+            "red_lines": analysis.get("red_lines", []),
+            "key_insight": analysis.get("key_insight", ""),
+            "strategy": analysis.get("strategy"),
+            "lawyer_recommendation": analysis.get("lawyer_recommendation"),
+            "user_rights": analysis.get("user_rights", []),
+            "opposing_weaknesses": analysis.get("opposing_weaknesses", []),
+            "documents_to_gather": analysis.get("documents_to_gather", []),
+            "recent_case_law": analysis.get("recent_case_law", []),
+            "case_law_updated": analysis.get("case_law_updated"),
+            "updated_at": now
+        },
+        "$push": {"risk_score_history": {
+            "score": new_score,
+            "financial": analysis["risk_score"]["financial"],
+            "urgency": analysis["risk_score"]["urgency"],
+            "legal_strength": analysis["risk_score"]["legal_strength"],
+            "complexity": analysis["risk_score"]["complexity"],
+            "document_name": "Re-analysis",
+            "date": now
+        }}}
+    )
+    
+    # Return updated case
+    updated = await db.cases.find_one({"case_id": case_id}, {"_id": 0})
+    return updated
+
 
 @api_router.get("/documents/{document_id}/download")
 async def download_document(
