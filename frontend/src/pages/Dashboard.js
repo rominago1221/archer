@@ -5,6 +5,7 @@ import axios from 'axios';
 import { Plus, FileText, Upload, Settings, MessageSquare, Scale, LogOut, BookOpen, Download, Share2, ExternalLink, Loader2, X, ArrowLeft } from 'lucide-react';
 import jsPDF from 'jspdf';
 import AddDocumentModal from '../components/AddDocumentModal';
+import CaseChatDrawer from '../components/CaseChatDrawer';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -68,6 +69,7 @@ const L = {
     connectGmail: 'Connect Gmail', connectOutlook: 'Connect Outlook',
     shareTitle: 'Share this case — read-only access', shareDesc: 'Generate a secure link', shareCopy: 'Copy link', shareExpiry: 'Link expires in',
     genLetter: 'Generate letter', downloading: 'Generating...', close: 'Close', downloadPdf: 'Download PDF',
+    moreQuestions: 'James has more questions — ask him directly',
   },
   fr: {
     tagline: 'Votre cabinet juridique virtuel',
@@ -126,6 +128,7 @@ const L = {
     connectGmail: 'Connecter Gmail', connectOutlook: 'Connecter Outlook',
     shareTitle: 'Partager ce dossier — accès en lecture seule', shareDesc: 'Générer un lien sécurisé', shareCopy: 'Copier le lien', shareExpiry: 'Lien expire dans',
     genLetter: 'Générer la lettre', downloading: 'Génération...', close: 'Fermer', downloadPdf: 'Télécharger PDF',
+    moreQuestions: 'James a d\'autres questions — demandez-lui directement',
   },
   nl: {
     tagline: 'Uw virtueel juridisch kantoor',
@@ -184,6 +187,7 @@ const L = {
     connectGmail: 'Verbind Gmail', connectOutlook: 'Verbind Outlook',
     shareTitle: 'Deel dit dossier — alleen-lezen', shareDesc: 'Genereer een beveiligde link', shareCopy: 'Link kopiëren', shareExpiry: 'Link verloopt in',
     genLetter: 'Brief genereren', downloading: 'Genereren...', close: 'Sluiten', downloadPdf: 'Download PDF',
+    moreQuestions: 'James heeft meer vragen — stel ze direct',
   },
 };
 
@@ -227,6 +231,7 @@ const Dashboard = () => {
   const [shareLink, setShareLink] = useState('');
   const [answerLoading, setAnswerLoading] = useState(false);
   const [showAddDoc, setShowAddDoc] = useState(false);
+  const [chatDrawer, setChatDrawer] = useState(null);
 
   const fetchCases = useCallback(async () => {
     try {
@@ -590,22 +595,26 @@ const Dashboard = () => {
                   })}
                 </div>
 
-                {/* James Question Card — interactive */}
+                {/* James Question Card — max 1 question */}
                 {jq && (
                   <div data-testid="james-question" style={{ background: '#fffbeb', borderRadius: 12, padding: '12px 14px', border: '0.5px solid #fde68a', marginBottom: 10 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#1a1a2e', marginBottom: 5 }}>💬 {t.jamesQ}</div>
                     <div style={{ fontSize: 11, color: '#78350f', lineHeight: 1.6, marginBottom: 8 }}>{jq.text}</div>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      {(jq.options || []).map((opt, i) => (
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                      {(jq.options || []).slice(0, 3).map((opt, i) => (
                         <button key={i} data-testid={`james-answer-${i}`} onClick={() => handleJamesAnswer(opt)} disabled={answerLoading}
                           style={{ padding: '6px 14px', background: answerLoading ? '#f3f4f6' : '#fff', color: answerLoading ? '#9ca3af' : '#1a1a2e', border: '0.5px solid #e2e0db', borderRadius: 8, fontSize: 10, fontWeight: 500, cursor: answerLoading ? 'default' : 'pointer' }}>
                           {opt}
                         </button>
                       ))}
                     </div>
+                    <button data-testid="ask-james-directly" onClick={() => setChatDrawer({ initial: `I have a question about my case "${sc?.title}". ${jq.text}` })}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: '#1a56db', fontWeight: 500, padding: 0 }}>
+                      {t.moreQuestions} →
+                    </button>
                   </div>
                 )}
-                {/* Fallback: key_insight without interactive buttons */}
+                {/* Fallback: key_insight */}
                 {!jq && sc.key_insight && (
                   <div style={{ background: '#fffbeb', borderRadius: 12, padding: '12px 14px', border: '0.5px solid #fde68a', marginBottom: 10 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#1a1a2e', marginBottom: 5 }}>💬 {t.questionTitle}</div>
@@ -783,6 +792,17 @@ const Dashboard = () => {
             <div style={{ padding: 8, margin: '0 8px', fontSize: 9, color: '#9ca3af', textAlign: 'center' }}>—</div>
           )}
         </div>
+
+        {/* ═══ CHAT DRAWER ═══ */}
+        {chatDrawer && selectedId && (
+          <CaseChatDrawer
+            caseId={selectedId}
+            caseTitle={sc?.title}
+            lang={lang}
+            onClose={() => setChatDrawer(null)}
+            initialMessage={chatDrawer.initial}
+          />
+        )}
 
         {/* ═══ ADD DOCUMENT MODAL ═══ */}
         {showAddDoc && selectedId && (

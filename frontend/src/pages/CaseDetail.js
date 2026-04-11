@@ -5,6 +5,7 @@ import axios from 'axios';
 import { ArrowLeft, Download, Share2, FileText, Plus, Scale, ExternalLink, Loader2, Upload, MessageSquare, Settings, BookOpen, LogOut, ChevronRight, X } from 'lucide-react';
 import jsPDF from 'jspdf';
 import AddDocumentModal from '../components/AddDocumentModal';
+import CaseChatDrawer from '../components/CaseChatDrawer';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -43,6 +44,7 @@ const L = {
     stat1: '847K+', stat1l: 'live sources', stat2: '20 yrs', stat2l: 'experience', stat3: 'Live', stat3l: 'case law', stat4: '#1', stat4l: 'Legal AI',
     activeCases: 'Active cases', navUpload: 'Upload', navLawyers: 'Lawyers', navDocs: 'Documents', navChat: 'Legal chat', navSettings: 'Settings',
     deadlineIn: 'Deadline in',
+    moreQuestions: 'James has more questions — ask him directly',
   },
   fr: {
     back: 'Mes dossiers', brief: 'Télécharger le résumé', share: 'Partager', addDoc: 'Ajouter un document', talkLawyer: 'Parler à un avocat',
@@ -77,6 +79,7 @@ const L = {
     stat1: '847K+', stat1l: 'sources live', stat2: '20 ans', stat2l: 'expérience', stat3: 'Live', stat3l: 'jurisprudence', stat4: '#1', stat4l: 'IA juridique',
     activeCases: 'Dossiers actifs', navUpload: 'Téléverser', navLawyers: 'Avocats', navDocs: 'Documents', navChat: 'Chat juridique', navSettings: 'Paramètres',
     deadlineIn: 'Échéance dans',
+    moreQuestions: 'James a d\'autres questions — demandez-lui directement',
   },
   nl: {
     back: 'Mijn dossiers', brief: 'Download samenvatting', share: 'Delen', addDoc: 'Document toevoegen', talkLawyer: 'Praat met een advocaat',
@@ -111,6 +114,7 @@ const L = {
     stat1: '847K+', stat1l: 'live bronnen', stat2: '20 jaar', stat2l: 'ervaring', stat3: 'Live', stat3l: 'rechtspraak', stat4: '#1', stat4l: 'Juridische AI',
     activeCases: 'Actieve dossiers', navUpload: 'Uploaden', navLawyers: 'Advocaten', navDocs: 'Documenten', navChat: 'Juridische chat', navSettings: 'Instellingen',
     deadlineIn: 'Deadline in',
+    moreQuestions: 'James heeft meer vragen — stel ze direct',
   },
 };
 const getLang = (u) => { const l = u?.language || 'en'; return l === 'nl' ? 'nl' : (l === 'fr' || l === 'fr-BE') ? 'fr' : 'en'; };
@@ -136,6 +140,7 @@ const CaseDetail = () => {
   const [answerLoading, setAnswerLoading] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
   const [showAddDoc, setShowAddDoc] = useState(false);
+  const [chatDrawer, setChatDrawer] = useState(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -399,19 +404,23 @@ const CaseDetail = () => {
                   })}
                 </div>
 
-                {/* James Question Card */}
+                {/* James Question Card — max 1 question */}
                 {jq && (
                   <div data-testid="james-question" style={{ background: '#fffbeb', borderRadius: 12, padding: '12px 14px', border: '0.5px solid #fde68a', marginBottom: 10 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#1a1a2e', marginBottom: 5 }}>💬 {t.jamesQ}</div>
                     <div style={{ fontSize: 11, color: '#78350f', lineHeight: 1.6, marginBottom: 8 }}>{jq.text}</div>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      {(jq.options || []).map((opt, i) => (
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                      {(jq.options || []).slice(0, 3).map((opt, i) => (
                         <button key={i} data-testid={`james-answer-${i}`} onClick={() => handleJamesAnswer(opt)} disabled={answerLoading}
                           style={{ padding: '6px 14px', background: answerLoading ? '#f3f4f6' : '#fff', color: answerLoading ? '#9ca3af' : '#1a1a2e', border: '0.5px solid #e2e0db', borderRadius: 8, fontSize: 10, fontWeight: 500, cursor: answerLoading ? 'default' : 'pointer' }}>
                           {opt}
                         </button>
                       ))}
                     </div>
+                    <button data-testid="ask-james-directly" onClick={() => setChatDrawer({ initial: `I have a question about my case "${sc?.title}". ${jq.text}` })}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: '#1a56db', fontWeight: 500, padding: 0 }}>
+                      {t.moreQuestions} →
+                    </button>
                   </div>
                 )}
 
@@ -596,6 +605,17 @@ const CaseDetail = () => {
               )}
             </div>
           </div>
+        )}
+
+        {/* ═══ CHAT DRAWER ═══ */}
+        {chatDrawer && (
+          <CaseChatDrawer
+            caseId={caseId}
+            caseTitle={sc?.title}
+            lang={lang}
+            onClose={() => setChatDrawer(null)}
+            initialMessage={chatDrawer.initial}
+          />
         )}
 
         {/* ═══ ADD DOCUMENT MODAL ═══ */}

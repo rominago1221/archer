@@ -4508,34 +4508,33 @@ async def send_chat_message(
     if case_id:
         case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
         if case_doc:
-            system_prompt += f"\n\nCONTEXT: The user has an active case: '{case_doc.get('title', '')}'. Type: {case_doc.get('type', '')}. Risk Score: {case_doc.get('risk_score', 0)}/100. Summary: {case_doc.get('ai_summary', 'N/A')}. They may ask questions related to this case."
+            case_findings = case_doc.get('ai_findings', [])[:5]
+            findings_text = "; ".join([f.get('text', '') for f in case_findings if f.get('text')])
+            case_steps = case_doc.get('ai_next_steps', [])[:3]
+            steps_text = "; ".join([s.get('title', '') if isinstance(s, dict) else str(s) for s in case_steps])
+            system_prompt += f"\n\nCONTEXT: The user has an active case: '{case_doc.get('title', '')}'. Type: {case_doc.get('type', '')}. Risk Score: {case_doc.get('risk_score', 0)}/100. Summary: {case_doc.get('ai_summary', 'N/A')}. Key findings: {findings_text}. Next steps: {steps_text}. They may ask questions related to this case. Continue the conversation naturally as James, their legal advisor."
 
-    # Call Claude with full conversation history
+    # Call Claude via Emergent integration (avoids 429 rate limits)
     try:
-        async with httpx.AsyncClient() as http_client:
-            response = await http_client.post(
-                "https://api.anthropic.com/v1/messages",
-                headers={
-                    "Content-Type": "application/json",
-                    "x-api-key": ANTHROPIC_API_KEY,
-                    "anthropic-version": "2023-06-01"
-                },
-                json={
-                    "model": "claude-sonnet-4-20250514",
-                    "max_tokens": 1500,
-                    "system": system_prompt,
-                    "messages": claude_messages
-                },
-                timeout=60.0
-            )
-            response.raise_for_status()
-            resp_data = response.json()
-            ai_text = ""
-            for block in resp_data.get("content", []):
-                if block.get("type") == "text":
-                    ai_text += block["text"]
-            if not ai_text:
-                ai_text = "James is temporarily unavailable — please try again in a moment."
+        chat = LlmChat(
+            api_key=EMERGENT_KEY,
+            session_id=f"chat_{conversation_id}",
+            system_message=system_prompt
+        ).with_model("anthropic", "claude-4-sonnet-20250514")
+        
+        # Send conversation history as context + latest message
+        history_text = ""
+        for m in claude_messages[:-1]:
+            role_label = "User" if m["role"] == "user" else "James"
+            history_text += f"{role_label}: {m['content']}\n\n"
+        
+        latest = claude_messages[-1]["content"] if claude_messages else data.content
+        full_msg = history_text + f"User: {latest}" if history_text else latest
+        
+        msg = UserMessage(text=full_msg)
+        ai_text = await chat.send_message(msg)
+        if not ai_text:
+            ai_text = "James is temporarily unavailable — please try again in a moment."
     except Exception as e:
         logger.error(f"Chat Claude error: {e}")
         ai_text = "James is temporarily unavailable — please try again in a moment."
