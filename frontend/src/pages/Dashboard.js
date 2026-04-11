@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import { Plus, FileText, Upload, Settings, MessageSquare, Scale, LogOut, BookOpen, Download, Share2, ExternalLink, Loader2, X, ArrowLeft } from 'lucide-react';
 import jsPDF from 'jspdf';
+import AddDocumentModal from '../components/AddDocumentModal';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -225,6 +226,7 @@ const Dashboard = () => {
   const [shareModal, setShareModal] = useState(false);
   const [shareLink, setShareLink] = useState('');
   const [answerLoading, setAnswerLoading] = useState(false);
+  const [showAddDoc, setShowAddDoc] = useState(false);
 
   const fetchCases = useCallback(async () => {
     try {
@@ -525,7 +527,7 @@ const Dashboard = () => {
                   <span style={{ color: '#d1d5db' }}>·</span>
                   <span>{t.updatedBy}</span>
                   <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                    <button onClick={() => navigate('/upload')} style={{ fontSize: 9, padding: '4px 10px', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#374151' }} data-testid="add-doc-btn">{t.addDoc}</button>
+                    <button onClick={() => setShowAddDoc(true)} style={{ fontSize: 9, padding: '4px 10px', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#374151' }} data-testid="add-doc-btn">{t.addDoc}</button>
                     <button onClick={() => navigate('/lawyers')} style={{ fontSize: 9, padding: '4px 10px', background: '#1a56db', border: 'none', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#fff' }} data-testid="talk-lawyer-btn">{t.talkLawyer}</button>
                     {score <= 0 && <button onClick={handleReanalyze} disabled={reanalyzing} style={{ fontSize: 9, padding: '4px 10px', background: reanalyzing ? '#9ca3af' : '#16a34a', border: 'none', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#fff' }} data-testid="reanalyze-btn">{reanalyzing ? '...' : (lang === 'fr' ? 'Ré-analyser' : lang === 'nl' ? 'Heranalyse' : 'Re-analyze')}</button>}
                   </span>
@@ -781,6 +783,16 @@ const Dashboard = () => {
             <div style={{ padding: 8, margin: '0 8px', fontSize: 9, color: '#9ca3af', textAlign: 'center' }}>—</div>
           )}
         </div>
+
+        {/* ═══ ADD DOCUMENT MODAL ═══ */}
+        {showAddDoc && selectedId && (
+          <AddDocumentModal
+            caseId={selectedId}
+            lang={lang}
+            onClose={() => setShowAddDoc(false)}
+            onUploadComplete={() => { setShowAddDoc(false); fetchCases(); }}
+          />
+        )}
 
         {/* ═══ LETTER MODAL ═══ */}
         {letterModal && (

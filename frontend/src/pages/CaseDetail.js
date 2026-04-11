@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import { ArrowLeft, Download, Share2, FileText, Plus, Scale, ExternalLink, Loader2, Upload, MessageSquare, Settings, BookOpen, LogOut, ChevronRight, X } from 'lucide-react';
 import jsPDF from 'jspdf';
+import AddDocumentModal from '../components/AddDocumentModal';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -134,6 +135,7 @@ const CaseDetail = () => {
   const [shareLink, setShareLink] = useState('');
   const [answerLoading, setAnswerLoading] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
+  const [showAddDoc, setShowAddDoc] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -307,7 +309,7 @@ const CaseDetail = () => {
             <div style={{ display: 'flex', gap: 5 }}>
               <button onClick={handleBriefPdf} data-testid="brief-btn" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, padding: '5px 10px', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#374151' }}><Download size={11} />{t.brief}</button>
               <button onClick={handleShare} data-testid="share-btn" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, padding: '5px 10px', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#374151' }}><Share2 size={11} />{t.share}</button>
-              <button onClick={() => navigate('/upload')} style={{ fontSize: 9, padding: '5px 10px', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#374151' }}>{t.addDoc}</button>
+              <button onClick={() => setShowAddDoc(true)} data-testid="add-doc-btn" style={{ fontSize: 9, padding: '5px 10px', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#374151' }}>{t.addDoc}</button>
               <button onClick={() => navigate('/lawyers')} style={{ fontSize: 9, padding: '5px 10px', background: '#1a56db', border: 'none', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#fff' }}>{t.talkLawyer}</button>
             </div>
           </div>
@@ -594,6 +596,16 @@ const CaseDetail = () => {
               )}
             </div>
           </div>
+        )}
+
+        {/* ═══ ADD DOCUMENT MODAL ═══ */}
+        {showAddDoc && (
+          <AddDocumentModal
+            caseId={caseId}
+            lang={lang}
+            onClose={() => setShowAddDoc(false)}
+            onUploadComplete={() => { setShowAddDoc(false); fetchData(); }}
+          />
         )}
 
         {/* ═══ NEW CASE OVERLAY ═══ */}

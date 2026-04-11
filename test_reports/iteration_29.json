@@ -1,0 +1,122 @@
+{
+  "summary": "Complete testing of AddDocumentModal feature. The modal opens correctly on both Dashboard and CaseDetail pages (NOT redirecting to /upload). All modal elements verified: upload drop zone, context textarea (0/500 counter), 'Analyze with James' button (disabled until file selected), close button. Backend POST /api/documents/upload accepts case_id and user_context Form fields correctly.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "features_verified": {
+    "1_dashboard_add_doc_button": {
+      "status": "PASS",
+      "evidence": "Found 'Add document' button with data-testid='add-doc-btn' on Dashboard page"
+    },
+    "2_dashboard_modal_opens_not_redirect": {
+      "status": "PASS",
+      "evidence": "Clicking 'Add document' on Dashboard opens modal (NOT redirect to /upload). URL stays at /dashboard"
+    },
+    "3_modal_has_correct_testid": {
+      "status": "PASS",
+      "evidence": "Modal has data-testid='add-document-modal'"
+    },
+    "4_upload_drop_zone_visible": {
+      "status": "PASS",
+      "evidence": "Upload drop zone with data-testid='upload-drop-zone' is visible. Shows 'Drag & drop your file here' and 'or click to browse'"
+    },
+    "5_context_textarea_visible": {
+      "status": "PASS",
+      "evidence": "Context textarea with data-testid='doc-context-input' is visible with placeholder text"
+    },
+    "6_analyze_button_disabled_no_file": {
+      "status": "PASS",
+      "evidence": "'Analyze with James' button (data-testid='analyze-with-james-btn') is disabled when no file selected"
+    },
+    "7_close_button_visible": {
+      "status": "PASS",
+      "evidence": "Close button with data-testid='close-add-doc-modal' is visible"
+    },
+    "8_character_counter_visible": {
+      "status": "PASS",
+      "evidence": "Character counter shows '0/500 characters' below context textarea"
+    },
+    "9_modal_closes_on_x_click": {
+      "status": "PASS",
+      "evidence": "Clicking X button closes modal, stays on same page"
+    },
+    "10_casedetail_add_doc_button": {
+      "status": "PASS",
+      "evidence": "Found 'Add document' button with data-testid='add-doc-btn' on CaseDetail page (/cases/{case_id})"
+    },
+    "11_casedetail_modal_opens_not_redirect": {
+      "status": "PASS",
+      "evidence": "Clicking 'Add document' on CaseDetail opens modal (NOT redirect to /upload). URL stays at /cases/{case_id}"
+    },
+    "12_casedetail_modal_all_elements": {
+      "status": "PASS",
+      "evidence": "CaseDetail modal has all elements: upload-drop-zone, doc-context-input, analyze-with-james-btn, close-add-doc-modal"
+    }
+  },
+
+  "backend_tests": {
+    "test_upload_endpoint_accepts_case_id_form_field": "PASS - POST /api/documents/upload accepts case_id as Form field and links document to existing case",
+    "test_upload_endpoint_accepts_user_context_form_field": "PASS - POST /api/documents/upload accepts user_context as Form field (500 chars max)",
+    "test_upload_endpoint_multipart_form_data": "PASS - Endpoint accepts multipart/form-data correctly",
+    "test_upload_without_case_id_creates_new_case": "PASS - Uploading without case_id creates a new case",
+    "test_upload_requires_authentication": "PASS - Returns 401 without authentication",
+    "test_upload_requires_file": "PASS - Returns 422 without file"
+  },
+
+  "test_report_links": [
+    "/app/backend/tests/test_add_document_modal.py",
+    "/app/test_reports/pytest/pytest_add_document_modal.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "AddDocumentModal.js is well-structured with proper data-testid attributes for all interactive elements",
+    "Modal correctly uses axios.post with multipart/form-data and withCredentials: true",
+    "Dashboard.js integrates modal with showAddDoc state and onUploadComplete callback that calls fetchCases()",
+    "CaseDetail.js integrates modal with showAddDoc state and onUploadComplete callback that calls fetchData()",
+    "Backend POST /api/documents/upload at line 2953 correctly accepts case_id and user_context as Form fields",
+    "When case_id is provided, document is linked to existing case; when not provided, new case is created",
+    "Modal has 3 language variants (en, fr, nl) matching user profile language"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_add_document_modal.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (6/6 tests passed)",
+    "frontend": "100% (12/12 features verified)"
+  },
+
+  "test_credentials": {
+    "us_pro_client": "test@jasper.legal / JasperPro2026!"
+  },
+
+  "seed_data_creation": "None - used existing seeded data with 28 cases",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "AddDocumentModal feature is fully implemented and tested. The modal opens on both Dashboard and CaseDetail pages when clicking 'Add document' button. It does NOT redirect to /upload. The modal has: drag & drop upload zone, context textarea (500 chars max), 'Analyze with James' button (disabled until file selected), Cancel button, and X close button. Backend POST /api/documents/upload accepts case_id and user_context Form fields. After upload, the modal closes and fetchCases/fetchData is called to refresh case data.",
+
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  },
+
+  "screenshots": [
+    ".screenshots/add_doc_modal_dashboard.png - AddDocumentModal on Dashboard page with all elements visible",
+    ".screenshots/add_doc_modal_casedetail.png - AddDocumentModal on CaseDetail page with all elements visible"
+  ]
+}
