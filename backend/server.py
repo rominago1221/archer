@@ -573,7 +573,8 @@ Return ONLY this JSON — no other text:
     {{
       "title": "Step title",
       "description": "Detailed description",
-      "action_type": "upload_document|book_lawyer|draft_response|no_action",
+      "action_type": "send_letter|book_lawyer|wait|gather_documents|no_action",
+      "letter_template": "Brief description of what letter to generate (only for send_letter type)",
       "why_important": "Why this matters"
     }}
   ],

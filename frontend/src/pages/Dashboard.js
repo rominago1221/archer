@@ -6,6 +6,8 @@ import { Plus, FileText, Upload, Settings, MessageSquare, Scale, LogOut, BookOpe
 import jsPDF from 'jspdf';
 import AddDocumentModal from '../components/AddDocumentModal';
 import CaseChatDrawer from '../components/CaseChatDrawer';
+import NextActionsPanel from '../components/NextActionsPanel';
+import LetterFormModal from '../components/LetterFormModal';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -225,8 +227,7 @@ const Dashboard = () => {
   const [showOverlay, setShowOverlay] = useState(false);
   const [loading, setLoading] = useState(true);
   const [reanalyzing, setReanalyzing] = useState(false);
-  const [letterModal, setLetterModal] = useState(null);
-  const [letterLoading, setLetterLoading] = useState(false);
+  const [letterFormStep, setLetterFormStep] = useState(null);
   const [shareModal, setShareModal] = useState(false);
   const [shareLink, setShareLink] = useState('');
   const [answerLoading, setAnswerLoading] = useState(false);
@@ -274,29 +275,6 @@ const Dashboard = () => {
       await fetchCases();
     } catch (e) { /* rate limit or other error */ }
     setReanalyzing(false);
-  };
-
-  const handleGenerateLetter = async (step) => {
-    setLetterLoading(true);
-    setLetterModal({ step, letter: null });
-    try {
-      const res = await axios.post(`${API}/cases/${selectedId}/generate-action-letter`, {
-        action_title: step.title || '',
-        action_description: step.description || '',
-      }, { withCredentials: true });
-      setLetterModal({ step, letter: res.data });
-    } catch (e) { setLetterModal({ step, letter: { body: 'Letter generation failed. Please try again.' } }); }
-    setLetterLoading(false);
-  };
-
-  const handleDownloadPdf = (letter) => {
-    const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text(letter?.subject || 'Legal Letter', 20, 20);
-    doc.setFontSize(10);
-    const lines = doc.splitTextToSize(letter?.body || '', 170);
-    doc.text(lines, 20, 35);
-    doc.save(`${sc?.title || 'letter'}.pdf`);
   };
 
   const handleJamesAnswer = async (answer) => {
@@ -769,33 +747,12 @@ const Dashboard = () => {
           )}
 
           {/* Next Actions */}
-          {steps.length > 0 && (
-            <>
-              <div style={{ padding: '8px 14px 4px', fontSize: 9, fontWeight: 700, color: '#1a1a2e', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.nextActions}</div>
-              {steps.map((s, i) => {
-                const sTitle = typeof s === 'string' ? s : (s.title || s.titre || '');
-                const sDesc = typeof s === 'string' ? '' : (s.description || s.why_important || '');
-                const isBookLawyer = (s.action_type === 'book_lawyer') || sTitle.toLowerCase().includes('attorney') || sTitle.toLowerCase().includes('avocat') || sTitle.toLowerCase().includes('advocaat');
-                return (
-                  <div key={i} data-testid={`action-item-${i}`}
-                    onClick={() => isBookLawyer ? navigate('/lawyers') : handleGenerateLetter(s)}
-                    style={{
-                    margin: '0 8px 4px', padding: '8px 10px', background: '#fff', borderRadius: 8, border: '0.5px solid #e2e0db',
-                    display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer',
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.borderColor = '#1a56db'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#e2e0db'; }}>
-                    <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#1a56db', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
-                    <div>
-                      <div style={{ fontSize: 10, fontWeight: 600, color: '#1a1a2e' }}>{sTitle}</div>
-                      {sDesc && <div style={{ fontSize: 9, color: '#6b7280', marginTop: 1 }}>{sDesc}</div>}
-                      <div style={{ fontSize: 8, color: '#1a56db', marginTop: 2, fontWeight: 500 }}>{isBookLawyer ? (lang === 'fr' ? 'Réserver un appel →' : 'Book a call →') : (lang === 'fr' ? 'Générer la lettre →' : 'Generate letter →')}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </>
-          )}
+          <NextActionsPanel
+            steps={steps}
+            lang={lang}
+            onLetterClick={(s) => setLetterFormStep(s)}
+            onCallClick={() => navigate('/lawyers')}
+          />
 
           {/* Documents */}
           <div style={{ padding: '8px 14px 4px', fontSize: 9, fontWeight: 700, color: '#1a1a2e', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.documents}</div>
@@ -850,34 +807,17 @@ const Dashboard = () => {
           />
         )}
 
-        {/* ═══ LETTER MODAL ═══ */}
-        {letterModal && (
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-            <div data-testid="letter-modal" style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 600, maxHeight: '80vh', overflow: 'auto', padding: 24 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{letterModal.step?.title || t.genLetter}</div>
-                <button onClick={() => setLetterModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} color="#6b7280" /></button>
-              </div>
-              {letterLoading ? (
-                <div style={{ textAlign: 'center', padding: 40 }}><Loader2 size={20} className="animate-spin" style={{ color: '#1a56db' }} /><div style={{ marginTop: 8, fontSize: 11, color: '#9ca3af' }}>{t.downloading}</div></div>
-              ) : letterModal.letter ? (
-                <>
-                  {letterModal.letter.subject && <div style={{ fontSize: 11, fontWeight: 600, color: '#374151', marginBottom: 4 }}>{letterModal.letter.subject}</div>}
-                  {letterModal.letter.recipient && <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 12 }}>To: {letterModal.letter.recipient}</div>}
-                  <div style={{ fontSize: 11, color: '#374151', lineHeight: 1.7, whiteSpace: 'pre-wrap', padding: 16, background: '#f8f7f4', borderRadius: 10, border: '0.5px solid #e2e0db', marginBottom: 16 }}>{letterModal.letter.body}</div>
-                  {letterModal.letter.legal_citations && (
-                    <div style={{ fontSize: 9, color: '#1d4ed8', marginBottom: 12 }}>
-                      {letterModal.letter.legal_citations.map((c, i) => <span key={i} style={{ display: 'inline-block', padding: '2px 8px', background: '#eff6ff', borderRadius: 4, marginRight: 4, marginBottom: 4 }}>{c}</span>)}
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => handleDownloadPdf(letterModal.letter)} data-testid="download-letter-pdf" style={{ flex: 1, padding: '10px 0', background: '#1a56db', color: '#fff', border: 'none', borderRadius: 9, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}><Download size={13} style={{ marginRight: 4 }} />{t.downloadPdf}</button>
-                    <button onClick={() => setLetterModal(null)} style={{ flex: 1, padding: '10px 0', background: '#fff', color: '#374151', border: '0.5px solid #e2e0db', borderRadius: 9, fontSize: 11, fontWeight: 500, cursor: 'pointer' }}>{t.close}</button>
-                  </div>
-                </>
-              ) : null}
-            </div>
-          </div>
+        {/* ═══ LETTER FORM MODAL ═══ */}
+        {letterFormStep && selectedId && (
+          <LetterFormModal
+            step={letterFormStep}
+            caseId={selectedId}
+            caseData={sc}
+            userName={user?.name}
+            lang={lang}
+            onClose={() => setLetterFormStep(null)}
+            onOpenChat={(msg) => setChatDrawer({ initial: msg })}
+          />
         )}
 
         {/* ═══ SHARE MODAL ═══ */}
