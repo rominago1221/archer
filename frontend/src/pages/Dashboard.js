@@ -232,6 +232,8 @@ const Dashboard = () => {
   const [answerLoading, setAnswerLoading] = useState(false);
   const [showAddDoc, setShowAddDoc] = useState(false);
   const [chatDrawer, setChatDrawer] = useState(null);
+  const [analysisToast, setAnalysisToast] = useState(null);
+  const prevSelectedStatusRef = React.useRef(null);
 
   const fetchCases = useCallback(async () => {
     try {
@@ -239,15 +241,30 @@ const Dashboard = () => {
       const sorted = (res.data || []).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
       setCases(sorted);
       if (sorted.length > 0 && !selectedId) setSelectedId(sorted[0].case_id);
-      // If any case is still analyzing, poll again in 5 seconds
-      if (sorted.some(c => c.status === 'analyzing')) {
-        setTimeout(() => fetchCases(), 5000);
-      }
     } catch (e) { /* ok */ }
     setLoading(false);
   }, [selectedId]);
 
   useEffect(() => { fetchCases(); }, [fetchCases]);
+
+  // Polling: 2s when any case is analyzing
+  useEffect(() => {
+    const hasAnalyzing = cases.some(c => c.status === 'analyzing');
+    if (!hasAnalyzing) return;
+    const interval = setInterval(fetchCases, 2000);
+    return () => clearInterval(interval);
+  }, [cases, fetchCases]);
+
+  // Detect when selected case finishes analysis
+  useEffect(() => {
+    const sc = cases.find(c => c.case_id === selectedId);
+    const curStatus = sc?.status;
+    if (prevSelectedStatusRef.current === 'analyzing' && curStatus === 'active') {
+      setAnalysisToast({ score: sc?.risk_score || 0 });
+      setTimeout(() => setAnalysisToast(null), 5000);
+    }
+    prevSelectedStatusRef.current = curStatus;
+  }, [cases, selectedId]);
 
   const handleReanalyze = async () => {
     if (!selectedId || reanalyzing) return;
@@ -503,7 +520,7 @@ const Dashboard = () => {
                   display: 'inline-flex', alignItems: 'center', gap: 8,
                 }}><Plus size={16} />{t.newCase}</button>
               </div>
-            ) : isAnalyzing ? (
+            ) : isAnalyzing && score === 0 ? (
               <div style={{ textAlign: 'center', padding: '80px 20px' }}>
                 <div style={{ fontSize: 40, marginBottom: 12, animation: 'pulse 1.5s infinite' }}>⚖️</div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>
@@ -520,6 +537,19 @@ const Dashboard = () => {
               </div>
             ) : (
               <>
+                {/* Re-analyzing banner */}
+                {isAnalyzing && score > 0 && (
+                  <div data-testid="reanalyzing-banner" style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', marginBottom: 10,
+                    background: '#eff6ff', borderRadius: 10, border: '0.5px solid #bfdbfe',
+                  }}>
+                    <Loader2 size={14} className="animate-spin" style={{ color: '#1a56db' }} />
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1e40af' }}>
+                      {lang === 'fr' ? 'James ré-analyse votre dossier complet...' : lang === 'nl' ? 'James heranalyseert uw volledig dossier...' : 'James is re-analyzing your complete case...'}
+                    </div>
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: 3 }}>{[0,1,2].map(i => <div key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: '#1a56db', animation: `pulse 1.5s infinite ${i*0.3}s` }} />)}</div>
+                  </div>
+                )}
                 {/* Case type badge + title */}
                 <div style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#fffbeb', border: '0.5px solid #fde68a', color: '#92400e', marginBottom: 8 }}>
                   {(t.caseEmoji[cType] || '📋')} {lang === 'fr' ? 'Dossier' : lang === 'nl' ? 'Dossier' : 'Case'} {t.caseType[cType] || cType}
@@ -810,7 +840,13 @@ const Dashboard = () => {
             caseId={selectedId}
             lang={lang}
             onClose={() => setShowAddDoc(false)}
-            onUploadComplete={() => { setShowAddDoc(false); fetchCases(); }}
+            onUploadComplete={() => {
+              setShowAddDoc(false);
+              prevSelectedStatusRef.current = 'analyzing';
+              // Mark selected case as analyzing locally so polling kicks in immediately
+              setCases(prev => prev.map(c => c.case_id === selectedId ? { ...c, status: 'analyzing' } : c));
+              fetchCases();
+            }}
           />
         )}
 
@@ -902,6 +938,20 @@ const Dashboard = () => {
                 marginTop: 14, fontSize: 10, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer',
               }}>← {t.backDash}</button>
             </div>
+          </div>
+        )}
+
+        {/* ═══ ANALYSIS COMPLETE TOAST ═══ */}
+        {analysisToast && (
+          <div data-testid="analysis-toast" style={{
+            position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 300,
+            background: '#16a34a', color: '#fff', padding: '10px 20px', borderRadius: 10,
+            fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)', animation: 'slideUp 0.3s ease-out',
+          }}>
+            <style>{`@keyframes slideUp{from{transform:translateX(-50%) translateY(20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}`}</style>
+            ✓ {lang === 'fr' ? 'Analyse terminée — Score de risque mis à jour' : lang === 'nl' ? 'Analyse voltooid — Risicoscore bijgewerkt' : 'Analysis complete — Risk Score updated'}
+            {analysisToast.score > 0 && <span style={{ background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: 6, fontWeight: 800 }}>{analysisToast.score}/100</span>}
           </div>
         )}
       </div>

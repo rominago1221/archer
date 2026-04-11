@@ -141,6 +141,8 @@ const CaseDetail = () => {
   const [showOverlay, setShowOverlay] = useState(false);
   const [showAddDoc, setShowAddDoc] = useState(false);
   const [chatDrawer, setChatDrawer] = useState(null);
+  const [analysisToast, setAnalysisToast] = useState(null);
+  const prevStatusRef = React.useRef(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -148,8 +150,15 @@ const CaseDetail = () => {
         axios.get(`${API}/cases/${caseId}`, { withCredentials: true }),
         axios.get(`${API}/cases`, { withCredentials: true }),
       ]);
-      setCaseData(caseRes.data);
-      setCases((casesRes.data || []).sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0)));
+      const newCase = caseRes.data;
+      // Detect transition from analyzing → active
+      if (prevStatusRef.current === 'analyzing' && newCase.status === 'active') {
+        setAnalysisToast({ score: newCase.risk_score || 0 });
+        setTimeout(() => setAnalysisToast(null), 5000);
+      }
+      prevStatusRef.current = newCase.status;
+      setCaseData(newCase);
+      setCases((casesRes.data || []).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)));
     } catch (e) { /* ok */ }
     setLoading(false);
   }, [caseId]);
@@ -157,7 +166,7 @@ const CaseDetail = () => {
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => {
     if (caseData?.status === 'analyzing') {
-      const interval = setInterval(fetchData, 5000);
+      const interval = setInterval(fetchData, 2000);
       return () => clearInterval(interval);
     }
   }, [caseData?.status, fetchData]);
@@ -323,7 +332,7 @@ const CaseDetail = () => {
           <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
             {!sc ? (
               <div style={{ textAlign: 'center', padding: '80px 20px', color: '#9ca3af' }}>Case not found</div>
-            ) : sc.status === 'analyzing' ? (
+            ) : sc.status === 'analyzing' && score === 0 ? (
               <div style={{ textAlign: 'center', padding: '80px 20px' }}>
                 <div style={{ fontSize: 40, marginBottom: 12, animation: 'pulse 1.5s infinite' }}>⚖️</div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>{t.analyzing}</div>
@@ -331,6 +340,19 @@ const CaseDetail = () => {
               </div>
             ) : (
               <>
+                {/* Re-analyzing banner */}
+                {sc.status === 'analyzing' && score > 0 && (
+                  <div data-testid="reanalyzing-banner" style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', marginBottom: 10,
+                    background: '#eff6ff', borderRadius: 10, border: '0.5px solid #bfdbfe',
+                  }}>
+                    <Loader2 size={14} className="animate-spin" style={{ color: '#1a56db' }} />
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1e40af' }}>
+                      {lang === 'fr' ? 'James ré-analyse votre dossier complet...' : lang === 'nl' ? 'James heranalyseert uw volledig dossier...' : 'James is re-analyzing your complete case...'}
+                    </div>
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: 3 }}>{[0,1,2].map(i => <div key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: '#1a56db', animation: `pulse 1.5s infinite ${i*0.3}s` }} />)}</div>
+                  </div>
+                )}
                 {/* Case type + title */}
                 <div style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#fffbeb', border: '0.5px solid #fde68a', color: '#92400e', marginBottom: 8 }}>
                   {t.caseType[sc.type] || sc.type || 'Other'}
@@ -624,7 +646,13 @@ const CaseDetail = () => {
             caseId={caseId}
             lang={lang}
             onClose={() => setShowAddDoc(false)}
-            onUploadComplete={() => { setShowAddDoc(false); fetchData(); }}
+            onUploadComplete={() => {
+              setShowAddDoc(false);
+              // Force analyzing state so polling kicks in immediately
+              setCaseData(prev => prev ? { ...prev, status: 'analyzing' } : prev);
+              prevStatusRef.current = 'analyzing';
+              fetchData();
+            }}
           />
         )}
 
@@ -662,6 +690,20 @@ const CaseDetail = () => {
                 marginTop: 14, fontSize: 10, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer',
               }}>← {t.backCase}</button>
             </div>
+          </div>
+        )}
+
+        {/* ═══ ANALYSIS COMPLETE TOAST ═══ */}
+        {analysisToast && (
+          <div data-testid="analysis-toast" style={{
+            position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 300,
+            background: '#16a34a', color: '#fff', padding: '10px 20px', borderRadius: 10,
+            fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)', animation: 'slideUp 0.3s ease-out',
+          }}>
+            <style>{`@keyframes slideUp{from{transform:translateX(-50%) translateY(20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}`}</style>
+            ✓ {lang === 'fr' ? 'Analyse terminée — Score de risque mis à jour' : lang === 'nl' ? 'Analyse voltooid — Risicoscore bijgewerkt' : 'Analysis complete — Risk Score updated'}
+            {analysisToast.score > 0 && <span style={{ background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: 6, fontWeight: 800 }}>{analysisToast.score}/100</span>}
           </div>
         )}
       </div>
