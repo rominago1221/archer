@@ -10,6 +10,7 @@ import NextActionsPanel from '../components/NextActionsPanel';
 import LetterFormModal from '../components/LetterFormModal';
 import JurisdictionPills from '../components/JurisdictionPills';
 import JurisdictionOnboarding, { hasSeenOnboarding } from '../components/JurisdictionOnboarding';
+import AnalysisFindings from '../components/AnalysisFindings';
 import { formatBoldText } from '../utils/sanitize';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -631,11 +632,17 @@ const Dashboard = () => {
 
                 {/* James Analysis */}
                 <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
-                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff' }}>J</div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e' }}>{t.analysisTitle}</div>
-                    <div style={{ marginLeft: 'auto', fontSize: 9, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e', animation: 'pulse 1.5s infinite' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                    <div style={{ position: 'relative', width: 32, height: 32, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                      J
+                      <div style={{ position: 'absolute', bottom: -1, right: -1, width: 8, height: 8, borderRadius: '50%', background: '#22c55e', border: '2px solid #fff', animation: 'pulse 1.5s infinite' }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: '#0a0a0f' }}>{t.analysisTitle}</div>
+                      <div style={{ fontSize: 11, color: '#9ca3af' }}>{sc?.title} · {sc?.type}</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#16a34a' }}>
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', animation: 'pulse 1.5s infinite' }} />
                       {t.live}
                     </div>
                   </div>
@@ -647,36 +654,7 @@ const Dashboard = () => {
                     </div>
                   )}
                   {findings.length === 0 && <div style={{ fontSize: 11, color: '#9ca3af', padding: '10px 0' }}>{t.questionFallback}</div>}
-                  {findings.map((f, idx) => {
-                    const fColor = f.impact === 'high' || f.type === 'risk' ? '#dc2626' : f.impact === 'low' || f.type === 'opportunity' ? '#16a34a' : '#f59e0b';
-                    return (
-                      <div key={`finding-${idx}-${(f.text || '').slice(0, 20)}`} style={{ padding: '9px 0', borderBottom: idx < findings.length - 1 ? '0.5px solid #f3f4f6' : 'none', display: 'flex', alignItems: 'flex-start', gap: 7 }}>
-                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: fColor, flexShrink: 0, marginTop: 4 }} />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 11, color: '#374151', lineHeight: 1.55, fontWeight: 600 }} dangerouslySetInnerHTML={{ __html: formatBoldText(f.text || '') }} />
-                          {f.impact_description && (
-                            <div style={{ fontSize: 10, color: '#4b5563', lineHeight: 1.5, marginTop: 3 }}>{f.impact_description}</div>
-                          )}
-                          {f.legal_ref && (
-                            <div style={{ marginTop: 5, padding: '5px 9px', background: '#eff6ff', borderLeft: '2px solid #1a56db', borderRadius: '0 5px 5px 0' }}>
-                              <div style={{ fontSize: 9, fontWeight: 600, color: '#1d4ed8' }}>{f.legal_ref}</div>
-                              {f.jurisprudence && <div style={{ fontSize: 8, color: '#3b82f6', marginTop: 1 }}>{f.jurisprudence}</div>}
-                            </div>
-                          )}
-                          {f.do_now && (
-                            <div style={{ fontSize: 10, color: '#065f46', lineHeight: 1.5, marginTop: 4, padding: '4px 8px', background: '#ecfdf5', borderRadius: 5, border: '0.5px solid #a7f3d0' }}>
-                              <span style={{ fontWeight: 600 }}>&#x2192;</span> {f.do_now}
-                            </div>
-                          )}
-                          {f.risk_if_ignored && (
-                            <div style={{ fontSize: 9, color: '#991b1b', lineHeight: 1.4, marginTop: 3, fontStyle: 'italic' }}>
-                              &#x26a0; {f.risk_if_ignored}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <AnalysisFindings findings={findings} lang={lang} isCompact={true} />
                 </div>
 
                 {/* James Question Card — max 1 question */}
