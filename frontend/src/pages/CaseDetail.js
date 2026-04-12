@@ -8,6 +8,7 @@ import AddDocumentModal from '../components/AddDocumentModal';
 import CaseChatDrawer from '../components/CaseChatDrawer';
 import NextActionsPanel from '../components/NextActionsPanel';
 import LetterFormModal from '../components/LetterFormModal';
+import AttorneyLetterModal from '../components/AttorneyLetterModal';
 import JurisdictionPills from '../components/JurisdictionPills';
 import AnalysisFindings from '../components/AnalysisFindings';
 import { formatBoldText } from '../utils/sanitize';
@@ -149,6 +150,7 @@ const CaseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [letterModal, setLetterModal] = useState(null);
   const [letterFormStep, setLetterFormStep] = useState(null);
+  const [attorneyModalStep, setAttorneyModalStep] = useState(null);
   const [shareModal, setShareModal] = useState(false);
   const [shareLink, setShareLink] = useState('');
   const [answerLoading, setAnswerLoading] = useState(false);
@@ -597,7 +599,7 @@ const CaseDetail = () => {
             findings={findings}
             lang={lang}
             opposingPartyName={sc?.opposing_party_name}
-            onLetterClick={(s) => setLetterFormStep(s)}
+            onLetterClick={(s) => setAttorneyModalStep(s)}
             onCallClick={() => navigate('/lawyers')}
           />
 
@@ -623,6 +625,19 @@ const CaseDetail = () => {
             )}
           </div>
         </div>
+
+        {/* ═══ ATTORNEY LETTER MODAL ═══ */}
+        {attorneyModalStep && (
+          <AttorneyLetterModal
+            caseData={sc}
+            lang={lang}
+            jurisdiction={user?.jurisdiction || 'US'}
+            opposingPartyName={sc?.opposing_party_name}
+            onClose={() => setAttorneyModalStep(null)}
+            onGenerateFree={() => { setLetterFormStep(attorneyModalStep); setAttorneyModalStep(null); }}
+            onOrderAttorney={() => { setAttorneyModalStep(null); }}
+          />
+        )}
 
         {/* ═══ LETTER FORM MODAL ═══ */}
         {letterFormStep && (

@@ -8,6 +8,7 @@ import AddDocumentModal from '../components/AddDocumentModal';
 import CaseChatDrawer from '../components/CaseChatDrawer';
 import NextActionsPanel from '../components/NextActionsPanel';
 import LetterFormModal from '../components/LetterFormModal';
+import AttorneyLetterModal from '../components/AttorneyLetterModal';
 import JurisdictionPills from '../components/JurisdictionPills';
 import JurisdictionOnboarding, { hasSeenOnboarding } from '../components/JurisdictionOnboarding';
 import AnalysisFindings from '../components/AnalysisFindings';
@@ -235,6 +236,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [reanalyzing, setReanalyzing] = useState(false);
   const [letterFormStep, setLetterFormStep] = useState(null);
+  const [attorneyModalStep, setAttorneyModalStep] = useState(null);
   const [shareModal, setShareModal] = useState(false);
   const [shareLink, setShareLink] = useState('');
   const [answerLoading, setAnswerLoading] = useState(false);
@@ -847,7 +849,7 @@ const Dashboard = () => {
             findings={findings}
             lang={lang}
             opposingPartyName={sc?.opposing_party_name}
-            onLetterClick={(s) => setLetterFormStep(s)}
+            onLetterClick={(s) => setAttorneyModalStep(s)}
             onCallClick={() => navigate('/lawyers')}
           />
 
@@ -903,6 +905,20 @@ const Dashboard = () => {
               setCases(prev => prev.map(c => c.case_id === selectedId ? { ...c, status: 'analyzing' } : c));
               fetchCases();
             }}
+          />
+        )}
+
+        {/* ═══ LETTER FORM MODAL ═══ */}
+        {/* ═══ ATTORNEY LETTER MODAL ═══ */}
+        {attorneyModalStep && selectedId && (
+          <AttorneyLetterModal
+            caseData={sc}
+            lang={lang}
+            jurisdiction={jurisdiction}
+            opposingPartyName={sc?.opposing_party_name}
+            onClose={() => setAttorneyModalStep(null)}
+            onGenerateFree={() => { setLetterFormStep(attorneyModalStep); setAttorneyModalStep(null); }}
+            onOrderAttorney={() => { /* Part 2: Stripe payment flow */ setAttorneyModalStep(null); }}
           />
         )}
 
