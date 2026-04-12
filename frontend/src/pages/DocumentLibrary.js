@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import { FileText, Search, Send, Download, Pen, ArrowUp, Loader2, Check, Lock, ChevronRight, X, Shield, Briefcase, Home, Code, CreditCard, Users, Info } from 'lucide-react';
+import { formatBoldText, safePrintContent } from '../utils/sanitize';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -140,7 +141,7 @@ const DocumentLibrary = () => {
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, sending]);
   useEffect(() => { localStorage.setItem('jasper_doc_mode', mode); }, [mode]);
   useEffect(() => {
-    (async () => { try { const r = await axios.get(`${API}/documents/james/recent`, { withCredentials: true }); setRecentDocs(r.data); } catch {} })();
+    (async () => { try { const r = await axios.get(`${API}/documents/james/recent`, { withCredentials: true }); setRecentDocs(r.data); } catch (e) { console.error('Failed to load recent docs:', e); } })();
   }, [latestDocId]);
 
   const sendMessage = async (text) => {
@@ -271,7 +272,7 @@ const DocumentLibrary = () => {
                   <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                     <JA />
                     <div style={{ maxWidth: '85%' }}>
-                      <div style={{ padding: '11px 14px', borderRadius: '3px 12px 12px 12px', background: '#ffffff', border: '1px solid #d1d5db', fontSize: 12, color: '#374151', lineHeight: 1.65, whiteSpace: 'pre-wrap' }} dangerouslySetInnerHTML={{ __html: dt.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#1a56db">$1</strong>').replace(/\n/g, '<br/>') }} />
+                      <div style={{ padding: '11px 14px', borderRadius: '3px 12px 12px 12px', background: '#ffffff', border: '1px solid #d1d5db', fontSize: 12, color: '#374151', lineHeight: 1.65, whiteSpace: 'pre-wrap' }} dangerouslySetInnerHTML={{ __html: formatBoldText(dt) }} />
                       {msg.document && <DocumentPreviewCard content={msg.document} onEdit={() => inputRef.current?.focus()} onDownload={handleDownloadPdf} onSign={() => setSignModal(true)} />}
                     </div>
                   </div>

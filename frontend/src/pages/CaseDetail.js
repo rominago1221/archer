@@ -9,6 +9,7 @@ import CaseChatDrawer from '../components/CaseChatDrawer';
 import NextActionsPanel from '../components/NextActionsPanel';
 import LetterFormModal from '../components/LetterFormModal';
 import JurisdictionPills from '../components/JurisdictionPills';
+import { formatBoldText } from '../utils/sanitize';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -433,7 +434,7 @@ const CaseDetail = () => {
                       <div key={i} style={{ padding: '9px 0', borderBottom: i < findings.length - 1 ? '0.5px solid #f3f4f6' : 'none', display: 'flex', alignItems: 'flex-start', gap: 7 }}>
                         <div style={{ width: 6, height: 6, borderRadius: '50%', background: fColor, flexShrink: 0, marginTop: 4 }} />
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 15, color: '#374151', lineHeight: 1.55 }} dangerouslySetInnerHTML={{ __html: (f.text || '').replace(/\*\*(.*?)\*\*/g, '<b style="color:#1a1a2e;font-weight:600">$1</b>') }} />
+                          <div style={{ fontSize: 15, color: '#374151', lineHeight: 1.55 }} dangerouslySetInnerHTML={{ __html: formatBoldText(f.text || '') }} />
                           {f.legal_ref && <div style={{ marginTop: 5, padding: '5px 9px', background: '#eff6ff', borderLeft: '2px solid #1a56db', borderRadius: '0 5px 5px 0' }}><div style={{ fontSize: 15, fontWeight: 600, color: '#1d4ed8' }}>{f.legal_ref}</div></div>}
                         </div>
                       </div>

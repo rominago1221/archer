@@ -39,7 +39,7 @@ const SharedCase = () => {
       });
       setCommentSent(true);
       setCommentText('');
-    } catch {} finally {
+    } catch (e) { console.error('Failed to load shared case:', e); } finally {
       setCommenting(false);
     }
   };

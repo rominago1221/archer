@@ -19,7 +19,7 @@ const PublicAttorneyProfile = () => {
       try {
         const res = await axios.get(`${API}/attorneys/${slug}`);
         setAttorney(res.data);
-      } catch (e) { /* ok */ }
+      } catch (e) { console.error('Failed to load attorney profile:', e); }
       setLoading(false);
     };
     fetch();

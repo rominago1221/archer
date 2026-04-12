@@ -28,7 +28,7 @@ const VideoCall = () => {
         setCall(res.data);
         if (res.data.brief) setBrief(res.data.brief);
         if (res.data.attorney_notes) setNotes(res.data.attorney_notes);
-      } catch (e) { /* ok */ }
+      } catch (e) { console.error('Failed to load call data:', e); }
       setLoading(false);
     };
     fetch();
@@ -72,7 +72,7 @@ const VideoCall = () => {
       const res = await axios.post(`${API}/attorney/calls/${callId}/generate-brief`, {}, { withCredentials: true });
       setBrief(res.data.brief);
       setShowBrief(true);
-    } catch (e) { /* ok */ }
+    } catch (e) { console.error('Failed to generate brief:', e); }
     setGeneratingBrief(false);
   };
 

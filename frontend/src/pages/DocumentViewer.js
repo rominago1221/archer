@@ -23,7 +23,7 @@ const DocumentViewer = () => {
         if (res.data.storage_path) {
           setPreviewUrl(`${API}/documents/${documentId}/download`);
         }
-      } catch (e) { /* ok */ }
+      } catch (e) { console.error('Failed to load document:', e); }
       setLoading(false);
     })();
   }, [documentId]);

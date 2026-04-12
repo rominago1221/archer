@@ -88,7 +88,7 @@ const Landing = () => {
             <h1 className="text-4xl md:text-5xl font-bold text-[#111] leading-tight mb-5" style={{ fontFamily: 'Outfit, sans-serif' }}>
               {t.hero.h1[0]}<br/>{t.hero.h1[1]}<br/><em className="not-italic text-[#1a56db]">{t.hero.h1[2]}</em>
             </h1>
-            <p className="text-[#555] text-base leading-relaxed mb-6" dangerouslySetInnerHTML={{ __html: t.hero.sub }} />
+            <p className="text-[#555] text-base leading-relaxed mb-6" dangerouslySetInnerHTML={{ __html: sanitizeHtml(t.hero.sub) }} />
             <div className="flex flex-wrap gap-3 mb-4">
               <button onClick={() => navigate('/signup')} className="px-6 py-3 bg-[#1a56db] text-white text-sm font-medium rounded-full hover:bg-[#1546b3] transition-colors" data-testid="hero-cta-btn">
                 {t.hero.cta}
@@ -190,7 +190,7 @@ const Landing = () => {
             <div className="w-5 h-5 rounded-md bg-[#eff6ff] flex items-center justify-center flex-shrink-0">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1a56db" strokeWidth="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
             </div>
-            <div className="text-[11px] text-[#555] text-left" dangerouslySetInnerHTML={{ __html: t.animated.aiBar }} />
+            <div className="text-[11px] text-[#555] text-left" dangerouslySetInnerHTML={{ __html: sanitizeHtml(t.animated.aiBar) }} />
           </div>
         </div>
       </section>
