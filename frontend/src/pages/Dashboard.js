@@ -12,6 +12,7 @@ import AttorneyLetterModal from '../components/AttorneyLetterModal';
 import JurisdictionPills from '../components/JurisdictionPills';
 import JurisdictionOnboarding, { hasSeenOnboarding } from '../components/JurisdictionOnboarding';
 import AnalysisFindings from '../components/AnalysisFindings';
+import ScoreHistoryChart from '../components/ScoreHistoryChart';
 import { formatBoldText } from '../utils/sanitize';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -740,34 +741,7 @@ const Dashboard = () => {
 
                 {/* Score History */}
                 {history.length > 0 && (
-                  <div style={{ background: '#fff', borderRadius: 12, padding: '16px 18px', marginBottom: 10, border: '1px solid #e2e0db' }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', marginBottom: 12 }}>{t.scoreHistory}</div>
-                    <svg viewBox="0 0 460 160" style={{ width: '100%', height: 120 }}>
-                      {[0, 25, 50, 75, 100].map(v => {
-                        const y = 130 - (v / 100) * 110;
-                        return <g key={v}>
-                          <line x1={40} y1={y} x2={440} y2={y} stroke="#f0f0f0" strokeWidth="0.5" strokeDasharray="4,3" />
-                          <text x={35} y={y + 4} textAnchor="end" fontSize="10" fill="#9ca3af">{v}</text>
-                        </g>;
-                      })}
-                      {history.map((h, hIdx) => {
-                        const x = history.length === 1 ? 240 : 50 + (hIdx / (history.length - 1)) * 380;
-                        const y = 130 - (h.score / 100) * 110;
-                        const c = h.score <= 30 ? '#16a34a' : h.score <= 60 ? '#f59e0b' : '#dc2626';
-                        const lineColor = history[history.length - 1].score <= 30 ? '#16a34a' : history[history.length - 1].score <= 60 ? '#f59e0b' : '#dc2626';
-                        const prevX = hIdx > 0 ? (history.length === 1 ? 240 : 50 + ((hIdx - 1) / (history.length - 1)) * 380) : x;
-                        const prevY = hIdx > 0 ? 130 - (history[hIdx - 1].score / 100) * 110 : y;
-                        const dt = h.date ? new Date(h.date) : null;
-                        const label = dt ? `${dt.toLocaleString('en', { month: 'short' })} ${dt.getDate()}` : `#${hIdx + 1}`;
-                        return <g key={h.date || `history-${hIdx}`}>
-                          {hIdx > 0 && <line x1={prevX} y1={prevY} x2={x} y2={y} stroke={lineColor} strokeWidth="2" />}
-                          <circle cx={x} cy={y} r="5" fill={c} stroke="#fff" strokeWidth="2" />
-                          <text x={x} y={y - 10} textAnchor="middle" fontSize="10" fontWeight="600" fill={c}>{h.score}</text>
-                          <text x={x} y={148} textAnchor="middle" fontSize="10" fill="#9ca3af">{label}</text>
-                        </g>;
-                      })}
-                    </svg>
-                  </div>
+                  <ScoreHistoryChart history={history} title={t.scoreHistory} isCompact={true} />
                 )}
 
                 {/* Battle Preview — Horizontal */}
