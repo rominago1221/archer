@@ -594,6 +594,7 @@ const CaseDetail = () => {
           {/* Next Actions */}
           <NextActionsPanel
             steps={steps}
+            findings={findings}
             lang={lang}
             opposingPartyName={sc?.opposing_party_name}
             onLetterClick={(s) => setLetterFormStep(s)}

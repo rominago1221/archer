@@ -13,6 +13,32 @@ const classifyAction = (step) => {
   return 'letter';
 };
 
+function classifyFinding(f) {
+  const text = ((f.text || '') + ' ' + (f.legal_ref || '') + ' ' + (f.risk_if_ignored || '')).toLowerCase();
+  const impact = (f.impact || '').toLowerCase();
+  const type = (f.type || '').toLowerCase();
+  const criticalSignals = ['deadline', 'délai', 'void', 'invalid', 'nulle', 'nul', 'illegal', 'violation', 'perte', 'loss', 'impératif', 'critical', 'critique', 'immediately', 'immédiatement', 'urgent', 'days', 'jours'];
+  if (type === 'deadline' || impact === 'high' || type === 'risk') {
+    if (criticalSignals.some(s => text.includes(s)) || impact === 'high') return 'CRITICAL';
+  }
+  const importantSignals = ['strengthen', 'renforce', 'calcul', 'formula', 'formule', 'claeys', 'presumption', 'présomption', 'error', 'erreur', 'advantage', 'avantage', 'levier', 'leverage', 'incorrect', 'favorable', 'marge', 'technique', 'contestable'];
+  if (importantSignals.some(s => text.includes(s)) || impact === 'medium') return 'IMPORTANT';
+  return 'ATTENTION';
+}
+
+function extractLetterArguments(findings) {
+  if (!findings || findings.length === 0) return [];
+  return findings
+    .filter(f => {
+      const cat = classifyFinding(f);
+      return cat === 'CRITICAL' || cat === 'IMPORTANT';
+    })
+    .map(f => ({
+      title: f.text || '',
+      legal_ref: f.legal_ref || '',
+    }));
+}
+
 const T = {
   en: {
     nextActions: 'Next actions',
@@ -56,7 +82,7 @@ const T = {
   },
 };
 
-function consolidateSteps(steps) {
+function consolidateSteps(steps, findings) {
   const letters = [];
   let callAction = null;
   let passiveAction = null;
@@ -70,22 +96,20 @@ function consolidateSteps(steps) {
     } else if (type === 'passive' && !passiveAction) {
       passiveAction = s;
     } else if (type === 'call' && callAction) {
-      // Extra call → demote to passive
       if (!passiveAction) passiveAction = s;
-    } else if (type === 'passive' && passiveAction) {
-      // Extra passive → skip
     }
   });
 
-  // Consolidate all letters into one
   let consolidated = null;
   if (letters.length > 0) {
     const mainTitle = typeof letters[0] === 'string' ? letters[0] : (letters[0].title || letters[0].titre || '');
-    const arguments_ = letters.map(l => {
-      const title = typeof l === 'string' ? l : (l.title || l.titre || '');
-      const desc = typeof l === 'string' ? '' : (l.description || '');
-      return { title, description: desc, originalStep: l };
-    });
+    // Use CRITICAL + IMPORTANT findings as letter arguments
+    const findingArgs = extractLetterArguments(findings);
+    // Fallback to letter step titles if no findings available
+    const arguments_ = findingArgs.length > 0
+      ? findingArgs
+      : letters.map(l => ({ title: typeof l === 'string' ? l : (l.title || l.titre || ''), legal_ref: '' }));
+
     consolidated = {
       title: mainTitle,
       arguments: arguments_,
@@ -97,11 +121,11 @@ function consolidateSteps(steps) {
   return { consolidated, callAction, passiveAction };
 }
 
-const NextActionsPanel = ({ steps, lang, onLetterClick, onCallClick, opposingPartyName }) => {
+const NextActionsPanel = ({ steps, lang, onLetterClick, onCallClick, opposingPartyName, findings }) => {
   const t = T[lang] || T.en;
   if (!steps || steps.length === 0) return null;
 
-  const { consolidated, callAction, passiveAction } = consolidateSteps(steps);
+  const { consolidated, callAction, passiveAction } = consolidateSteps(steps, findings);
   let actionNum = 0;
 
   return (
@@ -138,7 +162,10 @@ const NextActionsPanel = ({ steps, lang, onLetterClick, onCallClick, opposingPar
                     <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
                       <Check size={7} color="#1a56db" strokeWidth={3} />
                     </div>
-                    <span style={{ fontSize: 10, color: '#1e40af', lineHeight: 1.4 }}>{arg.title}</span>
+                    <div style={{ fontSize: 10, color: '#1e40af', lineHeight: 1.4 }}>
+                      {arg.title}
+                      {arg.legal_ref && <span style={{ color: '#3b82f6', fontWeight: 500 }}> — {arg.legal_ref}</span>}
+                    </div>
                   </div>
                 ))}
               </div>
