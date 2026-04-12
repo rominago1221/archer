@@ -8,6 +8,7 @@ Tests:
 import pytest
 import requests
 import os
+from tests.conftest import TEST_US_EMAIL, TEST_US_PASSWORD, TEST_BE_EMAIL, TEST_BE_PASSWORD, TEST_ATTORNEY_EMAIL, TEST_ATTORNEY_PASSWORD, US_PRO_USER, BELGIUM_PRO_USER, ATTORNEY_USER
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://predict-outcome.preview.emergentagent.com')
 
@@ -21,7 +22,7 @@ class TestLetterFormModalBackend:
         # Login as test user
         login_response = self.session.post(
             f"{BASE_URL}/api/auth/login",
-            json={"email": "test@jasper.legal", "password": "JasperPro2026!"}
+            json={"email": TEST_US_EMAIL, "password": TEST_US_PASSWORD}
         )
         assert login_response.status_code == 200, f"Login failed: {login_response.text}"
         self.user = login_response.json().get("user", login_response.json())
@@ -37,7 +38,7 @@ class TestLetterFormModalBackend:
         assert "name" in profile, "Profile missing 'name' field"
         assert "email" in profile, "Profile missing 'email' field"
         assert profile["name"] == "Alex Thompson", f"Expected name 'Alex Thompson', got '{profile.get('name')}'"
-        assert profile["email"] == "test@jasper.legal", f"Expected email 'test@jasper.legal', got '{profile.get('email')}'"
+        assert profile["email"] == TEST_US_EMAIL, f"Expected email 'test@jasper.legal', got '{profile.get('email')}'"
         
         # Check if address exists (should be empty for this test user)
         address = profile.get("address")

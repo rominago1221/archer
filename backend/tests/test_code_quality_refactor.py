@@ -9,6 +9,7 @@ Tests login flows, dashboard APIs, and page loading after code quality fixes:
 import pytest
 import requests
 import os
+from tests.conftest import TEST_US_EMAIL, TEST_US_PASSWORD, TEST_BE_EMAIL, TEST_BE_PASSWORD, TEST_ATTORNEY_EMAIL, TEST_ATTORNEY_PASSWORD, US_PRO_USER, BELGIUM_PRO_USER, ATTORNEY_USER
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
@@ -18,13 +19,12 @@ class TestAuthLogin:
     def test_us_pro_user_login(self):
         """Test US Pro user login - test@jasper.legal"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "test@jasper.legal",
-            "password": "JasperPro2026!"
+            "email": TEST_US_EMAIL, "password": TEST_US_PASSWORD
         })
         assert response.status_code == 200, f"US Pro login failed: {response.text}"
         data = response.json()
         assert "user" in data, "Response missing 'user' field"
-        assert data["user"]["email"] == "test@jasper.legal"
+        assert data["user"]["email"] == TEST_US_EMAIL
         assert data["user"]["plan"] == "pro"
         # Store session cookie for subsequent tests
         self.us_session_cookie = response.cookies.get("session_token")
@@ -34,13 +34,12 @@ class TestAuthLogin:
     def test_belgium_pro_user_login(self):
         """Test Belgium Pro user login - belgium@jasper.legal"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "belgium@jasper.legal",
-            "password": "JasperPro2026!"
+            "email": TEST_BE_EMAIL, "password": TEST_BE_PASSWORD
         })
         assert response.status_code == 200, f"Belgium Pro login failed: {response.text}"
         data = response.json()
         assert "user" in data, "Response missing 'user' field"
-        assert data["user"]["email"] == "belgium@jasper.legal"
+        assert data["user"]["email"] == TEST_BE_EMAIL
         assert data["user"]["plan"] == "pro"
         assert data["user"].get("jurisdiction") == "BE" or data["user"].get("country") == "BE"
         print(f"✓ Belgium Pro user login successful, jurisdiction: {data['user'].get('jurisdiction', data['user'].get('country'))}")
@@ -48,13 +47,12 @@ class TestAuthLogin:
     def test_attorney_login(self):
         """Test attorney login - attorney@jasper.com"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "attorney@jasper.com",
-            "password": "attorney123"
+            "email": TEST_ATTORNEY_EMAIL, "password": TEST_ATTORNEY_PASSWORD
         })
         assert response.status_code == 200, f"Attorney login failed: {response.text}"
         data = response.json()
         assert "user" in data, "Response missing 'user' field"
-        assert data["user"]["email"] == "attorney@jasper.com"
+        assert data["user"]["email"] == TEST_ATTORNEY_EMAIL
         print(f"✓ Attorney login successful")
     
     def test_invalid_credentials(self):
@@ -74,8 +72,7 @@ class TestCasesAPI:
     def setup_session(self):
         """Login and get session for authenticated requests"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "test@jasper.legal",
-            "password": "JasperPro2026!"
+            "email": TEST_US_EMAIL, "password": TEST_US_PASSWORD
         })
         assert response.status_code == 200, "Setup login failed"
         self.session = requests.Session()
@@ -110,8 +107,7 @@ class TestBelgiumJurisdiction:
     def setup_belgium_session(self):
         """Login as Belgium user"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "belgium@jasper.legal",
-            "password": "JasperPro2026!"
+            "email": TEST_BE_EMAIL, "password": TEST_BE_PASSWORD
         })
         assert response.status_code == 200, "Belgium login failed"
         self.session = requests.Session()
@@ -153,8 +149,7 @@ class TestDashboardAPIs:
     def setup_session(self):
         """Login and get session"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "test@jasper.legal",
-            "password": "JasperPro2026!"
+            "email": TEST_US_EMAIL, "password": TEST_US_PASSWORD
         })
         assert response.status_code == 200, "Setup login failed"
         self.session = requests.Session()
@@ -166,7 +161,7 @@ class TestDashboardAPIs:
         assert response.status_code == 200, f"GET /api/auth/me failed: {response.text}"
         data = response.json()
         assert "email" in data, "Response missing email"
-        assert data["email"] == "test@jasper.legal"
+        assert data["email"] == TEST_US_EMAIL
         print(f"✓ GET /api/auth/me returned user: {data['email']}")
     
     def test_chat_conversations(self):

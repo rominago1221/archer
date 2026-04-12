@@ -6,11 +6,12 @@ Tests POST /api/letters/generate with new letter type IDs.
 import pytest
 import requests
 import os
+from tests.conftest import TEST_US_EMAIL, TEST_US_PASSWORD, TEST_BE_EMAIL, TEST_BE_PASSWORD, TEST_ATTORNEY_EMAIL, TEST_ATTORNEY_PASSWORD, US_PRO_USER, BELGIUM_PRO_USER, ATTORNEY_USER
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials
-TEST_EMAIL = "test@jasper.com"
+TEST_EMAIL = TEST_US_EMAIL
 TEST_PASSWORD = "password123"
 TEST_CASE_ID = "case_325e9b859a01"  # Housing type case
 

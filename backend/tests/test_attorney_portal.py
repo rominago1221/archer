@@ -12,14 +12,15 @@ import pytest
 import requests
 import os
 import uuid
+from tests.conftest import TEST_US_EMAIL, TEST_US_PASSWORD, TEST_BE_EMAIL, TEST_BE_PASSWORD, TEST_ATTORNEY_EMAIL, TEST_ATTORNEY_PASSWORD, US_PRO_USER, BELGIUM_PRO_USER, ATTORNEY_USER
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials from test_credentials.md
 CLIENT_EMAIL = "test_cg@example.com"
 CLIENT_PASSWORD = "testpassword123"
-ATTORNEY_EMAIL = "attorney@jasper.com"
-ATTORNEY_PASSWORD = "attorney123"
+ATTORNEY_EMAIL = TEST_ATTORNEY_EMAIL
+ATTORNEY_PASSWORD = TEST_ATTORNEY_PASSWORD
 
 
 class TestHealthAndBasics:

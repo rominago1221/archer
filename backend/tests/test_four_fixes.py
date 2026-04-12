@@ -8,6 +8,7 @@ Test suite for the 4 fixes in iteration 38:
 import pytest
 import requests
 import os
+from tests.conftest import TEST_US_EMAIL, TEST_US_PASSWORD, TEST_BE_EMAIL, TEST_BE_PASSWORD, TEST_ATTORNEY_EMAIL, TEST_ATTORNEY_PASSWORD, US_PRO_USER, BELGIUM_PRO_USER, ATTORNEY_USER
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
@@ -19,8 +20,7 @@ class TestDocumentEndpoints:
         """Login and get session"""
         self.session = requests.Session()
         login_resp = self.session.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "test@jasper.legal",
-            "password": "JasperPro2026!"
+            "email": TEST_US_EMAIL, "password": TEST_US_PASSWORD
         })
         assert login_resp.status_code == 200, f"Login failed: {login_resp.text}"
         self.user = login_resp.json()
@@ -119,8 +119,7 @@ class TestCaseDetailEndpoints:
         """Login and get session"""
         self.session = requests.Session()
         login_resp = self.session.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "test@jasper.legal",
-            "password": "JasperPro2026!"
+            "email": TEST_US_EMAIL, "password": TEST_US_PASSWORD
         })
         assert login_resp.status_code == 200, f"Login failed: {login_resp.text}"
         self.user = login_resp.json()

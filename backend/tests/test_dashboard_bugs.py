@@ -5,14 +5,15 @@ Tests: Claude API via Emergent, CourtListener filtering, Dashboard data structur
 import pytest
 import requests
 import os
+from tests.conftest import TEST_US_EMAIL, TEST_US_PASSWORD, TEST_BE_EMAIL, TEST_BE_PASSWORD, TEST_ATTORNEY_EMAIL, TEST_ATTORNEY_PASSWORD, US_PRO_USER, BELGIUM_PRO_USER, ATTORNEY_USER
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials
-US_PRO_EMAIL = "test@jasper.legal"
-US_PRO_PASSWORD = "JasperPro2026!"
-BELGIAN_FR_EMAIL = "belgium@jasper.legal"
-BELGIAN_FR_PASSWORD = "JasperPro2026!"
+US_PRO_EMAIL = TEST_US_EMAIL
+US_PRO_PASSWORD = TEST_US_PASSWORD
+BELGIAN_FR_EMAIL = TEST_BE_EMAIL
+BELGIAN_FR_PASSWORD = TEST_US_PASSWORD
 
 
 class TestAuthAndLogin:

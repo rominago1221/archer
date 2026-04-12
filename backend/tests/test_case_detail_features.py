@@ -6,12 +6,13 @@ import pytest
 import requests
 import os
 import time
+from tests.conftest import TEST_US_EMAIL, TEST_US_PASSWORD, TEST_BE_EMAIL, TEST_BE_PASSWORD, TEST_ATTORNEY_EMAIL, TEST_ATTORNEY_PASSWORD, US_PRO_USER, BELGIUM_PRO_USER, ATTORNEY_USER
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials
-TEST_EMAIL = "test@jasper.legal"
-TEST_PASSWORD = "JasperPro2026!"
+TEST_EMAIL = TEST_US_EMAIL
+TEST_PASSWORD = TEST_US_PASSWORD
 CASE_ID = "case_ed35bd476d0a"
 
 

@@ -704,8 +704,8 @@ const CaseDetail = () => {
               </div>
               <div style={{ fontSize: 15, color: '#6b7280', marginBottom: 20 }}>{t.overlaySub}</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                {t.sit.map((s, i) => (
-                  <div key={i} data-testid={`situation-card-${i}`}
+                {t.sit.map((s) => (
+                  <div key={s.title} data-testid={`situation-card-${s.title}`}
                     onClick={() => { setShowOverlay(false); navigate('/upload'); }}
                     style={{
                       display: 'flex', alignItems: 'flex-start', gap: 10, padding: 11, borderRadius: 10,

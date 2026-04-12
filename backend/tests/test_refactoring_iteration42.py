@@ -6,13 +6,14 @@ Extracted modules: db.py, models.py, auth.py, storage.py, routes/auth_routes.py,
 import pytest
 import requests
 import os
+from tests.conftest import TEST_US_EMAIL, TEST_US_PASSWORD, TEST_BE_EMAIL, TEST_BE_PASSWORD, TEST_ATTORNEY_EMAIL, TEST_ATTORNEY_PASSWORD, US_PRO_USER, BELGIUM_PRO_USER, ATTORNEY_USER
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials from test_credentials.md
-US_PRO_USER = {"email": "test@jasper.legal", "password": "JasperPro2026!"}
-BELGIUM_PRO_USER = {"email": "belgium@jasper.legal", "password": "JasperPro2026!"}
-ATTORNEY_USER = {"email": "attorney@jasper.com", "password": "attorney123"}
+US_PRO_USER = {"email": TEST_US_EMAIL, "password": TEST_US_PASSWORD}
+BELGIUM_PRO_USER = {"email": TEST_BE_EMAIL, "password": TEST_BE_PASSWORD}
+ATTORNEY_USER = {"email": TEST_ATTORNEY_EMAIL, "password": TEST_ATTORNEY_PASSWORD}
 
 
 class TestHealthAndBasicEndpoints:

@@ -10,12 +10,13 @@ Tests for attorney onboarding & validation flow:
 import pytest
 import requests
 import os
+from tests.conftest import TEST_US_EMAIL, TEST_US_PASSWORD, TEST_BE_EMAIL, TEST_BE_PASSWORD, TEST_ATTORNEY_EMAIL, TEST_ATTORNEY_PASSWORD, US_PRO_USER, BELGIUM_PRO_USER, ATTORNEY_USER
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials from test_credentials.md
-ADMIN_EMAIL = "test@jasper.legal"
-ADMIN_PASSWORD = "JasperPro2026!"
+ADMIN_EMAIL = TEST_US_EMAIL
+ADMIN_PASSWORD = TEST_US_PASSWORD
 
 
 @pytest.fixture(scope="module")

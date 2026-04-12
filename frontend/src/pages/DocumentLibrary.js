@@ -261,15 +261,16 @@ const DocumentLibrary = () => {
                 </>
               )}
               {messages.map((msg, i) => {
-                if (msg.role === 'system') return <div key={i} style={{ textAlign: 'center', fontSize: 11, color: '#16a34a', margin: '8px 0', fontWeight: 500 }}>{msg.content}</div>;
+                const msgKey = msg.ts || `msg-${i}-${(msg.content || '').slice(0, 15)}`;
+                if (msg.role === 'system') return <div key={msgKey} style={{ textAlign: 'center', fontSize: 11, color: '#16a34a', margin: '8px 0', fontWeight: 500 }}>{msg.content}</div>;
                 if (msg.role === 'user') return (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                  <div key={msgKey} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
                     <div style={{ maxWidth: '70%', padding: '11px 14px', borderRadius: '12px 3px 12px 12px', background: '#1a56db', color: '#fff', fontSize: 12, lineHeight: 1.65 }}>{msg.content}</div>
                   </div>
                 );
                 const dt = stripDocumentTags(msg.content);
                 return (
-                  <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  <div key={msgKey} style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                     <JA />
                     <div style={{ maxWidth: '85%' }}>
                       <div style={{ padding: '11px 14px', borderRadius: '3px 12px 12px 12px', background: '#ffffff', border: '1px solid #d1d5db', fontSize: 12, color: '#374151', lineHeight: 1.65, whiteSpace: 'pre-wrap' }} dangerouslySetInnerHTML={{ __html: formatBoldText(dt) }} />
@@ -287,8 +288,8 @@ const DocumentLibrary = () => {
             <div style={{ borderTop: '1px solid #e2e0db', background: '#f4f4f1', padding: '13px 32px' }} data-testid="input-area">
               {!limitReached && (
                 <div style={{ display: 'flex', gap: 5, marginBottom: 9, overflowX: 'auto' }} data-testid="suggestion-chips">
-                  {suggestions.map((s, i) => (
-                    <button key={i} onClick={() => sendMessage(s)} data-testid={`suggestion-${i}`}
+                  {suggestions.map((s) => (
+                    <button key={s} onClick={() => sendMessage(s)} data-testid={`suggestion-${s.slice(0, 15)}`}
                       style={{ flexShrink: 0, padding: '4px 11px', borderRadius: 16, fontSize: 11, border: '1px solid #e2e0db', color: '#6b7280', background: '#fff', cursor: 'pointer', whiteSpace: 'nowrap' }}
                       onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.style.color = '#1a56db'; }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e0db'; e.currentTarget.style.color = '#6b7280'; }}>
@@ -349,10 +350,10 @@ const DocumentLibrary = () => {
             {/* Template grid */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px 28px' }} data-testid="template-grid">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                {filteredTemplates.map((t, i) => {
+                {filteredTemplates.map((t) => {
                   const cat = CATS.find(c => c.key === t.cat) || CATS[0];
                   return (
-                    <div key={i} onClick={() => switchToGenerate(t.name)} data-testid={`template-card-${i}`}
+                    <div key={t.name} onClick={() => switchToGenerate(t.name)} data-testid={`template-card-${t.name}`}
                       style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, border: '1px solid #e2e0db', borderRadius: 9, cursor: 'pointer', transition: 'all 0.15s', background: '#ffffff' }}
                       onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.style.background = '#f8faff'; e.currentTarget.querySelector('.gen-link').style.opacity = 1; }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e0db'; e.currentTarget.style.background = '#ffffff'; e.currentTarget.querySelector('.gen-link').style.opacity = 0; }}>

@@ -5,6 +5,7 @@ Tests the POST /api/documents/upload endpoint with case_id and user_context fiel
 import pytest
 import requests
 import os
+from tests.conftest import TEST_US_EMAIL, TEST_US_PASSWORD, TEST_BE_EMAIL, TEST_BE_PASSWORD, TEST_ATTORNEY_EMAIL, TEST_ATTORNEY_PASSWORD, US_PRO_USER, BELGIUM_PRO_USER, ATTORNEY_USER
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
@@ -18,7 +19,7 @@ class TestAddDocumentUploadEndpoint:
         # Login to get session
         login_response = self.session.post(
             f"{BASE_URL}/api/auth/login",
-            json={"email": "test@jasper.legal", "password": "JasperPro2026!"}
+            json={"email": TEST_US_EMAIL, "password": TEST_US_PASSWORD}
         )
         assert login_response.status_code == 200, f"Login failed: {login_response.text}"
         self.user_data = login_response.json()
@@ -155,7 +156,7 @@ class TestUploadEndpointValidation:
         self.session = requests.Session()
         login_response = self.session.post(
             f"{BASE_URL}/api/auth/login",
-            json={"email": "test@jasper.legal", "password": "JasperPro2026!"}
+            json={"email": TEST_US_EMAIL, "password": TEST_US_PASSWORD}
         )
         assert login_response.status_code == 200, f"Login failed: {login_response.text}"
     

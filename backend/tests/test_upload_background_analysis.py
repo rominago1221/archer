@@ -6,14 +6,15 @@ import pytest
 import requests
 import os
 import time
+from tests.conftest import TEST_US_EMAIL, TEST_US_PASSWORD, TEST_BE_EMAIL, TEST_BE_PASSWORD, TEST_ATTORNEY_EMAIL, TEST_ATTORNEY_PASSWORD, US_PRO_USER, BELGIUM_PRO_USER, ATTORNEY_USER
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials
-US_USER_EMAIL = "test@jasper.legal"
-US_USER_PASSWORD = "JasperPro2026!"
-BELGIAN_USER_EMAIL = "belgium@jasper.legal"
-BELGIAN_USER_PASSWORD = "JasperPro2026!"
+US_USER_EMAIL = TEST_US_EMAIL
+US_USER_PASSWORD = TEST_US_PASSWORD
+BELGIAN_USER_EMAIL = TEST_BE_EMAIL
+BELGIAN_USER_PASSWORD = TEST_US_PASSWORD
 
 
 class TestUploadBackgroundAnalysis:

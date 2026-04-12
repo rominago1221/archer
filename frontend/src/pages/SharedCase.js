@@ -141,8 +141,8 @@ const SharedCase = () => {
           <div className="card p-5">
             <div className="text-sm font-medium mb-3">Key Findings</div>
             <div className="space-y-2">
-              {caseData.ai_findings.map((f, i) => (
-                <div key={i} className="flex items-start gap-2 py-2 border-b border-[#f5f5f5] last:border-0">
+              {caseData.ai_findings.map((f, fIdx) => (
+                <div key={`finding-${fIdx}-${(f.text || '').slice(0, 20)}`} className="flex items-start gap-2 py-2 border-b border-[#f5f5f5] last:border-0">
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 mt-0.5" style={{
                     background: f.impact === 'high' ? '#fef2f2' : f.impact === 'medium' ? '#fef9c3' : '#f0fdf4',
                     color: f.impact === 'high' ? '#dc2626' : f.impact === 'medium' ? '#ca8a04' : '#16a34a'
@@ -192,8 +192,8 @@ const SharedCase = () => {
         {documents?.length > 0 && (
           <div className="card p-5">
             <div className="text-sm font-medium mb-3">Documents ({documents.length})</div>
-            {documents.map((d, i) => (
-              <div key={i} className="flex items-center gap-2 py-2 border-b border-[#f5f5f5] last:border-0">
+            {documents.map((d) => (
+              <div key={d.document_id || d.file_name} className="flex items-center gap-2 py-2 border-b border-[#f5f5f5] last:border-0">
                 <FileText size={14} className="text-[#9ca3af]" />
                 <span className="text-xs text-[#555] flex-1">{d.file_name}</span>
                 <span className="badge text-[9px]" style={{ background: d.status === 'analyzed' ? '#f0fdf4' : '#f5f5f5', color: d.status === 'analyzed' ? '#16a34a' : '#888' }}>{d.status}</span>
@@ -206,8 +206,8 @@ const SharedCase = () => {
         {events?.length > 0 && (
           <div className="card p-5">
             <div className="text-sm font-medium mb-3">Timeline</div>
-            {events.map((e, i) => (
-              <div key={i} className="flex items-start gap-3 py-2 border-b border-[#f5f5f5] last:border-0">
+            {events.map((e) => (
+              <div key={e.event_id || e.title} className="flex items-start gap-3 py-2 border-b border-[#f5f5f5] last:border-0">
                 <div className="w-2 h-2 rounded-full bg-[#1a56db] mt-1.5 flex-shrink-0"></div>
                 <div>
                   <div className="text-xs font-medium text-[#111827]">{e.title}</div>
@@ -223,8 +223,8 @@ const SharedCase = () => {
           <div className="text-sm font-medium mb-3">Comments</div>
           {comments?.length > 0 && (
             <div className="space-y-3 mb-4">
-              {comments.map((c, i) => (
-                <div key={i} className="bg-[#f8f8f8] rounded-lg p-3">
+              {comments.map((c) => (
+                <div key={c.created_at || c.commenter_name} className="bg-[#f8f8f8] rounded-lg p-3">
                   <div className="text-xs font-medium text-[#111827]">{c.commenter_name}</div>
                   <div className="text-xs text-[#555] mt-1">{c.comment}</div>
                   <div className="text-[10px] text-[#9ca3af] mt-1">{new Date(c.created_at).toLocaleDateString()}</div>
