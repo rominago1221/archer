@@ -158,12 +158,12 @@ const CaseDetail = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      const [caseRes, casesRes] = await Promise.all([
+      const [caseRes, casesRes, docsRes] = await Promise.all([
         axios.get(`${API}/cases/${caseId}`, { withCredentials: true }),
         axios.get(`${API}/cases`, { withCredentials: true }),
+        axios.get(`${API}/cases/${caseId}/documents`, { withCredentials: true }).catch(() => ({ data: [] })),
       ]);
       const newCase = caseRes.data;
-      // Detect transition from analyzing → active
       if (prevStatusRef.current === 'analyzing' && newCase.status === 'active') {
         setAnalysisToast({ score: newCase.risk_score || 0 });
         setTimeout(() => setAnalysisToast(null), 5000);
@@ -171,8 +171,7 @@ const CaseDetail = () => {
       prevStatusRef.current = newCase.status;
       setCaseData(newCase);
       setCases((casesRes.data || []).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)));
-      // Fetch documents for this case
-      try { const dr = await axios.get(`${API}/cases/${caseId}/documents`, { withCredentials: true }); setCaseDocs(dr.data || []); } catch {}
+      setCaseDocs(docsRes.data || []);
     } catch (e) { /* ok */ }
     setLoading(false);
   }, [caseId]);
