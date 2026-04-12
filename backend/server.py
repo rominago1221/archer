@@ -524,26 +524,43 @@ def _build_case_law_for_frontend(courtlistener_opinions: list) -> list:
     return result
 
 
-async def _validate_james_question(strategy: dict, facts_str: str, persona: str, lang_instruction: str) -> dict:
+async def _validate_james_question(strategy: dict, facts_str: str, persona: str, lang_instruction: str, language: str = "en") -> dict:
     """Ensure james_question exists with valid text and options, retrying if needed."""
     jq = strategy.get("james_question")
     if jq and isinstance(jq, dict) and jq.get("text") and jq.get("options") and len(jq.get("options", [])) >= 2:
         return jq
 
     logger.warning("James question missing or invalid — retrying")
+    is_french = language.startswith("fr")
+    is_dutch = language.startswith("nl")
+    is_german = language.startswith("de")
+    is_spanish = language.startswith("es")
+
+    if is_french:
+        retry_prompt = f"Sur base de cette analyse documentaire, genere UNE question specifique de clarification avec 2-4 options de reponse. La question DOIT referencer un fait precis du document. JAMAIS de question generique.\n\nFaits: {facts_str[:2000]}\n\nRetourne UNIQUEMENT JSON: {{\"text\": \"question specifique\", \"options\": [\"option1\", \"option2\", \"option3\"]}}"
+        fallback = {"text": "Avez-vous d'autres documents lies a cette affaire ?", "options": ["Oui, j'ai d'autres documents", "Non, c'est tout", "Je ne suis pas sur"]}
+    elif is_dutch:
+        retry_prompt = f"Op basis van deze documentanalyse, genereer EEN specifieke verduidelijkingsvraag met 2-4 antwoordopties.\n\nFeiten: {facts_str[:2000]}\n\nRetourneer ALLEEN JSON: {{\"text\": \"specifieke vraag\", \"options\": [\"optie1\", \"optie2\", \"optie3\"]}}"
+        fallback = {"text": "Heeft u andere documenten met betrekking tot deze zaak?", "options": ["Ja, ik heb meer documenten", "Nee, dat is alles", "Ik weet het niet zeker"]}
+    elif is_german:
+        retry_prompt = f"Basierend auf dieser Dokumentenanalyse, generiere EINE spezifische Klarungsfrage mit 2-4 Antwortoptionen.\n\nFakten: {facts_str[:2000]}\n\nGib NUR JSON zuruck: {{\"text\": \"spezifische Frage\", \"options\": [\"Option1\", \"Option2\", \"Option3\"]}}"
+        fallback = {"text": "Haben Sie weitere Dokumente zu diesem Fall?", "options": ["Ja, ich habe weitere Dokumente", "Nein, das ist alles", "Ich bin nicht sicher"]}
+    elif is_spanish:
+        retry_prompt = f"Basado en este analisis del documento, genera UNA pregunta de clarificacion especifica con 2-4 opciones de respuesta.\n\nHechos: {facts_str[:2000]}\n\nDevuelve SOLO JSON: {{\"text\": \"pregunta especifica\", \"options\": [\"opcion1\", \"opcion2\", \"opcion3\"]}}"
+        fallback = {"text": "Tiene otros documentos relacionados con este caso?", "options": ["Si, tengo mas documentos", "No, eso es todo", "No estoy seguro"]}
+    else:
+        retry_prompt = f"Based on this document analysis, generate ONE specific clarifying question with 2-4 answer options. The question must reference a specific fact from the document. NEVER a generic question.\n\nFacts: {facts_str[:2000]}\n\nReturn ONLY JSON: {{\"text\": \"specific question\", \"options\": [\"option1\", \"option2\", \"option3\"]}}"
+        fallback = {"text": "Do you have any additional documents related to this case?", "options": ["Yes, I have more documents", "No, this is everything", "I'm not sure"]}
+
     try:
         await asyncio.sleep(1)
-        jq_retry = await call_claude(
-            persona,
-            f"Based on this document analysis, generate ONE specific clarifying question with 2-4 answer options. The question must reference a specific fact from the document.\n\nFacts: {facts_str[:2000]}\n\nReturn ONLY JSON: {{\"text\": \"specific question\", \"options\": [\"option1\", \"option2\", \"option3\"]}}",
-            max_tokens=500
-        )
-        if jq_retry and jq_retry.get("text") and jq_retry.get("options"):
+        jq_retry = await call_claude(persona, retry_prompt, max_tokens=500)
+        if jq_retry and jq_retry.get("text") and jq_retry.get("options") and len(jq_retry.get("options", [])) >= 2:
             return jq_retry
     except Exception as e:
         logger.error(f"James question retry failed: {e}")
 
-    return {"text": "Do you have any additional documents related to this case?", "options": ["Yes, I have more documents", "No, this is everything", "I'm not sure"]}
+    return fallback
 
 
 async def _validate_user_arguments(user_arguments: dict, facts_str: str, analysis_str: str, lang_instruction: str) -> dict:
@@ -736,6 +753,7 @@ def _build_belgian_analysis_result(
         "lawyer_recommendation": strategy.get("lawyer_recommendation"),
         "success_probability": strategy.get("success_probability"),
         "key_insight": strategy.get("key_insight", ""),
+        "james_question": strategy.get("james_question"),
         "battle_preview": {"user_side": user_arguments, "opposing_side": opposing_arguments},
         "recent_case_law": [],
         "case_law_updated": now_date,
@@ -800,7 +818,7 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
         logger.info("Advanced analysis: All 5 passes complete")
 
         # ═══ VALIDATION — enforce global rules ═══
-        strategy["james_question"] = await _validate_james_question(strategy, facts_str, persona, lang_instruction)
+        strategy["james_question"] = await _validate_james_question(strategy, facts_str, persona, lang_instruction, language=language)
         user_arguments = await _validate_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
         strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
 
@@ -1066,6 +1084,10 @@ Sur base des faits et de l'analyse, fournis des recommandations strategiques con
 FAITS: {facts_json}
 ANALYSE JURIDIQUE: {analysis_json}
 
+REGLE CRITIQUE JAMES_QUESTION: Tu DOIS generer une question specifique basee sur les faits du document. La question doit referencer un fait precis du document. JAMAIS de question generique. La question DOIT avoir 2-4 options de reponse cliquables. Exemples:
+- Pour licenciement: "Avez-vous une preuve ecrite de votre signalement de harcelement ?" avec options ["Oui — email ou document RH", "Non — c'etait verbal", "Je ne suis pas sur"]
+- Pour clause non-concurrence: "Avez-vous deja signe un accord de depart propose par votre employeur ?" avec options ["Oui j'ai signe", "Non pas encore", "On me l'a propose mais pas signe"]
+
 Retourne UNIQUEMENT ce JSON:
 {{
   "recommended_strategy": {{
@@ -1083,8 +1105,10 @@ Retourne UNIQUEMENT ce JSON:
   "red_lines": ["Ne jamais signer de document sous pression sans le lire", "Ne jamais payer sans accord ecrit prealable"],
   "lawyer_recommendation": {{"necessaire": true, "urgence": "immediatement|dans_3_jours|dans_la_semaine|optionnel", "raison": "Exposition > 2500 EUR", "type_avocat": "droit_du_travail|droit_du_bail|droit_commercial|consommateur"}},
   "success_probability": {{"resolution_favorable": 35, "compromis_negocie": 48, "perte_partielle": 12, "perte_totale": 5}},
-  "key_insight": "La phrase la plus importante que l'utilisateur doit retenir"
-}}"""
+  "key_insight": "La phrase la plus importante que l'utilisateur doit retenir",
+  "james_question": {{"text": "Question SPECIFIQUE basee sur un fait precis du document — JAMAIS generique", "options": ["Option specifique 1", "Option specifique 2", "Option specifique 3"]}}
+}}
+OBLIGATOIRE: james_question DOIT etre present avec text et 2-4 options. JAMAIS l'omettre."""
 
 BE_PASS4A_SYSTEM = """Tu es un avocat senior en Belgique representant l'utilisateur. Ton travail est de construire le dossier LE PLUS SOLIDE possible pour ton client. Trouve chaque argument, chaque vice de procedure, chaque protection legale qui beneficie a ton client. Sois agressif et exhaustif.
 
@@ -1218,6 +1242,7 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
         logger.info("Belgian analysis: 5 passes complete")
 
         # ═══ VALIDATION — enforce global rules for Belgian analysis ═══
+        strategy["james_question"] = await _validate_james_question(strategy, facts_str, persona_with_lang, lang_instruction, language=language)
         user_arguments = await _validate_belgian_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
         strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
 
@@ -2013,6 +2038,7 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Complete")
 
     # ═══ VALIDATION — enforce global rules for Belgian multi-doc ═══
+    strategy["james_question"] = await _validate_james_question(strategy, facts_str, persona_with_lang, lang_instruction, language=language)
     user_arguments = await _validate_belgian_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
     strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
 
@@ -2851,6 +2877,7 @@ async def reanalyze_case(case_id: str, current_user: User = Depends(get_current_
             "leverage_points": analysis.get("leverage_points", []),
             "red_lines": analysis.get("red_lines", []),
             "key_insight": analysis.get("key_insight", ""),
+            "james_question": analysis.get("james_question"),
             "strategy": analysis.get("strategy"),
             "lawyer_recommendation": analysis.get("lawyer_recommendation"),
             "user_rights": analysis.get("user_rights", []),
