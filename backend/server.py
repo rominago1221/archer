@@ -2486,6 +2486,20 @@ async def update_case(
     updated = await db.cases.find_one({"case_id": case_id}, {"_id": 0})
     return updated
 
+
+@api_router.delete("/cases/{case_id}")
+async def delete_case(case_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a case and all its documents, events, and related data"""
+    case = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    await db.cases.delete_one({"case_id": case_id})
+    await db.documents.delete_many({"case_id": case_id})
+    await db.case_events.delete_many({"case_id": case_id})
+    await db.conversations.delete_many({"case_id": case_id})
+    return {"message": "Case deleted"}
+
+
 @api_router.get("/cases/{case_id}/events", response_model=List[CaseEvent])
 async def get_case_events(case_id: str, current_user: User = Depends(get_current_user)):
     """Get timeline events for a case"""

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { Plus, FileText, Upload, Settings, MessageSquare, Scale, LogOut, BookOpen, Download, Share2, ExternalLink, Loader2, X, ArrowLeft } from 'lucide-react';
+import { Plus, FileText, Upload, Settings, MessageSquare, Scale, LogOut, BookOpen, Download, Share2, ExternalLink, Loader2, X, ArrowLeft, Trash2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import AddDocumentModal from '../components/AddDocumentModal';
 import CaseChatDrawer from '../components/CaseChatDrawer';
@@ -60,6 +60,7 @@ const L = {
       { icon: '💬', bg: '#f0fdf4', title: 'Other legal situation', desc: 'Describe your problem to James' },
     ],
     noCase: 'No active case selected',
+    deleteConfirm: 'Delete this case? This cannot be undone.',
     noCaseSub: 'Select a case from the sidebar or open a new one.',
     openedOn: 'Opened', docCount: 'documents', updatedBy: 'Updated by James',
     caseType: { housing: 'Housing', employment: 'Employment', debt: 'Debt', insurance: 'Insurance', contract: 'Contract', consumer: 'Consumer', family: 'Family', court: 'Court', nda: 'NDA', penal: 'Criminal', commercial: 'Commercial', other: 'Other' },
@@ -120,6 +121,7 @@ const L = {
       { icon: '💬', bg: '#f0fdf4', title: 'Autre situation juridique', desc: 'Décrivez votre problème à James' },
     ],
     noCase: 'Aucun dossier actif sélectionné',
+    deleteConfirm: 'Supprimer ce dossier ? Cette action est irréversible.',
     noCaseSub: 'Sélectionnez un dossier dans la barre latérale ou ouvrez-en un nouveau.',
     openedOn: 'Ouvert le', docCount: 'documents', updatedBy: 'Mis à jour par James',
     caseType: { housing: 'Logement', employment: 'Emploi', debt: 'Dettes', insurance: 'Assurance', contract: 'Contrat', consumer: 'Consommation', family: 'Famille', court: 'Tribunal', nda: 'NDA', penal: 'Pénal', commercial: 'Commercial', other: 'Autre' },
@@ -180,6 +182,7 @@ const L = {
       { icon: '💬', bg: '#f0fdf4', title: 'Andere juridische situatie', desc: 'Beschrijf uw probleem aan James' },
     ],
     noCase: 'Geen actief dossier geselecteerd',
+    deleteConfirm: 'Dit dossier verwijderen? Dit kan niet ongedaan worden gemaakt.',
     noCaseSub: 'Selecteer een dossier in de zijbalk of open een nieuw dossier.',
     openedOn: 'Geopend op', docCount: 'documenten', updatedBy: 'Bijgewerkt door James',
     caseType: { housing: 'Huisvesting', employment: 'Werk', debt: 'Schulden', insurance: 'Verzekering', contract: 'Contract', consumer: 'Consument', family: 'Familie', court: 'Rechtbank', nda: 'NDA', penal: 'Strafrecht', commercial: 'Commercieel', other: 'Overig' },
@@ -340,6 +343,16 @@ const Dashboard = () => {
     setAnswerLoading(false);
   };
 
+
+  const handleDeleteCase = async (caseId) => {
+    if (!window.confirm(t.deleteConfirm)) return;
+    try {
+      await axios.delete(`${API}/cases/${caseId}`, { withCredentials: true });
+      if (selectedId === caseId) setSelectedId(null);
+      await fetchCases();
+    } catch (e) { console.error('Delete case error:', e); }
+  };
+
   const handleShare = async () => {
     setShareModal(true);
     try {
@@ -466,7 +479,17 @@ const Dashboard = () => {
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
                     <div style={{ width: 7, height: 7, borderRadius: '50%', background: c.status === 'analyzing' ? '#f59e0b' : cColor, flexShrink: 0, marginTop: 3, animation: c.status === 'analyzing' ? 'pulse 1.5s infinite' : 'none' }} />
                     <div style={{ fontSize: 11, fontWeight: 500, color: '#1a1a2e', flex: 1, lineHeight: 1.3 }}>{c.title || 'Untitled'}</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: c.status === 'analyzing' ? '#f59e0b' : cColor, marginLeft: 'auto', whiteSpace: 'nowrap' }}>{c.status === 'analyzing' ? '...' : cScore > 0 ? cScore : '—'}</div>
+                    <button
+                      data-testid={`delete-case-${c.case_id}`}
+                      onClick={(e) => { e.stopPropagation(); handleDeleteCase(c.case_id); }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, opacity: 0.3, transition: 'opacity 0.15s', flexShrink: 0 }}
+                      onMouseEnter={e => { e.currentTarget.style.opacity = '1'; }}
+                      onMouseLeave={e => { e.currentTarget.style.opacity = '0.3'; }}
+                      title={t.deleteConfirm}
+                    >
+                      <Trash2 size={11} color="#dc2626" />
+                    </button>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: c.status === 'analyzing' ? '#f59e0b' : cColor, whiteSpace: 'nowrap' }}>{c.status === 'analyzing' ? '...' : cScore > 0 ? cScore : '—'}</div>
                   </div>
                   <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2, marginLeft: 14 }}>{c.status === 'analyzing' ? (lang === 'fr' ? 'James analyse...' : lang === 'nl' ? 'James analyseert...' : 'James analyzing...') : `${cTypeName} · ${c.document_count || 0} ${t.docCount}`}</div>
                   {cDl !== null && (
