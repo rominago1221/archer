@@ -32,7 +32,7 @@ const JurisdictionPills = ({ jurisdiction, language, onSwitch, onLanguageChange 
   return (
     <div data-testid="jurisdiction-language-bar" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       {/* Jurisdiction pills */}
-      <div data-testid="jurisdiction-pills" style={{ display: 'flex', gap: 0, background: '#f3f4f6', borderRadius: 22, padding: 2 }}>
+      <div data-testid="jurisdiction-pills" style={{ display: 'flex', gap: 6 }}>
         {items.map(item => {
           const active = (jurisdiction || 'US') === item.key;
           return (
@@ -41,17 +41,17 @@ const JurisdictionPills = ({ jurisdiction, language, onSwitch, onLanguageChange 
               data-testid={`jurisdiction-pill-${item.key}`}
               onClick={() => onSwitch(item.key)}
               style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                padding: '5px 14px', borderRadius: 20, border: 'none',
-                background: active ? '#0a0a0f' : 'transparent',
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '6px 14px', borderRadius: 20, border: 'none',
+                background: active ? '#1a56db' : '#f4f4f1',
                 color: active ? '#fff' : '#374151',
-                fontSize: 11, fontWeight: active ? 600 : 400,
+                fontSize: 13, fontWeight: 500,
                 cursor: 'pointer', transition: 'all 0.2s',
                 whiteSpace: 'nowrap',
               }}
             >
-              <span style={{ fontSize: 11 }}>&#x2696;&#xFE0F;</span>
-              <span style={{ fontSize: 12 }}>{item.flag}</span>
+              <span style={{ fontSize: 16, fontWeight: 700, lineHeight: 1 }}>&#x2696;&#xFE0F;</span>
+              <span style={{ fontSize: 13 }}>{item.flag}</span>
               <span>{item.label}</span>
             </button>
           );
