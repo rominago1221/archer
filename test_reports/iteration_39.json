@@ -1,0 +1,126 @@
+{
+  "summary": "Tested 6 global Claude prompt fixes plus frontend Score History axes. Backend code review: All 6 fixes verified in server.py. Frontend: Score History graph has proper Y-axis (0,25,50,75,100) with gridlines on both Dashboard and CaseDetail. Fixed Outcome Predictor 0% bug by adding French field name fallbacks. JurisdictionPills has language selector dropdown.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Battle Preview - YOUR ARGUMENTS",
+        "issue": "YOUR ARGUMENTS section is empty while THEIR ARGUMENTS has content. This is existing data issue - the user_side.strongest_arguments is empty in database for this case.",
+        "affected_selectors": ["[data-testid='your-arguments']"],
+        "priority": "LOW - existing data, new analyses will have arguments due to retry logic"
+      }
+    ],
+    "design_issues": []
+  },
+
+  "features_verified": {
+    "1_score_history_dashboard_y_axis": {
+      "status": "PASS",
+      "evidence": "Dashboard.js lines 668-674: Y-axis values [0, 25, 50, 75, 100] with gridlines (stroke-dasharray='4,3'). Verified via SVG text content extraction."
+    },
+    "2_score_history_casedetail_y_axis": {
+      "status": "PASS",
+      "evidence": "CaseDetail.js lines 393-399: Same Y-axis implementation with gridlines. Verified in code."
+    },
+    "3_jurisdiction_pills_language_selector": {
+      "status": "PASS",
+      "evidence": "JurisdictionPills.js has language selector dropdown with data-testid='language-selector-btn'. 5 language options: EN, FR, NL, DE, ES."
+    },
+    "4_backend_pass3_james_question_rule": {
+      "status": "PASS",
+      "evidence": "server.py line 567: 'RULE 1 — james_question: You MUST generate exactly ONE specific clarifying question... Always provide 2-4 answer options as clickable buttons.'"
+    },
+    "5_backend_pass3_success_probability_rule": {
+      "status": "PASS",
+      "evidence": "server.py line 569: 'RULE 2 — success_probability: No outcome can be below 2% or above 95%. All four values MUST sum to exactly 100.'"
+    },
+    "6_backend_pass3_next_steps_legal_reference": {
+      "status": "PASS",
+      "evidence": "server.py line 571: 'RULE 3 — next_steps: Each step MUST include a specific legal reference (statute, article, section number).'"
+    },
+    "7_backend_pass4a_arguments_rule": {
+      "status": "PASS",
+      "evidence": "server.py lines 620-641: 'MUST generate exactly 4-5 strongest_arguments. NEVER return fewer than 4.'"
+    },
+    "8_backend_validation_james_question_retry": {
+      "status": "PASS",
+      "evidence": "server.py lines 909-926: Validation block retries james_question if missing/invalid with fallback default."
+    },
+    "9_backend_validation_user_arguments_retry": {
+      "status": "PASS",
+      "evidence": "server.py lines 928-942: Validation block retries Pass 4A if user_arguments < 3."
+    },
+    "10_backend_validation_success_probability_clamping": {
+      "status": "PASS",
+      "evidence": "server.py lines 944-963: Clamps values 2-95%, ensures sum=100, provides risk-based fallbacks."
+    },
+    "11_backend_language_instruction_enforcement": {
+      "status": "PASS",
+      "evidence": "server.py lines 2000-2022: get_language_instruction() includes 'ZERO English words allowed' enforcement."
+    },
+    "12_outcome_predictor_no_zero_percent": {
+      "status": "PASS (after fix)",
+      "evidence": "Fixed frontend to handle French field names (resolution_favorable, compromis_negocie, perte_partielle, perte_totale). Now shows 65%, 25%, 8%, 2% instead of 0%."
+    }
+  },
+
+  "test_report_links": [
+    "/app/test_reports/iteration_39.json"
+  ],
+
+  "action_items": [
+    "NONE - All 6 global fixes verified in backend code. Frontend Outcome Predictor 0% bug fixed by adding French field name fallbacks."
+  ],
+
+  "critical_code_review_comments": [
+    "Backend PASS3_PROMPT correctly includes all 3 rules: james_question with 2-4 options, success_probability 2-95% clamping, next_steps with legal references",
+    "Backend PASS4A_PROMPT correctly requires 4-5 strongest_arguments",
+    "Backend validation block (lines 908-963) properly implements retry logic for james_question, user_arguments, and success_probability",
+    "Backend get_language_instruction (lines 2000-2022) enforces 100% language consistency with 'ZERO English words allowed'",
+    "Frontend Score History graph has proper Y-axis (0,25,50,75,100) with dashed gridlines on both Dashboard and CaseDetail",
+    "Frontend JurisdictionPills component includes language selector dropdown with 5 options",
+    "FIXED: Frontend Outcome Predictor was showing 0% because French field names (resolution_favorable, compromis_negocie, etc.) were not in fallback chain"
+  ],
+
+  "updated_files": [
+    "/app/frontend/src/pages/Dashboard.js",
+    "/app/frontend/src/pages/CaseDetail.js"
+  ],
+
+  "success_rate": {
+    "backend": "100% (all 6 prompt fixes verified in code)",
+    "frontend": "100% (Score History axes verified, Outcome Predictor 0% bug fixed)"
+  },
+
+  "test_credentials": {
+    "usa_pro_client": "test@jasper.legal / JasperPro2026!"
+  },
+
+  "seed_data_creation": "None - used existing seeded data",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": true,
+
+  "context_for_next_testing_agent": "6 global Claude prompt fixes verified in backend code (lines 555-641 for prompts, 908-963 for validation, 2000-2022 for language). Frontend Score History graph has Y-axis (0,25,50,75,100) with gridlines. Fixed Outcome Predictor 0% bug by adding French field name fallbacks (resolution_favorable, compromis_negocie, perte_partielle, perte_totale). The YOUR ARGUMENTS section is empty for existing cases - this is expected as the data was created before the retry logic was added. New analyses will have proper arguments.",
+
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  },
+
+  "fixes_applied": {
+    "outcome_predictor_0_percent_bug": {
+      "root_cause": "Frontend expected English field names (full_resolution_in_favor, negotiated_settlement, partial_loss, full_loss) but database had French field names (resolution_favorable, compromis_negocie, perte_partielle, perte_totale)",
+      "fix": "Added French field name fallbacks to Dashboard.js and CaseDetail.js Outcome Predictor sections",
+      "files_modified": ["/app/frontend/src/pages/Dashboard.js", "/app/frontend/src/pages/CaseDetail.js"],
+      "verification": "Outcome Predictor now shows 65%, 25%, 8%, 2% instead of 0%, 0%, 0%, 0%"
+    }
+  }
+}

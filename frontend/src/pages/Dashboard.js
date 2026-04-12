@@ -662,17 +662,30 @@ const Dashboard = () => {
 
                 {/* Score History */}
                 {history.length > 0 && (
-                  <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 8 }}>{t.scoreHistory}</div>
-                    <svg viewBox="0 0 400 80" style={{ width: '100%', height: 60 }}>
+                  <div style={{ background: '#fff', borderRadius: 12, padding: '16px 18px', marginBottom: 10, border: '1px solid #e2e0db' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', marginBottom: 12 }}>{t.scoreHistory}</div>
+                    <svg viewBox="0 0 460 160" style={{ width: '100%', height: 120 }}>
+                      {[0, 25, 50, 75, 100].map(v => {
+                        const y = 130 - (v / 100) * 110;
+                        return <g key={v}>
+                          <line x1={40} y1={y} x2={440} y2={y} stroke="#f0f0f0" strokeWidth="0.5" strokeDasharray="4,3" />
+                          <text x={35} y={y + 4} textAnchor="end" fontSize="10" fill="#9ca3af">{v}</text>
+                        </g>;
+                      })}
                       {history.map((h, i) => {
-                        const x = history.length === 1 ? 200 : 20 + (i / (history.length - 1)) * 360;
-                        const y = 75 - (h.score / 100) * 70;
-                        const c = riskColor(h.score);
+                        const x = history.length === 1 ? 240 : 50 + (i / (history.length - 1)) * 380;
+                        const y = 130 - (h.score / 100) * 110;
+                        const c = h.score <= 30 ? '#16a34a' : h.score <= 60 ? '#f59e0b' : '#dc2626';
+                        const lineColor = history[history.length - 1].score <= 30 ? '#16a34a' : history[history.length - 1].score <= 60 ? '#f59e0b' : '#dc2626';
+                        const prevX = i > 0 ? (history.length === 1 ? 240 : 50 + ((i - 1) / (history.length - 1)) * 380) : x;
+                        const prevY = i > 0 ? 130 - (history[i - 1].score / 100) * 110 : y;
+                        const dt = h.date ? new Date(h.date) : null;
+                        const label = dt ? `${dt.toLocaleString('en', { month: 'short' })} ${dt.getDate()}` : `#${i + 1}`;
                         return <g key={i}>
-                          {i > 0 && <line x1={20 + ((i-1) / (history.length - 1)) * 360} y1={75 - (history[i-1].score / 100) * 70} x2={x} y2={y} stroke={c} strokeWidth="2" />}
-                          <circle cx={x} cy={y} r="4" fill={c} />
-                          <text x={x} y={y - 8} textAnchor="middle" fontSize="8" fill={c}>{h.score}</text>
+                          {i > 0 && <line x1={prevX} y1={prevY} x2={x} y2={y} stroke={lineColor} strokeWidth="2" />}
+                          <circle cx={x} cy={y} r="5" fill={c} stroke="#fff" strokeWidth="2" />
+                          <text x={x} y={y - 10} textAnchor="middle" fontSize="10" fontWeight="600" fill={c}>{h.score}</text>
+                          <text x={x} y={148} textAnchor="middle" fontSize="10" fill="#9ca3af">{label}</text>
                         </g>;
                       })}
                     </svg>
@@ -728,10 +741,10 @@ const Dashboard = () => {
                   <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
                     <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 8 }}>{t.outcomePred}</div>
                     {[
-                      { label: lang === 'fr' ? 'Résolution favorable' : lang === 'nl' ? 'Gunstige uitkomst' : 'Full resolution in your favor', pct: prob.full_resolution_in_favor || prob.favorable || 0, color: '#16a34a' },
-                      { label: lang === 'fr' ? 'Accord négocié' : lang === 'nl' ? 'Onderhandelde schikking' : 'Negotiated settlement', pct: prob.negotiated_settlement || prob.settlement || 0, color: '#1a56db' },
-                      { label: lang === 'fr' ? 'Résolution partielle' : lang === 'nl' ? 'Gedeeltelijk verlies' : 'Partial loss', pct: prob.partial_loss || prob.partial || 0, color: '#f59e0b' },
-                      { label: lang === 'fr' ? 'Issue défavorable' : lang === 'nl' ? 'Volledig verlies' : 'Full loss', pct: prob.full_loss || prob.unfavorable || 0, color: '#dc2626' },
+                      { label: lang === 'fr' ? 'Résolution favorable' : lang === 'nl' ? 'Gunstige uitkomst' : 'Full resolution in your favor', pct: prob.full_resolution_in_favor || prob.resolution_favorable || prob.favorable || 0, color: '#16a34a' },
+                      { label: lang === 'fr' ? 'Accord négocié' : lang === 'nl' ? 'Onderhandelde schikking' : 'Negotiated settlement', pct: prob.negotiated_settlement || prob.compromis_negocie || prob.settlement || 0, color: '#1a56db' },
+                      { label: lang === 'fr' ? 'Résolution partielle' : lang === 'nl' ? 'Gedeeltelijk verlies' : 'Partial loss', pct: prob.partial_loss || prob.perte_partielle || prob.partial || 0, color: '#f59e0b' },
+                      { label: lang === 'fr' ? 'Issue défavorable' : lang === 'nl' ? 'Volledig verlies' : 'Full loss', pct: prob.full_loss || prob.perte_totale || prob.unfavorable || 0, color: '#dc2626' },
                     ].map((o, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                         <div style={{ fontSize: 10, color: '#374151', width: 160, flexShrink: 0 }}>{o.label}</div>

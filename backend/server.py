@@ -562,6 +562,14 @@ Think through ALL possible paths:
 1. Ideal outcome? 2. Fastest resolution? 3. Cheapest path? 4. Most leverage?
 5. What should user do in next 24 hours? 6. What documents to gather? 7. Talk to lawyer first?
 
+CRITICAL RULES — you MUST follow ALL of these:
+
+RULE 1 — james_question: You MUST generate exactly ONE specific clarifying question that references something specific found in the document. The question must help James understand the user's situation better. Always provide 2-4 answer options as clickable buttons. NEVER skip this field. NEVER leave options empty. The question must reference a specific fact, date, amount, or party from the document.
+
+RULE 2 — success_probability: You MUST generate realistic outcome probabilities. No outcome can be below 2% or above 95%. All four values MUST sum to exactly 100. Base these on: risk score, number of violations found, jurisdiction, and strength of arguments. NEVER return 0% for any outcome.
+
+RULE 3 — next_steps: Each step MUST include a specific legal reference (statute, article, section number). NEVER generate generic actions like "consult an attorney" or "gather documents" without specifying WHICH attorney type, WHICH documents, and WHY. Format: "Action verb + specific legal reference + deadline". Each step MUST have a letter_template if action_type is send_letter.
+
 Return ONLY this JSON — no other text:
 {{
   "recommended_strategy": {{
@@ -575,11 +583,11 @@ Return ONLY this JSON — no other text:
   ],
   "next_steps": [
     {{
-      "title": "Step title",
-      "description": "Detailed description",
+      "title": "Specific action verb + exact legal reference (e.g. 'Contest eviction — Fla. Stat. § 83.56' or 'Demander motifs — CCT 109 art. 3')",
+      "description": "Detailed description with exact deadline, exact legal basis, and what it achieves for the user",
       "action_type": "send_letter|book_lawyer|wait|gather_documents|no_action",
-      "letter_template": "Brief description of what letter to generate (only for send_letter type)",
-      "why_important": "Why this matters"
+      "letter_template": "Brief description of what letter to generate (REQUIRED for send_letter type)",
+      "why_important": "Why this matters — reference specific law"
     }}
   ],
   "documents_to_gather": [
@@ -603,13 +611,13 @@ Return ONLY this JSON — no other text:
   }},
   "key_insight": "The most important thing the user must know in one sentence",
   "james_question": {{
-    "text": "A specific clarifying question that references something found in the document (e.g. 'The notice mentions a $150 fee — did you agree to this fee in your lease?')",
-    "options": ["Yes, it is in my lease", "No, I never agreed to this", "I am not sure"]
+    "text": "A SPECIFIC clarifying question referencing a fact from the document (e.g. 'The notice mentions a $150 fee — did you agree to this fee in your lease?' or 'Avez-vous une preuve écrite de votre signalement de harcèlement ?')",
+    "options": ["Answer option 1", "Answer option 2", "Answer option 3"]
   }}
 }}
-Exactly 3 next_steps. The next_steps must include letter_template field with a brief description of what letter to generate."""
+MANDATORY: james_question MUST be present with 2-4 options. success_probability values MUST sum to 100 with no value below 2 or above 95. next_steps MUST have exactly 3 items with specific legal references."""
 
-PASS4A_SYSTEM = """You are a senior attorney representing the user. Your job is to make the STRONGEST possible case for your client. Find every argument, every procedural defect, every legal protection that benefits your client. Be aggressive and thorough."""
+PASS4A_SYSTEM = """You are a senior attorney representing the user. Your job is to make the STRONGEST possible case for your client. Find every argument, every procedural defect, every legal protection that benefits your client. Be aggressive and thorough. You MUST produce exactly 4-5 strong arguments — NEVER leave arguments empty."""
 
 PASS4A_PROMPT = """Based on these facts and legal analysis, make the strongest possible case for the user. What are their best arguments? What gives them the most leverage? What mistakes did the opposing party make?
 
@@ -619,15 +627,18 @@ FACTS:
 LEGAL ANALYSIS:
 {analysis_json}
 
+CRITICAL: You MUST generate exactly 4-5 strongest_arguments. NEVER return an empty array. Each argument must reference a specific law, statute, or legal principle. If the user's position seems weak, find procedural arguments, constitutional protections, or burden-of-proof arguments.
+
 Return ONLY this JSON:
 {{
   "strongest_arguments": [
-    {{"argument": "description", "strength": "strong|medium|weak", "law_basis": "law ref", "how_to_use": "how to use in response"}}
+    {{"argument": "description", "strength": "strong|medium|weak", "law_basis": "specific law/statute reference", "how_to_use": "how to use in response"}}
   ],
   "procedural_wins": ["list of procedural advantages"],
   "best_outcome_scenario": "description of best possible outcome",
   "opening_argument": "First sentence of response letter to maximize impact"
-}}"""
+}}
+MANDATORY: strongest_arguments MUST contain exactly 4-5 items. NEVER return fewer than 4."""
 
 PASS4B_SYSTEM = """You are a senior attorney representing the opposing party. Your job is to make the STRONGEST possible case against the user. Be rigorous and identify every weakness in the user's position."""
 
@@ -893,6 +904,63 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
             })
 
         now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+        # ═══ VALIDATION — enforce global rules ═══
+        # FIX 1: james_question must always exist with options
+        jq = strategy.get("james_question")
+        if not jq or not isinstance(jq, dict) or not jq.get("text") or not jq.get("options") or len(jq.get("options", [])) < 2:
+            logger.warning("James question missing or invalid — retrying")
+            try:
+                await asyncio.sleep(1)
+                jq_retry = await call_claude(
+                    persona,
+                    f"Based on this document analysis, generate ONE specific clarifying question with 2-4 answer options. The question must reference a specific fact from the document.\n\nFacts: {facts_str[:2000]}\n\nReturn ONLY JSON: {{\"text\": \"specific question\", \"options\": [\"option1\", \"option2\", \"option3\"]}}",
+                    max_tokens=500
+                )
+                if jq_retry and jq_retry.get("text") and jq_retry.get("options"):
+                    jq = jq_retry
+            except Exception as e:
+                logger.error(f"James question retry failed: {e}")
+            if not jq or not jq.get("options"):
+                jq = {"text": "Do you have any additional documents related to this case?", "options": ["Yes, I have more documents", "No, this is everything", "I'm not sure"]}
+            strategy["james_question"] = jq
+
+        # FIX 2: Battle preview user_side must never be empty
+        ua = user_arguments.get("strongest_arguments", []) if isinstance(user_arguments, dict) else []
+        if len(ua) < 3:
+            logger.warning(f"User arguments too few ({len(ua)}) — retrying Pass 4A")
+            try:
+                await asyncio.sleep(1)
+                ua_retry = await call_claude(
+                    PASS4A_SYSTEM + lang_instruction,
+                    PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
+                    max_tokens=1500
+                )
+                if isinstance(ua_retry, dict) and len(ua_retry.get("strongest_arguments", [])) >= 3:
+                    user_arguments = ua_retry
+            except Exception as e:
+                logger.error(f"User arguments retry failed: {e}")
+
+        # FIX 3: Success probability must sum to 100, no value below 2 or above 95
+        sp = strategy.get("success_probability", {})
+        if isinstance(sp, dict):
+            keys = ["full_resolution_in_favor", "negotiated_settlement", "partial_loss", "full_loss"]
+            total = sum(sp.get(k, 0) for k in keys)
+            if total == 0 or any(sp.get(k, 0) == 0 for k in keys):
+                risk_total = legal_analysis.get("risk_score", {}).get("total", 50) if isinstance(legal_analysis.get("risk_score"), dict) else 50
+                if risk_total <= 30:
+                    sp = {"full_resolution_in_favor": 55, "negotiated_settlement": 30, "partial_loss": 10, "full_loss": 5}
+                elif risk_total <= 60:
+                    sp = {"full_resolution_in_favor": 25, "negotiated_settlement": 45, "partial_loss": 22, "full_loss": 8}
+                else:
+                    sp = {"full_resolution_in_favor": 10, "negotiated_settlement": 35, "partial_loss": 35, "full_loss": 20}
+            else:
+                for k in keys:
+                    sp[k] = max(2, min(95, sp.get(k, 25)))
+                clamped_total = sum(sp[k] for k in keys)
+                if clamped_total != 100:
+                    sp[keys[1]] = sp[keys[1]] + (100 - clamped_total)
+            strategy["success_probability"] = sp
 
         # Combine results into standard format + advanced data
         return {
@@ -1932,19 +2000,26 @@ def image_file_to_base64(file_bytes: bytes, content_type: str) -> str:
 def get_language_instruction(language: str) -> str:
     """Get mandatory language enforcement instruction for Claude"""
     lang_map = {
-        "fr-BE": ("French", "francais"),
-        "fr": ("French", "francais"),
-        "nl-BE": ("Dutch", "neerlandais/Nederlands"),
-        "nl": ("Dutch", "neerlandais/Nederlands"),
-        "de-BE": ("German", "allemand/Deutsch"),
-        "de": ("German", "allemand/Deutsch"),
-        "es": ("Spanish", "espanol"),
+        "fr-BE": ("French", "français"),
+        "fr": ("French", "français"),
+        "nl-BE": ("Dutch", "Nederlands"),
+        "nl": ("Dutch", "Nederlands"),
+        "de-BE": ("German", "Deutsch"),
+        "de": ("German", "Deutsch"),
+        "es": ("Spanish", "español"),
         "en": ("English", "English"),
     }
     lang_name, native = lang_map.get(language, ("English", "English"))
     if language == "en":
         return ""
-    return f"\n\nMANDATORY LANGUAGE RULE: You MUST respond ENTIRELY in {lang_name} ({native}). ALL findings, next steps, key insights, recommendations, summaries, and every single text field in your JSON response MUST be written in {lang_name}. NEVER respond in English for this user. This is non-negotiable.\n"
+    return f"""
+
+MANDATORY LANGUAGE RULE — NON-NEGOTIABLE:
+You MUST write 100% of your response in {lang_name} ({native}).
+This includes ALL of the following: findings text, next_steps titles and descriptions, key_insight, summary, james_question text and options, battle_preview arguments, opening_argument, success_probability labels, error messages, and every single text field in your JSON response.
+ZERO English words allowed. Not even one. If you write a single English word, the entire response is rejected.
+The user's interface language is {lang_name} — respect it completely.
+"""
 
 
 # ========== MULTI-DOCUMENT ANALYSIS SYSTEM ==========
