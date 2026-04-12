@@ -741,7 +741,7 @@ const Dashboard = () => {
 
                 {/* Score History */}
                 {history.length > 0 && (
-                  <ScoreHistoryChart history={history} title={t.scoreHistory} isCompact={true} />
+                  <ScoreHistoryChart history={history} title={t.scoreHistory} />
                 )}
 
                 {/* Battle Preview — Horizontal */}

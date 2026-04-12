@@ -4,7 +4,7 @@
 Build a complete, production-ready SaaS web application called "Jasper" — a legal tech AI platform for US and Belgium consumers.
 
 ## Architecture
-- **Frontend**: React (CRA + CRACO), Tailwind CSS, Shadcn UI, Recharts/SVG, DOMPurify
+- **Frontend**: React (CRA + CRACO), Tailwind CSS, Shadcn UI, SVG charts, DOMPurify
 - **Backend**: FastAPI (Python), modular structure:
   - `server.py` — Main app, analysis logic, routes (~5100 lines)
   - `db.py`, `models.py`, `auth.py`, `storage.py` — Shared modules
@@ -25,8 +25,11 @@ Build a complete, production-ready SaaS web application called "Jasper" — a le
 - Performance: Parallel Claude Passes, Analysis Caching
 - Code quality: XSS (DOMPurify), hook deps, array keys
 - Server.py modularization Phase 1
-- **Score History Chart redesign** (ScoreHistoryChart.js component — Apr 12 2026)
-  - 100% width, auto-scaling Y-axis, Bézier curves, timestamp labels, color-coded dots, dashed gridlines
+- **Score History Chart redesign** (Apr 12 2026)
+  - ResizeObserver for true 100% width fill
+  - HTML tooltip: white bg, Score (bold), Time (gray), Document (blue)
+  - Fixed 200px height + overflow:hidden (no overlap)
+  - Dynamic auto-scaling Y-axis, Bezier curves, color-coded dots, dashed gridlines
   - Integrated in both Dashboard.js and CaseDetail.js
 
 ## Prioritized Backlog
