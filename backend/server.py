@@ -983,6 +983,59 @@ def _ensure_contract_guard_fields(result: dict) -> dict:
     return result
 
 
+BE_DOC_TYPE_TO_CASE = {
+    "licenciement": "employment", "contrat_travail": "employment", "c4": "employment",
+    "bail": "housing", "avis_resiliation_bail": "housing",
+    "mise_en_demeure": "debt", "facture": "debt",
+    "nda": "nda", "jugement": "court", "lettre_huissier": "court"
+}
+
+
+def _build_belgian_analysis_result(
+    doc_type: str, inferred_case_type: str, legal_analysis: dict,
+    strategy: dict, facts: dict, user_arguments: dict,
+    opposing_arguments: dict, detected_region: str, language: str, now_date: str
+) -> dict:
+    """Build the standard result dict for Belgian single/multi-doc analysis."""
+    return {
+        "document_type": doc_type,
+        "case_type": legal_analysis.get("case_type", inferred_case_type),
+        "suggested_case_title": legal_analysis.get("suggested_case_title", "Analyse Document Juridique"),
+        "risk_score": legal_analysis.get("risk_score", {"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50}),
+        "risk_level": legal_analysis.get("risk_level", "moyen"),
+        "deadline": legal_analysis.get("deadline"),
+        "deadline_description": legal_analysis.get("deadline_description"),
+        "summary": legal_analysis.get("summary", ""),
+        "financial_exposure": legal_analysis.get("financial_exposure"),
+        "findings": legal_analysis.get("findings", []),
+        "next_steps": strategy.get("next_steps", []),
+        "recommend_lawyer": legal_analysis.get("recommend_lawyer", False),
+        "disclaimer": "Cette analyse fournit des informations juridiques uniquement, pas un avis juridique.",
+        "facts": facts,
+        "financial_exposure_detailed": legal_analysis.get("financial_exposure_detailed"),
+        "procedural_defects": legal_analysis.get("procedural_defects", []),
+        "user_rights": legal_analysis.get("user_rights", []),
+        "opposing_weaknesses": legal_analysis.get("opposing_weaknesses", []),
+        "applicable_laws": legal_analysis.get("applicable_laws", []),
+        "organismes_recommandes": legal_analysis.get("organismes_recommandes", []),
+        "strategy": strategy.get("recommended_strategy"),
+        "immediate_actions": strategy.get("immediate_actions", []),
+        "documents_to_gather": strategy.get("documents_to_gather", []),
+        "leverage_points": strategy.get("leverage_points", []),
+        "red_lines": strategy.get("red_lines", []),
+        "lawyer_recommendation": strategy.get("lawyer_recommendation"),
+        "success_probability": strategy.get("success_probability"),
+        "key_insight": strategy.get("key_insight", ""),
+        "battle_preview": {"user_side": user_arguments, "opposing_side": opposing_arguments},
+        "recent_case_law": [],
+        "case_law_updated": now_date,
+        "country": "BE",
+        "region": detected_region,
+        "language": language
+    }
+
+
+
 
 async def analyze_document_advanced(extracted_text: str, user_context: str = "", language: str = "en") -> dict:
     """Advanced 5-pass analysis system with real-time jurisprudence"""
@@ -1418,97 +1471,34 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
         persona = get_belgian_persona(language, region)
         lang_instruction = get_language_instruction(language)
         persona_with_lang = persona + lang_instruction
-        context_section = ""
-        if user_context:
-            context_section = f"CONTEXTE FOURNI PAR L'UTILISATEUR: {user_context}"
+        context_section = f"CONTEXTE FOURNI PAR L'UTILISATEUR: {user_context}" if user_context else ""
 
         # PASS 1: Fact extraction (Belgian)
         logger.info("Belgian analysis: Passe 1 — Extraction des faits")
-        facts = await call_claude(
-            persona_with_lang,
-            BE_PASS1_PROMPT.format(
-                document_text=extracted_text[:15000],
-                user_context_section=context_section
-            )
-        )
+        facts = await call_claude(persona_with_lang, BE_PASS1_PROMPT.format(document_text=extracted_text[:15000], user_context_section=context_section))
 
-        # Load Belgian jurisprudence based on detected type + region
         doc_type = facts.get("type_document", "autre")
         detected_region = facts.get("region_applicable", region)
         jurisprudence_text = load_belgian_jurisprudence(doc_type, detected_region)
+        inferred_case_type = BE_DOC_TYPE_TO_CASE.get(doc_type, "other")
 
-        # Map Belgian doc types to case types
-        be_doc_to_case = {
-            "licenciement": "employment", "contrat_travail": "employment", "c4": "employment",
-            "bail": "housing", "avis_resiliation_bail": "housing",
-            "mise_en_demeure": "debt", "facture": "debt",
-            "nda": "nda", "jugement": "court", "lettre_huissier": "court"
-        }
-        inferred_case_type = be_doc_to_case.get(doc_type, "other")
-
-        # PASS 2: Legal analysis with Belgian jurisprudence
+        # PASS 2: Legal analysis
         logger.info("Belgian analysis: Passe 2 — Analyse juridique")
-        legal_analysis = await call_claude(
-            persona_with_lang,
-            BE_PASS2_PROMPT.format(
-                facts_json=json.dumps(facts, indent=2, ensure_ascii=False),
-                jurisprudence_section=jurisprudence_text
-            ),
-            max_tokens=3000
-        )
+        legal_analysis = await call_claude(persona_with_lang, BE_PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2, ensure_ascii=False), jurisprudence_section=jurisprudence_text), max_tokens=3000)
 
         facts_str = json.dumps(facts, indent=2, ensure_ascii=False)
         analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
 
-        # PASS 3, 4A, 4B — staggered
+        # PASS 3, 4A, 4B
         logger.info("Belgian analysis: Passe 3+4A+4B — Strategie + Battle Preview")
         strategy = await call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=2500)
         user_arguments = await call_claude(BE_PASS4A_SYSTEM + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
         opposing_arguments = await call_claude(BE_PASS4B_SYSTEM + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
 
         logger.info("Belgian analysis: 5 passes complete")
-
         now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-        return {
-            "document_type": doc_type,
-            "case_type": legal_analysis.get("case_type", inferred_case_type),
-            "suggested_case_title": legal_analysis.get("suggested_case_title", "Analyse Document Juridique"),
-            "risk_score": legal_analysis.get("risk_score", {"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50}),
-            "risk_level": legal_analysis.get("risk_level", "moyen"),
-            "deadline": legal_analysis.get("deadline"),
-            "deadline_description": legal_analysis.get("deadline_description"),
-            "summary": legal_analysis.get("summary", ""),
-            "financial_exposure": legal_analysis.get("financial_exposure"),
-            "findings": legal_analysis.get("findings", []),
-            "next_steps": strategy.get("next_steps", []),
-            "recommend_lawyer": legal_analysis.get("recommend_lawyer", False),
-            "disclaimer": "Cette analyse fournit des informations juridiques uniquement, pas un avis juridique.",
-            "facts": facts,
-            "financial_exposure_detailed": legal_analysis.get("financial_exposure_detailed"),
-            "procedural_defects": legal_analysis.get("procedural_defects", []),
-            "user_rights": legal_analysis.get("user_rights", []),
-            "opposing_weaknesses": legal_analysis.get("opposing_weaknesses", []),
-            "applicable_laws": legal_analysis.get("applicable_laws", []),
-            "organismes_recommandes": legal_analysis.get("organismes_recommandes", []),
-            "strategy": strategy.get("recommended_strategy"),
-            "immediate_actions": strategy.get("immediate_actions", []),
-            "documents_to_gather": strategy.get("documents_to_gather", []),
-            "leverage_points": strategy.get("leverage_points", []),
-            "red_lines": strategy.get("red_lines", []),
-            "lawyer_recommendation": strategy.get("lawyer_recommendation"),
-            "success_probability": strategy.get("success_probability"),
-            "key_insight": strategy.get("key_insight", ""),
-            "battle_preview": {
-                "user_side": user_arguments,
-                "opposing_side": opposing_arguments
-            },
-            "recent_case_law": [],
-            "case_law_updated": now_date,
-            "country": "BE",
-            "region": detected_region,
-            "language": language
-        }
+        return _build_belgian_analysis_result(doc_type, inferred_case_type, legal_analysis, strategy, facts, user_arguments, opposing_arguments, detected_region, language, now_date)
     except Exception as e:
         logger.error(f"Belgian analysis error: {e}")
         return _default_analysis()
@@ -2272,39 +2262,25 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
     p2_supplement = get_multi_doc_pass2_supplement(doc_count, language)
     p3_supplement = get_multi_doc_pass3_supplement(doc_count, language)
 
-    context_section = ""
-    if user_context:
-        context_section = f"CONTEXTE FOURNI PAR L'UTILISATEUR: {user_context}"
+    context_section = f"CONTEXTE FOURNI PAR L'UTILISATEUR: {user_context}" if user_context else ""
 
     max_text = 30000 if doc_count <= 5 else 45000
     text_for_analysis = combined_text[:max_text]
 
     # PASS 1
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 1")
-    facts = await call_claude(
-        persona_with_lang,
-        BE_PASS1_PROMPT.format(document_text=text_for_analysis, user_context_section=context_section) + p1_supplement
-    )
+    facts = await call_claude(persona_with_lang, BE_PASS1_PROMPT.format(document_text=text_for_analysis, user_context_section=context_section) + p1_supplement)
 
     doc_type = facts.get("type_document", "autre")
     detected_region = facts.get("region_applicable", region)
     jurisprudence_text = load_belgian_jurisprudence(doc_type, detected_region)
-    be_doc_to_case = {
-        "licenciement": "employment", "contrat_travail": "employment", "c4": "employment",
-        "bail": "housing", "avis_resiliation_bail": "housing",
-        "mise_en_demeure": "debt", "facture": "debt",
-        "nda": "nda", "jugement": "court", "lettre_huissier": "court"
-    }
-    inferred_case_type = be_doc_to_case.get(doc_type, "other")
+    inferred_case_type = BE_DOC_TYPE_TO_CASE.get(doc_type, "other")
 
     # PASS 2
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 2")
     legal_analysis = await call_claude(
         persona_with_lang,
-        BE_PASS2_PROMPT.format(
-            facts_json=json.dumps(facts, indent=2, ensure_ascii=False),
-            jurisprudence_section=jurisprudence_text
-        ) + p2_supplement,
+        BE_PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2, ensure_ascii=False), jurisprudence_section=jurisprudence_text) + p2_supplement,
         max_tokens=4000
     )
 
@@ -2320,47 +2296,18 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Complete")
     now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    return {
-        "document_type": doc_type,
-        "case_type": legal_analysis.get("case_type", inferred_case_type),
-        "suggested_case_title": legal_analysis.get("suggested_case_title", "Analyse Document Juridique"),
-        "risk_score": legal_analysis.get("risk_score", {"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50}),
-        "risk_level": legal_analysis.get("risk_level", "moyen"),
-        "deadline": legal_analysis.get("deadline"),
-        "deadline_description": legal_analysis.get("deadline_description"),
-        "summary": legal_analysis.get("summary", ""),
-        "financial_exposure": legal_analysis.get("financial_exposure"),
-        "findings": legal_analysis.get("findings", []),
-        "next_steps": strategy.get("next_steps", []),
-        "recommend_lawyer": legal_analysis.get("recommend_lawyer", False),
-        "disclaimer": "Cette analyse fournit des informations juridiques uniquement.",
-        "facts": facts,
-        "financial_exposure_detailed": legal_analysis.get("financial_exposure_detailed"),
-        "procedural_defects": legal_analysis.get("procedural_defects", []),
-        "user_rights": legal_analysis.get("user_rights", []),
-        "opposing_weaknesses": legal_analysis.get("opposing_weaknesses", []),
-        "applicable_laws": legal_analysis.get("applicable_laws", []),
-        "organismes_recommandes": legal_analysis.get("organismes_recommandes", []),
-        "strategy": strategy.get("recommended_strategy"),
-        "immediate_actions": strategy.get("immediate_actions", []),
-        "documents_to_gather": strategy.get("documents_to_gather", []),
-        "leverage_points": strategy.get("leverage_points", []),
-        "red_lines": strategy.get("red_lines", []),
-        "lawyer_recommendation": strategy.get("lawyer_recommendation"),
-        "success_probability": strategy.get("success_probability"),
-        "key_insight": strategy.get("key_insight", ""),
-        "battle_preview": {"user_side": user_arguments, "opposing_side": opposing_arguments},
-        "recent_case_law": [],
-        "case_law_updated": now_date,
-        "country": "BE", "region": detected_region, "language": language,
-        # Multi-document specific fields
+    result = _build_belgian_analysis_result(doc_type, inferred_case_type, legal_analysis, strategy, facts, user_arguments, opposing_arguments, detected_region, language, now_date)
+
+    # Multi-document specific fields
+    result.update({
         "case_narrative": legal_analysis.get("case_narrative", ""),
         "contradictions": legal_analysis.get("contradictions", []),
         "opposing_strategy_analysis": legal_analysis.get("opposing_strategy_analysis", ""),
         "cumulative_financial_exposure": legal_analysis.get("cumulative_financial_exposure", ""),
         "master_deadlines": legal_analysis.get("master_deadlines", []),
         "pattern_analysis": strategy.get("pattern_analysis", ""),
-    }
+    })
+    return result
 
 
 
@@ -2532,55 +2479,8 @@ async def logout(request: Request):
     response.delete_cookie(key="session_token", path="/")
     return response
 
-@api_router.post("/auth/register")
-async def register_email(body: EmailRegister):
-    """Register a new user with email and password"""
-    email = body.email.strip().lower()
-    password = body.password.strip()
-    name = body.name.strip()
-    plan = body.plan if body.plan in ["free", "pro"] else "free"
-    jurisdiction = body.jurisdiction if body.jurisdiction in ["US", "BE"] else (body.country if body.country in ["US", "BE"] else "US")
-    region = body.region
-    language = body.language or "en"
-    
-    if not email or not password or not name:
-        raise HTTPException(status_code=400, detail="Email, password and name are required")
-    if len(password) < 8:
-        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
-    
-    existing = await db.users.find_one({"email": email}, {"_id": 0})
-    if existing:
-        raise HTTPException(status_code=409, detail="An account with this email already exists")
-    
-    user_id = f"user_{uuid.uuid4().hex[:12]}"
-    password_hash = hash_password(password)
-    
-    user_doc = {
-        "user_id": user_id,
-        "email": email,
-        "name": name,
-        "picture": None,
-        "password_hash": password_hash,
-        "auth_provider": "email",
-        "plan": plan,
-        "country": jurisdiction,
-        "jurisdiction": jurisdiction,
-        "region": region,
-        "language": language,
-        "account_type": body.account_type if body.account_type in ("client", "attorney") else "client",
-        "state_of_residence": None,
-        "phone": None,
-        "notif_risk_score": True,
-        "notif_deadlines": True,
-        "notif_calls": True,
-        "notif_lawyers": False,
-        "notif_promo": False,
-        "data_sharing": True,
-        "improve_ai": True,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.users.insert_one(user_doc)
-    
+async def _create_session_response(user_id: str, user_doc: dict, clear_old: bool = True) -> JSONResponse:
+    """Create a session and return a JSONResponse with session cookie."""
     session_token = str(uuid.uuid4())
     expires_at = datetime.now(timezone.utc) + timedelta(days=7)
     session_doc = {
@@ -2589,21 +2489,52 @@ async def register_email(body: EmailRegister):
         "expires_at": expires_at.isoformat(),
         "created_at": datetime.now(timezone.utc).isoformat()
     }
+    if clear_old:
+        await db.user_sessions.delete_many({"user_id": user_id})
     await db.user_sessions.insert_one(session_doc)
-    
+
     safe_user = {k: v for k, v in user_doc.items() if k not in ("password_hash", "_id")}
-    
     response = JSONResponse(content={"user": safe_user, "session_token": session_token})
     response.set_cookie(
-        key="session_token",
-        value=session_token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        path="/",
-        max_age=7 * 24 * 60 * 60
+        key="session_token", value=session_token,
+        httponly=True, secure=True, samesite="none",
+        path="/", max_age=7 * 24 * 60 * 60
     )
     return response
+
+@api_router.post("/auth/register")
+async def register_email(body: EmailRegister):
+    """Register a new user with email and password"""
+    email = body.email.strip().lower()
+    password = body.password.strip()
+    name = body.name.strip()
+    plan = body.plan if body.plan in ["free", "pro"] else "free"
+    jurisdiction = body.jurisdiction if body.jurisdiction in ["US", "BE"] else (body.country if body.country in ["US", "BE"] else "US")
+
+    if not email or not password or not name:
+        raise HTTPException(status_code=400, detail="Email, password and name are required")
+    if len(password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
+    existing = await db.users.find_one({"email": email}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=409, detail="An account with this email already exists")
+
+    user_id = f"user_{uuid.uuid4().hex[:12]}"
+    user_doc = {
+        "user_id": user_id, "email": email, "name": name, "picture": None,
+        "password_hash": hash_password(password), "auth_provider": "email",
+        "plan": plan, "country": jurisdiction, "jurisdiction": jurisdiction,
+        "region": body.region, "language": body.language or "en",
+        "account_type": body.account_type if body.account_type in ("client", "attorney") else "client",
+        "state_of_residence": None, "phone": None,
+        "notif_risk_score": True, "notif_deadlines": True, "notif_calls": True,
+        "notif_lawyers": False, "notif_promo": False,
+        "data_sharing": True, "improve_ai": True,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.users.insert_one(user_doc)
+    return await _create_session_response(user_id, user_doc, clear_old=False)
 
 @api_router.post("/auth/login")
 async def login_email(body: EmailLogin):
@@ -2624,33 +2555,8 @@ async def login_email(body: EmailLogin):
     
     if not verify_password(password, stored_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    
-    user_id = user_doc["user_id"]
-    session_token = str(uuid.uuid4())
-    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
-    session_doc = {
-        "session_token": session_token,
-        "user_id": user_id,
-        "expires_at": expires_at.isoformat(),
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    await db.user_sessions.delete_many({"user_id": user_id})
-    await db.user_sessions.insert_one(session_doc)
-    
-    safe_user = {k: v for k, v in user_doc.items() if k not in ("password_hash", "_id")}
-    
-    response = JSONResponse(content={"user": safe_user, "session_token": session_token})
-    response.set_cookie(
-        key="session_token",
-        value=session_token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        path="/",
-        max_age=7 * 24 * 60 * 60
-    )
-    return response
+
+    return await _create_session_response(user_doc["user_id"], user_doc)
 
 # ================== Profile Endpoints ==================
 

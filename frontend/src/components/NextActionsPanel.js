@@ -35,7 +35,7 @@ const NextActionsPanel = ({ steps, lang, onLetterClick, onCallClick }) => {
         <Bell size={14} color="#1a56db" />
         <span style={{ fontSize: 15, fontWeight: 700, color: '#0a0a0f', letterSpacing: '-0.2px' }}>{t.nextActions}</span>
       </div>
-      {steps.map((s, i) => {
+      {steps.map((s, sIdx) => {
         const sTitle = typeof s === 'string' ? s : (s.title || s.titre || '');
         const sDesc = typeof s === 'string' ? '' : (s.description || '');
         const actionType = classifyAction(s);
@@ -44,7 +44,7 @@ const NextActionsPanel = ({ steps, lang, onLetterClick, onCallClick }) => {
         const isClickable = actionType !== 'passive';
 
         return (
-          <div key={i} data-testid={`action-item-${i}`}
+          <div key={`action-${sIdx}-${sTitle.slice(0, 20)}`} data-testid={`action-item-${sIdx}`}
             onClick={() => {
               if (actionType === 'letter') onLetterClick?.(s);
               else if (actionType === 'call') onCallClick?.();
@@ -58,7 +58,7 @@ const NextActionsPanel = ({ steps, lang, onLetterClick, onCallClick }) => {
             onMouseEnter={e => { if (isClickable) { e.currentTarget.style.background = cfg.bg; e.currentTarget.style.borderColor = cfg.color; } }}
             onMouseLeave={e => { if (isClickable) { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#d1d5db'; } }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <div style={{ width: 24, height: 24, borderRadius: '50%', background: cfg.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
+              <div style={{ width: 24, height: 24, borderRadius: '50%', background: cfg.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{sIdx + 1}</div>
               <div style={{ width: 30, height: 30, borderRadius: 7, background: cfg.bg, border: `1px solid ${cfg.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Icon size={15} color={cfg.color} />
               </div>

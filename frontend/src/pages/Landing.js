@@ -6,6 +6,7 @@ import JurisdictionLanguageBar from '../components/JurisdictionLanguageBar';
 import JurisdictionPills from '../components/JurisdictionPills';
 import { useAuth } from '../contexts/AuthContext';
 import translations, { getStoredLocale, setStoredLocale, getLocaleFromPrefs } from '../data/landingTranslations';
+import { sanitizeHtml } from '../utils/sanitize';
 
 const catIcons = [FileText, Briefcase, Home, Users, DollarSign, AlertCircle, Package, Star, Heart];
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -166,8 +167,8 @@ const Landing = () => {
                 { cat: 'Traffic · Court notice', title: 'Speeding ticket — 89mph in 65mph zone · Court summons', action: 'Respond by Apr 14', detail: 'Fine up to $1,200 + license points', score: '82/100', risk: 'High risk', color: '#dc2626', bg: '#fff5f5' },
                 { cat: 'Debt collection', title: 'Collector harassment — 12 calls in 3 days · FDCPA violation', action: 'Send cease & desist now', detail: '$4,800 claimed', score: '64/100', risk: 'Medium risk', color: '#f59e0b', bg: '#fef3c7' },
                 { cat: 'Employment', title: 'Wrongful termination — demand letter · $8,400 claimed', action: 'Respond within 10 days', detail: 'Strong negotiation opportunity', score: '58/100', risk: 'Medium risk', color: '#f59e0b', bg: '#fef3c7' },
-              ]).map((c, i) => (
-                <div key={i} className="bg-white border border-[#ebebeb] rounded-r-xl p-3 flex items-center justify-between" style={{ borderLeft: `3px solid ${c.color}` }}>
+              ]).map((c, cIdx) => (
+                <div key={`case-${cIdx}-${c.cat}`} className="bg-white border border-[#ebebeb] rounded-r-xl p-3 flex items-center justify-between" style={{ borderLeft: `3px solid ${c.color}` }}>
                   <div className="text-left">
                     <div className="text-[9px] text-[#aaa] uppercase tracking-wider mb-0.5">{c.cat}</div>
                     <div className="text-[12px] font-medium text-[#0a0a0f] mb-1">{c.title}</div>
@@ -236,10 +237,10 @@ const Landing = () => {
             <p className="text-sm text-[#666] max-w-xl mx-auto">{t.categories.sub}</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {t.categories.items.map((cat, i) => {
-              const Icon = catIcons[i] || FileText;
+            {t.categories.items.map((cat) => {
+              const Icon = catIcons[t.categories.items.indexOf(cat)] || FileText;
               return (
-                <div key={i} className="card p-4 hover:shadow-md transition-shadow">
+                <div key={cat.title} className="card p-4 hover:shadow-md transition-shadow">
                   <div className="w-9 h-9 rounded-lg bg-[#eff6ff] flex items-center justify-center mb-3"><Icon size={16} className="text-[#1a56db]" /></div>
                   <div className="text-sm font-semibold text-[#111] mb-1">{cat.title}</div>
                   <div className="text-xs text-[#666] mb-2 leading-relaxed">{cat.desc}</div>
@@ -298,9 +299,9 @@ const Landing = () => {
             <h2 className="text-2xl md:text-3xl font-bold text-[#111]" style={{ fontFamily: 'Outfit, sans-serif' }}>{t.howItWorks.h2}</h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {t.howItWorks.steps.map((step, i) => (
-              <div key={i} className="text-center">
-                <div className="w-10 h-10 rounded-full bg-[#1a56db] text-white font-bold flex items-center justify-center mx-auto mb-3">{i + 1}</div>
+            {t.howItWorks.steps.map((step, stepIdx) => (
+              <div key={step.title} className="text-center">
+                <div className="w-10 h-10 rounded-full bg-[#1a56db] text-white font-bold flex items-center justify-center mx-auto mb-3">{stepIdx + 1}</div>
                 <div className="text-sm font-semibold text-[#111] mb-1">{step.title}</div>
                 <div className="text-xs text-[#666]">{step.desc}</div>
               </div>
@@ -325,8 +326,8 @@ const Landing = () => {
             <p className="text-xs text-[#93c5fd] mt-3">{t.lawyersCta.footnote}</p>
           </div>
           <div className="space-y-3">
-            {t.lawyers.map((lawyer, i) => (
-              <div key={i} className="bg-white rounded-xl p-4 flex items-center gap-4">
+            {t.lawyers.map((lawyer) => (
+              <div key={lawyer.name} className="bg-white rounded-xl p-4 flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-[#eff6ff] flex items-center justify-center flex-shrink-0 overflow-hidden">
                   {lawyer.photo ? <img src={lawyer.photo} alt={lawyer.name} className="w-full h-full object-cover" /> : (
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a56db" strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -357,8 +358,8 @@ const Landing = () => {
             <h2 className="text-2xl md:text-3xl font-bold text-[#111]" style={{ fontFamily: 'Outfit, sans-serif' }}>{t.lawyersSection.h2}</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
-            {t.lawyers.map((lawyer, i) => (
-              <div key={i} className="card overflow-hidden">
+            {t.lawyers.map((lawyer) => (
+              <div key={`card-${lawyer.name}`} className="card overflow-hidden">
                 <div className="h-28 bg-gradient-to-br from-[#eff6ff] to-[#dbeafe] flex items-center justify-center">
                   {lawyer.photo ? <img src={lawyer.photo} alt={lawyer.name} className="w-full h-full object-cover" /> : (
                     <div className="w-16 h-16 rounded-full bg-[#1a56db] flex items-center justify-center">
@@ -436,8 +437,8 @@ const Landing = () => {
             <h2 className="text-2xl md:text-3xl font-bold text-[#111]" style={{ fontFamily: 'Outfit, sans-serif' }}>{t.reviews.h2}</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
-            {t.reviews.items.map((review, i) => (
-              <div key={i} className="card p-5">
+            {t.reviews.items.map((review) => (
+              <div key={review.name} className="card p-5">
                 <div className="text-[#f59e0b] mb-3">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
                 <div className="text-sm text-[#444] leading-relaxed mb-4">{review.text}</div>
                 <div className="flex items-center gap-3">
@@ -461,13 +462,13 @@ const Landing = () => {
             <h2 className="text-2xl md:text-3xl font-bold text-[#111]" style={{ fontFamily: 'Outfit, sans-serif' }}>{t.faq.h2}</h2>
           </div>
           <div className="space-y-3">
-            {t.faq.items.map((faq, i) => (
-              <div key={i} className="card overflow-hidden">
-                <button className="w-full p-4 flex items-center justify-between text-left" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
+            {t.faq.items.map((faq, faqIdx) => (
+              <div key={faq.q} className="card overflow-hidden">
+                <button className="w-full p-4 flex items-center justify-between text-left" onClick={() => setOpenFaq(openFaq === faqIdx ? null : faqIdx)}>
                   <span className="text-sm font-medium text-[#111]">{faq.q}</span>
-                  {openFaq === i ? <Minus size={16} className="text-[#1a56db]" /> : <Plus size={16} className="text-[#999]" />}
+                  {openFaq === faqIdx ? <Minus size={16} className="text-[#1a56db]" /> : <Plus size={16} className="text-[#999]" />}
                 </button>
-                {openFaq === i && <div className="px-4 pb-4 text-sm text-[#666] leading-relaxed">{faq.a}</div>}
+                {openFaq === faqIdx && <div className="px-4 pb-4 text-sm text-[#666] leading-relaxed">{faq.a}</div>}
               </div>
             ))}
           </div>

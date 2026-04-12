@@ -22,7 +22,7 @@ const Login = () => {
       } else {
         navigate('/dashboard');
       }
-    } catch (err) { /* error is set by AuthContext */ }
+    } catch (err) { console.error('Login error:', err); /* error is set by AuthContext */ }
     setLoading(false);
   };
 

@@ -161,7 +161,7 @@ const DocumentLibrary = () => {
   };
 
   const handleKeyDown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input); } };
-  const handleDownloadPdf = () => { if (!latestDocContent) return; const w = window.open('', '_blank'); w.document.write(`<html><head><title>Document</title><style>body{font-family:Georgia,serif;max-width:800px;margin:40px auto;padding:20px;line-height:1.8}pre{white-space:pre-wrap}</style></head><body><pre>${latestDocContent}</pre></body></html>`); w.document.close(); w.print(); };
+  const handleDownloadPdf = () => { if (!latestDocContent) return; safePrintContent(latestDocContent, 'Document'); };
   const handleSign = async (signers, msg) => { if (!signers.length || !latestDocId) return; setSignLoading(true); try { await axios.post(`${API}/library/sign`, { doc_id: latestDocId, signers, message: msg }, { withCredentials: true }); setSignModal(false); setMessages(p => [...p, { role: 'system', content: 'Signature request sent.' }]); } catch (e) { alert(e.response?.data?.detail || 'Failed'); } setSignLoading(false); };
   const startNew = () => { setMessages([]); setConvId(null); setLatestDocContent(null); setLatestDocId(null); setLimitReached(false); };
   const switchToGenerate = (name) => { setMode('generate'); setInput(`I need a ${name}`); setTimeout(() => inputRef.current?.focus(), 100); };

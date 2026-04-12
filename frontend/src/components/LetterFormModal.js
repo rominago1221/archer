@@ -217,7 +217,7 @@ const LetterFormModal = ({ step, caseId, caseData, userName, userEmail, userAddr
             </div>
             {letter.legal_citations && (
               <div style={{ fontSize: 9, color: '#1d4ed8', marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                {letter.legal_citations.map((c, i) => <span key={i} style={{ padding: '2px 8px', background: '#eff6ff', borderRadius: 4 }}>{c}</span>)}
+                {letter.legal_citations.map((c) => <span key={c} style={{ padding: '2px 8px', background: '#eff6ff', borderRadius: 4 }}>{c}</span>)}
               </div>
             )}
             <div style={{ display: 'flex', gap: 6 }}>

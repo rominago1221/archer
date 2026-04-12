@@ -205,10 +205,10 @@ const LegalChat = () => {
               <h3 className="text-base font-semibold text-[#111827] mb-1">James</h3>
               <p className="text-xs text-[#6b7280] mb-6">{ui.credential} · {ui.exp}</p>
               <div className="grid grid-cols-2 gap-2 max-w-md" data-testid="suggested-questions">
-                {questions.map((q, i) => (
-                  <button key={i} onClick={() => sendMessage(q)}
+                {questions.map((q, qIdx) => (
+                  <button key={q} onClick={() => sendMessage(q)}
                     className="text-left px-3 py-2.5 bg-white border border-[#e5e7eb] rounded-xl text-xs text-[#374151] hover:border-[#1a56db] hover:bg-[#eff6ff] transition-all"
-                    data-testid={`suggested-q-${i}`}>
+                    data-testid={`suggested-q-${qIdx}`}>
                     {q}
                   </button>
                 ))}
@@ -216,8 +216,8 @@ const LegalChat = () => {
             </div>
           )}
 
-          {messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`} data-testid={`msg-${i}`}>
+          {messages.map((msg, msgIdx) => (
+            <div key={msg.created_at || `msg-${msgIdx}`} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`} data-testid={`msg-${msgIdx}`}>
               {msg.role === 'assistant' && (
                 <div className="w-7 h-7 rounded-full bg-[#1e3a5f] flex items-center justify-center flex-shrink-0 mr-2 mt-0.5">
                   <span className="text-white text-xs font-bold">J</span>

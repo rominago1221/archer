@@ -1,0 +1,128 @@
+{
+  "summary": "Tested code quality refactoring changes (iteration 41). Found and FIXED 3 critical 'i is not defined' bugs in CaseDetail.js, LegalChat.js, and NextActionsPanel.js - same pattern as Dashboard.js bug from iteration 40. Also fixed missing sanitizeHtml import in Landing.js. All pages now load correctly without runtime errors.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "bugs_found_and_fixed": {
+    "critical_bugs": [
+      {
+        "file": "/app/frontend/src/pages/CaseDetail.js",
+        "line": 497,
+        "error": "ReferenceError: i is not defined",
+        "root_cause": "In caseLaw.map() callback, the index variable was not defined but 'i' was used for borderBottom condition",
+        "fix_applied": "Changed caseLaw.map((cl) => to caseLaw.map((cl, clIdx) => and 'i < caseLaw.length - 1' to 'clIdx < caseLaw.length - 1'",
+        "status": "FIXED"
+      },
+      {
+        "file": "/app/frontend/src/pages/LegalChat.js",
+        "line": 211,
+        "error": "ReferenceError: i is not defined",
+        "root_cause": "In questions.map() callback, data-testid used undefined 'i' variable",
+        "fix_applied": "Changed questions.map((q) => to questions.map((q, qIdx) => and data-testid={`suggested-q-${i}`} to data-testid={`suggested-q-${qIdx}`}",
+        "status": "FIXED"
+      },
+      {
+        "file": "/app/frontend/src/components/NextActionsPanel.js",
+        "line": 61,
+        "error": "ReferenceError: i is not defined",
+        "root_cause": "In steps.map() callback, the step number display used undefined 'i' instead of 'sIdx'",
+        "fix_applied": "Changed {i + 1} to {sIdx + 1}",
+        "status": "FIXED"
+      },
+      {
+        "file": "/app/frontend/src/pages/Landing.js",
+        "line": 91,
+        "error": "ReferenceError: sanitizeHtml is not defined",
+        "root_cause": "sanitizeHtml function was used but not imported",
+        "fix_applied": "Added import { sanitizeHtml } from '../utils/sanitize';",
+        "status": "FIXED"
+      }
+    ]
+  },
+
+  "features_verified": {
+    "us_pro_login": "PASS - test@jasper.legal / JasperPro2026!",
+    "belgium_pro_login": "PASS - belgium@jasper.legal / JasperPro2026! (fixed jurisdiction data)",
+    "attorney_login": "PASS - attorney@jasper.com / attorney123",
+    "dashboard_loads": "PASS - Cases list, risk score, findings, battle preview, outcome predictor, score history all render",
+    "case_detail_page": "PASS - All sections render including Score History chart, Next Actions with numbered steps, James Analysis",
+    "upload_page": "PASS - No runtime errors",
+    "settings_page": "PASS - All tabs work",
+    "document_library": "PASS - Browse and Generate modes work",
+    "legal_chat": "PASS - Chat interface loads, suggested questions render with correct data-testid",
+    "landing_page": "PASS - All sections render (categories, howItWorks, lawyers, reviews, FAQ)",
+    "jurisdiction_switching": "PASS - US/BE switching works, onboarding modal appears on switch"
+  },
+
+  "test_report_links": [
+    "/app/backend/tests/test_code_quality_refactor.py",
+    "/app/test_reports/pytest/pytest_code_quality_refactor.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "FIXED: CaseDetail.js line 497 - undefined 'i' in caseLaw.map() borderBottom condition",
+    "FIXED: LegalChat.js line 211 - undefined 'i' in questions.map() data-testid",
+    "FIXED: NextActionsPanel.js line 61 - undefined 'i' in steps.map() step number display",
+    "FIXED: Landing.js - missing sanitizeHtml import",
+    "All 11 backend API tests pass (100%)",
+    "Minor: Signup.js has eslint warning for missing 'clearError' dependency in useEffect - not critical"
+  ],
+
+  "updated_files": [
+    "/app/frontend/src/pages/CaseDetail.js",
+    "/app/frontend/src/pages/LegalChat.js",
+    "/app/frontend/src/pages/Landing.js",
+    "/app/frontend/src/components/NextActionsPanel.js"
+  ],
+
+  "success_rate": {
+    "backend": "100% (11/11 tests passed)",
+    "frontend": "100% (all pages load, no runtime errors)"
+  },
+
+  "test_credentials": {
+    "us_pro_user": "test@jasper.legal / JasperPro2026!",
+    "belgium_pro_user": "belgium@jasper.legal / JasperPro2026!",
+    "attorney": "attorney@jasper.com / attorney123"
+  },
+
+  "seed_data_creation": "Fixed belgium@jasper.legal user jurisdiction from US to BE",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": true,
+
+  "context_for_next_testing_agent": "Code quality refactoring tested and fixed. Found 4 bugs (3 'i is not defined' errors + 1 missing import) - all fixed. Same pattern as Dashboard.js bug from iteration 40 where array index variable renaming was incomplete. All pages now load correctly. Backend helper function extraction (_build_belgian_analysis_result, _create_session_response, etc.) verified working.",
+
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  },
+
+  "rca_of_the_issue": {
+    "bug_pattern": "ReferenceError: i is not defined",
+    "reproduction_steps": [
+      "1. Login as any user",
+      "2. Navigate to CaseDetail page with caseLaw data, or LegalChat page, or any page with NextActionsPanel",
+      "3. Page crashes with 'i is not defined' error"
+    ],
+    "root_cause": "During the array index key refactoring task (replacing key={i} with content-based keys), the main agent renamed the index variable from 'i' to descriptive names (clIdx, qIdx, sIdx) in .map() callbacks, but references to 'i' inside the callback bodies were not updated. This is the exact same pattern found in Dashboard.js in iteration 40.",
+    "affected_files": [
+      "CaseDetail.js - caseLaw.map() borderBottom condition used 'i' instead of 'clIdx'",
+      "LegalChat.js - questions.map() data-testid used 'i' instead of 'qIdx'",
+      "NextActionsPanel.js - steps.map() step number display used 'i' instead of 'sIdx'"
+    ],
+    "mitigation": "Changed all references from 'i' to the correct renamed index variable in each file"
+  }
+}

@@ -113,8 +113,8 @@ const CaseChatDrawer = ({ caseId, caseTitle, lang, onClose, initialMessage }) =>
             <div style={{ fontSize: 12, fontWeight: 500 }}>{t.placeholder}</div>
           </div>
         )}
-        {messages.map((m, i) => (
-          <div key={i} style={{
+        {messages.map((m, mIdx) => (
+          <div key={m.created_at || `chat-msg-${mIdx}`} style={{
             display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start',
             marginBottom: 8,
           }}>
