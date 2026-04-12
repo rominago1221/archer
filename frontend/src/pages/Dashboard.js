@@ -75,6 +75,7 @@ const L = {
     shareTitle: 'Share this case — read-only access', shareDesc: 'Generate a secure link', shareCopy: 'Copy link', shareExpiry: 'Link expires in',
     genLetter: 'Generate letter', downloading: 'Generating...', close: 'Close', downloadPdf: 'Download PDF',
     moreQuestions: 'James has more questions — ask him directly',
+    updatingAnalysis: 'James is updating your analysis...',
   },
   fr: {
     tagline: 'Votre cabinet juridique virtuel',
@@ -134,6 +135,7 @@ const L = {
     shareTitle: 'Partager ce dossier — accès en lecture seule', shareDesc: 'Générer un lien sécurisé', shareCopy: 'Copier le lien', shareExpiry: 'Lien expire dans',
     genLetter: 'Générer la lettre', downloading: 'Génération...', close: 'Fermer', downloadPdf: 'Télécharger PDF',
     moreQuestions: 'James a d\'autres questions — demandez-lui directement',
+    updatingAnalysis: 'James met à jour votre analyse...',
   },
   nl: {
     tagline: 'Uw virtueel juridisch kantoor',
@@ -193,6 +195,7 @@ const L = {
     shareTitle: 'Deel dit dossier — alleen-lezen', shareDesc: 'Genereer een beveiligde link', shareCopy: 'Link kopiëren', shareExpiry: 'Link verloopt in',
     genLetter: 'Brief genereren', downloading: 'Genereren...', close: 'Sluiten', downloadPdf: 'Download PDF',
     moreQuestions: 'James heeft meer vragen — stel ze direct',
+    updatingAnalysis: 'James werkt uw analyse bij...',
   },
 };
 
@@ -217,7 +220,7 @@ const formatDate = (d, lang) => {
       : dt.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 };
 
-const pulse = `@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`;
+const pulse = `@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`;
 
 const Dashboard = () => {
   const { user, logout, updateUser } = useAuth();
@@ -636,6 +639,13 @@ const Dashboard = () => {
                       {t.live}
                     </div>
                   </div>
+                  {/* Optimistic loading banner */}
+                  {answerLoading && (
+                    <div data-testid="analysis-updating" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: '#eff6ff', borderRadius: 8, marginBottom: 10, border: '0.5px solid #bfdbfe' }}>
+                      <div style={{ width: 14, height: 14, border: '2px solid #1a56db', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                      <span style={{ fontSize: 10, fontWeight: 500, color: '#1a56db' }}>{t.updatingAnalysis}</span>
+                    </div>
+                  )}
                   {findings.length === 0 && <div style={{ fontSize: 11, color: '#9ca3af', padding: '10px 0' }}>{t.questionFallback}</div>}
                   {findings.map((f, idx) => {
                     const fColor = f.impact === 'high' || f.type === 'risk' ? '#dc2626' : f.impact === 'low' || f.type === 'opportunity' ? '#16a34a' : '#f59e0b';

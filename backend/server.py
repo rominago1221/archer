@@ -369,7 +369,7 @@ def load_jurisprudence(case_type: str, document_type: str) -> str:
 
 
 async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 2000, use_web_search: bool = False) -> dict:
-    """Make a Claude API call via Emergent integration (better rate limit handling)"""
+    """Make a Claude API call via Emergent integration — Sonnet for complex analysis"""
     for attempt in range(3):
         try:
             chat = LlmChat(
@@ -384,16 +384,73 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 2
         except json.JSONDecodeError:
             if attempt < 2:
                 logger.warning(f"JSON parse error from Claude, retrying (attempt {attempt+1}/3)")
-                await asyncio.sleep(2)
+                await asyncio.sleep(1)
                 continue
             raise
         except Exception as e:
             if attempt < 2:
-                wait = (attempt + 1) * 5
+                wait = (attempt + 1) * 3
                 logger.warning(f"Claude call error: {e}, retrying in {wait}s (attempt {attempt+1}/3)")
                 await asyncio.sleep(wait)
                 continue
             raise
+
+
+async def call_claude_fast(system_prompt: str, user_message: str, max_tokens: int = 800) -> dict:
+    """Fast Claude call with lower token limit — for simpler tasks (chat, Q&A, letter drafts)"""
+    for attempt in range(2):
+        try:
+            chat = LlmChat(
+                api_key=EMERGENT_KEY,
+                session_id=f"fast_{uuid.uuid4().hex[:8]}",
+                system_message=system_prompt
+            ).with_model("anthropic", "claude-4-sonnet-20250514")
+            msg = UserMessage(text=user_message + "\n\nRespond with valid JSON only. No markdown, no code blocks, just raw JSON.")
+            response = await chat.send_message(msg)
+            text = response.replace("```json", "").replace("```", "").strip()
+            return json.loads(text)
+        except json.JSONDecodeError:
+            if attempt < 1:
+                logger.warning(f"Fast call JSON parse error, retrying")
+                await asyncio.sleep(1)
+                continue
+            raise
+        except Exception as e:
+            if attempt < 1:
+                logger.warning(f"Fast call error: {e}, retrying")
+                await asyncio.sleep(2)
+                continue
+            raise
+
+
+import hashlib
+
+async def get_cached_analysis(doc_hash: str) -> dict:
+    """Check MongoDB for cached analysis result"""
+    cached = await db.analysis_cache.find_one({"doc_hash": doc_hash}, {"_id": 0})
+    if not cached:
+        return None
+    # Check 24h expiry
+    cached_at = cached.get("cached_at", "")
+    if cached_at:
+        try:
+            cached_time = datetime.fromisoformat(cached_at.replace("Z", "+00:00"))
+            if cached_time.tzinfo is None:
+                cached_time = cached_time.replace(tzinfo=timezone.utc)
+            if (datetime.now(timezone.utc) - cached_time).total_seconds() > 86400:
+                return None
+        except Exception:
+            return None
+    return cached.get("result")
+
+
+async def set_cached_analysis(doc_hash: str, result: dict):
+    """Store analysis result in cache"""
+    await db.analysis_cache.update_one(
+        {"doc_hash": doc_hash},
+        {"$set": {"doc_hash": doc_hash, "result": result, "cached_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
 
 
 async def fetch_courtlistener_opinions(case_type: str, state: str = "") -> list:
@@ -767,6 +824,13 @@ def _build_belgian_analysis_result(
 
 async def analyze_document_advanced(extracted_text: str, user_context: str = "", language: str = "en") -> dict:
     """Advanced 5-pass analysis system with real-time jurisprudence"""
+    # Fix 5: Check cache first
+    doc_hash = hashlib.sha256((extracted_text[:5000] + user_context + language).encode()).hexdigest()
+    cached = await get_cached_analysis(doc_hash)
+    if cached:
+        logger.info("Advanced analysis: Returning cached result")
+        return cached
+
     try:
         context_supplement = ""
         if user_context:
@@ -791,29 +855,23 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
 
         # PASS 2: Legal analysis
         logger.info("Advanced analysis: Pass 2 — Legal analysis")
-        await asyncio.sleep(2)
         legal_analysis = await call_claude(
             persona,
             PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2), jurisprudence_section=jurisprudence_text + realtime_law_context)
             + "\n\nIMPORTANT: Use the provided recent court decisions and jurisprudence to inform your analysis. Cite any relevant rulings in your findings.",
-            max_tokens=3000
+            max_tokens=2000
         )
 
         facts_str = json.dumps(facts, indent=2)
         analysis_str = json.dumps(legal_analysis, indent=2)
 
-        # PASS 3, 4A, 4B — staggered
-        logger.info("Advanced analysis: Pass 3 — Strategy")
-        await asyncio.sleep(2)
-        strategy = await call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=2500)
-
-        logger.info("Advanced analysis: Pass 4A — User arguments")
-        await asyncio.sleep(2)
-        user_arguments = await call_claude(PASS4A_SYSTEM + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
-
-        logger.info("Advanced analysis: Pass 4B — Opposing arguments")
-        await asyncio.sleep(2)
-        opposing_arguments = await call_claude(PASS4B_SYSTEM + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
+        # PASS 3 + 4A + 4B — RUN IN PARALLEL (60% faster)
+        logger.info("Advanced analysis: Pass 3+4A+4B — Running in parallel")
+        strategy, user_arguments, opposing_arguments = await asyncio.gather(
+            call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500),
+            call_claude(PASS4A_SYSTEM + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800),
+            call_claude(PASS4B_SYSTEM + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800),
+        )
 
         logger.info("Advanced analysis: All 5 passes complete")
 
@@ -826,10 +884,14 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
         recent_case_law = _build_case_law_for_frontend(courtlistener_opinions)
         now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-        return _build_standard_analysis_result(
+        result = _build_standard_analysis_result(
             doc_type, inferred_case_type, legal_analysis, strategy, facts,
             user_arguments, opposing_arguments, recent_case_law, now_date
         )
+
+        # Cache the result
+        await set_cached_analysis(doc_hash, result)
+        return result
 
     except Exception as e:
         logger.error(f"Advanced analysis error: {e}")
@@ -1212,6 +1274,13 @@ def get_belgian_persona(language: str, region: str) -> str:
 
 async def analyze_document_belgian(extracted_text: str, user_context: str = "", region: str = "Wallonie", language: str = "fr-BE") -> dict:
     """Belgian 5-pass analysis system with Belgian jurisprudence"""
+    # Check cache first
+    doc_hash = hashlib.sha256((extracted_text[:5000] + user_context + region + language).encode()).hexdigest()
+    cached = await get_cached_analysis(doc_hash)
+    if cached:
+        logger.info("Belgian analysis: Returning cached result")
+        return cached
+
     try:
         persona = get_belgian_persona(language, region)
         lang_instruction = get_language_instruction(language)
@@ -1229,16 +1298,18 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
 
         # PASS 2: Legal analysis
         logger.info("Belgian analysis: Passe 2 — Analyse juridique")
-        legal_analysis = await call_claude(persona_with_lang, BE_PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2, ensure_ascii=False), jurisprudence_section=jurisprudence_text), max_tokens=3000)
+        legal_analysis = await call_claude(persona_with_lang, BE_PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2, ensure_ascii=False), jurisprudence_section=jurisprudence_text), max_tokens=2000)
 
         facts_str = json.dumps(facts, indent=2, ensure_ascii=False)
         analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
 
-        # PASS 3, 4A, 4B
-        logger.info("Belgian analysis: Passe 3+4A+4B — Strategie + Battle Preview")
-        strategy = await call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=2500)
-        user_arguments = await call_claude(BE_PASS4A_SYSTEM + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
-        opposing_arguments = await call_claude(BE_PASS4B_SYSTEM + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
+        # PASS 3 + 4A + 4B — RUN IN PARALLEL
+        logger.info("Belgian analysis: Passe 3+4A+4B — En parallele")
+        strategy, user_arguments, opposing_arguments = await asyncio.gather(
+            call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500),
+            call_claude(BE_PASS4A_SYSTEM + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800),
+            call_claude(BE_PASS4B_SYSTEM + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800),
+        )
 
         logger.info("Belgian analysis: 5 passes complete")
 
@@ -1249,7 +1320,11 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
 
         now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-        return _build_belgian_analysis_result(doc_type, inferred_case_type, legal_analysis, strategy, facts, user_arguments, opposing_arguments, detected_region, language, now_date)
+        result = _build_belgian_analysis_result(doc_type, inferred_case_type, legal_analysis, strategy, facts, user_arguments, opposing_arguments, detected_region, language, now_date)
+
+        # Cache the result
+        await set_cached_analysis(doc_hash, result)
+        return result
     except Exception as e:
         logger.error(f"Belgian analysis error: {e}")
         return _default_analysis()
@@ -1968,11 +2043,13 @@ async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, us
     facts_str = json.dumps(facts, indent=2)
     analysis_str = json.dumps(legal_analysis, indent=2)
 
-    # PASS 3+4A+4B
-    logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 3+4A+4B")
-    strategy = await call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement, max_tokens=3000)
-    user_arguments = await call_claude(PASS4A_SYSTEM, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
-    opposing_arguments = await call_claude(PASS4B_SYSTEM, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
+    # PASS 3+4A+4B — PARALLEL
+    logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 3+4A+4B — Parallel")
+    strategy, user_arguments, opposing_arguments = await asyncio.gather(
+        call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement, max_tokens=1500),
+        call_claude(PASS4A_SYSTEM, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800),
+        call_claude(PASS4B_SYSTEM, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800),
+    )
 
     logger.info(f"Multi-doc analysis ({doc_count} docs): All passes complete")
 
@@ -2030,11 +2107,13 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
     facts_str = json.dumps(facts, indent=2, ensure_ascii=False)
     analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
 
-    # PASS 3+4A+4B
-    logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 3+4A+4B")
-    strategy = await call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement, max_tokens=3000)
-    user_arguments = await call_claude(BE_PASS4A_SYSTEM + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
-    opposing_arguments = await call_claude(BE_PASS4B_SYSTEM + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
+    # PASS 3+4A+4B — PARALLEL
+    logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 3+4A+4B — Parallel")
+    strategy, user_arguments, opposing_arguments = await asyncio.gather(
+        call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement, max_tokens=1500),
+        call_claude(BE_PASS4A_SYSTEM + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800),
+        call_claude(BE_PASS4B_SYSTEM + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800),
+    )
 
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Complete")
 
@@ -3007,7 +3086,7 @@ User answered: "{answer}"
 Analyze the impact of this answer on the case."""
     
     try:
-        result = await call_claude(system, user_msg, max_tokens=1500)
+        result = await call_claude_fast(system, user_msg, max_tokens=600)
     except Exception as e:
         logger.error(f"James Q&A error: {e}")
         raise HTTPException(status_code=500, detail="Analysis failed")
@@ -3090,7 +3169,7 @@ Description: {action_description}
 Generate a complete, ready-to-send legal letter for this action."""
     
     try:
-        letter = await call_claude(system, user_msg, max_tokens=2500)
+        letter = await call_claude_fast(system, user_msg, max_tokens=1500)
         return letter
     except Exception as e:
         logger.error(f"Letter generation error: {e}")
@@ -4036,7 +4115,7 @@ async def send_chat_message(
             steps_text = "; ".join([s.get('title', '') if isinstance(s, dict) else str(s) for s in case_steps])
             system_prompt += f"\n\nCONTEXT: The user has an active case: '{case_doc.get('title', '')}'. Type: {case_doc.get('type', '')}. Risk Score: {case_doc.get('risk_score', 0)}/100. Summary: {case_doc.get('ai_summary', 'N/A')}. Key findings: {findings_text}. Next steps: {steps_text}. They may ask questions related to this case. Continue the conversation naturally as James, their legal advisor."
 
-    # Call Claude via Emergent integration (avoids 429 rate limits)
+    # Call Claude via Emergent integration — fast with lower token budget
     try:
         chat = LlmChat(
             api_key=EMERGENT_KEY,

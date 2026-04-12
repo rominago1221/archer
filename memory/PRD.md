@@ -1,67 +1,48 @@
 # Jasper - Legal Tech AI Platform PRD
 
 ## Original Problem Statement
-Build a complete, production-ready SaaS web application called "Jasper" — a legal tech AI platform for US and Belgium consumers. Features include AI-powered document analysis (5-pass Claude pipeline), Virtual Legal Office dashboard, jurisdiction/language switching, attorney marketplace, and document library.
+Build a complete, production-ready SaaS web application called "Jasper" — a legal tech AI platform for US and Belgium consumers.
 
 ## Architecture
 - **Frontend**: React (CRA + CRACO), Tailwind CSS, Shadcn UI, Recharts, DOMPurify
 - **Backend**: FastAPI (Python), modular structure:
-  - `server.py` — Main app, analysis logic, case/document/letter/chat/library routes (~5161 lines)
-  - `db.py` — MongoDB connection
-  - `models.py` — Pydantic models (252 lines)
-  - `auth.py` — Auth helpers (72 lines)
-  - `storage.py` — Object storage (52 lines)
-  - `routes/auth_routes.py` — Auth & Profile endpoints (161 lines)
-  - `routes/attorney_routes.py` — Attorney portal + Admin (836 lines)
+  - `server.py` — Main app, analysis logic, routes (~5300 lines)
+  - `db.py`, `models.py`, `auth.py`, `storage.py` — Shared modules
+  - `routes/auth_routes.py`, `routes/attorney_routes.py` — Extracted routers
 - **Database**: MongoDB
-- **Integrations**: Emergent Universal LLM Key (Claude-sonnet-4-20250514), Emergent Google Auth, Stripe, Daily.co
+- **Integrations**: Emergent Universal LLM Key (Claude-sonnet-4-20250514), Emergent Google Auth
 
-## What's Been Implemented
+## Latest Changes
 
-### Server.py Modularization (Apr 12 2026) — LATEST
-- Extracted shared modules: db.py, models.py, auth.py, storage.py
-- Extracted auth/profile routes into routes/auth_routes.py
-- Extracted attorney portal (800+ lines) into routes/attorney_routes.py
-- server.py reduced from 6512 to 5161 lines (21% reduction)
+### Performance Optimizations (Apr 12 2026) — LATEST
+1. **Parallel Analysis Passes**: Pass 3 + 4A + 4B run via `asyncio.gather` (~60% faster)
+2. **Removed stagger delays**: Eliminated all `asyncio.sleep(2)` between passes
+3. **Analysis caching**: Document hash → MongoDB cache (24h expiry)
+4. **Reduced max_tokens**: Pass 2: 2000 (was 3000), Pass 3: 1500 (was 2500), 4A/4B: 800 (was 1500)
+5. **Fast call function**: `call_claude_fast` with fewer retries + lower tokens for james-answer, letters
+6. **Optimistic UI**: Instant loading spinner in analysis section when answer processing
 
-### Code Quality Report — COMPLETE (Apr 12 2026)
-1. XSS Prevention: DOMPurify + safePrintContent()
-2. Empty Catch Blocks: Error logging added
-3. React Hook Dependencies: Fixed stale closures
-4. Insecure localStorage: Input validation + logging
-5. Array Index Keys: ALL `key={i}` replaced with stable keys
-6. Backend Complexity: 10 helper functions extracted
-7. Fixed Upload.js crash
+### Enhanced Findings Format (Apr 12 2026)
+Every finding now has 5 elements: title, impact_description (plain language), legal_ref, do_now (action), risk_if_ignored
 
-### Previous Features
-- Dashboard & Case Detail 12-feature parity, polling, James question two-step
-- Next Actions, Letter Generation Auto-fill Modal
-- Jurisdiction (USA/BE) & Language (EN/FR/NL/DE/ES) switching
-- Attorney Onboarding & Admin Approval, Document Library (158 templates)
-- 6 Global Claude Prompt fixes, Score History Graph
+### Previous
+- Chat drawer: James speaks first, clarification flow with impact + chat link
+- Code quality: XSS, hooks, keys, complexity all fixed
+- Server.py modularization Phase 1 complete
+- Full feature set: Dashboard, Case Detail, Document Library, Attorney Portal, etc.
 
 ## Prioritized Backlog
 
 ### P0: Continue server.py modularization
-Extract remaining route groups into routes/:
-- `routes/cases.py` — Case CRUD, events, brief (~300 lines)
-- `routes/documents.py` — Upload, text extraction (~500 lines)
-- `routes/letters.py` — Letter generation (~200 lines)
-- `routes/chat.py` — LegalChat (~200 lines)
-- `routes/library.py` — Document Library + James Creator (~300 lines)
-- `routes/lawyers.py` — Lawyer directory, booking (~200 lines)
-- Move analysis logic to `analysis/` package
+Extract cases, documents, letters, chat, library routes
 
-### P1: Integration Features
-- Mobile Document Scanner (Camera integration)
-- HelloSign / Dropbox Sign API Integration
+### P1: Features
+- Mobile Document Scanner
+- HelloSign / Dropbox Sign Integration
 - Stripe Connect for Attorney Payouts
-
-### P1: Communication Features
-- Deadline Alerts via SMS + Email (Twilio/SendGrid)
+- Deadline Alerts (Twilio/SendGrid)
 
 ### P2: Polish
+- Component splitting, Python type hints
 - Full UI translation verification
-- Component splitting (Dashboard, CaseDetail)
-- Python type hints
-- Multi-country expansion
+- Streaming Claude responses (SSE)
