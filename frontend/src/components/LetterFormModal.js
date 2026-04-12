@@ -73,7 +73,7 @@ const Field = ({ label, value, onChange, locked, hint, autoComplete }) => (
   </div>
 );
 
-const LetterFormModal = ({ step, caseId, caseData, userName, userEmail, userAddress, lang, onClose, onOpenChat, onNavigate }) => {
+const LetterFormModal = ({ step, caseId, caseData, userName, userEmail, userAddress, lang, onClose, onOpenChat, onNavigate, tone }) => {
   const t = T[lang] || T.en;
 
   // Determine profile completeness
@@ -109,6 +109,7 @@ const LetterFormModal = ({ step, caseId, caseData, userName, userEmail, userAddr
       const res = await axios.post(`${API}/cases/${caseId}/generate-action-letter`, {
         action_title: step.title || '',
         action_description: step.description || '',
+        tone: tone || 'citizen',
         sender_name: form.senderName,
         sender_address: form.senderAddress,
         recipient_name: form.recipientName,

@@ -150,6 +150,7 @@ const CaseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [letterModal, setLetterModal] = useState(null);
   const [letterFormStep, setLetterFormStep] = useState(null);
+  const [letterTone, setLetterTone] = useState('citizen');
   const [attorneyModalStep, setAttorneyModalStep] = useState(null);
   const [shareModal, setShareModal] = useState(false);
   const [shareLink, setShareLink] = useState('');
@@ -634,8 +635,8 @@ const CaseDetail = () => {
             jurisdiction={user?.jurisdiction || 'US'}
             opposingPartyName={sc?.opposing_party_name}
             onClose={() => setAttorneyModalStep(null)}
-            onGenerateFree={() => { setLetterFormStep(attorneyModalStep); setAttorneyModalStep(null); }}
-            onOrderAttorney={() => { setAttorneyModalStep(null); }}
+            onGenerateFree={() => { setLetterTone('citizen'); setLetterFormStep(attorneyModalStep); setAttorneyModalStep(null); }}
+            onOrderAttorney={() => { setLetterTone('attorney'); setLetterFormStep(attorneyModalStep); setAttorneyModalStep(null); }}
           />
         )}
 
@@ -649,6 +650,7 @@ const CaseDetail = () => {
             userEmail={user?.email}
             userAddress={user?.address}
             lang={lang}
+            tone={letterTone}
             onClose={() => setLetterFormStep(null)}
             onOpenChat={(msg) => setChatDrawer({ initial: msg })}
             onNavigate={(path) => navigate(path)}

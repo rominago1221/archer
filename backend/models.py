@@ -250,3 +250,4 @@ class LetterRequest(BaseModel):
     opposing_party_name: Optional[str] = None
     opposing_party_address: Optional[str] = None
     additional_context: Optional[str] = None
+    tone: str = "citizen"

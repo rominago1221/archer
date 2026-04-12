@@ -1735,11 +1735,101 @@ LETTER_TYPES = {
     ]
 }
 
-async def generate_letter_with_claude(letter_data: dict, belgian: bool = False, language: str = "en") -> dict:
+CITIZEN_TONE_FR = """
+REGLE DE TON — LETTRE CITOYEN (Option 1):
+Tu rediges cette lettre AU NOM DU CITOYEN lui-meme, PAS d'un avocat.
+- TOUJOURS utiliser "Je" — JAMAIS "Nous"
+- JAMAIS de phrases d'avocat: "Par la presente nous avons l'honneur de...", "Nous sollicitons respectueusement...", "Il appert que...", "Aux termes de..."
+- Les references legales sont autorisees mais expliquees simplement
+  INTERDIT: "En application de l'article 216bis CIC..."
+  CORRECT: "Je souhaite contester cette amende. L'article 216bis du Code d'instruction criminelle me donne ce droit."
+- Signe par: [NOM DE L'UTILISATEUR] — PAS un cabinet
+- Ton: simple, direct, premiere personne, citoyen respectueux qui s'adresse a une autorite
+- Cloture: "Veuillez agreer, Madame/Monsieur, l'expression de mes salutations distinguees."
+"""
+
+CITIZEN_TONE_EN = """
+TONE RULE — CITIZEN LETTER (Option 1):
+You are writing this letter IN THE NAME OF THE CITIZEN themselves, NOT a lawyer.
+- ALWAYS use "I" — NEVER "We"
+- NEVER use attorney phrases: "We respectfully submit...", "It appears that...", "Pursuant to...", "We hereby..."
+- Legal references ARE allowed but explained simply
+  WRONG: "Pursuant to Fla. Stat. § 83.56(3)..."
+  RIGHT: "I am disputing this notice. Florida law (Section 83.56) gives me the right to do so."
+- Signed by: [USER FULL NAME] — not a law firm
+- Tone: simple, direct, first person, respectful citizen writing to an authority
+- Closing: "Sincerely,"
+"""
+
+CITIZEN_TONE_NL = """
+TOONREGEL — BURGERBRIEF (Optie 1):
+Je schrijft deze brief IN NAAM VAN DE BURGER zelf, NIET van een advocaat.
+- ALTIJD "Ik" gebruiken — NOOIT "Wij"
+- NOOIT advocatentaal: "Bij deze hebben wij de eer...", "Wij verzoeken eerbiedig..."
+- Wettelijke referenties zijn toegestaan maar eenvoudig uitgelegd
+- Ondertekend door: [NAAM GEBRUIKER] — geen kantoor
+- Toon: eenvoudig, direct, eerste persoon, respectvolle burger
+"""
+
+ATTORNEY_TONE_FR = """
+REGLE DE TON — LETTRE D'AVOCAT (Option 2):
+Tu es un avocat senior redigeant une lettre formelle au nom de ton client.
+- Utiliser le langage juridique formel et professionnel
+- Referer au client en troisieme personne: "notre client M. [Nom]" / "notre cliente Mme [Nom]"
+- Citer les references legales formellement: "En application de l'article...", "Aux termes de..."
+- Signe par: [Nom Avocat] — Avocat au Barreau de [juridiction]
+- En-tete: Cabinet [Nom] — Avocats
+- Ton: formel, autoritaire, professionnel
+- Ouverture: "Maitre, Monsieur le Procureur du Roi, Nous avons l'honneur de vous adresser la presente au nom et pour le compte de notre client..."
+- Cloture: "Veuillez agreer, Maitre/Monsieur, l'expression de mes sentiments distingues."
+"""
+
+ATTORNEY_TONE_EN = """
+TONE RULE — ATTORNEY LETTER (Option 2):
+You are a senior attorney writing a formal legal letter on behalf of your client.
+- Use formal professional legal language
+- Reference the client in third person: "our client Mr. [Name]" / "our client Ms. [Name]"
+- Cite legal references formally: "Pursuant to...", "Under the provisions of..."
+- Signed by: [Attorney Name], Esq. — [Bar Association]
+- Letterhead: [Firm Name] — Attorneys at Law
+- Tone: formal, authoritative, professional
+- Opening: "Dear [Title], We write on behalf of our client, [Name], regarding..."
+- Closing: "Very truly yours,"
+"""
+
+ATTORNEY_TONE_NL = """
+TOONREGEL — ADVOCAATBRIEF (Optie 2):
+Je bent een senior advocaat die een formele juridische brief schrijft namens je client.
+- Gebruik formele professionele juridische taal
+- Verwijs naar de client in derde persoon: "onze client de heer [Naam]"
+- Citeer wettelijke referenties formeel: "Krachtens artikel..."
+- Ondertekend door: [Naam Advocaat] — Advocaat bij de Balie van [jurisdictie]
+- Toon: formeel, gezaghebbend, professioneel
+"""
+
+def get_letter_tone_instruction(tone: str, language: str) -> str:
+    """Get tone-specific instruction for letter generation."""
+    lang_prefix = language[:2] if language else "en"
+    if tone == "attorney":
+        if lang_prefix == "fr":
+            return ATTORNEY_TONE_FR
+        elif lang_prefix == "nl":
+            return ATTORNEY_TONE_NL
+        return ATTORNEY_TONE_EN
+    else:
+        if lang_prefix == "fr":
+            return CITIZEN_TONE_FR
+        elif lang_prefix == "nl":
+            return CITIZEN_TONE_NL
+        return CITIZEN_TONE_EN
+
+
+async def generate_letter_with_claude(letter_data: dict, belgian: bool = False, language: str = "en", tone: str = "citizen") -> dict:
     """Generate a response letter using Claude API"""
     try:
         system_prompt = BELGIAN_LETTER_SYSTEM if belgian else LETTER_SYSTEM_PROMPT
         system_prompt += get_language_instruction(language)
+        system_prompt += get_letter_tone_instruction(tone, language)
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "https://api.anthropic.com/v1/messages",
@@ -3135,19 +3225,22 @@ async def generate_action_letter(case_id: str, body: dict, current_user: User = 
     
     action_title = body.get("action_title", "")
     action_description = body.get("action_description", "")
+    letter_tone = body.get("tone", "citizen")  # "citizen" or "attorney"
     user_language = current_user.language or case_doc.get("language", "en")
     
+    tone_instruction = get_letter_tone_instruction(letter_tone, user_language)
     lang_note = ""
     if user_language.startswith("fr"):
-        lang_note = "Write the letter entirely in French. Use formal French legal style."
+        lang_note = "Write the letter entirely in French."
     elif user_language.startswith("nl"):
-        lang_note = "Write the letter entirely in Dutch. Use formal Dutch legal style."
+        lang_note = "Write the letter entirely in Dutch."
     elif user_language.startswith("de"):
         lang_note = "Write the letter entirely in German."
     
-    system = f"""You are James, a senior legal attorney drafting a formal legal letter for a client.
+    system = f"""You are James, drafting a legal letter.
 {lang_note}
-The letter must be professional, cite specific laws and statutes, and be ready to send.
+{tone_instruction}
+The letter must cite specific laws and statutes, and be ready to send.
 Use the case details to fill in all specific information (names, addresses, dates, amounts).
 Return JSON:
 {{
@@ -3231,7 +3324,8 @@ async def generate_letter(
     # Generate letter — use Belgian system prompt if user is Belgian
     is_belgian = current_user.jurisdiction == "BE"
     user_language = getattr(current_user, 'language', 'en') or 'en'
-    letter_result = await generate_letter_with_claude(letter_data, belgian=is_belgian, language=user_language)
+    letter_tone = request.tone or "citizen"
+    letter_result = await generate_letter_with_claude(letter_data, belgian=is_belgian, language=user_language, tone=letter_tone)
     
     # Store letter in database
     letter_id = f"letter_{uuid.uuid4().hex[:12]}"

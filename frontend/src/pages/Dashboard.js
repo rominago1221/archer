@@ -236,6 +236,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [reanalyzing, setReanalyzing] = useState(false);
   const [letterFormStep, setLetterFormStep] = useState(null);
+  const [letterTone, setLetterTone] = useState('citizen');
   const [attorneyModalStep, setAttorneyModalStep] = useState(null);
   const [shareModal, setShareModal] = useState(false);
   const [shareLink, setShareLink] = useState('');
@@ -917,8 +918,8 @@ const Dashboard = () => {
             jurisdiction={jurisdiction}
             opposingPartyName={sc?.opposing_party_name}
             onClose={() => setAttorneyModalStep(null)}
-            onGenerateFree={() => { setLetterFormStep(attorneyModalStep); setAttorneyModalStep(null); }}
-            onOrderAttorney={() => { /* Part 2: Stripe payment flow */ setAttorneyModalStep(null); }}
+            onGenerateFree={() => { setLetterTone('citizen'); setLetterFormStep(attorneyModalStep); setAttorneyModalStep(null); }}
+            onOrderAttorney={() => { setLetterTone('attorney'); setLetterFormStep(attorneyModalStep); setAttorneyModalStep(null); }}
           />
         )}
 
@@ -932,6 +933,7 @@ const Dashboard = () => {
             userEmail={user?.email}
             userAddress={user?.address}
             lang={lang}
+            tone={letterTone}
             onClose={() => setLetterFormStep(null)}
             onOpenChat={(msg) => setChatDrawer({ initial: msg })}
             onNavigate={(path) => navigate(path)}
