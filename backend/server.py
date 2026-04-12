@@ -568,6 +568,38 @@ async def _validate_user_arguments(user_arguments: dict, facts_str: str, analysi
     return user_arguments
 
 
+async def _validate_belgian_user_arguments(user_arguments: dict, facts_str: str, analysis_str: str, lang_instruction: str) -> dict:
+    """Ensure Belgian user arguments contain at least 3 strongest_arguments, retrying with BE prompts if needed.
+    Also normalizes legacy 'strong_arguments' field to 'strongest_arguments'."""
+    if isinstance(user_arguments, dict):
+        # Normalize: if strong_arguments exists but strongest_arguments doesn't, copy it
+        if "strong_arguments" in user_arguments and "strongest_arguments" not in user_arguments:
+            user_arguments["strongest_arguments"] = user_arguments.pop("strong_arguments")
+
+    ua = user_arguments.get("strongest_arguments", []) if isinstance(user_arguments, dict) else []
+    if len(ua) >= 3:
+        return user_arguments
+
+    logger.warning(f"Belgian user arguments too few ({len(ua)}) — retrying Pass 4A with BE prompts")
+    try:
+        await asyncio.sleep(1)
+        ua_retry = await call_claude(
+            BE_PASS4A_SYSTEM + lang_instruction,
+            BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
+            max_tokens=1500
+        )
+        if isinstance(ua_retry, dict):
+            if "strong_arguments" in ua_retry and "strongest_arguments" not in ua_retry:
+                ua_retry["strongest_arguments"] = ua_retry.pop("strong_arguments")
+            if len(ua_retry.get("strongest_arguments", [])) >= 3:
+                return ua_retry
+    except Exception as e:
+        logger.error(f"Belgian user arguments retry failed: {e}")
+
+    return user_arguments
+
+
+
 def _validate_success_probability(strategy: dict, legal_analysis: dict) -> dict:
     """Clamp success probability to sum=100, each value 2-95%, with risk-based fallback."""
     sp = strategy.get("success_probability", {})
@@ -1054,19 +1086,29 @@ Retourne UNIQUEMENT ce JSON:
   "key_insight": "La phrase la plus importante que l'utilisateur doit retenir"
 }}"""
 
-BE_PASS4A_SYSTEM = "Tu es l'avocat de l'utilisateur en Belgique. Fais les arguments les plus solides possibles pour defendre ton client selon le droit belge. Sois agressif et exhaustif dans la defense. Reponds en JSON uniquement."
-BE_PASS4A_PROMPT = """Sur base de ces faits et de cette analyse, construis les arguments les plus solides pour defendre l'utilisateur.
+BE_PASS4A_SYSTEM = """Tu es un avocat senior en Belgique representant l'utilisateur. Ton travail est de construire le dossier LE PLUS SOLIDE possible pour ton client. Trouve chaque argument, chaque vice de procedure, chaque protection legale qui beneficie a ton client. Sois agressif et exhaustif.
+
+REGLE CRITIQUE: Tu DOIS generer exactement 4-5 arguments dans strongest_arguments. JAMAIS un tableau vide. Chaque argument doit citer une loi, un article de loi, ou un principe juridique belge specifique. Si la position de l'utilisateur semble faible, trouve des arguments proceduraux, des protections constitutionnelles, ou des arguments sur la charge de la preuve.
+
+Reponds en JSON uniquement."""
+
+BE_PASS4A_PROMPT = """Sur base de ces faits et de cette analyse, construis les arguments les plus solides pour defendre l'utilisateur selon le droit belge.
 
 FAITS: {facts_json}
 ANALYSE: {analysis_json}
 
-Retourne JSON:
+OBLIGATOIRE: strongest_arguments DOIT contenir exactement 4-5 elements. JAMAIS moins de 4. Chaque argument doit citer un article de loi belge specifique (CCT 109, Loi contrats travail, Code civil, etc.).
+
+Retourne UNIQUEMENT ce JSON:
 {{
-  "strong_arguments": [{{"argument": "Le delai de preavis calcule est insuffisant", "force": "fort|moyen|faible", "base_legale": "Loi du 26 decembre 2013", "comment_utiliser": "Calculer le preavis correct et reclamer la difference"}}],
-  "procedural_victories": ["liste des avantages proceduraux"],
-  "best_case": "description du meilleur resultat possible",
+  "strongest_arguments": [
+    {{"argument": "Description precise de l'argument avec reference legale", "strength": "strong|medium|weak", "law_basis": "Article de loi belge specifique (ex: CCT 109 art. 3, Art. 65-70 Loi contrats travail)", "how_to_use": "Comment utiliser cet argument dans la defense"}}
+  ],
+  "procedural_wins": ["liste des avantages proceduraux"],
+  "best_outcome_scenario": "description du meilleur resultat possible",
   "opening_argument": "Premiere phrase percutante pour la lettre de reponse"
-}}"""
+}}
+OBLIGATOIRE: strongest_arguments DOIT contenir 4-5 elements. JAMAIS retourner moins de 4."""
 
 BE_PASS4B_SYSTEM = "Tu es l'avocat de la partie adverse contre l'utilisateur en Belgique. Construis les arguments les plus solides contre l'utilisateur selon le droit belge. Reponds en JSON uniquement."
 BE_PASS4B_PROMPT = """Construis les arguments que la partie adverse va utiliser contre l'utilisateur. Identifie les faiblesses de la position de l'utilisateur.
@@ -1174,6 +1216,11 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
         opposing_arguments = await call_claude(BE_PASS4B_SYSTEM + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
 
         logger.info("Belgian analysis: 5 passes complete")
+
+        # ═══ VALIDATION — enforce global rules for Belgian analysis ═══
+        user_arguments = await _validate_belgian_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
+        strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
+
         now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
         return _build_belgian_analysis_result(doc_type, inferred_case_type, legal_analysis, strategy, facts, user_arguments, opposing_arguments, detected_region, language, now_date)
@@ -1964,6 +2011,11 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
     opposing_arguments = await call_claude(BE_PASS4B_SYSTEM + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
 
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Complete")
+
+    # ═══ VALIDATION — enforce global rules for Belgian multi-doc ═══
+    user_arguments = await _validate_belgian_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
+    strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
+
     now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     result = _build_belgian_analysis_result(doc_type, inferred_case_type, legal_analysis, strategy, facts, user_arguments, opposing_arguments, detected_region, language, now_date)

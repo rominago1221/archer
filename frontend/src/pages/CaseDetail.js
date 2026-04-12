@@ -469,7 +469,7 @@ const CaseDetail = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                       <div style={{ background: '#f0fdf4', border: '0.5px solid #86efac', borderRadius: 9, padding: 10 }}>
                         <div style={{ fontSize: 15, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#16a34a', marginBottom: 6 }}>{t.yourArgs}</div>
-                        {(bp.user_side?.strongest_arguments || bp.user_arguments || []).slice(0, 5).map((a, aIdx) => (
+                        {(bp.user_side?.strongest_arguments || bp.user_side?.strong_arguments || bp.user_arguments || []).slice(0, 5).map((a, aIdx) => (
                           <div key={`ua-${aIdx}-${(typeof a === 'string' ? a : a.argument || '').slice(0, 15)}`} style={{ fontSize: 12, color: '#374151', padding: '4px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.5, display: 'flex', gap: 6 }}>
                             <span style={{ color: '#16a34a', fontWeight: 600 }}>•</span>
                             <span>{typeof a === 'string' ? a : a.argument || a.text || ''}</span>
