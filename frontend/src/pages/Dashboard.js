@@ -775,8 +775,8 @@ const Dashboard = () => {
                 {caseLaw.length > 0 && (
                   <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
                     <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 8 }}>{t.jurisTitle}</div>
-                    {caseLaw.map((cl) => (
-                      <div key={cl.case_name || cl.court} style={{ padding: '8px 0', borderBottom: i < caseLaw.length - 1 ? '0.5px solid #f3f4f6' : 'none' }}>
+                    {caseLaw.map((cl, clIdx) => (
+                      <div key={cl.case_name || cl.court} style={{ padding: '8px 0', borderBottom: clIdx < caseLaw.length - 1 ? '0.5px solid #f3f4f6' : 'none' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', flex: 1 }}>{cl.case_name}</div>
                           {cl.url && <a href={cl.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={11} color="#1a56db" /></a>}
