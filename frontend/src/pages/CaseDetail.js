@@ -595,6 +595,7 @@ const CaseDetail = () => {
           <NextActionsPanel
             steps={steps}
             lang={lang}
+            opposingPartyName={sc?.opposing_party_name}
             onLetterClick={(s) => setLetterFormStep(s)}
             onCallClick={() => navigate('/lawyers')}
           />

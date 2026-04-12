@@ -1,80 +1,229 @@
 import React from 'react';
-import { Mail, Phone, Clock, Bell } from 'lucide-react';
+import { Mail, Phone, Clock, FileText, Check } from 'lucide-react';
 
 const classifyAction = (step) => {
   const title = (typeof step === 'string' ? step : (step.title || '')).toLowerCase();
   const type = (step.action_type || '').toLowerCase();
-  if (type === 'send_letter' || type === 'draft_response') return 'letter';
-  if (type === 'book_lawyer') return 'call';
-  if (type === 'wait' || type === 'no_action') return 'passive';
-  if (title.includes('letter') || title.includes('lettre') || title.includes('brief') || title.includes('file') || title.includes('motion') || title.includes('challenge') || title.includes('demand') || title.includes('formal') || title.includes('submit') || title.includes('respond') || title.includes('contest') || title.includes('claim') || title.includes('prepare') || title.includes('draft') || title.includes('counterclaim')) return 'letter';
-  if (title.includes('attorney') || title.includes('lawyer') || title.includes('avocat') || title.includes('advocaat') || title.includes('consult') || title.includes('call') || title.includes('book') || title.includes('schedule') || title.includes('engage')) return 'call';
-  if (title.includes('wait') || title.includes('keep') || title.includes('monitor') || title.includes('document') || title.includes('gather') || title.includes('collect') || title.includes('save') || title.includes('arrange') || title.includes('avoid') || title.includes('transport')) return 'passive';
+  if (type === 'send_letter' || type === 'draft_response' || type === 'rediger_reponse' || type === 'ajouter_document') return 'letter';
+  if (type === 'book_lawyer' || type === 'contacter_avocat' || type === 'contacter_syndicat') return 'call';
+  if (type === 'wait' || type === 'no_action' || type === 'aucune_action') return 'passive';
+  if (title.includes('letter') || title.includes('lettre') || title.includes('brief') || title.includes('contest') || title.includes('demand') || title.includes('formal') || title.includes('submit') || title.includes('respond') || title.includes('file') || title.includes('motion') || title.includes('challenge') || title.includes('claim') || title.includes('prepare') || title.includes('draft') || title.includes('counterclaim') || title.includes('exiger') || title.includes('envoyer') || title.includes('communic')) return 'letter';
+  if (title.includes('attorney') || title.includes('lawyer') || title.includes('avocat') || title.includes('advocaat') || title.includes('consult') || title.includes('call') || title.includes('book') || title.includes('schedule') || title.includes('syndicat') || title.includes('barreau')) return 'call';
+  if (title.includes('wait') || title.includes('keep') || title.includes('monitor') || title.includes('document') || title.includes('gather') || title.includes('collect') || title.includes('save') || title.includes('rassembler') || title.includes('avoid') || title.includes('transport') || title.includes('photo') || title.includes('preuve') || title.includes('noter')) return 'passive';
   return 'letter';
 };
 
-const typeConfig = {
-  letter: { icon: Mail, color: '#1a56db', bg: '#eff6ff', border: '#bfdbfe' },
-  call: { icon: Phone, color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd' },
-  passive: { icon: Clock, color: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb' },
-};
-
 const T = {
-  en: { genLetter: 'Generate letter', bookCall: 'Book a call', nextActions: 'Next actions' },
-  fr: { genLetter: 'Générer la lettre', bookCall: 'Réserver un appel', nextActions: 'Prochaines actions' },
-  nl: { genLetter: 'Brief genereren', bookCall: 'Bel reserveren', nextActions: 'Volgende acties' },
+  en: {
+    nextActions: 'Next actions',
+    genLetter: 'Generate complete letter',
+    bookCall: 'Book a call',
+    noAction: 'No action required',
+    containsArgs: (n) => `Contains ${n} argument${n > 1 ? 's' : ''}`,
+    oneLetterTo: (name) => `James drafted a single letter containing all your arguments. Send once to ${name}.`,
+  },
+  fr: {
+    nextActions: 'Prochaines actions',
+    genLetter: 'Générer la lettre complète',
+    bookCall: 'Réserver un appel',
+    noAction: 'Aucune action requise',
+    containsArgs: (n) => `Contient ${n} argument${n > 1 ? 's' : ''}`,
+    oneLetterTo: (name) => `James a rédigé une lettre unique contenant tous vos arguments. À envoyer une seule fois${name ? ` au ${name}` : ''}.`,
+  },
+  nl: {
+    nextActions: 'Volgende acties',
+    genLetter: 'Volledige brief genereren',
+    bookCall: 'Bel reserveren',
+    noAction: 'Geen actie vereist',
+    containsArgs: (n) => `Bevat ${n} argument${n > 1 ? 'en' : ''}`,
+    oneLetterTo: (name) => `James heeft één brief opgesteld met al uw argumenten. Eenmaal verzenden naar ${name}.`,
+  },
+  de: {
+    nextActions: 'Nächste Schritte',
+    genLetter: 'Vollständigen Brief erstellen',
+    bookCall: 'Anruf buchen',
+    noAction: 'Keine Aktion erforderlich',
+    containsArgs: (n) => `Enthält ${n} Argument${n > 1 ? 'e' : ''}`,
+    oneLetterTo: (name) => `James hat einen einzigen Brief mit allen Argumenten verfasst. Einmal an ${name} senden.`,
+  },
+  es: {
+    nextActions: 'Próximas acciones',
+    genLetter: 'Generar carta completa',
+    bookCall: 'Reservar llamada',
+    noAction: 'No se requiere acción',
+    containsArgs: (n) => `Contiene ${n} argumento${n > 1 ? 's' : ''}`,
+    oneLetterTo: (name) => `James redactó una carta única con todos sus argumentos. Enviar una sola vez a ${name}.`,
+  },
 };
 
-const NextActionsPanel = ({ steps, lang, onLetterClick, onCallClick }) => {
+function consolidateSteps(steps) {
+  const letters = [];
+  let callAction = null;
+  let passiveAction = null;
+
+  steps.forEach(s => {
+    const type = classifyAction(s);
+    if (type === 'letter') {
+      letters.push(s);
+    } else if (type === 'call' && !callAction) {
+      callAction = s;
+    } else if (type === 'passive' && !passiveAction) {
+      passiveAction = s;
+    } else if (type === 'call' && callAction) {
+      // Extra call → demote to passive
+      if (!passiveAction) passiveAction = s;
+    } else if (type === 'passive' && passiveAction) {
+      // Extra passive → skip
+    }
+  });
+
+  // Consolidate all letters into one
+  let consolidated = null;
+  if (letters.length > 0) {
+    const mainTitle = typeof letters[0] === 'string' ? letters[0] : (letters[0].title || letters[0].titre || '');
+    const arguments_ = letters.map(l => {
+      const title = typeof l === 'string' ? l : (l.title || l.titre || '');
+      const desc = typeof l === 'string' ? '' : (l.description || '');
+      return { title, description: desc, originalStep: l };
+    });
+    consolidated = {
+      title: mainTitle,
+      arguments: arguments_,
+      originalStep: letters[0],
+      allSteps: letters,
+    };
+  }
+
+  return { consolidated, callAction, passiveAction };
+}
+
+const NextActionsPanel = ({ steps, lang, onLetterClick, onCallClick, opposingPartyName }) => {
   const t = T[lang] || T.en;
   if (!steps || steps.length === 0) return null;
 
-  return (
-    <div style={{ borderLeft: '3px solid #1a56db', background: '#f0f7ff', margin: '0 0 8px', borderRadius: '0 8px 8px 0' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px 6px' }}>
-        <Bell size={14} color="#1a56db" />
-        <span style={{ fontSize: 15, fontWeight: 700, color: '#0a0a0f', letterSpacing: '-0.2px' }}>{t.nextActions}</span>
-      </div>
-      {steps.map((s, sIdx) => {
-        const sTitle = typeof s === 'string' ? s : (s.title || s.titre || '');
-        const sDesc = typeof s === 'string' ? '' : (s.description || '');
-        const actionType = classifyAction(s);
-        const cfg = typeConfig[actionType];
-        const Icon = cfg.icon;
-        const isClickable = actionType !== 'passive';
+  const { consolidated, callAction, passiveAction } = consolidateSteps(steps);
+  let actionNum = 0;
 
+  return (
+    <div data-testid="next-actions-panel">
+      {/* Consolidated Letter — TYPE A */}
+      {consolidated && (() => {
+        actionNum++;
+        const num = actionNum;
         return (
-          <div key={`action-${sIdx}-${sTitle.slice(0, 20)}`} data-testid={`action-item-${sIdx}`}
-            onClick={() => {
-              if (actionType === 'letter') onLetterClick?.(s);
-              else if (actionType === 'call') onCallClick?.();
-            }}
-            style={{
-              margin: '0 8px 6px', padding: 14, background: '#fff',
-              border: '1px solid #d1d5db', borderRadius: 8,
-              cursor: isClickable ? 'pointer' : 'default',
-              transition: 'all 0.15s',
-            }}
-            onMouseEnter={e => { if (isClickable) { e.currentTarget.style.background = cfg.bg; e.currentTarget.style.borderColor = cfg.color; } }}
-            onMouseLeave={e => { if (isClickable) { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#d1d5db'; } }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <div style={{ width: 24, height: 24, borderRadius: '50%', background: cfg.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{sIdx + 1}</div>
-              <div style={{ width: 30, height: 30, borderRadius: 7, background: cfg.bg, border: `1px solid ${cfg.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Icon size={15} color={cfg.color} />
-              </div>
+          <div data-testid="action-consolidated-letter" style={{
+            border: '1.5px solid #1a56db', borderRadius: 10, background: '#f8faff',
+            margin: '0 10px 8px', overflow: 'hidden',
+          }}>
+            {/* Header */}
+            <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#1a56db', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{num}</div>
+              <div style={{ flex: 1, fontSize: 12, fontWeight: 500, color: '#0c3275', lineHeight: 1.3 }}>{consolidated.title}</div>
+              <Mail size={16} color="#1a56db" />
             </div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: '#0a0a0f', lineHeight: 1.4, marginBottom: 4 }}>{sTitle}</div>
-            {sDesc && <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5, marginBottom: isClickable ? 8 : 0, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{sDesc}</div>}
-            {actionType === 'letter' && (
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#1a56db', textAlign: 'right' }}>{t.genLetter} →</div>
+
+            {/* Description */}
+            <div style={{ padding: '0 12px 8px 40px', fontSize: 10, color: '#1e40af', lineHeight: 1.5 }}>
+              {t.oneLetterTo(opposingPartyName || '')}
+            </div>
+
+            {/* Arguments list */}
+            {consolidated.arguments.length > 0 && (
+              <div style={{ background: '#eff6ff', borderTop: '0.5px solid #bfdbfe', padding: '6px 12px' }}>
+                <div style={{ fontSize: 9, fontWeight: 500, color: '#3b82f6', textTransform: 'uppercase', marginBottom: 4 }}>
+                  {t.containsArgs(consolidated.arguments.length)}
+                </div>
+                {consolidated.arguments.map((arg, aIdx) => (
+                  <div key={`arg-${aIdx}-${arg.title.slice(0, 15)}`} style={{ display: 'flex', gap: 5, alignItems: 'flex-start', marginBottom: 3 }}>
+                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                      <Check size={7} color="#1a56db" strokeWidth={3} />
+                    </div>
+                    <span style={{ fontSize: 10, color: '#1e40af', lineHeight: 1.4 }}>{arg.title}</span>
+                  </div>
+                ))}
+              </div>
             )}
-            {actionType === 'call' && (
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#7c3aed', textAlign: 'right' }}>{t.bookCall} →</div>
-            )}
+
+            {/* Generate button */}
+            <div style={{ padding: '8px 12px 10px' }}>
+              <button
+                data-testid="generate-consolidated-letter"
+                onClick={() => onLetterClick?.(consolidated.originalStep)}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  background: '#1a56db', color: '#fff', border: 'none', borderRadius: 7,
+                  padding: '8px 12px', fontSize: 11, fontWeight: 500, cursor: 'pointer',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#1548b8'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#1a56db'; }}
+              >
+                <FileText size={13} />
+                {t.genLetter}
+              </button>
+            </div>
           </div>
         );
-      })}
-      <div style={{ height: 8 }} />
+      })()}
+
+      {/* Call Action — TYPE B */}
+      {callAction && (() => {
+        actionNum++;
+        const num = actionNum;
+        const sTitle = typeof callAction === 'string' ? callAction : (callAction.title || callAction.titre || '');
+        const sDesc = typeof callAction === 'string' ? '' : (callAction.description || '');
+        return (
+          <div data-testid="action-call" style={{
+            border: '0.5px solid #e2e0db', borderRadius: 10, background: '#fff',
+            margin: '0 10px 8px', overflow: 'hidden',
+          }}>
+            <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#7c3aed', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{num}</div>
+              <div style={{ flex: 1, fontSize: 12, fontWeight: 500, color: '#0a0a0f', lineHeight: 1.3 }}>{sTitle}</div>
+              <Phone size={16} color="#7c3aed" />
+            </div>
+            {sDesc && <div style={{ padding: '0 12px 8px 40px', fontSize: 10, color: '#6b7280', lineHeight: 1.5 }}>{sDesc}</div>}
+            <div style={{ padding: '0 12px 10px' }}>
+              <button
+                data-testid="action-book-call"
+                onClick={() => onCallClick?.()}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  background: '#f5f3ff', color: '#7c3aed', border: '0.5px solid #c4b5fd', borderRadius: 7,
+                  padding: '7px 12px', fontSize: 11, fontWeight: 500, cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#ede9fe'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#f5f3ff'; }}
+              >
+                <Phone size={12} />
+                {t.bookCall}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Passive Action — TYPE C */}
+      {passiveAction && (() => {
+        actionNum++;
+        const num = actionNum;
+        const sTitle = typeof passiveAction === 'string' ? passiveAction : (passiveAction.title || passiveAction.titre || '');
+        const sDesc = typeof passiveAction === 'string' ? '' : (passiveAction.description || '');
+        return (
+          <div data-testid="action-passive" style={{
+            border: '0.5px solid #e2e0db', borderRadius: 10, background: '#f9fafb',
+            margin: '0 10px 8px', cursor: 'default',
+          }}>
+            <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#9ca3af', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{num}</div>
+              <div style={{ flex: 1, fontSize: 12, fontWeight: 500, color: '#6b7280', lineHeight: 1.3 }}>{sTitle}</div>
+              <span style={{ fontSize: 9, color: '#9ca3af', padding: '2px 8px', background: '#f3f4f6', borderRadius: 10, border: '0.5px solid #e5e7eb', whiteSpace: 'nowrap' }}>{t.noAction}</span>
+            </div>
+            {sDesc && <div style={{ padding: '0 12px 10px 40px', fontSize: 10, color: '#6b7280', lineHeight: 1.5, opacity: 0.8 }}>{sDesc}</div>}
+          </div>
+        );
+      })()}
     </div>
   );
 };
