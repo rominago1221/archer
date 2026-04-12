@@ -12,6 +12,7 @@ const T = {
     send: 'Send',
     typing: 'James is thinking...',
     close: 'Close',
+    intro: "Hi. I've reviewed your case in detail. To sharpen my analysis, I need one more piece of information.",
   },
   fr: {
     title: 'Discuter avec James',
@@ -20,6 +21,7 @@ const T = {
     send: 'Envoyer',
     typing: 'James réfléchit...',
     close: 'Fermer',
+    intro: "Bonjour. J'ai analysé votre dossier en détail. Pour affiner mon analyse, j'ai besoin d'un élément supplémentaire.",
   },
   nl: {
     title: 'Chat met James',
@@ -28,10 +30,11 @@ const T = {
     send: 'Versturen',
     typing: 'James denkt na...',
     close: 'Sluiten',
+    intro: 'Hallo. Ik heb uw dossier in detail bekeken. Om mijn analyse te verfijnen, heb ik nog één element nodig.',
   },
 };
 
-const CaseChatDrawer = ({ caseId, caseTitle, lang, onClose, initialMessage }) => {
+const CaseChatDrawer = ({ caseId, caseTitle, lang, onClose, initialMessage, jamesQuestion, lastAnswer }) => {
   const t = T[lang] || T.en;
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -43,22 +46,30 @@ const CaseChatDrawer = ({ caseId, caseTitle, lang, onClose, initialMessage }) =>
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Send initial context message when drawer opens
+  // James speaks FIRST when drawer opens — send context silently to API
   useEffect(() => {
-    if (initialMessage && !convId) {
+    if (!convId) {
       const init = async () => {
+        // Build James's opening message
+        let jamesIntro = t.intro;
+        if (jamesQuestion) {
+          jamesIntro += '\n\n' + jamesQuestion;
+        }
+
+        // Show James's intro as an assistant message (left-aligned, white bubble)
+        setMessages([{ role: 'assistant', content: jamesIntro, ts: Date.now() }]);
+
+        // Send context to API silently (no user bubble shown)
         setSending(true);
-        const introMsg = initialMessage;
-        setMessages([{ role: 'user', content: introMsg, ts: Date.now() }]);
+        const contextMsg = initialMessage || `Case: ${caseTitle}`;
         try {
           const res = await axios.post(`${API}/chat/send`, {
-            message: introMsg,
+            message: contextMsg,
             case_id: caseId,
           }, { withCredentials: true });
           setConvId(res.data.conversation_id);
-          setMessages(prev => [...prev, { role: 'assistant', content: res.data.response, ts: Date.now() }]);
         } catch (e) {
-          setMessages(prev => [...prev, { role: 'assistant', content: lang === 'fr' ? 'James est temporairement indisponible.' : 'James is temporarily unavailable.', ts: Date.now() }]);
+          console.error('Chat init error:', e);
         }
         setSending(false);
       };
@@ -114,18 +125,23 @@ const CaseChatDrawer = ({ caseId, caseTitle, lang, onClose, initialMessage }) =>
           </div>
         )}
         {messages.map((m, mIdx) => (
-          <div key={m.created_at || `chat-msg-${mIdx}`} style={{
+          <div key={m.ts || `chat-msg-${mIdx}`} style={{
             display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start',
-            marginBottom: 8,
+            marginBottom: 10, alignItems: 'flex-start',
           }}>
             {m.role === 'assistant' && (
-              <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff', flexShrink: 0, marginRight: 6, marginTop: 2 }}>J</div>
+              <div style={{ position: 'relative', width: 26, height: 26, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', flexShrink: 0, marginRight: 8, marginTop: 2 }}>
+                J
+                <div style={{ position: 'absolute', bottom: -1, right: -1, width: 8, height: 8, borderRadius: '50%', background: '#22c55e', border: '2px solid #fff' }} />
+              </div>
             )}
             <div style={{
-              maxWidth: '80%', padding: '8px 12px', borderRadius: 10,
-              background: m.role === 'user' ? '#1a56db' : '#f3f4f6',
-              color: m.role === 'user' ? '#fff' : '#374151',
-              fontSize: 11, lineHeight: 1.6, whiteSpace: 'pre-wrap',
+              maxWidth: '80%', padding: '9px 13px',
+              borderRadius: m.role === 'user' ? '12px 12px 3px 12px' : '3px 12px 12px 12px',
+              background: m.role === 'user' ? '#1a56db' : '#fff',
+              color: m.role === 'user' ? '#fff' : '#0a0a0f',
+              border: m.role === 'user' ? 'none' : '0.5px solid #e2e0db',
+              fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap',
             }}>{m.content}</div>
           </div>
         ))}

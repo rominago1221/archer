@@ -151,6 +151,9 @@ const CaseDetail = () => {
   const [shareModal, setShareModal] = useState(false);
   const [shareLink, setShareLink] = useState('');
   const [answerLoading, setAnswerLoading] = useState(false);
+  const [jqAnswered, setJqAnswered] = useState(false);
+  const [jqImpact, setJqImpact] = useState(null);
+  const [jqSelectedAnswer, setJqSelectedAnswer] = useState(null);
   const [showOverlay, setShowOverlay] = useState(false);
   const [showAddDoc, setShowAddDoc] = useState(false);
   const [chatDrawer, setChatDrawer] = useState(null);
@@ -201,13 +204,22 @@ const CaseDetail = () => {
   const handleJamesAnswer = async (answer) => {
     if (!jq || answerLoading) return;
     setAnswerLoading(true);
+    setJqSelectedAnswer(answer);
+    setJqAnswered(false);
+    setJqImpact(null);
     try {
-      await axios.post(`${API}/cases/${caseId}/james-answer`, {
+      const res = await axios.post(`${API}/cases/${caseId}/james-answer`, {
         question: jq.text,
         answer: answer,
       }, { withCredentials: true });
+      const impactText = res.data?.impact_summary || null;
+      setJqImpact(impactText);
+      setJqAnswered(true);
       await fetchData();
-    } catch (e) { /* ok */ }
+    } catch (e) {
+      console.error('James answer error:', e);
+      setJqAnswered(true);
+    }
     setAnswerLoading(false);
   };
 
@@ -443,22 +455,50 @@ const CaseDetail = () => {
                 </div>
 
                 {/* James Question Card — max 1 question */}
-                {jq && (
+                {(jq || jqImpact) && (
                   <div data-testid="james-question" style={{ background: '#fffbeb', borderRadius: 12, padding: '12px 14px', border: '0.5px solid #fde68a', marginBottom: 10 }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a2e', marginBottom: 5 }}>💬 {t.jamesQ}</div>
-                    <div style={{ fontSize: 15, color: '#78350f', lineHeight: 1.6, marginBottom: 8 }}>{jq.text}</div>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-                      {(jq.options || []).slice(0, 3).map((opt, optIdx) => (
-                        <button key={`jq-opt-${optIdx}-${opt.slice(0, 15)}`} data-testid={`james-answer-${optIdx}`} onClick={() => handleJamesAnswer(opt)} disabled={answerLoading}
-                          style={{ padding: '6px 14px', background: answerLoading ? '#f3f4f6' : '#fff', color: answerLoading ? '#9ca3af' : '#1a1a2e', border: '0.5px solid #e2e0db', borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: answerLoading ? 'default' : 'pointer' }}>
-                          {opt}
+                    {/* Previous answer impact — shown after answer */}
+                    {jqAnswered && jqImpact && (
+                      <>
+                        <div data-testid="james-impact" style={{ fontSize: 12, color: '#1a56db', lineHeight: 1.5, marginBottom: 8, padding: '6px 10px', background: '#eff6ff', borderRadius: 8, border: '0.5px solid #bfdbfe' }}>
+                          <span style={{ fontWeight: 600 }}>James:</span> {jqImpact}
+                        </div>
+                        <button data-testid="ask-james-directly"
+                          onClick={() => setChatDrawer({
+                            initial: `${lang === 'fr' ? 'Mon dossier' : 'My case'}: "${sc?.title}". ${jqSelectedAnswer || ''}`,
+                            jamesQuestion: jq?.text || '',
+                            lastAnswer: jqSelectedAnswer,
+                          })}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#1a56db', fontWeight: 500, padding: 0, marginBottom: jq ? 10 : 0 }}>
+                          {t.moreQuestions} →
                         </button>
-                      ))}
-                    </div>
-                    <button data-testid="ask-james-directly" onClick={() => setChatDrawer({ initial: `I have a question about my case "${sc?.title}". ${jq.text}` })}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#1a56db', fontWeight: 500, padding: 0 }}>
-                      {t.moreQuestions} →
-                    </button>
+                        {jq && <div style={{ borderTop: '0.5px solid #fde68a', marginTop: 4, paddingTop: 8 }} />}
+                      </>
+                    )}
+                    {/* Current question */}
+                    {jq && (
+                      <>
+                        <div style={{ fontSize: 15, color: '#78350f', lineHeight: 1.6, marginBottom: 8 }}>{jq.text}</div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {(jq.options || []).slice(0, 4).map((opt, optIdx) => (
+                            <button key={`jq-opt-${optIdx}-${opt.slice(0, 15)}`} data-testid={`james-answer-${optIdx}`}
+                              onClick={() => handleJamesAnswer(opt)}
+                              disabled={answerLoading}
+                              style={{
+                                padding: '6px 14px',
+                                background: answerLoading ? '#f3f4f6' : '#fff',
+                                color: answerLoading ? '#9ca3af' : '#1a1a2e',
+                                border: '0.5px solid #e2e0db',
+                                borderRadius: 8, fontSize: 12, fontWeight: 500,
+                                cursor: answerLoading ? 'default' : 'pointer',
+                              }}>
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -633,6 +673,8 @@ const CaseDetail = () => {
             lang={lang}
             onClose={() => setChatDrawer(null)}
             initialMessage={chatDrawer.initial}
+            jamesQuestion={chatDrawer.jamesQuestion}
+            lastAnswer={chatDrawer.lastAnswer}
           />
         )}
 
