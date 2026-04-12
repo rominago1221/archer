@@ -3426,6 +3426,25 @@ async def reanalyze_case(case_id: str, current_user: User = Depends(get_current_
     return updated
 
 
+@api_router.get("/documents/{document_id}")
+async def get_document_detail(document_id: str, current_user: User = Depends(get_current_user)):
+    """Get a single document with details"""
+    doc = await db.documents.find_one(
+        {"document_id": document_id, "user_id": current_user.user_id},
+        {"_id": 0}
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return doc
+
+@api_router.delete("/documents/{document_id}")
+async def delete_document(document_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a document"""
+    result = await db.documents.delete_one({"document_id": document_id, "user_id": current_user.user_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return {"status": "deleted"}
+
 @api_router.get("/documents/{document_id}/download")
 async def download_document(
     document_id: str,

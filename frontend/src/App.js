@@ -31,6 +31,7 @@ import AttorneyEarnings from './pages/AttorneyEarnings';
 import AttorneySettings from './pages/AttorneySettings';
 import PublicAttorneyProfile from './pages/PublicAttorneyProfile';
 import AdminAttorneys from './pages/AdminAttorneys';
+import DocumentViewer from './pages/DocumentViewer';
 import VideoCall from './pages/VideoCall';
 import './App.css';
 
@@ -73,6 +74,7 @@ const AppRouter = () => {
       <Route path="/attorney/apply" element={<AttorneyApply />} />
       <Route path="/attorneys/:slug" element={<PublicAttorneyProfile />} />
       <Route path="/admin/attorneys" element={<ProtectedRoute><AdminAttorneys /></ProtectedRoute>} />
+      <Route path="/documents/:documentId" element={<ProtectedRoute><DocumentViewer /></ProtectedRoute>} />
       
       {/* Attorney protected routes */}
       <Route path="/attorney" element={<AttorneyRoute><AttorneyLayout /></AttorneyRoute>}>
