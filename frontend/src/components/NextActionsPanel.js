@@ -126,6 +126,8 @@ const NextActionsPanel = ({ steps, lang, onLetterClick, onCallClick, opposingPar
   if (!steps || steps.length === 0) return null;
 
   const { consolidated, callAction, passiveAction } = consolidateSteps(steps, findings);
+  // Use recipient from step data (stage-aware) or fallback to opposingPartyName
+  const letterRecipient = consolidated?.originalStep?.recipient || opposingPartyName || '';
   let actionNum = 0;
 
   return (
@@ -148,7 +150,7 @@ const NextActionsPanel = ({ steps, lang, onLetterClick, onCallClick, opposingPar
 
             {/* Description */}
             <div style={{ padding: '0 12px 8px 40px', fontSize: 10, color: '#1e40af', lineHeight: 1.5 }}>
-              {t.oneLetterTo(opposingPartyName || '')}
+              {t.oneLetterTo(letterRecipient)}
             </div>
 
             {/* Arguments list */}

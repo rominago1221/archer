@@ -236,23 +236,59 @@ EXTRACTED FACTS:
 LEGAL ANALYSIS:
 {analysis_json}
 
+CRITICAL RULE — CASE STAGE DETECTION:
+You MUST identify the current stage of the legal proceeding and adapt ALL recommendations accordingly:
+
+STAGE 1 — Initial notice/violation received:
+- User just received a notice (eviction, debt collection, termination, etc.)
+- Actions: Respond within deadline, dispute validity, gather evidence
+- Letter to: the original sender (landlord, employer, collector)
+
+STAGE 2 — Pre-litigation / negotiation:
+- Parties are negotiating, settlement offers made
+- Actions: Counter-offer, document everything, prepare for court
+- Letter to: opposing party or their attorney
+
+STAGE 3 — Court proceedings filed:
+- Case is before a court/judge, hearing date set
+- The original sender is NO LONGER the right recipient — NEVER suggest writing to them
+- Actions: Retain attorney, file court responses, prepare defense
+- Letter to: Court clerk / opposing counsel
+- Priority 1: Consult attorney (action_type: book_lawyer)
+- Priority 2: File court response if deadline (action_type: send_letter to court)
+- Priority 3: Gather defense evidence (action_type: gather_documents)
+
+STAGE 4 — Judgment/ruling issued:
+- Court has ruled
+- Actions: Appeal if unfavorable (within deadline), enforce if favorable
+- Letter to: Appellate court clerk
+
+DETECTION SIGNALS:
+- "court date", "hearing", "docket", "filed suit", "summons" = STAGE 3
+- "notice", "demand letter", "pay or quit", "termination" = STAGE 1
+- "settlement", "negotiate", "offer", "mediation" = STAGE 2
+- "judgment", "ruling", "ordered", "appeal" = STAGE 4
+
+MANDATORY: Each next_step MUST include a "recipient" field indicating WHO the letter/action is directed to.
+
 Think through ALL possible paths:
 1. Ideal outcome? 2. Fastest resolution? 3. Cheapest path? 4. Most leverage?
 5. What should user do in next 24 hours? 6. What documents to gather? 7. Talk to lawyer first?
 
 CRITICAL RULES — you MUST follow ALL of these:
 
-RULE 1 — james_question: You MUST generate exactly ONE specific clarifying question that references something specific found in the document. The question must help James understand the user's situation better. Always provide 2-4 answer options as clickable buttons. NEVER skip this field. NEVER leave options empty. The question must reference a specific fact, date, amount, or party from the document.
+RULE 1 — james_question: You MUST generate exactly ONE specific clarifying question that references something specific found in the document. Always provide 2-4 answer options. NEVER skip this field.
 
-RULE 2 — success_probability: You MUST generate realistic outcome probabilities. No outcome can be below 2% or above 95%. All four values MUST sum to exactly 100. Base these on: risk score, number of violations found, jurisdiction, and strength of arguments. NEVER return 0% for any outcome.
+RULE 2 — success_probability: Realistic outcome probabilities. No outcome below 2% or above 95%. All four values MUST sum to 100.
 
-RULE 3 — next_steps: Each step MUST include a specific legal reference (statute, article, section number). NEVER generate generic actions like "consult an attorney" or "gather documents" without specifying WHICH attorney type, WHICH documents, and WHY. Format: "Action verb + specific legal reference + deadline". Each step MUST have a letter_template if action_type is send_letter.
+RULE 3 — next_steps: Each step MUST include a specific legal reference AND a recipient. NEVER suggest writing to the wrong party for the current stage.
 
 Return ONLY this JSON — no other text:
 {{
+  "case_stage": "stage_1_notice|stage_2_negotiation|stage_3_court|stage_4_judgment",
   "recommended_strategy": {{
     "primary": "negotiate|dispute|comply|ignore|lawyer_immediately",
-    "reasoning": "why this is best",
+    "reasoning": "why this is best for THIS STAGE",
     "expected_outcome": "realistic outcome",
     "time_to_resolution": "3-7 days|1-4 weeks|1-3 months"
   }},
@@ -261,9 +297,10 @@ Return ONLY this JSON — no other text:
   ],
   "next_steps": [
     {{
-      "title": "Specific action verb + exact legal reference (e.g. 'Contest eviction — Fla. Stat. § 83.56' or 'Demander motifs — CCT 109 art. 3')",
-      "description": "Detailed description with exact deadline, exact legal basis, and what it achieves for the user",
+      "title": "Specific action verb + exact legal reference",
+      "description": "Detailed description adapted to CURRENT STAGE",
       "action_type": "send_letter|book_lawyer|wait|gather_documents|no_action",
+      "recipient": "Exact recipient for this stage (e.g. Court Clerk, Opposing Counsel, Landlord)",
       "letter_template": "Brief description of what letter to generate (REQUIRED for send_letter type)",
       "why_important": "Why this matters — reference specific law"
     }}
@@ -1147,31 +1184,65 @@ Sur base des faits et de l'analyse, fournis des recommandations strategiques con
 FAITS: {facts_json}
 ANALYSE JURIDIQUE: {analysis_json}
 
-REGLE CRITIQUE JAMES_QUESTION: Tu DOIS generer une question specifique basee sur les faits du document. La question doit referencer un fait precis du document. JAMAIS de question generique. La question DOIT avoir 2-4 options de reponse cliquables. Exemples:
-- Pour licenciement: "Avez-vous une preuve ecrite de votre signalement de harcelement ?" avec options ["Oui — email ou document RH", "Non — c'etait verbal", "Je ne suis pas sur"]
-- Pour clause non-concurrence: "Avez-vous deja signe un accord de depart propose par votre employeur ?" avec options ["Oui j'ai signe", "Non pas encore", "On me l'a propose mais pas signe"]
+REGLE CRITIQUE — DETECTION DU STADE DE LA PROCEDURE:
+Tu DOIS identifier a quel stade se trouve le dossier et adapter TOUTES les recommandations en consequence:
+
+STADE 1 — PV + perception immediate:
+- La police a dresse un PV et propose une amende immediate
+- Actions: Contester aupres du parquet, analyser le PV, verifier les vices de procedure
+- Destinataire lettre: Procureur du Roi
+
+STADE 2 — Convocation au parquet / proposition de transaction:
+- Le parquet propose une transaction (Art. 216bis CIC)
+- Actions: Accepter ou contester la transaction, negocier avec le substitut
+- Destinataire lettre: Parquet / Substitut du Procureur
+
+STADE 3 — Citation directe au tribunal:
+- L'affaire est renvoyee devant le Tribunal de Police/Correctionnel
+- La police N'EST PLUS le bon interlocuteur — JAMAIS de lettre a la police a ce stade
+- Actions: Consulter un avocat penaliste AVANT l'audience, demander report si necessaire, constituer dossier defense
+- Destinataire lettre: Greffe du Tribunal de Police
+- Priorite 1: Consulter avocat (action_type: contacter_avocat)
+- Priorite 2: Lettre au greffe si report necessaire (action_type: rediger_reponse)
+- Priorite 3: Constituer dossier defense (action_type: aucune_action)
+
+STADE 4 — Jugement rendu:
+- Le tribunal a rendu sa decision
+- Actions: Analyser le jugement, faire appel si defavorable (dans les 30 jours)
+- Destinataire lettre: Greffe de la Cour d'Appel
+
+INDICES POUR DETECTER LE STADE:
+- "citation directe", "audience le", "tribunal de police", "renvoi devant" = STADE 3
+- "perception immediate", "PV", "amende forfaitaire" = STADE 1
+- "transaction", "proposition du parquet", "art. 216bis" = STADE 2
+- "jugement", "condamne", "acquitte", "appel" = STADE 4
+
+OBLIGATOIRE: Chaque next_step DOIT inclure un champ "recipient" indiquant a QUI la lettre/action est destinee.
+
+REGLE CRITIQUE JAMES_QUESTION: Tu DOIS generer une question specifique basee sur les faits du document. La question doit referencer un fait precis du document. JAMAIS de question generique. La question DOIT avoir 2-4 options de reponse cliquables.
 
 Retourne UNIQUEMENT ce JSON:
 {{
+  "case_stage": "stage_1_pv|stage_2_transaction|stage_3_tribunal|stage_4_jugement",
   "recommended_strategy": {{
     "principale": "negocier|contester|se_conformer|mediation|tribunal",
-    "raisonnement": "pourquoi c'est la meilleure strategie",
+    "raisonnement": "pourquoi c'est la meilleure strategie pour CE STADE",
     "resultat_attendu": "resultat realiste",
     "delai_resolution": "8-15 jours|1-3 mois|3-6 mois"
   }},
-  "immediate_actions": [{{"action": "Ne pas repondre sans avoir consulte votre syndicat", "delai": "dans les 24 heures", "priorite": "critique"}}],
+  "immediate_actions": [{{"action": "Action specifique au stade actuel", "delai": "dans les 24 heures", "priorite": "critique"}}],
   "next_steps": [
-    {{"title": "Contacter votre syndicat", "description": "Si vous etes syndique, appelez votre delegue immediatement.", "action_type": "contacter_syndicat|contacter_avocat|saisir_mediateur|ajouter_document|rediger_reponse|aucune_action"}}
+    {{"title": "Action specifique au STADE detecte", "description": "Description adaptee au stade", "action_type": "contacter_avocat|contacter_syndicat|saisir_mediateur|ajouter_document|rediger_reponse|aucune_action", "recipient": "Destinataire exact (ex: Greffe du Tribunal de Police, Parquet du Procureur du Roi)"}}
   ],
-  "documents_to_gather": [{{"document": "Contrat de travail original signe", "pourquoi": "Preuve des conditions contractuelles", "urgence": "critique|important|utile"}}],
-  "leverage_points": [{{"levier": "Absence de motifs de licenciement", "comment_utiliser": "Envoyer demande formelle sous CCT 109 art. 3"}}],
-  "red_lines": ["Ne jamais signer de document sous pression sans le lire", "Ne jamais payer sans accord ecrit prealable"],
-  "lawyer_recommendation": {{"necessaire": true, "urgence": "immediatement|dans_3_jours|dans_la_semaine|optionnel", "raison": "Exposition > 2500 EUR", "type_avocat": "droit_du_travail|droit_du_bail|droit_commercial|consommateur"}},
+  "documents_to_gather": [{{"document": "Document a rassembler", "pourquoi": "Raison", "urgence": "critique|important|utile"}}],
+  "leverage_points": [{{"levier": "Point de levier", "comment_utiliser": "Comment l'utiliser"}}],
+  "red_lines": ["Ne jamais..."],
+  "lawyer_recommendation": {{"necessaire": true, "urgence": "immediatement|dans_3_jours|dans_la_semaine|optionnel", "raison": "Raison", "type_avocat": "droit_du_travail|droit_du_bail|droit_penal|consommateur"}},
   "success_probability": {{"resolution_favorable": 35, "compromis_negocie": 48, "perte_partielle": 12, "perte_totale": 5}},
-  "key_insight": "La phrase la plus importante que l'utilisateur doit retenir",
-  "james_question": {{"text": "Question SPECIFIQUE basee sur un fait precis du document — JAMAIS generique", "options": ["Option specifique 1", "Option specifique 2", "Option specifique 3"]}}
+  "key_insight": "La phrase la plus importante",
+  "james_question": {{"text": "Question SPECIFIQUE", "options": ["Option 1", "Option 2", "Option 3"]}}
 }}
-OBLIGATOIRE: james_question DOIT etre present avec text et 2-4 options. JAMAIS l'omettre."""
+OBLIGATOIRE: james_question DOIT etre present. case_stage DOIT etre detecte correctement."""
 
 BE_PASS4A_SYSTEM = """Tu es un avocat senior en Belgique representant l'utilisateur. Ton travail est de construire le dossier LE PLUS SOLIDE possible pour ton client. Trouve chaque argument, chaque vice de procedure, chaque protection legale qui beneficie a ton client. Sois agressif et exhaustif.
 
