@@ -309,8 +309,8 @@ const Settings = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                {['Unlimited document analyses', 'Full risk reports + Dynamic Risk Score', 'Live case files with document history'].map((feature, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs text-[#3b82f6]">
+                {['Unlimited document analyses', 'Full risk reports + Dynamic Risk Score', 'Live case files with document history'].map((feature) => (
+                  <div key={feature} className="flex items-center gap-2 text-xs text-[#3b82f6]">
                     <CheckCircle size={12} className="text-[#1d4ed8]" /><span>{feature}</span>
                   </div>
                 ))}
@@ -337,8 +337,8 @@ const Settings = () => {
                       { date: 'November 2026', desc: 'Pro plan · Nov 15', amount: '$69.00' },
                       { date: 'October 2026', desc: 'Pro plan · Oct 15', amount: '$69.00' },
                       { date: 'Attorney call', desc: 'James Carter · Oct 8', amount: '$149.00' }
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-center justify-between py-2 border-b border-[#f5f5f5] last:border-0">
+                    ].map((item) => (
+                      <div key={item.date} className="flex items-center justify-between py-2 border-b border-[#f5f5f5] last:border-0">
                         <div><div className="text-sm font-medium text-[#111827]">{item.date}</div><div className="text-xs text-[#6b7280]">{item.desc}</div></div>
                         <div className="text-sm font-medium text-[#111827]">{item.amount}</div>
                       </div>
@@ -502,8 +502,8 @@ const Settings = () => {
                 { label: 'Call reminders', desc: '1 hour before your attorney call', checked: notifCalls, onChange: setNotifCalls },
                 { label: 'New lawyer available', desc: 'When a lawyer matching your case is available', checked: notifLawyers, onChange: setNotifLawyers },
                 { label: 'Promotional emails', desc: 'Tips, updates, and new features', checked: notifPromo, onChange: setNotifPromo }
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between py-2 border-b border-[#f5f5f5] last:border-0">
+              ].map((item) => (
+                <div key={item.label} className="flex items-center justify-between py-2 border-b border-[#f5f5f5] last:border-0">
                   <div><div className="text-sm font-medium text-[#111827]">{item.label}</div><div className="text-xs text-[#6b7280]">{item.desc}</div></div>
                   <Toggle checked={item.checked} onChange={item.onChange} />
                 </div>

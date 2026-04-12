@@ -750,13 +750,21 @@ export const getLocaleFromPrefs = (jurisdiction, language) => {
 export const getStoredLocale = () => {
   try {
     const stored = localStorage.getItem('jasper_locale');
-    if (stored && translations[stored]) return stored;
-  } catch (e) {}
+    if (stored && typeof stored === 'string' && translations[stored]) return stored;
+  } catch (e) {
+    console.error('getStoredLocale read error:', e);
+  }
   return 'us-en';
 };
 
 export const setStoredLocale = (key) => {
-  try { localStorage.setItem('jasper_locale', key); } catch (e) {}
+  try {
+    if (key && typeof key === 'string') {
+      localStorage.setItem('jasper_locale', key);
+    }
+  } catch (e) {
+    console.error('setStoredLocale write error:', e);
+  }
 };
 
 export default translations;

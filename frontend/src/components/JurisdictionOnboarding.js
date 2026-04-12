@@ -132,17 +132,30 @@ const SEEN_KEY = 'jasper_jurisdiction_onboarded';
 
 export const hasSeenOnboarding = (jurisdiction) => {
   try {
-    const seen = JSON.parse(localStorage.getItem(SEEN_KEY) || '{}');
+    const raw = localStorage.getItem(SEEN_KEY);
+    if (!raw) return false;
+    const seen = JSON.parse(raw);
+    if (typeof seen !== 'object' || seen === null) return false;
     return seen[jurisdiction] === true;
-  } catch { return false; }
+  } catch (e) {
+    console.error('hasSeenOnboarding read error:', e);
+    return false;
+  }
 };
 
 export const markOnboardingSeen = (jurisdiction) => {
   try {
-    const seen = JSON.parse(localStorage.getItem(SEEN_KEY) || '{}');
+    const raw = localStorage.getItem(SEEN_KEY);
+    const seen = raw ? JSON.parse(raw) : {};
+    if (typeof seen !== 'object' || seen === null) {
+      localStorage.setItem(SEEN_KEY, JSON.stringify({ [jurisdiction]: true }));
+      return;
+    }
     seen[jurisdiction] = true;
     localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
-  } catch {}
+  } catch (e) {
+    console.error('markOnboardingSeen write error:', e);
+  }
 };
 
 const JurisdictionOnboarding = ({ jurisdiction, lang, onClose }) => {

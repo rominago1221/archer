@@ -245,7 +245,7 @@ const Dashboard = () => {
   const handleJurisdictionSwitch = async (j) => {
     if (j === jurisdiction) return;
     updateUser({ jurisdiction: j, country: j });
-    try { await axios.put(`${API}/profile`, { jurisdiction: j, country: j }, { withCredentials: true }); } catch (e) {}
+    try { await axios.put(`${API}/profile`, { jurisdiction: j, country: j }, { withCredentials: true }); } catch (e) { console.error('Jurisdiction switch error:', e); }
     if (!hasSeenOnboarding(j)) setOnboarding(j);
   };
 
@@ -254,10 +254,10 @@ const Dashboard = () => {
       const res = await axios.get(`${API}/cases`, { withCredentials: true });
       const sorted = (res.data || []).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
       setCases(sorted);
-      if (sorted.length > 0 && !selectedId) setSelectedId(sorted[0].case_id);
-    } catch (e) { /* ok */ }
+      setSelectedId(prev => (sorted.length > 0 && !prev) ? sorted[0].case_id : prev);
+    } catch (e) { console.error('Fetch cases error:', e); }
     setLoading(false);
-  }, [selectedId, jurisdiction]);
+  }, []);
 
   // Re-fetch and reset selection when jurisdiction changes
   useEffect(() => {
@@ -265,7 +265,7 @@ const Dashboard = () => {
     setCases([]);
     setLoading(true);
     fetchCases();
-  }, [jurisdiction]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [jurisdiction, fetchCases]);
 
   useEffect(() => { fetchCases(); }, [fetchCases]);
 
@@ -390,8 +390,8 @@ const Dashboard = () => {
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', marginLeft: 'auto', animation: 'pulse 1.5s infinite' }} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-              {[[t.stat1, t.stat1l], [t.stat2, t.stat2l], [t.stat3, t.stat3l], [t.stat4, t.stat4l]].map(([v, l], i) => (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.8)', borderRadius: 6, padding: '5px 7px', fontSize: 9, color: '#1e40af', fontWeight: 500, textAlign: 'center', lineHeight: 1.3 }}>
+              {[[t.stat1, t.stat1l], [t.stat2, t.stat2l], [t.stat3, t.stat3l], [t.stat4, t.stat4l]].map(([v, l]) => (
+                <div key={l} style={{ background: 'rgba(255,255,255,0.8)', borderRadius: 6, padding: '5px 7px', fontSize: 9, color: '#1e40af', fontWeight: 500, textAlign: 'center', lineHeight: 1.3 }}>
                   <span style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#1a56db' }}>{v}</span>{l}
                 </div>
               ))}
@@ -406,8 +406,8 @@ const Dashboard = () => {
               { icon: <BookOpen size={10} />, label: t.navDocs, to: '/documents' },
               { icon: <MessageSquare size={10} />, label: t.navChat, to: '/chat' },
               { icon: <Settings size={10} />, label: t.navSettings, to: '/settings' },
-            ].map((n, i) => (
-              <button key={i} onClick={() => navigate(n.to)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 7px', fontSize: 9, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 5 }}
+            ].map((n) => (
+              <button key={n.to} onClick={() => navigate(n.to)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 7px', fontSize: 9, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 5 }}
                 onMouseEnter={e => { e.currentTarget.style.background = '#f8f7f4'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}>
                 {n.icon}{n.label}
@@ -594,8 +594,8 @@ const Dashboard = () => {
                         [sc.risk_urgency, t.dimUrg],
                         [sc.risk_legal_strength, t.dimLeg],
                         [sc.risk_complexity, t.dimCom],
-                      ].map(([v, label], i) => (
-                        <div key={i} style={{ background: '#f8f7f4', borderRadius: 7, padding: 6, textAlign: 'center' }}>
+                      ].map(([v, label]) => (
+                        <div key={label} style={{ background: '#f8f7f4', borderRadius: 7, padding: 6, textAlign: 'center' }}>
                           <div style={{ fontSize: 14, fontWeight: 800, color: riskColor(v || 0) }}>{v || '—'}</div>
                           <div style={{ fontSize: 8, color: '#9ca3af', marginTop: 1 }}>{label}</div>
                         </div>
@@ -615,10 +615,10 @@ const Dashboard = () => {
                     </div>
                   </div>
                   {findings.length === 0 && <div style={{ fontSize: 11, color: '#9ca3af', padding: '10px 0' }}>{t.questionFallback}</div>}
-                  {findings.map((f, i) => {
+                  {findings.map((f, idx) => {
                     const fColor = f.impact === 'high' || f.type === 'risk' ? '#dc2626' : f.impact === 'low' || f.type === 'opportunity' ? '#16a34a' : '#f59e0b';
                     return (
-                      <div key={i} style={{ padding: '9px 0', borderBottom: i < findings.length - 1 ? '0.5px solid #f3f4f6' : 'none', display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+                      <div key={`finding-${idx}-${(f.text || '').slice(0, 20)}`} style={{ padding: '9px 0', borderBottom: idx < findings.length - 1 ? '0.5px solid #f3f4f6' : 'none', display: 'flex', alignItems: 'flex-start', gap: 7 }}>
                         <div style={{ width: 6, height: 6, borderRadius: '50%', background: fColor, flexShrink: 0, marginTop: 4 }} />
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 11, color: '#374151', lineHeight: 1.55 }} dangerouslySetInnerHTML={{ __html: formatBoldText(f.text || '') }} />
@@ -640,8 +640,8 @@ const Dashboard = () => {
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#1a1a2e', marginBottom: 5 }}>💬 {t.jamesQ}</div>
                     <div style={{ fontSize: 11, color: '#78350f', lineHeight: 1.6, marginBottom: 8 }}>{jq.text}</div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-                      {(jq.options || []).slice(0, 3).map((opt, i) => (
-                        <button key={i} data-testid={`james-answer-${i}`} onClick={() => handleJamesAnswer(opt)} disabled={answerLoading}
+                      {(jq.options || []).slice(0, 3).map((opt, optIdx) => (
+                        <button key={`jq-opt-${optIdx}-${opt.slice(0, 15)}`} data-testid={`james-answer-${optIdx}`} onClick={() => handleJamesAnswer(opt)} disabled={answerLoading}
                           style={{ padding: '6px 14px', background: answerLoading ? '#f3f4f6' : '#fff', color: answerLoading ? '#9ca3af' : '#1a1a2e', border: '0.5px solid #e2e0db', borderRadius: 8, fontSize: 10, fontWeight: 500, cursor: answerLoading ? 'default' : 'pointer' }}>
                           {opt}
                         </button>
@@ -673,17 +673,17 @@ const Dashboard = () => {
                           <text x={35} y={y + 4} textAnchor="end" fontSize="10" fill="#9ca3af">{v}</text>
                         </g>;
                       })}
-                      {history.map((h, i) => {
-                        const x = history.length === 1 ? 240 : 50 + (i / (history.length - 1)) * 380;
+                      {history.map((h, hIdx) => {
+                        const x = history.length === 1 ? 240 : 50 + (hIdx / (history.length - 1)) * 380;
                         const y = 130 - (h.score / 100) * 110;
                         const c = h.score <= 30 ? '#16a34a' : h.score <= 60 ? '#f59e0b' : '#dc2626';
                         const lineColor = history[history.length - 1].score <= 30 ? '#16a34a' : history[history.length - 1].score <= 60 ? '#f59e0b' : '#dc2626';
-                        const prevX = i > 0 ? (history.length === 1 ? 240 : 50 + ((i - 1) / (history.length - 1)) * 380) : x;
-                        const prevY = i > 0 ? 130 - (history[i - 1].score / 100) * 110 : y;
+                        const prevX = hIdx > 0 ? (history.length === 1 ? 240 : 50 + ((hIdx - 1) / (history.length - 1)) * 380) : x;
+                        const prevY = hIdx > 0 ? 130 - (history[hIdx - 1].score / 100) * 110 : y;
                         const dt = h.date ? new Date(h.date) : null;
-                        const label = dt ? `${dt.toLocaleString('en', { month: 'short' })} ${dt.getDate()}` : `#${i + 1}`;
-                        return <g key={i}>
-                          {i > 0 && <line x1={prevX} y1={prevY} x2={x} y2={y} stroke={lineColor} strokeWidth="2" />}
+                        const label = dt ? `${dt.toLocaleString('en', { month: 'short' })} ${dt.getDate()}` : `#${hIdx + 1}`;
+                        return <g key={h.date || `history-${hIdx}`}>
+                          {hIdx > 0 && <line x1={prevX} y1={prevY} x2={x} y2={y} stroke={lineColor} strokeWidth="2" />}
                           <circle cx={x} cy={y} r="5" fill={c} stroke="#fff" strokeWidth="2" />
                           <text x={x} y={y - 10} textAnchor="middle" fontSize="10" fontWeight="600" fill={c}>{h.score}</text>
                           <text x={x} y={148} textAnchor="middle" fontSize="10" fill="#9ca3af">{label}</text>
@@ -700,8 +700,8 @@ const Dashboard = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                       <div style={{ background: '#f0fdf4', border: '0.5px solid #86efac', borderRadius: 9, padding: 10 }}>
                         <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#16a34a', marginBottom: 6 }}>{t.yourArgs}</div>
-                        {(bp.user_side?.strongest_arguments || bp.user_arguments || []).slice(0, 5).map((a, i) => (
-                          <div key={i} style={{ fontSize: 10, color: '#374151', padding: '4px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.5, display: 'flex', gap: 6 }}>
+                        {(bp.user_side?.strongest_arguments || bp.user_arguments || []).slice(0, 5).map((a, aIdx) => (
+                          <div key={`ua-${aIdx}-${(typeof a === 'string' ? a : a.argument || '').slice(0, 15)}`} style={{ fontSize: 10, color: '#374151', padding: '4px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.5, display: 'flex', gap: 6 }}>
                             <span style={{ color: '#16a34a', fontWeight: 600 }}>•</span>
                             <span>{typeof a === 'string' ? a : a.argument || a.text || ''}</span>
                           </div>
@@ -709,8 +709,8 @@ const Dashboard = () => {
                       </div>
                       <div style={{ background: '#fff5f5', border: '0.5px solid #fca5a5', borderRadius: 9, padding: 10 }}>
                         <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#dc2626', marginBottom: 6 }}>{t.theirArgs}</div>
-                        {(bp.opposing_side?.strongest_arguments || bp.opposing_side?.opposing_arguments || bp.opposing_arguments || []).slice(0, 5).map((a, i) => (
-                          <div key={i} style={{ fontSize: 10, color: '#374151', padding: '4px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.5, display: 'flex', gap: 6 }}>
+                        {(bp.opposing_side?.strongest_arguments || bp.opposing_side?.opposing_arguments || bp.opposing_arguments || []).slice(0, 5).map((a, aIdx) => (
+                          <div key={`oa-${aIdx}-${(typeof a === 'string' ? a : a.argument || '').slice(0, 15)}`} style={{ fontSize: 10, color: '#374151', padding: '4px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.5, display: 'flex', gap: 6 }}>
                             <span style={{ color: '#dc2626', fontWeight: 600 }}>•</span>
                             <span>{typeof a === 'string' ? a : a.argument || a.text || ''}</span>
                           </div>
@@ -724,8 +724,8 @@ const Dashboard = () => {
                 {caseLaw.length > 0 && (
                   <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
                     <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 8 }}>{t.jurisTitle}</div>
-                    {caseLaw.map((cl, i) => (
-                      <div key={i} style={{ padding: '8px 0', borderBottom: i < caseLaw.length - 1 ? '0.5px solid #f3f4f6' : 'none' }}>
+                    {caseLaw.map((cl) => (
+                      <div key={cl.case_name || cl.court} style={{ padding: '8px 0', borderBottom: i < caseLaw.length - 1 ? '0.5px solid #f3f4f6' : 'none' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', flex: 1 }}>{cl.case_name}</div>
                           {cl.url && <a href={cl.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={11} color="#1a56db" /></a>}
@@ -746,8 +746,8 @@ const Dashboard = () => {
                       { label: lang === 'fr' ? 'Accord négocié' : lang === 'nl' ? 'Onderhandelde schikking' : 'Negotiated settlement', pct: prob.negotiated_settlement || prob.compromis_negocie || prob.settlement || 0, color: '#1a56db' },
                       { label: lang === 'fr' ? 'Résolution partielle' : lang === 'nl' ? 'Gedeeltelijk verlies' : 'Partial loss', pct: prob.partial_loss || prob.perte_partielle || prob.partial || 0, color: '#f59e0b' },
                       { label: lang === 'fr' ? 'Issue défavorable' : lang === 'nl' ? 'Volledig verlies' : 'Full loss', pct: prob.full_loss || prob.perte_totale || prob.unfavorable || 0, color: '#dc2626' },
-                    ].map((o, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    ].map((o) => (
+                      <div key={o.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                         <div style={{ fontSize: 10, color: '#374151', width: 160, flexShrink: 0 }}>{o.label}</div>
                         <div style={{ flex: 1, height: 8, background: '#f3f4f6', borderRadius: 4, overflow: 'hidden' }}>
                           <div style={{ height: '100%', borderRadius: 4, background: o.color, width: `${o.pct}%`, transition: 'width 0.5s' }} />
@@ -904,8 +904,8 @@ const Dashboard = () => {
               </div>
               <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 20 }}>{t.overlaySub}</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                {t.sit.map((s, i) => (
-                  <div key={i} data-testid={`situation-card-${i}`}
+                {t.sit.map((s) => (
+                  <div key={s.title} data-testid={`situation-card-${s.title}`}
                     onClick={() => { setShowOverlay(false); navigate('/upload'); }}
                     style={{
                       display: 'flex', alignItems: 'flex-start', gap: 10, padding: 11, borderRadius: 10,

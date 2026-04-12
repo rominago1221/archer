@@ -595,8 +595,8 @@ const ContractGuardResult = ({ analysis, fileName, getNegotiationColor, getSever
                 </div>
                 {expandedSections.red_lines ? <ChevronUp size={16} className="text-[#9ca3af]" /> : <ChevronDown size={16} className="text-[#9ca3af]" />}
               </button>
-              {(expandedSections.red_lines !== false) && analysis.red_lines.map((item, i) => (
-                <div key={i} className="bg-[#fef2f2] border border-[#fecaca] rounded-xl p-3 mb-2">
+              {(expandedSections.red_lines !== false) && analysis.red_lines.map((item) => (
+                <div key={`rl-${item.clause}-${item.severity}`} className="bg-[#fef2f2] border border-[#fecaca] rounded-xl p-3 mb-2">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="text-xs font-semibold text-[#dc2626]">{item.clause}</div>
                     <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full text-white" style={{ backgroundColor: getSeverityColor(item.severity) }}>
@@ -621,8 +621,8 @@ const ContractGuardResult = ({ analysis, fileName, getNegotiationColor, getSever
                 </div>
                 {expandedSections.negotiation_points ? <ChevronUp size={16} className="text-[#9ca3af]" /> : <ChevronDown size={16} className="text-[#9ca3af]" />}
               </button>
-              {(expandedSections.negotiation_points !== false) && analysis.negotiation_points.map((item, i) => (
-                <div key={i} className="bg-[#fffbeb] border border-[#fde68a] rounded-xl p-3 mb-2">
+              {(expandedSections.negotiation_points !== false) && analysis.negotiation_points.map((item) => (
+                <div key={`np-${item.clause}-${item.priority}`} className="bg-[#fffbeb] border border-[#fde68a] rounded-xl p-3 mb-2">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="text-xs font-semibold text-[#92400e]">{item.clause}</div>
                     <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full ${
@@ -687,8 +687,8 @@ const ContractGuardResult = ({ analysis, fileName, getNegotiationColor, getSever
               </button>
               {expandedSections.clauses_check && (
                 <div className="grid grid-cols-2 gap-2">
-                  {analysis.standard_clauses_check.map((clause, i) => (
-                    <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-[#f8f8f8]">
+                  {analysis.standard_clauses_check.map((clause) => (
+                    <div key={`sc-${clause.clause_name || clause.name}`} className="flex items-center gap-2 p-2 rounded-lg bg-[#f8f8f8]">
                       {clause.present ? (
                         clause.fair ? (
                           <CheckCircle size={14} className="text-[#16a34a] flex-shrink-0" />
@@ -846,10 +846,10 @@ const StandardResult = ({ result, analysis, file, getRiskColor, getDimensionColo
           {analysis.findings?.length > 0 && (
             <div className="mb-5">
               <div className="text-sm font-medium text-[#111827] mb-3">Key findings</div>
-              {analysis.findings.map((finding, i) => {
+              {analysis.findings.map((finding, fIdx) => {
                 const dotColor = finding.impact === 'high' ? '#dc2626' : finding.impact === 'medium' ? '#d97706' : '#16a34a';
                 return (
-                  <div key={i} className={`flex items-start gap-2 py-2.5 ${i < analysis.findings.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}>
+                  <div key={`f-${fIdx}-${(finding.text || '').slice(0, 20)}`} className={`flex items-start gap-2 py-2.5 ${fIdx < analysis.findings.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}>
                     <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: dotColor }}></span>
                     <div>
                       <div className="text-xs text-[#333]">{finding.text}</div>
@@ -864,9 +864,9 @@ const StandardResult = ({ result, analysis, file, getRiskColor, getDimensionColo
           {analysis.next_steps?.length > 0 && (
             <div className="mb-5">
               <div className="text-sm font-medium text-[#111827] mb-3">Recommended next steps</div>
-              {analysis.next_steps.map((step, i) => (
-                <div key={i} className="flex items-start gap-3 py-2.5">
-                  <div className="w-5 h-5 rounded-full bg-[#eff6ff] text-[#1a56db] flex items-center justify-center text-[10px] font-bold flex-shrink-0">{i + 1}</div>
+              {analysis.next_steps.map((step, sIdx) => (
+                <div key={`ns-${step.title}`} className="flex items-start gap-3 py-2.5">
+                  <div className="w-5 h-5 rounded-full bg-[#eff6ff] text-[#1a56db] flex items-center justify-center text-[10px] font-bold flex-shrink-0">{sIdx + 1}</div>
                   <div>
                     <div className="text-xs font-medium text-[#111827]">{step.title}</div>
                     <div className="text-[11px] text-[#6b7280] mt-0.5">{step.description}</div>
@@ -883,8 +883,8 @@ const StandardResult = ({ result, analysis, file, getRiskColor, getDimensionColo
                 <div className="text-sm font-medium text-[#111827]">Recent legal updates</div>
               </div>
               <div className="space-y-2">
-                {analysis.recent_case_law.map((law, i) => (
-                  <div key={i} className="bg-[#f8fdf8] border border-[#d1fae5] rounded-xl p-3">
+                {analysis.recent_case_law.map((law) => (
+                  <div key={`cl-${law.case_name}`} className="bg-[#f8fdf8] border border-[#d1fae5] rounded-xl p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="text-xs font-medium text-[#111827]">{law.case_name}</div>
                       {law.source_url && (

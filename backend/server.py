@@ -804,10 +804,189 @@ async def analyze_document_with_claude(extracted_text: str) -> dict:
         return _default_analysis()
 
 
+
+# ═══ SHARED ANALYSIS HELPERS ═══
+# Extracted from analyze_document_advanced / run_multi_doc_analysis_advanced to reduce complexity
+
+DOC_TYPE_TO_CASE = {
+    "eviction_notice": "housing", "lease": "housing",
+    "employment_contract": "employment",
+    "debt_collection": "debt",
+    "demand_letter": "demand",
+    "court_notice": "court", "nda": "nda"
+}
+
+def _build_realtime_law_context(courtlistener_opinions: list) -> str:
+    """Build real-time case law context string from CourtListener opinions."""
+    if not courtlistener_opinions:
+        return ""
+    ctx = "\n\nRECENT COURT DECISIONS (from CourtListener — real-time data):\n"
+    for i, op in enumerate(courtlistener_opinions, 1):
+        ctx += f"{i}. {op['case_name']} (Filed: {op['date_filed']}, Court: {op['court']})\n"
+        if op.get('snippet'):
+            clean_snippet = op['snippet'].replace('<em>', '').replace('</em>', '')
+            ctx += f"   Excerpt: {clean_snippet}\n"
+    ctx += "\nConsider these recent decisions when assessing the user's legal position.\n"
+    return ctx
+
+
+def _build_case_law_for_frontend(courtlistener_opinions: list) -> list:
+    """Transform CourtListener opinions into frontend-ready case law dicts."""
+    result = []
+    for op in courtlistener_opinions:
+        clean_snippet = (op.get("snippet", "") or "").replace("<em>", "").replace("</em>", "")
+        result.append({
+            "case_name": op["case_name"],
+            "date": op["date_filed"],
+            "court": op["court"],
+            "ruling_summary": clean_snippet[:200] if clean_snippet else "Decision text available at source.",
+            "source_url": op.get("url"),
+            "cite_count": op.get("cite_count", 0)
+        })
+    return result
+
+
+async def _validate_james_question(strategy: dict, facts_str: str, persona: str, lang_instruction: str) -> dict:
+    """Ensure james_question exists with valid text and options, retrying if needed."""
+    jq = strategy.get("james_question")
+    if jq and isinstance(jq, dict) and jq.get("text") and jq.get("options") and len(jq.get("options", [])) >= 2:
+        return jq
+
+    logger.warning("James question missing or invalid — retrying")
+    try:
+        await asyncio.sleep(1)
+        jq_retry = await call_claude(
+            persona,
+            f"Based on this document analysis, generate ONE specific clarifying question with 2-4 answer options. The question must reference a specific fact from the document.\n\nFacts: {facts_str[:2000]}\n\nReturn ONLY JSON: {{\"text\": \"specific question\", \"options\": [\"option1\", \"option2\", \"option3\"]}}",
+            max_tokens=500
+        )
+        if jq_retry and jq_retry.get("text") and jq_retry.get("options"):
+            return jq_retry
+    except Exception as e:
+        logger.error(f"James question retry failed: {e}")
+
+    return {"text": "Do you have any additional documents related to this case?", "options": ["Yes, I have more documents", "No, this is everything", "I'm not sure"]}
+
+
+async def _validate_user_arguments(user_arguments: dict, facts_str: str, analysis_str: str, lang_instruction: str) -> dict:
+    """Ensure user arguments contain at least 3 strongest_arguments, retrying if needed."""
+    ua = user_arguments.get("strongest_arguments", []) if isinstance(user_arguments, dict) else []
+    if len(ua) >= 3:
+        return user_arguments
+
+    logger.warning(f"User arguments too few ({len(ua)}) — retrying Pass 4A")
+    try:
+        await asyncio.sleep(1)
+        ua_retry = await call_claude(
+            PASS4A_SYSTEM + lang_instruction,
+            PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
+            max_tokens=1500
+        )
+        if isinstance(ua_retry, dict) and len(ua_retry.get("strongest_arguments", [])) >= 3:
+            return ua_retry
+    except Exception as e:
+        logger.error(f"User arguments retry failed: {e}")
+
+    return user_arguments
+
+
+def _validate_success_probability(strategy: dict, legal_analysis: dict) -> dict:
+    """Clamp success probability to sum=100, each value 2-95%, with risk-based fallback."""
+    sp = strategy.get("success_probability", {})
+    if not isinstance(sp, dict):
+        sp = {}
+
+    keys = ["full_resolution_in_favor", "negotiated_settlement", "partial_loss", "full_loss"]
+    total = sum(sp.get(k, 0) for k in keys)
+
+    if total == 0 or any(sp.get(k, 0) == 0 for k in keys):
+        # Risk-based fallback
+        risk_score = legal_analysis.get("risk_score", {})
+        risk_total = risk_score.get("total", 50) if isinstance(risk_score, dict) else 50
+        if risk_total <= 30:
+            return {"full_resolution_in_favor": 55, "negotiated_settlement": 30, "partial_loss": 10, "full_loss": 5}
+        elif risk_total <= 60:
+            return {"full_resolution_in_favor": 25, "negotiated_settlement": 45, "partial_loss": 22, "full_loss": 8}
+        else:
+            return {"full_resolution_in_favor": 10, "negotiated_settlement": 35, "partial_loss": 35, "full_loss": 20}
+
+    # Clamp each value
+    for k in keys:
+        sp[k] = max(2, min(95, sp.get(k, 25)))
+    clamped_total = sum(sp[k] for k in keys)
+    if clamped_total != 100:
+        sp[keys[1]] = sp[keys[1]] + (100 - clamped_total)
+    return sp
+
+
+def _build_standard_analysis_result(
+    doc_type: str, inferred_case_type: str, legal_analysis: dict,
+    strategy: dict, facts: dict, user_arguments: dict,
+    opposing_arguments: dict, recent_case_law: list, now_date: str
+) -> dict:
+    """Build the standard result dict shared by single-doc and multi-doc analysis."""
+    return {
+        "document_type": doc_type,
+        "case_type": legal_analysis.get("case_type", inferred_case_type),
+        "suggested_case_title": legal_analysis.get("suggested_case_title", "Legal Document Analysis"),
+        "risk_score": legal_analysis.get("risk_score", {"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50}),
+        "risk_level": legal_analysis.get("risk_level", "medium"),
+        "deadline": legal_analysis.get("deadline"),
+        "deadline_description": legal_analysis.get("deadline_description"),
+        "summary": legal_analysis.get("summary", ""),
+        "financial_exposure": legal_analysis.get("financial_exposure"),
+        "findings": legal_analysis.get("findings", []),
+        "next_steps": strategy.get("next_steps", legal_analysis.get("findings", [])[:3]),
+        "recommend_lawyer": legal_analysis.get("recommend_lawyer", False),
+        "disclaimer": "This analysis provides legal information only, not legal advice.",
+        "facts": facts,
+        "financial_exposure_detailed": legal_analysis.get("financial_exposure_detailed"),
+        "procedural_defects": legal_analysis.get("procedural_defects", []),
+        "user_rights": legal_analysis.get("user_rights", []),
+        "opposing_weaknesses": legal_analysis.get("opposing_weaknesses", []),
+        "applicable_laws": legal_analysis.get("applicable_laws", []),
+        "strategy": strategy.get("recommended_strategy"),
+        "immediate_actions": strategy.get("immediate_actions", []),
+        "documents_to_gather": strategy.get("documents_to_gather", []),
+        "leverage_points": strategy.get("leverage_points", []),
+        "red_lines": strategy.get("red_lines", []),
+        "lawyer_recommendation": strategy.get("lawyer_recommendation"),
+        "success_probability": strategy.get("success_probability"),
+        "key_insight": strategy.get("key_insight", ""),
+        "james_question": strategy.get("james_question"),
+        "battle_preview": {
+            "user_side": user_arguments,
+            "opposing_side": opposing_arguments
+        },
+        "recent_case_law": recent_case_law,
+        "case_law_updated": now_date
+    }
+
+
+def _ensure_contract_guard_fields(result: dict) -> dict:
+    """Ensure all required Contract Guard fields exist with defaults."""
+    if "negotiation_score" not in result:
+        result["negotiation_score"] = 50
+    if "negotiation_level" not in result:
+        score = result["negotiation_score"]
+        if score <= 25:
+            result["negotiation_level"] = "favorable"
+        elif score <= 50:
+            result["negotiation_level"] = "balanced"
+        elif score <= 75:
+            result["negotiation_level"] = "unfavorable"
+        else:
+            result["negotiation_level"] = "dangerous"
+    for field in ("red_lines", "negotiation_points", "missing_protections"):
+        if field not in result:
+            result[field] = []
+    return result
+
+
+
 async def analyze_document_advanced(extracted_text: str, user_context: str = "", language: str = "en") -> dict:
     """Advanced 5-pass analysis system with real-time jurisprudence"""
     try:
-        # Build user context supplement for Pass 1
         context_supplement = ""
         if user_context:
             context_supplement = f"\n\nADDITIONAL CONTEXT PROVIDED BY THE USER:\n{user_context}\n(Use this context to better understand the situation, identify the user's role, and extract more accurate facts.)"
@@ -817,191 +996,59 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
 
         # PASS 1: Fact extraction
         logger.info("Advanced analysis: Pass 1 — Fact extraction")
-        facts = await call_claude(
-            persona,
-            PASS1_PROMPT.format(document_text=extracted_text[:15000]) + context_supplement
-        )
+        facts = await call_claude(persona, PASS1_PROMPT.format(document_text=extracted_text[:15000]) + context_supplement)
 
-        # Load jurisprudence based on facts
+        # Load jurisprudence + real-time case law
         doc_type = facts.get("document_type", "other")
-        doc_to_case = {
-            "eviction_notice": "housing", "lease": "housing",
-            "employment_contract": "employment",
-            "debt_collection": "debt",
-            "demand_letter": "demand",
-            "court_notice": "court", "nda": "nda"
-        }
-        inferred_case_type = doc_to_case.get(doc_type, "other")
+        inferred_case_type = DOC_TYPE_TO_CASE.get(doc_type, "other")
         jurisprudence_text = load_jurisprudence(inferred_case_type, doc_type)
 
-        # Fetch real-time case law from CourtListener (parallel with Pass 2 prep)
         logger.info("Advanced analysis: Fetching real-time case law from CourtListener")
         state = facts.get("jurisdiction", facts.get("state", ""))
         courtlistener_opinions = await fetch_courtlistener_opinions(inferred_case_type, state)
-        
-        # Build real-time case law context for Claude
-        realtime_law_context = ""
-        if courtlistener_opinions:
-            realtime_law_context = "\n\nRECENT COURT DECISIONS (from CourtListener — real-time data):\n"
-            for i, op in enumerate(courtlistener_opinions, 1):
-                realtime_law_context += f"{i}. {op['case_name']} (Filed: {op['date_filed']}, Court: {op['court']})\n"
-                if op['snippet']:
-                    clean_snippet = op['snippet'].replace('<em>', '').replace('</em>', '')
-                    realtime_law_context += f"   Excerpt: {clean_snippet}\n"
-            realtime_law_context += "\nConsider these recent decisions when assessing the user's legal position.\n"
+        realtime_law_context = _build_realtime_law_context(courtlistener_opinions)
 
-        # PASS 2: Legal analysis (with real-time case law context)
+        # PASS 2: Legal analysis
         logger.info("Advanced analysis: Pass 2 — Legal analysis")
-        await asyncio.sleep(2)  # Stagger API calls
+        await asyncio.sleep(2)
         legal_analysis = await call_claude(
             persona,
-            PASS2_PROMPT.format(
-                facts_json=json.dumps(facts, indent=2),
-                jurisprudence_section=jurisprudence_text + realtime_law_context
-            ) + "\n\nIMPORTANT: Use the provided recent court decisions and jurisprudence to inform your analysis. Cite any relevant rulings in your findings.",
+            PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2), jurisprudence_section=jurisprudence_text + realtime_law_context)
+            + "\n\nIMPORTANT: Use the provided recent court decisions and jurisprudence to inform your analysis. Cite any relevant rulings in your findings.",
             max_tokens=3000
         )
 
         facts_str = json.dumps(facts, indent=2)
         analysis_str = json.dumps(legal_analysis, indent=2)
 
-        # PASS 3, 4A, 4B — staggered to avoid rate limits
+        # PASS 3, 4A, 4B — staggered
         logger.info("Advanced analysis: Pass 3 — Strategy")
         await asyncio.sleep(2)
-        strategy = await call_claude(
-            persona,
-            PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
-            max_tokens=2500
-        )
+        strategy = await call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=2500)
+
         logger.info("Advanced analysis: Pass 4A — User arguments")
         await asyncio.sleep(2)
-        user_arguments = await call_claude(
-            PASS4A_SYSTEM + lang_instruction,
-            PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
-            max_tokens=1500
-        )
+        user_arguments = await call_claude(PASS4A_SYSTEM + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
+
         logger.info("Advanced analysis: Pass 4B — Opposing arguments")
         await asyncio.sleep(2)
-        opposing_arguments = await call_claude(
-            PASS4B_SYSTEM + lang_instruction,
-            PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
-            max_tokens=1500
-        )
+        opposing_arguments = await call_claude(PASS4B_SYSTEM + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
 
         logger.info("Advanced analysis: All 5 passes complete")
 
-        # Build recent_case_law for frontend display
-        recent_case_law = []
-        for op in courtlistener_opinions:
-            clean_snippet = (op.get("snippet", "") or "").replace("<em>", "").replace("</em>", "")
-            recent_case_law.append({
-                "case_name": op["case_name"],
-                "date": op["date_filed"],
-                "court": op["court"],
-                "ruling_summary": clean_snippet[:200] if clean_snippet else "Decision text available at source.",
-                "source_url": op.get("url"),
-                "cite_count": op.get("cite_count", 0)
-            })
+        # ═══ VALIDATION — enforce global rules ═══
+        strategy["james_question"] = await _validate_james_question(strategy, facts_str, persona, lang_instruction)
+        user_arguments = await _validate_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
+        strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
 
+        # Build result
+        recent_case_law = _build_case_law_for_frontend(courtlistener_opinions)
         now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-        # ═══ VALIDATION — enforce global rules ═══
-        # FIX 1: james_question must always exist with options
-        jq = strategy.get("james_question")
-        if not jq or not isinstance(jq, dict) or not jq.get("text") or not jq.get("options") or len(jq.get("options", [])) < 2:
-            logger.warning("James question missing or invalid — retrying")
-            try:
-                await asyncio.sleep(1)
-                jq_retry = await call_claude(
-                    persona,
-                    f"Based on this document analysis, generate ONE specific clarifying question with 2-4 answer options. The question must reference a specific fact from the document.\n\nFacts: {facts_str[:2000]}\n\nReturn ONLY JSON: {{\"text\": \"specific question\", \"options\": [\"option1\", \"option2\", \"option3\"]}}",
-                    max_tokens=500
-                )
-                if jq_retry and jq_retry.get("text") and jq_retry.get("options"):
-                    jq = jq_retry
-            except Exception as e:
-                logger.error(f"James question retry failed: {e}")
-            if not jq or not jq.get("options"):
-                jq = {"text": "Do you have any additional documents related to this case?", "options": ["Yes, I have more documents", "No, this is everything", "I'm not sure"]}
-            strategy["james_question"] = jq
-
-        # FIX 2: Battle preview user_side must never be empty
-        ua = user_arguments.get("strongest_arguments", []) if isinstance(user_arguments, dict) else []
-        if len(ua) < 3:
-            logger.warning(f"User arguments too few ({len(ua)}) — retrying Pass 4A")
-            try:
-                await asyncio.sleep(1)
-                ua_retry = await call_claude(
-                    PASS4A_SYSTEM + lang_instruction,
-                    PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
-                    max_tokens=1500
-                )
-                if isinstance(ua_retry, dict) and len(ua_retry.get("strongest_arguments", [])) >= 3:
-                    user_arguments = ua_retry
-            except Exception as e:
-                logger.error(f"User arguments retry failed: {e}")
-
-        # FIX 3: Success probability must sum to 100, no value below 2 or above 95
-        sp = strategy.get("success_probability", {})
-        if isinstance(sp, dict):
-            keys = ["full_resolution_in_favor", "negotiated_settlement", "partial_loss", "full_loss"]
-            total = sum(sp.get(k, 0) for k in keys)
-            if total == 0 or any(sp.get(k, 0) == 0 for k in keys):
-                risk_total = legal_analysis.get("risk_score", {}).get("total", 50) if isinstance(legal_analysis.get("risk_score"), dict) else 50
-                if risk_total <= 30:
-                    sp = {"full_resolution_in_favor": 55, "negotiated_settlement": 30, "partial_loss": 10, "full_loss": 5}
-                elif risk_total <= 60:
-                    sp = {"full_resolution_in_favor": 25, "negotiated_settlement": 45, "partial_loss": 22, "full_loss": 8}
-                else:
-                    sp = {"full_resolution_in_favor": 10, "negotiated_settlement": 35, "partial_loss": 35, "full_loss": 20}
-            else:
-                for k in keys:
-                    sp[k] = max(2, min(95, sp.get(k, 25)))
-                clamped_total = sum(sp[k] for k in keys)
-                if clamped_total != 100:
-                    sp[keys[1]] = sp[keys[1]] + (100 - clamped_total)
-            strategy["success_probability"] = sp
-
-        # Combine results into standard format + advanced data
-        return {
-            # Standard fields (backward-compatible)
-            "document_type": doc_type,
-            "case_type": legal_analysis.get("case_type", inferred_case_type),
-            "suggested_case_title": legal_analysis.get("suggested_case_title", "Legal Document Analysis"),
-            "risk_score": legal_analysis.get("risk_score", {"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50}),
-            "risk_level": legal_analysis.get("risk_level", "medium"),
-            "deadline": legal_analysis.get("deadline"),
-            "deadline_description": legal_analysis.get("deadline_description"),
-            "summary": legal_analysis.get("summary", ""),
-            "financial_exposure": legal_analysis.get("financial_exposure"),
-            "findings": legal_analysis.get("findings", []),
-            "next_steps": strategy.get("next_steps", legal_analysis.get("findings", [])[:3]),
-            "recommend_lawyer": legal_analysis.get("recommend_lawyer", False),
-            "disclaimer": "This analysis provides legal information only, not legal advice.",
-            # Advanced fields
-            "facts": facts,
-            "financial_exposure_detailed": legal_analysis.get("financial_exposure_detailed"),
-            "procedural_defects": legal_analysis.get("procedural_defects", []),
-            "user_rights": legal_analysis.get("user_rights", []),
-            "opposing_weaknesses": legal_analysis.get("opposing_weaknesses", []),
-            "applicable_laws": legal_analysis.get("applicable_laws", []),
-            "strategy": strategy.get("recommended_strategy"),
-            "immediate_actions": strategy.get("immediate_actions", []),
-            "documents_to_gather": strategy.get("documents_to_gather", []),
-            "leverage_points": strategy.get("leverage_points", []),
-            "red_lines": strategy.get("red_lines", []),
-            "lawyer_recommendation": strategy.get("lawyer_recommendation"),
-            "success_probability": strategy.get("success_probability"),
-            "key_insight": strategy.get("key_insight", ""),
-            "james_question": strategy.get("james_question"),
-            "battle_preview": {
-                "user_side": user_arguments,
-                "opposing_side": opposing_arguments
-            },
-            # Real-time jurisprudence
-            "recent_case_law": recent_case_law,
-            "case_law_updated": now_date
-        }
+        return _build_standard_analysis_result(
+            doc_type, inferred_case_type, legal_analysis, strategy, facts,
+            user_arguments, opposing_arguments, recent_case_law, now_date
+        )
 
     except Exception as e:
         logger.error(f"Advanced analysis error: {e}")
@@ -1689,11 +1736,8 @@ Produce at least 3 red_lines, 4 negotiation_points, and 2 missing_protections.""
 async def analyze_contract_guard(extracted_text: str, user_context: str = "", country: str = "US", region: str = "", language: str = "en") -> dict:
     """Contract Guard analysis — negotiation-focused pre-signing review"""
     try:
-        context_section = ""
-        if user_context:
-            context_section = f"USER CONTEXT: {user_context}"
+        context_section = f"USER CONTEXT: {user_context}" if user_context else ""
 
-        # Choose persona based on country
         if country == "BE":
             persona = BELGIAN_CONTRACT_GUARD_PERSONA + get_language_instruction(language)
             logger.info("Contract Guard (Belgian): Starting negotiation analysis")
@@ -1703,33 +1747,11 @@ async def analyze_contract_guard(extracted_text: str, user_context: str = "", co
 
         result = await call_claude(
             persona,
-            CONTRACT_GUARD_PROMPT.format(
-                document_text=extracted_text[:15000],
-                user_context_section=context_section
-            ),
+            CONTRACT_GUARD_PROMPT.format(document_text=extracted_text[:15000], user_context_section=context_section),
             max_tokens=4000
         )
-        
-        # Ensure required fields exist
-        if "negotiation_score" not in result:
-            result["negotiation_score"] = 50
-        if "negotiation_level" not in result:
-            score = result["negotiation_score"]
-            if score <= 25:
-                result["negotiation_level"] = "favorable"
-            elif score <= 50:
-                result["negotiation_level"] = "balanced"
-            elif score <= 75:
-                result["negotiation_level"] = "unfavorable"
-            else:
-                result["negotiation_level"] = "dangerous"
-        if "red_lines" not in result:
-            result["red_lines"] = []
-        if "negotiation_points" not in result:
-            result["negotiation_points"] = []
-        if "missing_protections" not in result:
-            result["missing_protections"] = []
 
+        result = _ensure_contract_guard_fields(result)
         logger.info(f"Contract Guard: Analysis complete — Score {result['negotiation_score']}/100")
         return result
 
@@ -2184,127 +2206,61 @@ async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, us
     p2_supplement = get_multi_doc_pass2_supplement(doc_count, language)
     p3_supplement = get_multi_doc_pass3_supplement(doc_count, language)
 
-    context_supplement = ""
-    if user_context:
-        context_supplement = f"\n\nADDITIONAL CONTEXT PROVIDED BY THE USER:\n{user_context}"
+    context_supplement = f"\n\nADDITIONAL CONTEXT PROVIDED BY THE USER:\n{user_context}" if user_context else ""
 
-    # Limit combined text to stay within token limits
     max_text = 30000 if doc_count <= 5 else 45000
     text_for_analysis = combined_text[:max_text]
 
     # PASS 1: Multi-doc fact extraction
     logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 1 — Fact extraction")
-    facts = await call_claude(
-        persona,
-        PASS1_PROMPT.format(document_text=text_for_analysis) + p1_supplement + context_supplement
-    )
+    facts = await call_claude(persona, PASS1_PROMPT.format(document_text=text_for_analysis) + p1_supplement + context_supplement)
 
     doc_type = facts.get("document_type", "other")
-    doc_to_case = {
-        "eviction_notice": "housing", "lease": "housing",
-        "employment_contract": "employment",
-        "debt_collection": "debt",
-        "demand_letter": "demand",
-        "court_notice": "court", "nda": "nda"
-    }
-    inferred_case_type = doc_to_case.get(doc_type, "other")
+    inferred_case_type = DOC_TYPE_TO_CASE.get(doc_type, "other")
     jurisprudence_text = load_jurisprudence(inferred_case_type, doc_type)
 
     logger.info("Multi-doc analysis: Fetching real-time case law")
     state = facts.get("jurisdiction", facts.get("state", ""))
     courtlistener_opinions = await fetch_courtlistener_opinions(inferred_case_type, state)
-    realtime_law_context = ""
-    if courtlistener_opinions:
-        realtime_law_context = "\n\nRECENT COURT DECISIONS (from CourtListener):\n"
-        for i, op in enumerate(courtlistener_opinions, 1):
-            realtime_law_context += f"{i}. {op['case_name']} (Filed: {op['date_filed']}, Court: {op['court']})\n"
-            if op['snippet']:
-                realtime_law_context += f"   Excerpt: {op['snippet'].replace('<em>', '').replace('</em>', '')}\n"
+    realtime_law_context = _build_realtime_law_context(courtlistener_opinions)
 
     # PASS 2: Multi-doc legal analysis
     logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 2 — Legal analysis")
     legal_analysis = await call_claude(
         persona,
-        PASS2_PROMPT.format(
-            facts_json=json.dumps(facts, indent=2),
-            jurisprudence_section=jurisprudence_text + realtime_law_context
-        ) + p2_supplement,
-        max_tokens=4000,
-        use_web_search=True
+        PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2), jurisprudence_section=jurisprudence_text + realtime_law_context) + p2_supplement,
+        max_tokens=4000, use_web_search=True
     )
 
     facts_str = json.dumps(facts, indent=2)
     analysis_str = json.dumps(legal_analysis, indent=2)
 
-    # PASS 3+4A+4B: Multi-doc strategy + battle preview
+    # PASS 3+4A+4B
     logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 3+4A+4B")
-    strategy = await call_claude(
-        persona,
-        PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement,
-        max_tokens=3000
-    )
-    user_arguments = await call_claude(
-        PASS4A_SYSTEM,
-        PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
-        max_tokens=1500
-    )
-    opposing_arguments = await call_claude(
-        PASS4B_SYSTEM,
-        PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
-        max_tokens=1500
-    )
+    strategy = await call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement, max_tokens=3000)
+    user_arguments = await call_claude(PASS4A_SYSTEM, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
+    opposing_arguments = await call_claude(PASS4B_SYSTEM, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
 
     logger.info(f"Multi-doc analysis ({doc_count} docs): All passes complete")
 
-    recent_case_law = []
-    for op in courtlistener_opinions:
-        clean_snippet = (op.get("snippet", "") or "").replace("<em>", "").replace("</em>", "")
-        recent_case_law.append({
-            "case_name": op["case_name"], "date": op["date_filed"], "court": op["court"],
-            "ruling_summary": clean_snippet[:200], "source_url": op.get("url"), "cite_count": op.get("cite_count", 0)
-        })
-
+    recent_case_law = _build_case_law_for_frontend(courtlistener_opinions)
     now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    return {
-        "document_type": doc_type,
-        "case_type": legal_analysis.get("case_type", inferred_case_type),
-        "suggested_case_title": legal_analysis.get("suggested_case_title", "Legal Document Analysis"),
-        "risk_score": legal_analysis.get("risk_score", {"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50}),
-        "risk_level": legal_analysis.get("risk_level", "medium"),
-        "deadline": legal_analysis.get("deadline"),
-        "deadline_description": legal_analysis.get("deadline_description"),
-        "summary": legal_analysis.get("summary", ""),
-        "financial_exposure": legal_analysis.get("financial_exposure"),
-        "findings": legal_analysis.get("findings", []),
-        "next_steps": strategy.get("next_steps", []),
-        "recommend_lawyer": legal_analysis.get("recommend_lawyer", False),
-        "disclaimer": "This analysis provides legal information only, not legal advice.",
-        "facts": facts,
-        "financial_exposure_detailed": legal_analysis.get("financial_exposure_detailed"),
-        "procedural_defects": legal_analysis.get("procedural_defects", []),
-        "user_rights": legal_analysis.get("user_rights", []),
-        "opposing_weaknesses": legal_analysis.get("opposing_weaknesses", []),
-        "applicable_laws": legal_analysis.get("applicable_laws", []),
-        "strategy": strategy.get("recommended_strategy"),
-        "immediate_actions": strategy.get("immediate_actions", []),
-        "documents_to_gather": strategy.get("documents_to_gather", []),
-        "leverage_points": strategy.get("leverage_points", []),
-        "red_lines": strategy.get("red_lines", []),
-        "lawyer_recommendation": strategy.get("lawyer_recommendation"),
-        "success_probability": strategy.get("success_probability"),
-        "key_insight": strategy.get("key_insight", ""),
-        "battle_preview": {"user_side": user_arguments, "opposing_side": opposing_arguments},
-        "recent_case_law": recent_case_law,
-        "case_law_updated": now_date,
-        # Multi-document specific fields
+    result = _build_standard_analysis_result(
+        doc_type, inferred_case_type, legal_analysis, strategy, facts,
+        user_arguments, opposing_arguments, recent_case_law, now_date
+    )
+
+    # Multi-document specific fields
+    result.update({
         "case_narrative": legal_analysis.get("case_narrative", ""),
         "contradictions": legal_analysis.get("contradictions", []),
         "opposing_strategy_analysis": legal_analysis.get("opposing_strategy_analysis", ""),
         "cumulative_financial_exposure": legal_analysis.get("cumulative_financial_exposure", ""),
         "master_deadlines": legal_analysis.get("master_deadlines", []),
         "pattern_analysis": strategy.get("pattern_analysis", ""),
-    }
+    })
+    return result
 
 
 async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, user_context: str = "", region: str = "Wallonie", language: str = "fr-BE") -> dict:
