@@ -852,8 +852,11 @@ const StandardResult = ({ result, analysis, file, getRiskColor, getDimensionColo
                   <div key={`f-${fIdx}-${(finding.text || '').slice(0, 20)}`} className={`flex items-start gap-2 py-2.5 ${fIdx < analysis.findings.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}>
                     <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: dotColor }}></span>
                     <div>
-                      <div className="text-xs text-[#333]">{finding.text}</div>
-                      <div className="text-[10px] text-[#aaa] mt-0.5 capitalize">{finding.impact} impact</div>
+                      <div className="text-xs text-[#333] font-semibold">{finding.text}</div>
+                      {finding.impact_description && <div className="text-[10px] text-[#4b5563] mt-0.5 leading-snug">{finding.impact_description}</div>}
+                      {finding.legal_ref && <div className="text-[10px] text-[#1d4ed8] font-semibold mt-1">{finding.legal_ref}</div>}
+                      {finding.do_now && <div className="text-[10px] text-[#065f46] mt-1 bg-[#ecfdf5] px-2 py-1 rounded">&#x2192; {finding.do_now}</div>}
+                      {finding.risk_if_ignored && <div className="text-[9px] text-[#991b1b] mt-1 italic">&#x26a0; {finding.risk_if_ignored}</div>}
                     </div>
                   </div>
                 );

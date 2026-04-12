@@ -444,10 +444,28 @@ const CaseDetail = () => {
                     const fColor = f.impact === 'high' || f.type === 'risk' ? '#dc2626' : f.impact === 'low' || f.type === 'opportunity' ? '#16a34a' : '#f59e0b';
                     return (
                       <div key={`finding-${fIdx}-${(f.text || '').slice(0, 20)}`} style={{ padding: '9px 0', borderBottom: fIdx < findings.length - 1 ? '0.5px solid #f3f4f6' : 'none', display: 'flex', alignItems: 'flex-start', gap: 7 }}>
-                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: fColor, flexShrink: 0, marginTop: 4 }} />
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: fColor, flexShrink: 0, marginTop: 5 }} />
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 15, color: '#374151', lineHeight: 1.55 }} dangerouslySetInnerHTML={{ __html: formatBoldText(f.text || '') }} />
-                          {f.legal_ref && <div style={{ marginTop: 5, padding: '5px 9px', background: '#eff6ff', borderLeft: '2px solid #1a56db', borderRadius: '0 5px 5px 0' }}><div style={{ fontSize: 15, fontWeight: 600, color: '#1d4ed8' }}>{f.legal_ref}</div></div>}
+                          <div style={{ fontSize: 15, color: '#374151', lineHeight: 1.55, fontWeight: 600 }} dangerouslySetInnerHTML={{ __html: formatBoldText(f.text || '') }} />
+                          {f.impact_description && (
+                            <div style={{ fontSize: 13, color: '#4b5563', lineHeight: 1.5, marginTop: 3 }}>{f.impact_description}</div>
+                          )}
+                          {f.legal_ref && (
+                            <div style={{ marginTop: 5, padding: '5px 9px', background: '#eff6ff', borderLeft: '2px solid #1a56db', borderRadius: '0 5px 5px 0' }}>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: '#1d4ed8' }}>{f.legal_ref}</div>
+                              {f.jurisprudence && <div style={{ fontSize: 11, color: '#3b82f6', marginTop: 1 }}>{f.jurisprudence}</div>}
+                            </div>
+                          )}
+                          {f.do_now && (
+                            <div style={{ fontSize: 12, color: '#065f46', lineHeight: 1.5, marginTop: 4, padding: '4px 8px', background: '#ecfdf5', borderRadius: 5, border: '0.5px solid #a7f3d0' }}>
+                              <span style={{ fontWeight: 600 }}>&#x2192;</span> {f.do_now}
+                            </div>
+                          )}
+                          {f.risk_if_ignored && (
+                            <div style={{ fontSize: 11, color: '#991b1b', lineHeight: 1.4, marginTop: 3, fontStyle: 'italic' }}>
+                              &#x26a0; {f.risk_if_ignored}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

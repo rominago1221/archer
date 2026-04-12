@@ -220,12 +220,12 @@ Return ONLY this JSON — no other text:
     {{"law": "statute name", "relevance": "how it applies", "favors": "user|opposing|neutral"}}
   ],
   "findings": [
-    {{"text": "Specific finding", "impact": "high|medium|low", "type": "risk|opportunity|deadline|neutral", "legal_ref": "Applicable law citation (e.g. FDCPA 15 U.S.C. § 1692)", "jurisprudence": "Relevant case law if any"}}
+    {{"text": "Finding title: short, specific, actionable — NEVER vague or generic", "impact": "high|medium|low", "type": "risk|opportunity|deadline|neutral", "legal_ref": "Exact statute, article, or case law citation (e.g. Fla. Stat. § 83.56(3) — Florida 3rd DCA 2023)", "jurisprudence": "Relevant case law if any", "impact_description": "What this means for the user RIGHT NOW in plain language — no legal jargon, written as if explaining to a friend", "do_now": "Exact next step the user MUST take — specific and actionable, never generic like 'consult an attorney'", "risk_if_ignored": "What happens if user does NOTHING — create urgency, explain real consequences of inaction"}}
   ],
   "recommend_lawyer": true,
   "disclaimer": "This analysis provides legal information only, not legal advice."
 }}
-Produce 3-6 findings."""
+Produce 3-6 findings. EVERY finding MUST have ALL 7 fields: text (title), impact, type, legal_ref (exact statute), jurisprudence, impact_description (plain language), do_now (specific action), risk_if_ignored (consequence of inaction). NEVER omit any field. Impact_description must be plain language. Do_now must be specific. Risk_if_ignored must create urgency."""
 
 PASS3_PROMPT = """TASK: STRATEGIC RECOMMENDATIONS
 Based on the facts and legal analysis below, provide concrete strategic recommendations. Think like a litigator preparing a client for the best outcome.
@@ -1065,7 +1065,7 @@ Retourne UNIQUEMENT ce JSON:
   "deadline_description": "Description du delai",
   "financial_exposure": "EUR montant ou fourchette",
   "findings": [
-    {{"text": "Constatation juridique", "impact": "high|medium|low", "type": "risk|opportunity|neutral", "legal_ref": "Reference legale belge", "jurisprudence": "Jurisprudence applicable"}}
+    {{"text": "Titre court, specifique et actionnable — JAMAIS vague ou generique", "impact": "high|medium|low", "type": "risk|opportunity|neutral", "legal_ref": "Reference legale EXACTE: article de loi + jurisprudence recente (ex: Art. 65-70 Loi contrats travail — C. trav. Bruxelles 7 mai 2024)", "jurisprudence": "Jurisprudence applicable avec date et juridiction", "impact_description": "Ce que cela signifie CONCRETEMENT pour l'utilisateur — en langage simple, comme si on expliquait a un ami, JAMAIS de jargon juridique", "do_now": "Action PRECISE que l'utilisateur DOIT faire MAINTENANT — jamais generique comme 'consultez un avocat'", "risk_if_ignored": "Ce qui se passe si l'utilisateur ne fait RIEN — creer l'urgence, expliquer les consequences reelles de l'inaction"}}
   ],
   "procedural_defects": [{{"vice": "description", "gravite": "fatal|significatif|mineur", "loi_applicable": "reference", "benefice_utilisateur": "comment ca aide"}}],
   "user_rights": [{{"droit": "droit specifique", "reference_legale": "loi exacte", "force": "fort|moyen|faible"}}],
@@ -1075,7 +1075,8 @@ Retourne UNIQUEMENT ce JSON:
   "organismes_recommandes": [{{"organisme": "Syndicat CSC/FGTB/CGSLB", "raison": "Aide juridique gratuite", "contact": "www.csc.be"}}],
   "recommend_lawyer": true,
   "key_insight": "La phrase la plus importante"
-}}"""
+}}
+Produis 3-6 constatations. CHAQUE constatation DOIT avoir les 7 champs: text (titre), impact, type, legal_ref (loi exacte + jurisprudence), jurisprudence, impact_description (langage simple), do_now (action precise), risk_if_ignored (consequence de l'inaction). JAMAIS omettre un champ."""
 
 BE_PASS3_PROMPT = """TACHE: RECOMMANDATIONS STRATEGIQUES
 
