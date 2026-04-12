@@ -49,11 +49,17 @@ const Landing = () => {
           <div className="flex items-center gap-3">
             <JurisdictionPills
               jurisdiction={jurisdiction}
+              language={language}
               onSwitch={(j) => {
                 handleJurisdictionChange(j);
                 if (user) {
-                  // Also update user profile
                   axios.put(`${API}/profile`, { jurisdiction: j, country: j }, { withCredentials: true }).catch(() => {});
+                }
+              }}
+              onLanguageChange={(l) => {
+                handleLanguageChange(l);
+                if (user) {
+                  axios.put(`${API}/profile`, { language: l }, { withCredentials: true }).catch(() => {});
                 }
               }}
             />

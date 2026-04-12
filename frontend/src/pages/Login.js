@@ -40,28 +40,32 @@ const Login = () => {
             /* ─── Account Type Selection ─── */
             <div data-testid="account-type-selector">
               <h2 className="text-[15px] font-semibold text-[#111827] text-center mb-5">How would you like to sign in?</h2>
-              <div className="grid grid-cols-2 gap-3 mb-4">
+              <div style={{ display: 'flex', gap: 20, justifyContent: 'center', marginBottom: 16 }}>
                 <button
                   onClick={() => setAccountType('client')}
-                  className="flex flex-col items-center gap-2.5 p-5 rounded-[14px] border border-[#e5e5e5] bg-white hover:border-[#1a56db] hover:bg-[#eff6ff] transition-all group"
                   data-testid="select-client-btn"
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, width: 220, minHeight: 160, padding: 28, borderRadius: 14, border: '1px solid #e2e0db', background: '#fff', cursor: 'pointer', transition: 'all 0.2s' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(26,86,219,0.1)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e0db'; e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
-                  <div className="w-10 h-10 rounded-xl bg-[#eff6ff] flex items-center justify-center group-hover:bg-white transition-colors">
-                    <User size={18} className="text-[#1a56db]" />
+                  <div style={{ width: 48, height: 48, borderRadius: 12, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <User size={24} className="text-[#1a56db]" />
                   </div>
-                  <div className="text-[13px] font-semibold text-[#111827]">I'm a client</div>
-                  <div className="text-[10px] text-[#6b7280] text-center leading-snug">Analyze documents, talk to attorneys, protect yourself</div>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: '#111827' }}>I'm a client</div>
+                  <div style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', lineHeight: 1.4 }}>Analyze documents, talk to attorneys, protect yourself</div>
                 </button>
                 <button
                   onClick={() => setAccountType('attorney')}
-                  className="flex flex-col items-center gap-2.5 p-5 rounded-[14px] border border-[#e5e5e5] bg-white hover:border-[#1a56db] hover:bg-[#eff6ff] transition-all group"
                   data-testid="select-attorney-btn"
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, width: 220, minHeight: 160, padding: 28, borderRadius: 14, border: '1px solid #e2e0db', background: '#fff', cursor: 'pointer', transition: 'all 0.2s' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(26,86,219,0.1)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e0db'; e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
-                  <div className="w-10 h-10 rounded-xl bg-[#eff6ff] flex items-center justify-center group-hover:bg-white transition-colors">
-                    <Scale size={18} className="text-[#1a56db]" />
+                  <div style={{ width: 48, height: 48, borderRadius: 12, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Scale size={24} className="text-[#1a56db]" />
                   </div>
-                  <div className="text-[13px] font-semibold text-[#111827]">I'm an attorney</div>
-                  <div className="text-[10px] text-[#6b7280] text-center leading-snug">Join Jasper to receive pre-qualified clients</div>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: '#111827' }}>I'm an attorney</div>
+                  <div style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', lineHeight: 1.4 }}>Join Jasper to receive pre-qualified clients</div>
                 </button>
               </div>
             </div>

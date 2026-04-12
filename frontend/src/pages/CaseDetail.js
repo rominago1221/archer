@@ -314,7 +314,7 @@ const CaseDetail = () => {
           }}>
             <button onClick={() => navigate('/dashboard')} data-testid="back-btn-global" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: '#9ca3af', fontWeight: 500, marginRight: 12, display: 'flex', alignItems: 'center', gap: 3 }}>← Back</button>
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <JurisdictionPills jurisdiction={jurisdiction} onSwitch={handleJurisdictionSwitch} />
+              <JurisdictionPills jurisdiction={jurisdiction} language={user?.language} onSwitch={handleJurisdictionSwitch} onLanguageChange={async (l) => { updateUser({ language: l }); try { await axios.put(`${API}/profile`, { language: l }, { withCredentials: true }); } catch {} }} />
             </div>
           </div>
           {/* Breadcrumb + Actions */}
@@ -386,17 +386,32 @@ const CaseDetail = () => {
 
                 {/* Score History */}
                 {history.length > 0 && (
-                  <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1a2e', marginBottom: 8 }}>{t.scoreHistory}</div>
-                    <svg viewBox="0 0 400 80" style={{ width: '100%', height: 60 }}>
+                  <div style={{ background: '#fff', borderRadius: 12, padding: '16px 18px', marginBottom: 10, border: '1px solid #e2e0db' }}>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1a2e', marginBottom: 12 }}>{t.scoreHistory}</div>
+                    <svg viewBox="0 0 460 160" style={{ width: '100%', height: 140 }}>
+                      {/* Y-axis gridlines */}
+                      {[0, 25, 50, 75, 100].map(v => {
+                        const y = 130 - (v / 100) * 110;
+                        return <g key={v}>
+                          <line x1={40} y1={y} x2={440} y2={y} stroke="#f0f0f0" strokeWidth="0.5" strokeDasharray="4,3" />
+                          <text x={35} y={y + 4} textAnchor="end" fontSize="10" fill="#9ca3af">{v}</text>
+                        </g>;
+                      })}
+                      {/* Data line + points */}
                       {history.map((h, i) => {
-                        const x = history.length === 1 ? 200 : 20 + (i / (history.length - 1)) * 360;
-                        const y = 75 - (h.score / 100) * 70;
-                        const c = riskColor(h.score);
+                        const x = history.length === 1 ? 240 : 50 + (i / (history.length - 1)) * 380;
+                        const y = 130 - (h.score / 100) * 110;
+                        const c = h.score <= 30 ? '#16a34a' : h.score <= 60 ? '#f59e0b' : '#dc2626';
+                        const lineColor = history[history.length - 1].score <= 30 ? '#16a34a' : history[history.length - 1].score <= 60 ? '#f59e0b' : '#dc2626';
+                        const prevX = i > 0 ? (history.length === 1 ? 240 : 50 + ((i - 1) / (history.length - 1)) * 380) : x;
+                        const prevY = i > 0 ? 130 - (history[i - 1].score / 100) * 110 : y;
+                        const dt = h.date ? new Date(h.date) : null;
+                        const label = dt ? `${dt.toLocaleString('en', { month: 'short' })} ${dt.getDate()}` : `#${i + 1}`;
                         return <g key={i}>
-                          {i > 0 && <line x1={20 + ((i-1) / (history.length - 1)) * 360} y1={75 - (history[i-1].score / 100) * 70} x2={x} y2={y} stroke={c} strokeWidth="2" />}
-                          <circle cx={x} cy={y} r="4" fill={c} />
-                          <text x={x} y={y - 8} textAnchor="middle" fontSize="8" fill={c}>{h.score}</text>
+                          {i > 0 && <line x1={prevX} y1={prevY} x2={x} y2={y} stroke={lineColor} strokeWidth="2" />}
+                          <circle cx={x} cy={y} r="5" fill={c} stroke="#fff" strokeWidth="2" />
+                          <text x={x} y={y - 10} textAnchor="middle" fontSize="10" fontWeight="600" fill={c}>{h.score}</text>
+                          <text x={x} y={148} textAnchor="middle" fontSize="10" fill="#9ca3af">{label}</text>
                         </g>;
                       })}
                     </svg>

@@ -1,22 +1,15 @@
 # Jasper - Legal Tech AI Platform PRD
 
-## Original Problem Statement
-Build Jasper — a virtual legal cabinet for US and Belgian consumers.
-
 ## What's Been Implemented
 
 ### Four Fixes (Apr 12 2026) — LATEST
-1. **Back button → /dashboard**: CaseDetail "← Back" always navigates to /dashboard
-2. **Next Actions redesign**: Blue left border accent (3px), light blue bg (#f0f7ff), bell icon, 15px bold titles, stronger card borders (1px #d1d5db), 14px padding
-3. **Document clicking**: Individual documents shown in right panel, clickable → navigates to /documents/{documentId} with DocumentViewer page (preview, download, delete, James analysis)
-4. **Font size +15%**: All CaseDetail fonts increased (9→12, 10→12, 11→13, 12→14, 13→15, 14→16). Dashboard unchanged.
+1. **Browse mode redesign**: Compact cards (12px padding), category-specific colored icons (blue/green/purple/amber/red), "More +" filter button (6 visible + overflow), #f4f4f1 page bg, visible 1px borders
+2. **Navbar switcher**: ⚖️ icons on jurisdiction pills + language selector dropdown (EN/FR/NL/DE/ES), both independent, visible on every page
+3. **Score History graph**: Y-axis 0-100 with gridlines at 25 intervals, X-axis with dates, color-coded data points (green/amber/red), dashed gridlines
+4. **Login selector cards**: 220px×160px, 48px icons, 16px titles, 13px descriptions, 28px padding, hover scale(1.02) + blue border + shadow
 
 ### Previous Features
-- Document Library redesign (Generate + Browse 158 templates)
-- Letter Modal auto-fill, Attorney Onboarding, Jurisdiction Switching, Real-time polling, James chat drawer
-
-### Integrations
-- Emergent LlmChat, Google OAuth, Object Storage, Daily.co, Stripe, CourtListener
+- Document Library (Generate+Browse 158 templates), Document Viewer, Next Actions redesign, Letter Modal auto-fill, Attorney Onboarding, Jurisdiction Switching + Onboarding, Real-time polling, James chat drawer, AddDocumentModal, 12-feature Dashboard/CaseDetail parity, Font size +15% on CaseDetail
 
 ## Prioritized Backlog
 ### P0: Refactor server.py (6500+ lines)

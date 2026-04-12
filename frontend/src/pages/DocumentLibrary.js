@@ -24,6 +24,12 @@ const CATS = [
   { key: 'family', name: 'Family', icon: Users, bg: '#f0fdf4', stroke: '#16a34a', count: 12 },
   { key: 'freelance', name: 'Freelance', icon: Code, bg: '#eff6ff', stroke: '#1a56db', count: 10 },
   { key: 'consumer', name: 'Consumer', icon: Info, bg: '#fdf4ff', stroke: '#7c3aed', count: 12 },
+  { key: 'realestate', name: 'Real Estate', icon: Home, bg: '#f0fdf4', stroke: '#16a34a', count: 10 },
+  { key: 'ip', name: 'IP', icon: Shield, bg: '#fdf4ff', stroke: '#7c3aed', count: 8 },
+  { key: 'court', name: 'Court', icon: FileText, bg: '#fff5f5', stroke: '#dc2626', count: 8 },
+  { key: 'immigration', name: 'Immigration', icon: Users, bg: '#eff6ff', stroke: '#1a56db', count: 8 },
+  { key: 'government', name: 'Government', icon: Info, bg: '#fff7ed', stroke: '#d97706', count: 7 },
+  { key: 'education', name: 'Education', icon: Briefcase, bg: '#eff6ff', stroke: '#1a56db', count: 5 },
 ];
 
 const ALL_TEMPLATES = [
@@ -125,6 +131,7 @@ const DocumentLibrary = () => {
   const [limitReached, setLimitReached] = useState(false);
   const [browseFilter, setBrowseFilter] = useState('all');
   const [browseSearch, setBrowseSearch] = useState('');
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
   const isPro = user?.plan === 'pro';
@@ -313,14 +320,30 @@ const DocumentLibrary = () => {
                   style={{ flex: 1, border: 'none', background: 'transparent', padding: '8px 8px', fontSize: 12, color: '#374151', outline: 'none' }} data-testid="browse-search" />
               </div>
             </div>
-            {/* Filter pills */}
-            <div style={{ display: 'flex', gap: 4, padding: '10px 28px', borderTop: '1px solid #e2e0db', borderBottom: '1px solid #e2e0db', overflowX: 'auto' }} data-testid="browse-filter-pills">
-              {FILTER_PILLS.map(f => (
+            {/* Filter pills — max 6 visible + More */}
+            <div style={{ display: 'flex', gap: 4, padding: '10px 28px', borderTop: '1px solid #e2e0db', borderBottom: '1px solid #e2e0db', alignItems: 'center' }} data-testid="browse-filter-pills">
+              {FILTER_PILLS.slice(0, 6).map(f => (
                 <button key={f} onClick={() => setBrowseFilter(f)} data-testid={`filter-pill-${f}`}
                   style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', background: browseFilter === f ? '#1a56db' : 'transparent', color: browseFilter === f ? '#fff' : '#6b7280', fontWeight: browseFilter === f ? 600 : 400 }}>
                   {FILTER_LABELS[f]}
                 </button>
               ))}
+              <div style={{ position: 'relative' }}>
+                <button onClick={() => setShowMoreFilters(!showMoreFilters)} data-testid="more-filters-btn"
+                  style={{ padding: '4px 12px', borderRadius: 16, fontSize: 11, border: '1px solid #e2e0db', cursor: 'pointer', whiteSpace: 'nowrap', background: FILTER_PILLS.slice(6).includes(browseFilter) ? '#1a56db' : '#fff', color: FILTER_PILLS.slice(6).includes(browseFilter) ? '#fff' : '#6b7280' }}>
+                  More +
+                </button>
+                {showMoreFilters && (
+                  <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, background: '#fff', border: '1px solid #e2e0db', borderRadius: 10, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', zIndex: 50, padding: 4, minWidth: 140 }}>
+                    {FILTER_PILLS.slice(6).map(f => (
+                      <button key={f} onClick={() => { setBrowseFilter(f); setShowMoreFilters(false); }} data-testid={`filter-pill-${f}`}
+                        style={{ display: 'block', width: '100%', padding: '6px 12px', borderRadius: 8, fontSize: 11, border: 'none', cursor: 'pointer', textAlign: 'left', background: browseFilter === f ? '#eff6ff' : 'transparent', color: browseFilter === f ? '#1a56db' : '#374151', fontWeight: browseFilter === f ? 600 : 400 }}>
+                        {FILTER_LABELS[f]}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             {/* Template grid */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px 28px' }} data-testid="template-grid">
@@ -329,17 +352,17 @@ const DocumentLibrary = () => {
                   const cat = CATS.find(c => c.key === t.cat) || CATS[0];
                   return (
                     <div key={i} onClick={() => switchToGenerate(t.name)} data-testid={`template-card-${i}`}
-                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '1px solid #e2e0db', borderRadius: 9, cursor: 'pointer', transition: 'all 0.15s', background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
-                      onMouseEnter={e => { e.currentTarget.style.border = '1.5px solid #1a56db'; e.currentTarget.style.background = '#eff6ff'; e.currentTarget.querySelector('.gen-link').style.opacity = 1; }}
-                      onMouseLeave={e => { e.currentTarget.style.border = '1px solid #e2e0db'; e.currentTarget.style.background = '#ffffff'; e.currentTarget.querySelector('.gen-link').style.opacity = 0; }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, border: '1px solid #e2e0db', borderRadius: 9, cursor: 'pointer', transition: 'all 0.15s', background: '#ffffff' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.style.background = '#f8faff'; e.currentTarget.querySelector('.gen-link').style.opacity = 1; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e0db'; e.currentTarget.style.background = '#ffffff'; e.currentTarget.querySelector('.gen-link').style.opacity = 0; }}>
                       <div style={{ width: 32, height: 32, borderRadius: 7, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <cat.icon size={14} color={cat.stroke} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 500, color: '#1a1a2e' }}>{t.name}</div>
-                        <div style={{ fontSize: 10, color: '#9ca3af' }}>{t.desc}</div>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: '#1a1a2e' }}>{t.name}</div>
+                        <div style={{ fontSize: 11, color: '#9ca3af' }}>{t.desc}</div>
                       </div>
-                      <span className="gen-link" style={{ fontSize: 10, color: '#1a56db', fontWeight: 500, opacity: 0, transition: 'opacity 0.15s', whiteSpace: 'nowrap' }}>Generate →</span>
+                      <span className="gen-link" style={{ fontSize: 11, color: '#1a56db', fontWeight: 600, opacity: 0, transition: 'opacity 0.15s', whiteSpace: 'nowrap' }}>Generate →</span>
                     </div>
                   );
                 })}

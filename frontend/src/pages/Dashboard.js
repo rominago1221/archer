@@ -481,7 +481,7 @@ const Dashboard = () => {
           }}>
             <button onClick={() => window.history.back()} data-testid="back-btn" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#9ca3af', fontWeight: 500, marginRight: 12, display: 'flex', alignItems: 'center', gap: 3 }}>← Back</button>
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <JurisdictionPills jurisdiction={jurisdiction} onSwitch={handleJurisdictionSwitch} />
+              <JurisdictionPills jurisdiction={jurisdiction} language={user?.language} onSwitch={handleJurisdictionSwitch} onLanguageChange={async (l) => { updateUser({ language: l }); try { await axios.put(`${API}/profile`, { language: l }, { withCredentials: true }); } catch {} }} />
             </div>
           </div>
           {/* Top Bar with James Banner + Actions */}
