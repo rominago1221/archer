@@ -276,10 +276,10 @@ const Icon = ({ name, size = 18, ...props }) => {
 /* ─── STYLES ─── */
 const s = {
   page: { background: '#f4f4f1', minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif', color: '#0a0a0f', paddingBottom: 48 },
-  hero: { textAlign: 'center', padding: '60px 20px 32px' },
-  shieldIcon: { width: 56, height: 56, borderRadius: '50%', background: '#eff6ff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-  h1: { fontSize: 44, fontWeight: 500, letterSpacing: -1.5, lineHeight: 1, margin: '0 0 14px', color: '#0a0a0f' },
-  tagline: { fontSize: 18, color: '#1a56db', fontStyle: 'italic', margin: 0 },
+  hero: { textAlign: 'center', padding: '80px 20px 40px' },
+  shieldIcon: { width: 80, height: 80, borderRadius: '50%', background: '#eff6ff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 28 },
+  h1: { fontSize: 64, fontWeight: 600, letterSpacing: -2.5, lineHeight: 1, margin: '0 0 18px', color: '#0a0a0f' },
+  tagline: { fontSize: 22, color: '#1a56db', fontStyle: 'italic', margin: 0, fontWeight: 400 },
   toggleWrap: { display: 'flex', justifyContent: 'center', margin: '24px 0' },
   toggle: { display: 'inline-flex', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 30, padding: 4, gap: 0 },
   toggleOpt: (active) => ({ padding: '8px 18px', borderRadius: 24, fontSize: 13, fontWeight: 500, cursor: 'pointer', background: active ? '#0a0a0f' : 'transparent', color: active ? '#fff' : '#555', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s', border: 'none', outline: 'none', userSelect: 'none' }),
@@ -345,6 +345,17 @@ const responsiveCSS = `
 .pricing-page .pricing-cta:hover {
   transform: scale(1.02);
 }
+@keyframes shield-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes shield-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(26,86,219,0.15); }
+  50% { box-shadow: 0 0 24px 8px rgba(26,86,219,0.12); }
+}
+.pricing-page .shield-anim {
+  animation: shield-float 3s ease-in-out infinite, shield-glow 3s ease-in-out infinite;
+}
 @keyframes subtle-pulse {
   0%, 100% { transform: translateX(-50%) scale(1); }
   50% { transform: translateX(-50%) scale(1.04); }
@@ -378,7 +389,10 @@ const responsiveCSS = `
     padding: 28px 18px !important;
   }
   .pricing-page .hero-h1 {
-    font-size: 32px !important;
+    font-size: 42px !important;
+  }
+  .pricing-page .hero-tagline {
+    font-size: 18px !important;
   }
   .pricing-page .section-h2 {
     font-size: 24px !important;
@@ -400,9 +414,9 @@ export default function Pricing() {
 
       {/* ── SECTION 1: HERO ── */}
       <div style={s.hero}>
-        <div style={s.shieldIcon}><Shield size={28} color="#1a56db" /></div>
+        <div className="shield-anim" style={s.shieldIcon}><Shield size={38} color="#1a56db" /></div>
         <h1 className="hero-h1" style={s.h1}>{t.hero.title}</h1>
-        <p style={s.tagline}>{t.hero.subtitle}</p>
+        <p className="hero-tagline" style={s.tagline}>{t.hero.subtitle}</p>
       </div>
 
       {/* ── SECTION 2: TOGGLE ── */}
