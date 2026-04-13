@@ -44,7 +44,7 @@ const Landing = () => {
           <div className="hidden md:flex items-center gap-6 text-sm text-[#555]">
             <a href="#how" className="hover:text-[#1a56db]">{t.nav.howItWorks}</a>
             <a href="#attorneys" className="hover:text-[#1a56db]">{t.nav.attorneys}</a>
-            <a href="#pricing" className="hover:text-[#1a56db]">{t.nav.pricing}</a>
+            <span onClick={() => navigate('/pricing')} className="hover:text-[#1a56db] cursor-pointer">{t.nav.pricing}</span>
             <a href="#faq" className="hover:text-[#1a56db]">{t.nav.faq}</a>
           </div>
           <div className="flex items-center gap-3">
