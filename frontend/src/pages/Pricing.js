@@ -1,601 +1,322 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Shield, Clock, DollarSign, Award, Lock, Sparkles, CheckCircle, Layers } from 'lucide-react';
 import PublicNavbar from '../components/PublicNavbar';
 
-/* ─── CONTENT OBJECT ─── */
-const content = {
+const Chk = ({c='#16a34a'}) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
+
+const D = {
   en: {
-    hero: { title: 'Be protected.', subtitle: 'Whatever life throws at you.' },
-    toggle: { monthly: 'Monthly', yearly: 'Yearly', save: 'Save 17%' },
+    heroBadge: 'ARCHER PROTECT \u00B7 PRICING',
+    heroTitle: ['Pricing built', 'for ', 'real life.'],
+    heroTag: 'Start with a free analysis. Subscribe when you need more.\nZero hourly billing. Zero surprises. Cancel anytime.',
+    freeLabel: 'FREE FIRST ANALYSIS',
+    freeTitle: 'Create a free account. Get one analysis free.',
+    freeDesc: 'Full legal analysis on one document. Upgrade to Protect when you need more \u2014 attorney letters, live counsel, and unlimited cases.',
+    freeCta: 'Create free account',
+    subSupra: 'ARCHER PROTECT PLANS',
+    subTitle: ['Pick your plan.', 'Unlock everything.'],
+    subSub: 'All Protect plans include unlimited document analyses, unlimited DIY letters, unlimited legal chat, and access to Attorney Letters on demand. Monthly or yearly. Cancel anytime.',
+    monthly: 'Monthly', yearly: 'Yearly', save17: 'SAVE 17%',
     plans: [
-      {
-        id: 'free', name: 'Free', desc: 'Try Archer',
-        monthly: { price: '$0', period: 'forever' },
-        yearly: { price: '$0', period: 'forever' },
-        cta: 'Start free', ctaStyle: 'default', link: '/en/signup?plan=free',
-        features: [
-          { ok: true, text: '1 analysis' },
-          { ok: true, text: 'Basic Risk Score' },
-          { ok: false, text: 'No Attorney Letter' },
-        ],
-      },
-      {
-        id: 'paypercase', name: 'Pay-per-case', desc: 'One-shot need',
-        monthly: { price: '$39', period: 'per case' },
-        yearly: { price: '$39', period: 'per case' },
-        cta: 'Analyze now', ctaStyle: 'secondary', link: '/en/upload',
-        features: [
-          { ok: true, text: 'Full analysis' },
-          { ok: true, text: 'Battle Preview' },
-          { ok: true, text: 'Outcome Predictor' },
-          { ok: true, text: '1 letter included' },
-        ],
-      },
-      {
-        id: 'solo', name: 'Protect Solo', desc: 'Personal cabinet', featured: true,
-        badge: 'MOST POPULAR',
-        monthly: { price: '$29.99', period: '/month' },
-        yearly: { price: '$299', period: '/year', save: 'Save $60/year' },
-        cta: 'Start 14-day trial', ctaStyle: 'primary', subCta: 'No credit card required',
-        link: '/en/signup?plan=solo&cycle=monthly',
-        features: [
-          { ok: true, text: '2 analyses/month' },
-          { ok: true, text: '1 Attorney Letter/year' },
-          { ok: true, text: 'Risk Monitor' },
-          { ok: true, text: 'James unlimited' },
-          { ok: true, text: 'Document Vault' },
-          { ok: true, text: 'Cancel anytime' },
-        ],
-      },
-      {
-        id: 'family', name: 'Protect Family', desc: '5 people',
-        monthly: { price: '$49.99', period: '/month' },
-        yearly: { price: '$499', period: '/year', save: 'Save $100/year' },
-        cta: 'Protect family', ctaStyle: 'default', link: '/en/signup?plan=family',
-        features: [
-          { ok: true, text: 'Everything in Solo' },
-          { ok: true, text: '5 users' },
-          { ok: true, text: '5 analyses/month' },
-          { ok: true, text: '2 Attorney Letters/year' },
-          { ok: true, text: '24/7 hotline' },
-        ],
-      },
-      {
-        id: 'pro', name: 'Protect Pro', desc: 'Freelancers & landlords',
-        monthly: { price: '$89.99', period: '/month' },
-        yearly: { price: '$899', period: '/year', save: 'Save $180/year' },
-        cta: 'Choose Pro', ctaStyle: 'default', link: '/en/signup?plan=pro',
-        features: [
-          { ok: true, text: 'Everything in Family' },
-          { ok: true, text: 'Unlimited analyses' },
-          { ok: true, text: '4 Attorney Letters/year' },
-          { ok: true, text: 'Quarterly video call' },
-          { ok: true, text: 'Priority support 24/7' },
-        ],
-      },
+      { name: 'Protect Solo', tag: 'For individuals', price: ['$29.99','$24.92'], per: '/mo', period: ['Or $299/year','Or $299/year'], yrSave: ['Save $60 yearly','Save $60 yearly'], cta: 'Start Solo', feats: [
+        { t: 'Unlimited document analyses', bold: true },
+        { t: 'Unlimited DIY letters', bold: true },
+        { t: 'Unlimited legal chat' },
+        { t: 'Document Vault' },
+        { t: 'Risk Monitor for emails' },
+      ]},
+      { name: 'Protect Family', tag: 'Up to 3 family members', badge: '\u2605 MOST POPULAR', featured: true, price: ['$49.99','$41.58'], per: '/mo', period: ['Or $499/year','Or $499/year'], yrSave: ['Save $100 yearly','Save $100 yearly'], cta: 'Start Family', feats: [
+        { t: 'Everything in Solo, for 3 people', bold: true },
+        { t: '1 Live Counsel session/year', bold: true, c: '#7c3aed', sub: '$149 value included' },
+        { t: 'Shared Document Vault' },
+        { t: 'Priority support' },
+      ]},
+      { name: 'Protect Pro', tag: 'For high-stakes cases', price: ['$89.99','$74.92'], per: '/mo', period: ['Or $899/year','Or $899/year'], yrSave: ['Save $180 yearly','Save $180 yearly'], cta: 'Start Pro', feats: [
+        { t: 'Everything in Solo' },
+        { t: '2 Attorney Letters/year', bold: true, c: '#1a56db', sub: '$100 value included' },
+        { t: '1 Live Counsel/year', bold: true, c: '#7c3aed', sub: '$149 value included' },
+        { t: 'Dedicated attorney follow-up' },
+      ]},
     ],
-    attorney: {
-      badge: 'THE ATTORNEY LETTER',
-      h2pre: 'A real lawyer letter.',
-      h2accent1: '4 hours.',
-      h2mid: ' For ',
-      h2accent2: '$49.',
-      desc: 'An official letter drafted by James and personally signed by a licensed partner attorney. Bar number, official letterhead, full legal authority \u2014 sent on your behalf in less than 4 hours.',
-      pillars: [
-        { title: '4 hours', sub: 'Delivered fast', icon: 'clock' },
-        { title: '10\u00D7 cheaper', sub: 'vs. lawyer', icon: 'dollar' },
-        { title: 'Bar certified', sub: 'Real attorney', icon: 'award' },
-        { title: 'Or refunded', sub: 'No result, no pay', icon: 'shield' },
-      ],
-    },
-    intelligence: {
-      badge: 'THE INTELLIGENCE',
-      h2: 'The most powerful legal AI',
-      h2br: 'ever built for individuals.',
-      desc: 'James reads your document, cross-checks live jurisprudence across millions of cases, and finds the legal angle that wins. In 60 seconds.',
-      stats1: [
-        { num: '2.4M', label: 'Case laws indexed' },
-        { num: '60s', label: 'Full analysis' },
-        { num: '5', label: 'Reasoning passes' },
-        { num: '94%', label: 'Accuracy rate' },
-      ],
-      stats2: [
-        { num: '2', label: 'Jurisdictions' },
-        { num: '5', label: 'Languages' },
-        { num: '158', label: 'Document types' },
-        { num: '24/7', label: 'Always on' },
-      ],
-      capabilities: [
-        { icon: 'clock', title: 'Live jurisprudence', sub: 'Updated daily' },
-        { icon: 'layers', title: '5-pass reasoning', sub: 'Deep analysis' },
-        { icon: 'check', title: 'Outcome predictor', sub: 'Win probability' },
-        { icon: 'shield', title: 'Battle Preview', sub: 'See your odds' },
-        { icon: 'lock', title: 'AES-256 encryption', sub: 'GDPR compliant' },
-        { icon: 'sparkles', title: 'Trained on Claude 4.6', sub: "Anthropic's most advanced" },
-      ],
-    },
-    oldWorld: {
-      badge: 'VS THE OLD WORLD',
-      h2pre: 'Half the price.',
-      h2accent: '100\u00D7 faster.',
-      left: {
-        label: 'TRADITIONAL INSURANCE', title: 'LegalShield, ARAG, DAS',
-        items: ['$40\u2013115/month', '2\u20134 weeks delay', '$150\u2013300 deductible', '3-month waiting period', 'Annual cap', 'No AI'],
-      },
-      right: {
-        label: 'ARCHER PROTECT', title: 'Solo plan',
-        items: ['$29.99/month', '60 seconds', 'Zero deductible', 'Instant coverage', 'No cap', 'Powered by AI'],
-      },
-    },
-    guarantee: { badge: '30-DAY GUARANTEE', text: 'Try Archer Protect risk-free.' },
+    compSupra: 'FEATURE BY FEATURE', compTitle: ['Compare all ', 'plans.'],
+    compCols: ['Free','Solo','Family','Pro'],
+    compPrices: ['$0','$29.99/mo','$49.99/mo','$89.99/mo'],
+    compRows: [
+      ['Document analyses','1 lifetime','Unlimited','Unlimited','Unlimited'],
+      ['DIY letters (download & send)','1 per analysis','Unlimited','Unlimited','Unlimited'],
+      ['Unlimited legal chat','\u2715','\u2713','\u2713','\u2713'],
+      ['Number of users','1','1','Up to 3','1'],
+      ['Document Vault','\u2715','\u2713','\u2713 Shared','\u2713'],
+      ['Risk Monitor (email scanning)','\u2715','\u2713','\u2713','\u2713'],
+      ['Attorney Letter access','\u2715','$49.99 each','$49.99 each','2 included'],
+      ['Live Counsel access','\u2715','$149 each','1 included/year','1 included/year'],
+      ['Dedicated attorney follow-up','\u2715','With Letter','With Letter','\u2713 Always'],
+      ['Real-time case tracking','\u2715','With Letter','With Letter','\u2713 Always'],
+      ['Certified mail add-on','\u2715','$14 each','$14 each','$14 each'],
+      ['Priority support','\u2715','\u2715','\u2713','\u2713'],
+    ],
+    compFoot: 'All plans: 30-day money-back guarantee \u00B7 Cancel anytime \u00B7 No hidden fees',
+    alBadge: 'THE ATTORNEY LETTER',
+    alTitle: ['A signed lawyer letter.', 'In ', '4 hours.', ' For ', '$49.99.'],
+    alDesc: "An official letter drafted by Archer and personally signed by a licensed partner attorney. Bar number, official letterhead, full legal responsibility. Includes dedicated follow-up and real-time case tracking \u2014 when the other party responds, Archer re-analyzes automatically.",
+    alSub: 'Available to Protect subscribers only \u00B7 Included free in Pro (2/year)',
+    alPillars: [
+      { t: '4 hours', s: 'Not 4 weeks' },
+      { t: '10\u00D7 cheaper', s: 'vs. $400-800 average' },
+      { t: 'Bar certified', s: 'Real signing attorney' },
+      { t: 'Real-time tracking', s: 'Attorney stays on your case' },
+    ],
+    vsSupra: 'VS THE OLD WORLD', vsTitle: ['Why pay more', 'for less?'],
+    vsSub: "Here's the honest comparison between getting a lawyer the traditional way, paying for legal insurance, and using Archer Protect.",
+    vsCols: [
+      { label: 'TRADITIONAL LAWYER', title: 'Local attorney', price: '$300\u2013500', priceSub: 'Per consultation', items: ['$300-500 first consultation','$400-800 per letter','2-3 week wait for appointment','Billable hours, not flat fees','Business hours only'], x: true },
+      { label: 'LEGAL INSURANCE', title: 'LegalShield, ARAG, DAS', price: '$40\u2013115', priceSub: 'Per month', items: ['$40-115/month premium','3-month waiting period','$150-300 deductible per case','Annual cap on cases','No AI, still slow lawyers'], x: true },
+      { label: 'ARCHER PROTECT', title: 'Solo plan', price: '$29.99', priceSub: 'Per month', items: ['First analysis free, no signup','$49.99 flat attorney letters','60-second analysis, instant','Flat prices, no surprises','Available 24/7/365'], x: false, hl: true },
+    ],
+    faqSupra: 'PRICING QUESTIONS', faqTitle: ['Common ', 'questions.'],
+    faqs: [
+      { q: 'What do I get with the free plan?', a: "A free Archer account gets you one full document analysis with win probability, legal angles, and a downloadable DIY letter. It's the perfect way to try Archer with your real case. To do more \u2014 unlimited analyses, legal chat, document vault, and especially Attorney Letters \u2014 you need a Protect plan starting at $29.99/month." },
+      { q: "Why can't I buy an Attorney Letter without a subscription?", a: "Archer isn't a one-off service. Our attorneys work with people they're actually helping across time \u2014 reviewing cases, tracking replies, following up. That relationship only makes sense for subscribers. Protect Solo starts at $29.99/mo and includes everything you need to handle most cases yourself, plus access to Attorney Letters on demand." },
+      { q: "What's included in the $49.99 Attorney Letter?", a: "A partner attorney reviews your case, edits Archer's draft if needed, signs the letter with their bar number, and stays assigned to your case. You get real-time tracking \u2014 when the other party responds, your attorney uploads their reply and Archer re-analyzes automatically." },
+      { q: 'Can I cancel anytime?', a: 'Yes. Cancel from your dashboard in one click, no phone calls, no retention specialists. You keep access until the end of your current billing period, and you can reactivate anytime. All plans include a 30-day money-back guarantee.' },
+      { q: 'Is Protect Family really for 3 people?', a: "Yes. Up to 3 family members share one plan \u2014 each person gets their own account, their own cases, and shared access to the Document Vault. Ideal for couples with a kid, or an adult with elderly parents needing legal help." },
+      { q: 'Is there a yearly discount?', a: "Yes. Paying yearly saves you 17% \u2014 that's $60 off Solo, $100 off Family, $180 off Pro. Same features, same flexibility, just cheaper if you commit to a year." },
+    ],
+    ctaBadge: '30-DAY MONEY-BACK GUARANTEE',
+    ctaTitle: ['Start free.', 'Upgrade when you need more.'],
+    ctaDesc: "Create a free Archer account and analyze one real document. When you're ready for unlimited cases, attorney letters, and real legal protection \u2014 pick a Protect plan. Cancel anytime.",
+    ctaBtn: 'Create my free account',
+    ctaSub: 'No credit card required \u00B7 30-day money-back on all plans',
   },
   fr: {
-    hero: { title: 'Soyez prot\u00E9g\u00E9.', subtitle: 'Quoi que la vie vous r\u00E9serve.' },
-    toggle: { monthly: 'Mensuel', yearly: 'Annuel', save: '\u00C9conomisez 17%' },
+    heroBadge: 'ARCHER PROTECT \u00B7 TARIFS',
+    heroTitle: ['Des tarifs', 'pour la ', 'vraie vie.'],
+    heroTag: "Commence avec une analyse gratuite. Abonne-toi quand tu as besoin de plus.\nZ\u00E9ro facturation horaire. Z\u00E9ro surprise. Annulation \u00E0 tout moment.",
+    freeLabel: 'PREMI\u00C8RE ANALYSE GRATUITE',
+    freeTitle: 'Cr\u00E9e un compte gratuit. Une analyse offerte.',
+    freeDesc: "Analyse juridique compl\u00E8te sur un document. Passe sur Protect quand tu en as besoin de plus \u2014 lettres d'avocat, consultations live, et dossiers illimit\u00E9s.",
+    freeCta: 'Cr\u00E9er un compte gratuit',
+    subSupra: 'LES PLANS ARCHER PROTECT',
+    subTitle: ['Choisis ton plan.', 'D\u00E9bloque tout.'],
+    subSub: "Tous les plans Protect incluent des analyses illimit\u00E9es, des lettres DIY illimit\u00E9es, un chat juridique illimit\u00E9, et l'acc\u00E8s aux Lettres d'Avocat \u00E0 la demande. Mensuel ou annuel. Annulation \u00E0 tout moment.",
+    monthly: 'Mensuel', yearly: 'Annuel', save17: '-17%',
     plans: [
-      {
-        id: 'free', name: 'Free', desc: 'D\u00E9couvrir Archer',
-        monthly: { price: '0 \u20AC', period: '\u00E0 vie' },
-        yearly: { price: '0 \u20AC', period: '\u00E0 vie' },
-        cta: 'Commencer gratuitement', ctaStyle: 'default', link: '/fr/signup?plan=free',
-        features: [
-          { ok: true, text: '1 analyse' },
-          { ok: true, text: 'Risk Score basique' },
-          { ok: false, text: "Pas d'Attorney Letter" },
-        ],
-      },
-      {
-        id: 'paypercase', name: '\u00C0 la demande', desc: 'Pour un cas ponctuel',
-        monthly: { price: '29 \u20AC', period: 'par dossier' },
-        yearly: { price: '29 \u20AC', period: 'par dossier' },
-        cta: 'Analyser un document', ctaStyle: 'secondary', link: '/fr/upload',
-        features: [
-          { ok: true, text: 'Analyse compl\u00E8te' },
-          { ok: true, text: 'Battle Preview' },
-          { ok: true, text: 'Outcome Predictor' },
-          { ok: true, text: '1 lettre incluse' },
-        ],
-      },
-      {
-        id: 'solo', name: 'Protect Solo', desc: 'Cabinet personnel', featured: true,
-        badge: 'LE PLUS POPULAIRE',
-        monthly: { price: '19,99 \u20AC', period: '/mois' },
-        yearly: { price: '199 \u20AC', period: '/an', save: '\u00C9conomisez 40 \u20AC/an' },
-        cta: 'Essai gratuit 14 jours', ctaStyle: 'primary', subCta: 'Sans carte bancaire',
-        link: '/fr/signup?plan=solo&cycle=monthly',
-        features: [
-          { ok: true, text: '2 analyses/mois' },
-          { ok: true, text: '1 Attorney Letter/an' },
-          { ok: true, text: 'Risk Monitor' },
-          { ok: true, text: 'James illimit\u00E9' },
-          { ok: true, text: 'Document Vault' },
-          { ok: true, text: 'Annulation \u00E0 tout moment' },
-        ],
-      },
-      {
-        id: 'family', name: 'Protect Family', desc: '5 personnes',
-        monthly: { price: '34,99 \u20AC', period: '/mois' },
-        yearly: { price: '349 \u20AC', period: '/an', save: '\u00C9conomisez 70 \u20AC/an' },
-        cta: 'Prot\u00E9ger ma famille', ctaStyle: 'default', link: '/fr/signup?plan=family',
-        features: [
-          { ok: true, text: 'Tout Solo inclus' },
-          { ok: true, text: '5 utilisateurs' },
-          { ok: true, text: '5 analyses/mois' },
-          { ok: true, text: '2 Attorney Letters/an' },
-          { ok: true, text: 'Hotline 24/7 prioritaire' },
-        ],
-      },
-      {
-        id: 'pro', name: 'Protect Pro', desc: 'Ind\u00E9pendants & bailleurs',
-        monthly: { price: '59,99 \u20AC', period: '/mois' },
-        yearly: { price: '599 \u20AC', period: '/an', save: '\u00C9conomisez 120 \u20AC/an' },
-        cta: 'Choisir Pro', ctaStyle: 'default', link: '/fr/signup?plan=pro',
-        features: [
-          { ok: true, text: 'Tout Family inclus' },
-          { ok: true, text: 'Analyses illimit\u00E9es' },
-          { ok: true, text: '4 Attorney Letters/an' },
-          { ok: true, text: 'Consultation vid\u00E9o trimestrielle' },
-          { ok: true, text: 'Support prioritaire 24/7' },
-        ],
-      },
+      { name: 'Protect Solo', tag: 'Pour les particuliers', price: ['29,99 \u20AC','24,92 \u20AC'], per: '/mois', period: ['Ou 299 \u20AC/an','Ou 299 \u20AC/an'], yrSave: ['\u00C9conomise 60 \u20AC par an','\u00C9conomise 60 \u20AC par an'], cta: 'D\u00E9marrer Solo', feats: [
+        { t: 'Analyses de documents illimit\u00E9es', bold: true },
+        { t: 'Lettres DIY illimit\u00E9es', bold: true },
+        { t: 'Chat juridique illimit\u00E9' },
+        { t: 'Coffre-fort documents' },
+        { t: 'Surveillance des risques emails' },
+      ]},
+      { name: 'Protect Family', tag: "Jusqu'\u00E0 3 membres de la famille", badge: '\u2605 LE PLUS POPULAIRE', featured: true, price: ['49,99 \u20AC','41,58 \u20AC'], per: '/mois', period: ['Ou 499 \u20AC/an','Ou 499 \u20AC/an'], yrSave: ['\u00C9conomise 100 \u20AC par an','\u00C9conomise 100 \u20AC par an'], cta: 'D\u00E9marrer Family', feats: [
+        { t: 'Tout Solo, pour 3 personnes', bold: true },
+        { t: '1 session Live Counsel/an', bold: true, c: '#7c3aed', sub: '149 \u20AC de valeur inclus' },
+        { t: 'Coffre-fort documents partag\u00E9' },
+        { t: 'Support prioritaire' },
+      ]},
+      { name: 'Protect Pro', tag: 'Pour les cas \u00E0 fort enjeu', price: ['89,99 \u20AC','74,92 \u20AC'], per: '/mois', period: ['Ou 899 \u20AC/an','Ou 899 \u20AC/an'], yrSave: ['\u00C9conomise 180 \u20AC par an','\u00C9conomise 180 \u20AC par an'], cta: 'D\u00E9marrer Pro', feats: [
+        { t: 'Tout ce qui est dans Solo' },
+        { t: "2 Lettres d'Avocat/an", bold: true, c: '#1a56db', sub: '100 \u20AC de valeur inclus' },
+        { t: '1 Live Counsel/an', bold: true, c: '#7c3aed', sub: '149 \u20AC de valeur inclus' },
+        { t: 'Suivi par avocat d\u00E9di\u00E9' },
+      ]},
     ],
-    attorney: {
-      badge: "L'ATTORNEY LETTER",
-      h2pre: "Une vraie lettre d'avocat.",
-      h2accent1: '4 heures.',
-      h2mid: ' Pour ',
-      h2accent2: '39 \u20AC.',
-      desc: "Une lettre officielle r\u00E9dig\u00E9e par James et personnellement sign\u00E9e par un avocat partenaire inscrit au barreau. Num\u00E9ro de barreau, papier \u00E0 en-t\u00EAte officiel, pleine autorit\u00E9 juridique \u2014 envoy\u00E9e en votre nom en moins de 4 heures.",
-      pillars: [
-        { title: '4 heures', sub: 'Livraison rapide', icon: 'clock' },
-        { title: '10\u00D7 moins cher', sub: 'vs. avocat', icon: 'dollar' },
-        { title: 'Avocat certifi\u00E9', sub: 'Inscrit au barreau', icon: 'award' },
-        { title: 'Ou rembours\u00E9', sub: 'Sans r\u00E9sultat, pas de paiement', icon: 'shield' },
-      ],
-    },
-    intelligence: {
-      badge: "L'INTELLIGENCE",
-      h2: "L'IA juridique la plus puissante",
-      h2br: 'jamais con\u00E7ue pour les particuliers.',
-      desc: 'James lit votre document, croise la jurisprudence en direct sur des millions de cas, et trouve l\u2019angle juridique qui gagne. En 60 secondes.',
-      stats1: [
-        { num: '2,4M', label: 'Jurisprudences index\u00E9es' },
-        { num: '60s', label: 'Analyse compl\u00E8te' },
-        { num: '5', label: 'Passes de raisonnement' },
-        { num: '94%', label: 'Taux de pr\u00E9cision' },
-      ],
-      stats2: [
-        { num: '2', label: 'Juridictions' },
-        { num: '5', label: 'Langues' },
-        { num: '158', label: 'Types de documents' },
-        { num: '24/7', label: 'Toujours actif' },
-      ],
-      capabilities: [
-        { icon: 'clock', title: 'Jurisprudence en direct', sub: 'Mise \u00E0 jour quotidienne' },
-        { icon: 'layers', title: 'Raisonnement 5 passes', sub: 'Analyse profonde' },
-        { icon: 'check', title: 'Outcome Predictor', sub: 'Probabilit\u00E9 de victoire' },
-        { icon: 'shield', title: 'Battle Preview', sub: 'Vos chances de gagner' },
-        { icon: 'lock', title: 'Chiffrement AES-256', sub: 'Conforme RGPD' },
-        { icon: 'sparkles', title: 'Propuls\u00E9 par Claude 4.6', sub: "Le mod\u00E8le le plus avanc\u00E9 d'Anthropic" },
-      ],
-    },
-    oldWorld: {
-      badge: "VS L'ANCIEN MONDE",
-      h2pre: 'Moiti\u00E9 prix.',
-      h2accent: '100\u00D7 plus rapide.',
-      left: {
-        label: 'ASSURANCE TRADITIONNELLE', title: 'DAS, ARAG, Euromex',
-        items: ['30\u2013115 \u20AC/mois', 'D\u00E9lai de 2\u20134 semaines', 'Franchise 150\u2013300 \u20AC', 'D\u00E9lai de carence 3 mois', 'Plafond annuel', 'Sans IA'],
-      },
-      right: {
-        label: 'ARCHER PROTECT', title: 'Formule Solo',
-        items: ['19,99 \u20AC/mois', '60 secondes', 'Sans franchise', 'Couverture imm\u00E9diate', 'Sans plafond', "Propuls\u00E9 par l'IA"],
-      },
-    },
-    guarantee: { badge: 'GARANTIE 30 JOURS', text: 'Essayez Archer Protect sans risque.' },
+    compSupra: 'FONCTIONNALIT\u00C9 PAR FONCTIONNALIT\u00C9', compTitle: ['Compare tous les ', 'plans.'],
+    compCols: ['Gratuit','Solo','Family','Pro'],
+    compPrices: ['0 \u20AC','29,99 \u20AC/mois','49,99 \u20AC/mois','89,99 \u20AC/mois'],
+    compRows: [
+      ['Analyses de documents','1 \u00E0 vie','Illimit\u00E9es','Illimit\u00E9es','Illimit\u00E9es'],
+      ['Lettres DIY (t\u00E9l\u00E9chargement & envoi)','1 par analyse','Illimit\u00E9es','Illimit\u00E9es','Illimit\u00E9es'],
+      ['Chat juridique illimit\u00E9','\u2715','\u2713','\u2713','\u2713'],
+      ["Nombre d'utilisateurs",'1','1',"Jusqu'\u00E0 3",'1'],
+      ['Coffre-fort documents','\u2715','\u2713','\u2713 Partag\u00E9','\u2713'],
+      ['Surveillance des risques emails','\u2715','\u2713','\u2713','\u2713'],
+      ["Acc\u00E8s Lettres d'Avocat",'\u2715','49,99 \u20AC chacune','49,99 \u20AC chacune','2 incluses'],
+      ['Acc\u00E8s Live Counsel','\u2715','149 \u20AC chacune','1 incluse/an','1 incluse/an'],
+      ['Suivi par avocat d\u00E9di\u00E9','\u2715','Avec la Lettre','Avec la Lettre','\u2713 Toujours'],
+      ['Suivi de dossier en temps r\u00E9el','\u2715','Avec la Lettre','Avec la Lettre','\u2713 Toujours'],
+      ['Option recommand\u00E9 postal','\u2715','15 \u20AC chacun','15 \u20AC chacun','15 \u20AC chacun'],
+      ['Support prioritaire','\u2715','\u2715','\u2713','\u2713'],
+    ],
+    compFoot: 'Tous les plans : garantie satisfait-rembours\u00E9 30 jours \u00B7 Annulation \u00E0 tout moment \u00B7 Pas de frais cach\u00E9s',
+    alBadge: "LA LETTRE D'AVOCAT",
+    alTitle: ["Une vraie lettre d'avocat sign\u00E9e.", 'En ', '4 heures.', ' Pour ', '49,99 \u20AC.'],
+    alDesc: "Une lettre officielle r\u00E9dig\u00E9e par Archer et sign\u00E9e personnellement par un avocat partenaire inscrit au barreau. Num\u00E9ro de barreau, en-t\u00EAte officielle, responsabilit\u00E9 l\u00E9gale compl\u00E8te. Inclut un suivi d\u00E9di\u00E9 et un tracking en temps r\u00E9el \u2014 quand l'autre partie r\u00E9pond, Archer r\u00E9-analyse automatiquement.",
+    alSub: 'R\u00E9serv\u00E9 aux abonn\u00E9s Protect \u00B7 Inclus gratuitement dans Pro (2/an)',
+    alPillars: [
+      { t: '4 heures', s: 'Pas 4 semaines' },
+      { t: '10\u00D7 moins cher', s: 'vs. 400-800 \u20AC en moyenne' },
+      { t: 'Certifi\u00E9 barreau', s: 'Vrai avocat signataire' },
+      { t: 'Suivi temps r\u00E9el', s: "L'avocat reste sur ton dossier" },
+    ],
+    vsSupra: "VS L'ANCIEN MONDE", vsTitle: ['Pourquoi payer plus', 'pour moins ?'],
+    vsSub: "Voici la comparaison honn\u00EAte entre aller chez un avocat \u00E0 l'ancienne, payer une assurance juridique, et utiliser Archer Protect.",
+    vsCols: [
+      { label: 'AVOCAT TRADITIONNEL', title: 'Avocat local', price: '300\u2013500 \u20AC', priceSub: 'Par consultation', items: ['300-500 \u20AC premi\u00E8re consultation','400-800 \u20AC par lettre',"2-3 semaines d'attente","Heures factur\u00E9es, pas de prix fixe",'Heures de bureau uniquement'], x: true },
+      { label: 'ASSURANCE JURIDIQUE', title: 'LegalShield, ARAG, DAS', price: '40\u2013115 \u20AC', priceSub: 'Par mois', items: ['40-115 \u20AC/mois de prime',"3 mois d'attente avant couverture",'150-300 \u20AC de franchise par cas','Plafond annuel sur les cas','Pas d\'IA, toujours des avocats lents'], x: true },
+      { label: 'ARCHER PROTECT', title: 'Plan Solo', price: '29,99 \u20AC', priceSub: 'Par mois', items: ["Premi\u00E8re analyse gratuite, sans inscription","49,99 \u20AC fixe pour lettres d'avocat",'Analyse 60 secondes, instantan\u00E9e','Prix fixes, pas de surprises','Disponible 24h/24, 7j/7'], x: false, hl: true },
+    ],
+    faqSupra: 'QUESTIONS SUR LES TARIFS', faqTitle: ['Questions ', 'fr\u00E9quentes.'],
+    faqs: [
+      { q: "Qu'est-ce que j'obtiens avec le plan gratuit ?", a: "Un compte Archer gratuit te donne une analyse compl\u00E8te de document avec probabilit\u00E9 de victoire, angles juridiques, et une lettre DIY t\u00E9l\u00E9chargeable. C'est parfait pour tester Archer avec ton vrai cas. Pour aller plus loin \u2014 analyses illimit\u00E9es, chat juridique, coffre-fort, et surtout les Lettres d'Avocat \u2014 il te faut un plan Protect \u00E0 partir de 29,99 \u20AC/mois." },
+      { q: "Pourquoi je ne peux pas acheter une Lettre d'Avocat sans abonnement ?", a: "Archer n'est pas un service one-shot. Nos avocats travaillent avec des gens qu'ils accompagnent dans la dur\u00E9e \u2014 r\u00E9vision de dossiers, suivi des r\u00E9ponses, relances. Cette relation n'a de sens que pour les abonn\u00E9s. Protect Solo commence \u00E0 29,99 \u20AC/mois et inclut tout ce qu'il faut pour g\u00E9rer la plupart des cas toi-m\u00EAme, plus l'acc\u00E8s aux Lettres d'Avocat \u00E0 la demande." },
+      { q: "Qu'est-ce qui est inclus dans la Lettre d'Avocat \u00E0 49,99 \u20AC ?", a: "Un avocat partenaire r\u00E9vise ton dossier, \u00E9dite le brouillon d'Archer si n\u00E9cessaire, signe la lettre avec son num\u00E9ro de barreau, et reste assign\u00E9 \u00E0 ton dossier. Tu b\u00E9n\u00E9ficies d'un suivi en temps r\u00E9el \u2014 quand l'autre partie r\u00E9pond, ton avocat uploade sa r\u00E9ponse et Archer r\u00E9-analyse automatiquement." },
+      { q: 'Puis-je annuler \u00E0 tout moment ?', a: "Oui. Annule depuis ton dashboard en un clic, pas d'appels t\u00E9l\u00E9phoniques, pas de service de r\u00E9tention. Tu gardes l'acc\u00E8s jusqu'\u00E0 la fin de ta p\u00E9riode de facturation actuelle, et tu peux r\u00E9activer \u00E0 tout moment. Tous les plans incluent une garantie satisfait-rembours\u00E9 de 30 jours." },
+      { q: 'Protect Family c\'est vraiment pour 3 personnes ?', a: "Oui. Jusqu'\u00E0 3 membres de la famille partagent un plan \u2014 chaque personne a son propre compte, ses propres dossiers, et un acc\u00E8s partag\u00E9 au Coffre-fort documents. Id\u00E9al pour un couple avec un enfant, ou un adulte avec des parents \u00E2g\u00E9s ayant besoin d'aide juridique." },
+      { q: 'Y a-t-il une r\u00E9duction annuelle ?', a: "Oui. Payer \u00E0 l'ann\u00E9e fait \u00E9conomiser 17 % \u2014 soit 60 \u20AC sur Solo, 100 \u20AC sur Family, 180 \u20AC sur Pro. M\u00EAmes fonctionnalit\u00E9s, m\u00EAme flexibilit\u00E9, juste moins cher si tu t'engages sur un an." },
+    ],
+    ctaBadge: 'GARANTIE SATISFAIT-REMBOURS\u00C9 30 JOURS',
+    ctaTitle: ['Commence gratuitement.', 'Passe Protect quand tu veux plus.'],
+    ctaDesc: "Cr\u00E9e un compte Archer gratuit et analyse un vrai document. Quand tu es pr\u00EAt pour des dossiers illimit\u00E9s, des lettres d'avocat et une vraie protection juridique \u2014 choisis un plan Protect. Annulation \u00E0 tout moment.",
+    ctaBtn: 'Cr\u00E9er mon compte gratuit',
+    ctaSub: 'Pas de carte bancaire requise \u00B7 Garantie 30 jours sur tous les plans',
   },
 };
 
-/* ─── ICON MAP ─── */
-const iconMap = {
-  clock: Clock,
-  dollar: DollarSign,
-  award: Award,
-  shield: Shield,
-  lock: Lock,
-  sparkles: Sparkles,
-  check: CheckCircle,
-  layers: Layers,
-};
-
-const Icon = ({ name, size = 18, ...props }) => {
-  const Comp = iconMap[name];
-  return Comp ? <Comp size={size} {...props} /> : null;
-};
-
-/* ─── STYLES ─── */
-const s = {
-  page: { minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif', color: '#0a0a0f' },
-  hero: { textAlign: 'center', padding: '80px 20px 40px' },
-  shieldIcon: { width: 80, height: 80, borderRadius: '50%', background: '#eff6ff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 28 },
-  h1: { fontSize: 64, fontWeight: 600, letterSpacing: -2.5, lineHeight: 1, margin: '0 0 18px', color: '#0a0a0f' },
-  tagline: { fontSize: 28, color: '#1a56db', fontStyle: 'italic', margin: 0, fontWeight: 400, letterSpacing: -0.5 },
-  toggleWrap: { display: 'flex', justifyContent: 'center', margin: '24px 0' },
-  toggle: { display: 'inline-flex', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 30, padding: 4, gap: 0 },
-  toggleOpt: (active) => ({ padding: '8px 18px', borderRadius: 24, fontSize: 13, fontWeight: 500, cursor: 'pointer', background: active ? '#0a0a0f' : 'transparent', color: active ? '#fff' : '#555', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s', border: 'none', outline: 'none', userSelect: 'none' }),
-  savePill: { background: '#ecfdf5', color: '#16a34a', fontSize: 10, fontWeight: 500, padding: '2px 8px', borderRadius: 20, letterSpacing: 0.5 },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, maxWidth: 1100, margin: '0 auto', padding: '0 20px' },
-  card: (featured) => ({ background: '#fff', border: featured ? '2px solid #1a56db' : '0.5px solid #e2e0db', borderRadius: 16, padding: '24px 18px', position: 'relative', display: 'flex', flexDirection: 'column', transition: 'transform 0.2s, border-color 0.2s' }),
-  badgePop: { position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#1a56db', color: '#fff', fontSize: 10, fontWeight: 600, letterSpacing: 1, padding: '4px 14px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' },
-  planName: (featured) => ({ fontSize: 14, fontWeight: 500, color: featured ? '#1a56db' : '#0a0a0f', marginBottom: 2 }),
-  planDesc: { fontSize: 12, color: '#9ca3af', marginBottom: 14 },
-  price: { fontSize: 32, fontWeight: 500, lineHeight: 1, color: '#0a0a0f', marginBottom: 2 },
-  period: { fontSize: 12, color: '#9ca3af', marginBottom: 4 },
-  yearlySave: { fontSize: 11, color: '#16a34a', fontWeight: 500, marginBottom: 4, minHeight: 16 },
-  ctaBase: { width: '100%', padding: '10px 0', borderRadius: 28, fontSize: 13, fontWeight: 500, cursor: 'pointer', textAlign: 'center', marginTop: 8, marginBottom: 4, transition: 'transform 0.15s, background 0.2s', border: 'none', outline: 'none', display: 'block', textDecoration: 'none' },
-  ctaDefault: { background: '#fff', color: '#0a0a0f', border: '0.5px solid #e2e0db' },
-  ctaSecondary: { background: '#fff', color: '#1a56db', border: '1px solid #1a56db' },
-  ctaPrimary: { background: '#1a56db', color: '#fff', border: 'none' },
-  noCC: { fontSize: 10, color: '#9ca3af', textAlign: 'center', marginBottom: 8 },
-  featureRow: (ok) => ({ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: ok ? '#0a0a0f' : '#9ca3af', marginBottom: 6 }),
-  checkMark: { color: '#16a34a', fontSize: 13, fontWeight: 700, width: 16, flexShrink: 0 },
-  xMark: { color: '#9ca3af', fontSize: 13, fontWeight: 400, width: 16, flexShrink: 0 },
-  section: { background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 16, padding: '40px 32px', maxWidth: 1060, margin: '0 auto', textAlign: 'center' },
-  sectionBadge: (green) => ({ display: 'inline-flex', alignItems: 'center', gap: 6, background: green ? '#ecfdf5' : '#eff6ff', color: green ? '#16a34a' : '#1a56db', fontSize: 10, fontWeight: 600, letterSpacing: 1, padding: '5px 14px', borderRadius: 20, marginBottom: 18 }),
-  h2: { fontSize: 32, fontWeight: 500, letterSpacing: -1, lineHeight: 1.1, color: '#0a0a0f', margin: '0 0 14px' },
-  accent: { color: '#1a56db' },
-  desc: { fontSize: 14, color: '#555', lineHeight: 1.6, maxWidth: 540, margin: '0 auto 28px' },
-  pillars: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, maxWidth: 700, margin: '0 auto' },
-  pillarIcon: { width: 40, height: 40, borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px', color: '#1a56db' },
-  pillarTitle: { fontSize: 14, fontWeight: 500, color: '#0a0a0f', marginBottom: 2 },
-  pillarSub: { fontSize: 11, color: '#9ca3af' },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, maxWidth: 820, margin: '0 auto 12px' },
-  stat: { background: '#fff', borderRadius: 12, padding: '20px 14px', textAlign: 'center' },
-  statNum: { fontSize: 28, fontWeight: 500, color: '#1a56db', lineHeight: 1, marginBottom: 4 },
-  statLabel: { fontSize: 11, color: '#555' },
-  capGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, maxWidth: 820, margin: '12px auto 0' },
-  capCard: { background: '#fff', borderRadius: 12, padding: '16px 14px', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left' },
-  capIcon: { width: 32, height: 32, borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#1a56db' },
-  capTitle: { fontSize: 13, fontWeight: 500, color: '#0a0a0f' },
-  capSub: { fontSize: 11, color: '#9ca3af' },
-  compare: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, maxWidth: 720, margin: '0 auto' },
-  compareCol: (highlight) => ({ background: highlight ? '#eff6ff' : '#f4f4f1', border: highlight ? '2px solid #1a56db' : '0.5px solid #e2e0db', borderRadius: 16, padding: '24px 20px' }),
-  compareLabel: (blue) => ({ fontSize: 10, fontWeight: 600, letterSpacing: 1, color: blue ? '#1a56db' : '#9ca3af', marginBottom: 6, textTransform: 'uppercase' }),
-  compareTitle: (blue) => ({ fontSize: 18, fontWeight: 500, color: blue ? '#1a56db' : '#0a0a0f', marginBottom: 16 }),
-  compareItem: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 8 },
-  finalCta: { textAlign: 'center' },
-  finalBadge: { display: 'inline-flex', alignItems: 'center', gap: 6, color: '#1a56db', fontSize: 11, fontWeight: 600, letterSpacing: 1, marginBottom: 8 },
-  finalText: { fontSize: 18, fontWeight: 500, color: '#1a56db', margin: 0 },
-};
-
-/* ─── RESPONSIVE CSS ─── */
-const responsiveCSS = `
-.pricing-page .pricing-grid-wrap {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-.pricing-page .pricing-card:hover {
-  transform: translateY(-2px);
-  border-color: #1a56db !important;
-}
-.pricing-page .pricing-cta:hover {
-  transform: scale(1.02);
-}
-@keyframes shield-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-@keyframes shield-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(26,86,219,0.15); }
-  50% { box-shadow: 0 0 24px 8px rgba(26,86,219,0.12); }
-}
-.pricing-page .shield-anim {
-  animation: shield-float 3s ease-in-out infinite, shield-glow 3s ease-in-out infinite;
-}
-@keyframes subtle-pulse {
-  0%, 100% { transform: translateX(-50%) scale(1); }
-  50% { transform: translateX(-50%) scale(1.04); }
-}
-.pricing-page .badge-popular-anim {
-  animation: subtle-pulse 4s ease-in-out infinite;
-}
-@media (max-width: 1200px) {
-  .pricing-page .pricing-grid-wrap {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-@media (max-width: 768px) {
-  .pricing-page .pricing-grid-wrap {
-    grid-template-columns: 1fr;
-    max-width: 400px;
-  }
-  .pricing-page .pillars-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-  .pricing-page .stats-grid-wrap {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-  .pricing-page .cap-grid-wrap {
-    grid-template-columns: 1fr !important;
-  }
-  .pricing-page .compare-grid {
-    grid-template-columns: 1fr !important;
-  }
-  .pricing-page .section-wrap {
-    padding: 28px 18px !important;
-  }
-  .pricing-page .hero-h1 {
-    font-size: 42px !important;
-  }
-  .pricing-page .hero-tagline {
-    font-size: 18px !important;
-  }
-  .pricing-page .section-h2 {
-    font-size: 24px !important;
-  }
-}
+const CSS = `
+.pp{font-family:-apple-system,BlinkMacSystemFont,"Inter",system-ui,sans-serif;color:#0a0a0f;background:#f4f4f1;min-height:100vh;padding-top:72px}
+.pp .si{max-width:1280px;margin:0 auto;padding:0 24px}
+.pp .hero{text-align:center;padding:60px 24px 40px}
+.pp .hero-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#eff6ff;border-radius:30px;font-size:11px;font-weight:700;color:#1a56db;letter-spacing:1px;margin-bottom:20px}
+.pp .hero h1{font-size:64px;font-weight:500;letter-spacing:-2.5px;line-height:1;margin:0 0 16px}.pp .hero .ac{color:#1a56db;font-weight:800}
+.pp .hero .tag{font-size:17px;color:#555;white-space:pre-line;line-height:1.6}
+.pp .fb{display:flex;align-items:center;justify-content:space-between;gap:32px;background:#fff;border:.5px solid #e2e0db;border-radius:16px;padding:32px 36px;margin:0 auto 48px;max-width:1280px}
+.pp .fb-label{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:#16a34a;letter-spacing:1px;margin-bottom:8px}
+.pp .fb-title{font-size:20px;font-weight:800;margin-bottom:6px;letter-spacing:-.5px}
+.pp .fb-desc{font-size:13px;color:#555;line-height:1.5;max-width:520px}
+.pp .fb-cta{padding:14px 28px;border-radius:30px;background:#0a0a0f;color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:8px;transition:all .2s}
+.pp .fb-cta:hover{background:#1a56db}
+.pp .sh{text-align:center;margin-bottom:32px}
+.pp .supra{font-size:11px;font-weight:600;letter-spacing:2px;color:#1a56db;margin-bottom:12px}
+.pp .stitle{font-size:42px;font-weight:500;letter-spacing:-1.5px;line-height:1.05;margin:0 0 12px}.pp .stitle .ac{color:#1a56db;font-weight:800}
+.pp .ssub{font-size:15px;color:#555;max-width:680px;margin:0 auto;line-height:1.6}
+.pp .tog-w{display:flex;justify-content:center;margin-bottom:32px}
+.pp .tog{display:inline-flex;background:#fff;border:.5px solid #e2e0db;border-radius:30px;padding:4px;gap:0}
+.pp .tog-o{padding:9px 20px;border-radius:24px;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:#555;border:none;display:flex;align-items:center;gap:6px;transition:all .2s}
+.pp .tog-o.on{background:#0a0a0f;color:#fff}
+.pp .sav{background:#ecfdf5;color:#16a34a;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px}
+.pp .sg{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1080px;margin:0 auto 64px}
+.pp .sc{background:#fff;border:.5px solid #e2e0db;border-radius:20px;padding:32px 28px;position:relative;display:flex;flex-direction:column}
+.pp .sc.ft{border:2px solid #1a56db;box-shadow:0 8px 32px rgba(26,86,219,.1)}
+.pp .sc-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#1a56db;color:#fff;padding:5px 14px;border-radius:12px;font-size:10px;font-weight:800;white-space:nowrap}
+.pp .sc-name{font-size:14px;font-weight:700;color:#1a56db;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px}
+.pp .sc-tag{font-size:12px;color:#9ca3af;margin-bottom:14px}
+.pp .sc-price{font-size:48px;font-weight:800;letter-spacing:-2px;line-height:1;margin-bottom:4px}
+.pp .sc-per{font-size:16px;color:#9ca3af;font-weight:500}
+.pp .sc-period{font-size:12px;color:#9ca3af;margin-top:4px}
+.pp .sc-yr{font-size:11px;color:#16a34a;font-weight:600;margin-bottom:16px;min-height:16px}
+.pp .sc-cta{width:100%;padding:14px;border-radius:30px;font-size:14px;font-weight:700;cursor:pointer;border:.5px solid #e2e0db;background:#fff;color:#0a0a0f;margin-bottom:20px;transition:all .2s}
+.pp .sc-cta:hover{border-color:#1a56db;color:#1a56db}
+.pp .sc-cta.pr{background:#1a56db;color:#fff;border:none}.pp .sc-cta.pr:hover{background:#1e40af}
+.pp .sf{border-top:.5px solid #e2e0db;padding-top:16px;display:flex;flex-direction:column;gap:10px;flex:1}
+.pp .sf-i{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#0a0a0f}
+.pp .sf-i.bd{font-weight:700}
+.pp .sf-sub{display:block;font-size:10px;font-weight:700;color:#9ca3af;margin-top:1px;letter-spacing:.2px}
+.pp .sw{background:#fff;border:.5px solid #e2e0db;border-radius:20px;padding:48px;margin-bottom:48px;max-width:1280px;margin-left:auto;margin-right:auto}
+.pp table{width:100%;border-collapse:collapse;margin-top:24px}
+.pp th,.pp td{padding:14px 12px;text-align:center;font-size:13px;border-bottom:.5px solid #e2e0db}
+.pp th{font-weight:400;color:#9ca3af;font-size:12px}
+.pp th.ft{background:#eff6ff;border-top:2px solid #1a56db;border-left:1px solid rgba(26,86,219,.2);border-right:1px solid rgba(26,86,219,.2)}
+.pp td.ft{background:#eff6ff;border-left:1px solid rgba(26,86,219,.15);border-right:1px solid rgba(26,86,219,.15)}
+.pp td.fl{text-align:left;font-weight:600;color:#0a0a0f}
+.pp .cg{color:#15803d;font-weight:700}
+.pp .cx{color:#d1d5db}
+.pp .ca{color:#b45309;font-weight:600;font-size:12px}
+.pp .al-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#eff6ff;border-radius:30px;font-size:11px;font-weight:700;color:#1a56db;letter-spacing:1px;margin-bottom:20px}
+.pp .al-title{font-size:42px;font-weight:500;letter-spacing:-1.5px;line-height:1.05;margin:0 0 18px}.pp .al-title .ac{color:#1a56db;font-weight:800}
+.pp .al-desc{font-size:15px;color:#555;max-width:720px;margin:0 auto 16px;line-height:1.6}
+.pp .al-pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:780px;margin:32px auto 0}
+.pp .al-p{text-align:center}
+.pp .al-pi{width:52px;height:52px;border-radius:50%;background:#eff6ff;display:inline-flex;align-items:center;justify-content:center;color:#1a56db;margin-bottom:10px}
+.pp .al-pt{font-size:14px;font-weight:800;margin-bottom:2px}
+.pp .al-ps{font-size:11px;color:#9ca3af}
+.pp .vs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px}
+.pp .vs-col{background:#f4f4f1;border:.5px solid #e2e0db;border-radius:16px;padding:28px 22px;text-align:left}
+.pp .vs-col.hl{background:#eff6ff;border:2px solid #1a56db}
+.pp .vs-label{font-size:10px;font-weight:700;letter-spacing:1px;color:#9ca3af;margin-bottom:6px}
+.pp .vs-col.hl .vs-label{color:#1a56db}
+.pp .vs-ct{font-size:16px;font-weight:800;margin-bottom:4px}
+.pp .vs-cp{font-size:28px;font-weight:800;letter-spacing:-1px;margin-bottom:2px}
+.pp .vs-cs{font-size:11px;color:#9ca3af;margin-bottom:16px}
+.pp .vs-li{display:flex;align-items:flex-start;gap:8px;font-size:13px;margin-bottom:8px}
+.pp .vs-x{color:#b91c1c;font-weight:800;flex-shrink:0}
+.pp .vs-c{color:#15803d;font-weight:800;flex-shrink:0}
+.pp .faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:32px}
+.pp .faq-i{background:#fff;border:.5px solid #e2e0db;border-radius:16px;padding:24px}
+.pp .faq-q{display:flex;align-items:flex-start;gap:10px;font-size:15px;font-weight:800;margin-bottom:10px}
+.pp .faq-qm{width:22px;height:22px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#1a56db;flex-shrink:0}
+.pp .faq-a{font-size:13px;color:#555;line-height:1.6;padding-left:32px}
+.pp .final{background:#1a56db;border-radius:20px;padding:64px 40px;text-align:center;max-width:1280px;margin:0 auto 40px}
+.pp .final .badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);padding:9px 18px;border-radius:30px;color:#fff;font-size:11px;font-weight:700;letter-spacing:.5px;margin-bottom:24px}
+.pp .final h2{font-size:48px;font-weight:500;letter-spacing:-2px;line-height:1;color:#fff;margin:0 0 16px}.pp .final h2 .ac{font-weight:800;color:#fff}
+.pp .final p{font-size:17px;color:rgba(255,255,255,.85);max-width:600px;margin:0 auto 32px;line-height:1.5}
+.pp .final-btn{display:inline-flex;align-items:center;gap:10px;padding:18px 40px;border-radius:40px;background:#fff;color:#1a56db;font-size:16px;font-weight:700;border:none;cursor:pointer;transition:transform .2s}
+.pp .final-btn:hover{transform:scale(1.03)}
+.pp .final .fp{font-size:12px;color:rgba(255,255,255,.65);margin-top:14px}
+@media(max-width:1100px){.pp .sg{grid-template-columns:1fr}.pp .vs-grid{grid-template-columns:1fr}.pp .al-pillars{grid-template-columns:repeat(2,1fr)}.pp .faq-grid{grid-template-columns:1fr}.pp .fb{flex-direction:column;text-align:center;gap:20px}}
+@media(max-width:640px){.pp .hero h1{font-size:40px}.pp .stitle,.pp .al-title{font-size:30px}.pp .final h2{font-size:36px}.pp .sw{padding:28px 18px}.pp .fb{padding:24px 20px}}
+.pp footer{padding:32px 24px;background:#111;text-align:center}
 `;
 
-/* ─── COMPONENT ─── */
 export default function Pricing() {
-  const { lang: urlLang } = useParams();
-  const language = urlLang === 'fr' ? 'fr' : 'en';
-  const t = content[language];
-  const [billing, setBilling] = useState('monthly');
+  const { lang } = useParams();
+  const isFr = lang === 'fr';
+  const t = isFr ? D.fr : D.en;
   const navigate = useNavigate();
+  const [billing, setBilling] = useState(0);
+
+  const cellClass = (val) => {
+    if (val === '\u2715') return 'cx';
+    if (val.startsWith('\u2713') || val === 'Unlimited' || val === 'Illimit\u00E9es' || val.includes('included') || val.includes('inclus') || val.includes('Always') || val.includes('Toujours')) return 'cg';
+    if (val.includes('$') || val.includes('\u20AC')) return 'ca';
+    return '';
+  };
 
   return (
-    <div className="pricing-page" style={{ minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif', color: '#0a0a0f' }}>
+    <div className="pp">
+      <style>{CSS}</style>
       <PublicNavbar />
-      <style>{responsiveCSS}</style>
 
-      {/* ── BAND 1: HERO + TOGGLE — white ── */}
-      <div style={{ background: '#fff', paddingTop: 72 }}>
-      {/* ── SECTION 1: HERO ── */}
-      <div style={s.hero}>
-        <div className="shield-anim" style={s.shieldIcon}><Shield size={38} color="#16a34a" /></div>
-        <h1 className="hero-h1" style={s.h1}>{t.hero.title}</h1>
-        <p className="hero-tagline" style={s.tagline}>{t.hero.subtitle}</p>
+      {/* HERO */}
+      <div className="hero"><div className="hero-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>{t.heroBadge}</span></div><h1>{t.heroTitle[0]}<br />{t.heroTitle[1]}<span className="ac">{t.heroTitle[2]}</span></h1><p className="tag">{t.heroTag}</p></div>
+
+      {/* FREE BANNER */}
+      <div className="si"><div className="fb"><div className="fb-text"><div className="fb-label"><Chk />{t.freeLabel}</div><div className="fb-title">{t.freeTitle}</div><div className="fb-desc">{t.freeDesc}</div></div><button className="fb-cta" onClick={() => navigate('/signup')}>{t.freeCta}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></div></div>
+
+      {/* SUBSCRIBE */}
+      <div className="si">
+        <div className="sh"><div className="supra">{t.subSupra}</div><h2 className="stitle">{t.subTitle[0]}<br /><span className="ac">{t.subTitle[1]}</span></h2><p className="ssub">{t.subSub}</p></div>
+        <div className="tog-w"><div className="tog"><button className={`tog-o${billing===0?' on':''}`} onClick={()=>setBilling(0)}>{t.monthly}</button><button className={`tog-o${billing===1?' on':''}`} onClick={()=>setBilling(1)}>{t.yearly} <span className="sav">{t.save17}</span></button></div></div>
+        <div className="sg">
+          {t.plans.map((p,i) => <div key={i} className={`sc${p.featured?' ft':''}`}>{p.badge&&<div className="sc-badge">{p.badge}</div>}<div className="sc-name">{p.name}</div><div className="sc-tag">{p.tag}</div><div className="sc-price">{p.price[billing]}<span className="sc-per">{p.per}</span></div><div className="sc-period">{p.period[billing]}</div><div className="sc-yr">{p.yrSave[billing]}</div><button className={`sc-cta${p.featured?' pr':''}`} onClick={()=>navigate('/signup')}>{p.cta}</button><div className="sf">{p.feats.map((f,fi) => <div key={fi} className={`sf-i${f.bold?' bd':''}`}><Chk c={f.c||'#16a34a'}/><span>{f.t}{f.sub&&<span className="sf-sub">{f.sub}</span>}</span></div>)}</div></div>)}
+        </div>
       </div>
 
-      {/* ── SECTION 2: TOGGLE ── */}
-      <div style={{ ...s.toggleWrap, paddingBottom: 48 }}>
-        <div style={s.toggle}>
-          <div
-            data-testid="toggle-monthly"
-            style={s.toggleOpt(billing === 'monthly')}
-            onClick={() => setBilling('monthly')}
-          >
-            {t.toggle.monthly}
-          </div>
-          <div
-            data-testid="toggle-yearly"
-            style={s.toggleOpt(billing === 'yearly')}
-            onClick={() => setBilling('yearly')}
-          >
-            {t.toggle.yearly}
-            <span style={s.savePill}>{t.toggle.save}</span>
-          </div>
-        </div>
-      </div>
-      </div>{/* close white band */}
+      {/* COMPARE TABLE */}
+      <div className="si"><div className="sw"><div className="sh" style={{marginBottom:8}}><div className="supra">{t.compSupra}</div><h2 className="stitle">{t.compTitle[0]}<span className="ac">{t.compTitle[1]}</span></h2></div>
+        <table><thead><tr><th style={{width:'35%',textAlign:'left'}}> </th>{t.compCols.map((c,i)=><th key={i} className={i===2?'ft':''}>{c}<br /><span style={{fontSize:11,color:i===2?'#1a56db':'#9ca3af',fontWeight:700}}>{t.compPrices[i]}</span></th>)}</tr></thead><tbody>{t.compRows.map((r,ri)=><tr key={ri}><td className="fl">{r[0]}</td>{[1,2,3,4].map(ci=><td key={ci} className={`${ci===3?'ft':''} ${cellClass(r[ci])}`}>{r[ci].includes('included')||r[ci].includes('inclus')?<strong>{r[ci]}</strong>:r[ci]}</td>)}</tr>)}</tbody></table>
+        <div style={{textAlign:'center',fontSize:12,color:'#9ca3af',marginTop:24,paddingTop:24,borderTop:'.5px solid #e2e0db'}}>{t.compFoot}</div>
+      </div></div>
 
-      {/* ── BAND 2: CARDS — gray ── */}
-      <div style={{ background: '#f4f4f1', borderTop: '1px solid #ebebeb', padding: '48px 0' }}>
-      <div className="pricing-grid-wrap">
-        {t.plans.map((plan) => {
-          const p = billing === 'yearly' ? plan.yearly : plan.monthly;
-          const ctaStyleObj = plan.ctaStyle === 'primary' ? s.ctaPrimary : plan.ctaStyle === 'secondary' ? s.ctaSecondary : s.ctaDefault;
-          return (
-            <div
-              key={plan.id}
-              className="pricing-card"
-              data-testid={`pricing-card-${plan.id}`}
-              style={s.card(plan.featured)}
-            >
-              {plan.badge && (
-                <div className="badge-popular-anim" style={s.badgePop}>
-                  <Shield size={11} /> {plan.badge}
-                </div>
-              )}
-              <div style={s.planName(plan.featured)}>{plan.name}</div>
-              <div style={s.planDesc}>{plan.desc}</div>
-              <div style={s.price}>{p.price}</div>
-              <div style={s.period}>{p.period}</div>
-              <div style={s.yearlySave}>{billing === 'yearly' && p.save ? p.save : '\u00A0'}</div>
-              <button
-                className="pricing-cta"
-                data-testid={`cta-${plan.id}`}
-                style={{ ...s.ctaBase, ...ctaStyleObj }}
-                onClick={() => navigate(plan.link)}
-              >
-                {plan.cta}
-              </button>
-              {plan.subCta && <div style={s.noCC}>{plan.subCta}</div>}
-              <div style={{ marginTop: 12, flex: 1 }}>
-                {plan.features.map((f, fi) => (
-                  <div key={fi} style={s.featureRow(f.ok)}>
-                    <span style={f.ok ? s.checkMark : s.xMark}>{f.ok ? '\u2713' : '\u00D7'}</span>
-                    {f.text}
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      </div>{/* close gray cards band */}
+      {/* ATTORNEY LETTER */}
+      <div className="si"><div className="sw" style={{textAlign:'center'}}><div className="al-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>{t.alBadge}</div><h2 className="al-title">{t.alTitle[0]}<br />{t.alTitle[1]}<span className="ac">{t.alTitle[2]}</span>{t.alTitle[3]}<span className="ac">{t.alTitle[4]}</span></h2><p className="al-desc">{t.alDesc}</p><div style={{display:'inline-flex',alignItems:'center',gap:8,padding:'10px 18px',background:'#eff6ff',borderRadius:30,marginTop:20}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1a56db" strokeWidth="2.5"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span style={{fontSize:12,fontWeight:700,color:'#1a56db'}}>{t.alSub}</span></div>
+        <div className="al-pillars">{t.alPillars.map((p,i)=><div key={i} className="al-p"><div className="al-pi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div className="al-pt">{p.t}</div><div className="al-ps">{p.s}</div></div>)}</div>
+      </div></div>
 
-      {/* ── BAND 3: ATTORNEY LETTER — white ── */}
-      <div style={{ background: '#fff', borderTop: '1px solid #ebebeb', padding: '48px 20px' }}>
-      {/* ── SECTION 4: ATTORNEY LETTER ── */}
-      <div className="section-wrap" style={{ ...s.section, border: 'none', background: 'transparent' }} data-testid="section-attorney-letter">
-        <div style={s.sectionBadge(false)}>
-          <Shield size={11} /> {t.attorney.badge}
-        </div>
-        <h2 className="section-h2" style={s.h2}>
-          {t.attorney.h2pre}<br />
-          {language === 'en' ? 'In ' : 'En '}<span style={s.accent}>{t.attorney.h2accent1}</span>
-          {t.attorney.h2mid}<span style={s.accent}>{t.attorney.h2accent2}</span>
-        </h2>
-        <p style={s.desc}>{t.attorney.desc}</p>
-        <div className="pillars-grid" style={s.pillars}>
-          {t.attorney.pillars.map((p, i) => (
-            <div key={i} style={{ textAlign: 'center' }}>
-              <div style={s.pillarIcon}><Icon name={p.icon} size={22} /></div>
-              <div style={s.pillarTitle}>{p.title}</div>
-              <div style={s.pillarSub}>{p.sub}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-      </div>{/* close attorney band */}
+      {/* VS OLD WORLD */}
+      <div className="si"><div className="sw"><div className="sh"><div className="supra" style={{color:'#16a34a'}}>{t.vsSupra}</div><h2 className="stitle">{t.vsTitle[0]}<br /><span className="ac">{t.vsTitle[1]}</span></h2><p className="ssub">{t.vsSub}</p></div>
+        <div className="vs-grid">{t.vsCols.map((col,i)=><div key={i} className={`vs-col${col.hl?' hl':''}`}><div className="vs-label">{col.label}</div><div className="vs-ct">{col.title}</div><div className="vs-cp">{col.price}</div><div className="vs-cs">{col.priceSub}</div>{col.items.map((item,ii)=><div key={ii} className="vs-li">{col.x?<span className="vs-x">{'\u2715'}</span>:<span className="vs-c">{'\u2713'}</span>}{item}</div>)}</div>)}</div>
+      </div></div>
 
-      {/* ── BAND 4: INTELLIGENCE — gray ── */}
-      <div style={{ background: '#f4f4f1', borderTop: '1px solid #ebebeb', padding: '48px 20px' }}>
-      {/* ── SECTION 5: THE INTELLIGENCE ── */}
-      <div className="section-wrap" style={{ ...s.section, textAlign: 'center', border: 'none', background: 'transparent' }} data-testid="section-intelligence">
-        <div style={s.sectionBadge(false)}>{t.intelligence.badge}</div>
-        <h2 className="section-h2" style={s.h2}>
-          {t.intelligence.h2}<br />{t.intelligence.h2br}
-        </h2>
-        <p style={s.desc}>{t.intelligence.desc}</p>
-        <div className="stats-grid-wrap" style={s.statsGrid}>
-          {t.intelligence.stats1.map((st, i) => (
-            <div key={i} style={s.stat}>
-              <div style={s.statNum}>{st.num}</div>
-              <div style={s.statLabel}>{st.label}</div>
-            </div>
-          ))}
-        </div>
-        <div className="stats-grid-wrap" style={s.statsGrid}>
-          {t.intelligence.stats2.map((st, i) => (
-            <div key={i} style={s.stat}>
-              <div style={s.statNum}>{st.num}</div>
-              <div style={s.statLabel}>{st.label}</div>
-            </div>
-          ))}
-        </div>
-        <div className="cap-grid-wrap" style={s.capGrid}>
-          {t.intelligence.capabilities.map((c, i) => (
-            <div key={i} style={s.capCard}>
-              <div style={s.capIcon}><Icon name={c.icon} size={18} /></div>
-              <div>
-                <div style={s.capTitle}>{c.title}</div>
-                <div style={s.capSub}>{c.sub}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      </div>{/* close intelligence band */}
+      {/* FAQ */}
+      <div className="si"><div className="sw"><div className="sh"><div className="supra">{t.faqSupra}</div><h2 className="stitle">{t.faqTitle[0]}<span className="ac">{t.faqTitle[1]}</span></h2></div>
+        <div className="faq-grid">{t.faqs.map((f,i)=><div key={i} className="faq-i"><div className="faq-q"><span className="faq-qm">?</span>{f.q}</div><div className="faq-a">{f.a}</div></div>)}</div>
+      </div></div>
 
-      {/* ── BAND 5: VS OLD WORLD — white ── */}
-      <div style={{ background: '#fff', borderTop: '1px solid #ebebeb', padding: '48px 20px' }}>
-      {/* ── SECTION 6: VS THE OLD WORLD ── */}
-      <div className="section-wrap" style={{ ...s.section, border: 'none', background: 'transparent' }} data-testid="section-old-world">
-        <div style={{ marginBottom: 32 }}>
-          <div style={s.sectionBadge(true)}>{t.oldWorld.badge}</div>
-          <h2 className="section-h2" style={s.h2}>
-            {t.oldWorld.h2pre}<br /><span style={s.accent}>{t.oldWorld.h2accent}</span>
-          </h2>
-        </div>
-        <div className="compare-grid" style={s.compare}>
-          <div style={s.compareCol(false)}>
-            <div style={s.compareLabel(false)}>{t.oldWorld.left.label}</div>
-            <div style={s.compareTitle(false)}>{t.oldWorld.left.title}</div>
-            {t.oldWorld.left.items.map((item, i) => (
-              <div key={i} style={s.compareItem}>
-                <span style={s.xMark}>{'\u00D7'}</span> {item}
-              </div>
-            ))}
-          </div>
-          <div style={s.compareCol(true)}>
-            <div style={s.compareLabel(true)}>{t.oldWorld.right.label}</div>
-            <div style={s.compareTitle(true)}>{t.oldWorld.right.title}</div>
-            {t.oldWorld.right.items.map((item, i) => (
-              <div key={i} style={s.compareItem}>
-                <span style={s.checkMark}>{'\u2713'}</span> {item}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      </div>{/* close old world band */}
+      {/* FINAL CTA */}
+      <div className="final"><div className="badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>{t.ctaBadge}</div><h2>{t.ctaTitle[0]}<br /><span className="ac">{t.ctaTitle[1]}</span></h2><p>{t.ctaDesc}</p><button className="final-btn" onClick={()=>navigate('/signup')}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>{t.ctaBtn}</button><div className="fp">{t.ctaSub}</div></div>
 
-      {/* ── BAND 6: GUARANTEE — blue full width ── */}
-      <div style={{ background: '#eff6ff', borderTop: '1px solid #d6e4f0', padding: '48px 20px' }}>
-      {/* ── SECTION 7: 30-DAY GUARANTEE ── */}
-      <div style={s.finalCta} data-testid="section-guarantee">
-        <div style={s.finalBadge}><Shield size={13} /> {t.guarantee.badge}</div>
-        <p style={s.finalText}>{t.guarantee.text}</p>
-      </div>
-      </div>
+      <footer><div style={{marginBottom:16}}><img src="/logos/archer-logo-mono-white.svg" alt="Archer" style={{height:36}}/></div><p style={{fontSize:11,color:'#666'}}>&copy; 2026 Archer Inc.</p></footer>
     </div>
   );
 }
