@@ -416,10 +416,9 @@ const Dashboard = () => {
         }}>
           {/* Logo */}
           <div style={{ padding: '18px 14px 14px', borderBottom: '0.5px solid #f0ede8' }}>
-            <div onClick={() => navigate('/')} style={{ fontSize: 19, fontWeight: 500, color: '#1a1a2e', letterSpacing: '0.3px', cursor: 'pointer' }} data-testid="logo-link">
-              Jas<span style={{ color: '#1a56db' }}>per</span>
+            <div onClick={() => navigate('/')} style={{ cursor: 'pointer' }} data-testid="logo-link">
+              <img src="/logos/archer-logo-full-color.svg" alt="Archer" style={{ height: 42 }} />
             </div>
-            <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 1 }}>{t.tagline}</div>
           </div>
 
           {/* James Card */}
