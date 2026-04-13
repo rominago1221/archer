@@ -241,7 +241,7 @@ const WinWallSection = ({ jurisdiction = 'US', language = 'en' }) => {
     h1: { fontSize: 52, fontWeight: 600, letterSpacing: -2, lineHeight: 1.05, color: '#0a0a0f', margin: '18px 0 14px' },
     accent: { color: '#1a56db' },
     desc: { fontSize: 15, color: '#555', lineHeight: 1.6, maxWidth: 560, margin: '0 auto' },
-    iconCircle: { width: 56, height: 56, borderRadius: '50%', background: '#eff6ff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+    iconCircle: { width: 56, height: 56, borderRadius: '50%', background: '#fef9ec', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
     slide: { background: '#fff', borderRadius: 16, padding: '32px 28px', border: '0.5px solid #e2e0db', maxWidth: 760, margin: '0 auto' },
     slideBadge: { display: 'inline-flex', alignItems: 'center', gap: 5, background: '#dcfce7', color: '#15803d', fontSize: 10, fontWeight: 600, letterSpacing: 0.8, padding: '4px 12px', borderRadius: 12, marginBottom: 14 },
     slideH3: { fontSize: 22, fontWeight: 500, color: '#0a0a0f', lineHeight: 1.35, margin: '0 0 12px', letterSpacing: -0.3 },
@@ -281,8 +281,8 @@ const WinWallSection = ({ jurisdiction = 'US', language = 'en' }) => {
       {/* 1. HERO (white) */}
       <div className="section-wrap white">
         <div className="section-inner" style={{ textAlign: 'center' }}>
-          <div style={s.iconCircle}><Trophy size={28} color="#1a56db" /></div>
-          <div style={s.badge}>{t.badge}</div>
+          <div style={s.iconCircle}><Trophy size={28} color="#d4a017" /></div>
+          <div style={{ marginBottom: 16 }}><div style={s.badge}>{t.badge}</div></div>
           <h2 className="hero-h1" style={s.h1}>{t.h1[0]}<br /><span style={s.accent}>{t.h1[1]}</span></h2>
           <p style={s.desc}>{t.desc}</p>
         </div>
