@@ -275,7 +275,7 @@ const Icon = ({ name, size = 18, ...props }) => {
 
 /* ─── STYLES ─── */
 const s = {
-  page: { background: '#f4f4f1', minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif', color: '#0a0a0f', paddingBottom: 48 },
+  page: { minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif', color: '#0a0a0f' },
   hero: { textAlign: 'center', padding: '80px 20px 40px' },
   shieldIcon: { width: 80, height: 80, borderRadius: '50%', background: '#eff6ff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 28 },
   h1: { fontSize: 64, fontWeight: 600, letterSpacing: -2.5, lineHeight: 1, margin: '0 0 18px', color: '#0a0a0f' },
@@ -409,9 +409,11 @@ export default function Pricing() {
   const navigate = useNavigate();
 
   return (
-    <div className="pricing-page" style={s.page}>
+    <div className="pricing-page" style={{ minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif', color: '#0a0a0f' }}>
       <style>{responsiveCSS}</style>
 
+      {/* ── BAND 1: HERO + TOGGLE — white ── */}
+      <div style={{ background: '#fff' }}>
       {/* ── SECTION 1: HERO ── */}
       <div style={s.hero}>
         <div className="shield-anim" style={s.shieldIcon}><Shield size={38} color="#1a56db" /></div>
@@ -420,7 +422,7 @@ export default function Pricing() {
       </div>
 
       {/* ── SECTION 2: TOGGLE ── */}
-      <div style={s.toggleWrap}>
+      <div style={{ ...s.toggleWrap, paddingBottom: 48 }}>
         <div style={s.toggle}>
           <div
             data-testid="toggle-monthly"
@@ -439,9 +441,10 @@ export default function Pricing() {
           </div>
         </div>
       </div>
+      </div>{/* close white band */}
 
-      {/* ── SECTION 3: PRICING CARDS ── */}
-      <div style={{ paddingBottom: 48 }}>
+      {/* ── BAND 2: CARDS — gray ── */}
+      <div style={{ background: '#f4f4f1', borderTop: '1px solid #ebebeb', padding: '48px 0' }}>
       <div className="pricing-grid-wrap">
         {t.plans.map((plan) => {
           const p = billing === 'yearly' ? plan.yearly : plan.monthly;
@@ -484,10 +487,10 @@ export default function Pricing() {
           );
         })}
       </div>
-      </div>
+      </div>{/* close gray cards band */}
 
-      {/* ── BAND: ATTORNEY LETTER — white bg ── */}
-      <div style={{ background: '#fff', borderTop: '1px solid #ebebeb', borderBottom: '1px solid #ebebeb', padding: '48px 20px' }}>
+      {/* ── BAND 3: ATTORNEY LETTER — white ── */}
+      <div style={{ background: '#fff', borderTop: '1px solid #ebebeb', padding: '48px 20px' }}>
       {/* ── SECTION 4: ATTORNEY LETTER ── */}
       <div className="section-wrap" style={{ ...s.section, border: 'none', background: 'transparent' }} data-testid="section-attorney-letter">
         <div style={s.sectionBadge(false)}>
@@ -511,8 +514,8 @@ export default function Pricing() {
       </div>
       </div>{/* close attorney band */}
 
-      {/* ── BAND: INTELLIGENCE — gray bg ── */}
-      <div style={{ background: '#f8f8f8', borderTop: '1px solid #ebebeb', borderBottom: '1px solid #ebebeb', padding: '48px 20px' }}>
+      {/* ── BAND 4: INTELLIGENCE — gray ── */}
+      <div style={{ background: '#f4f4f1', borderTop: '1px solid #ebebeb', padding: '48px 20px' }}>
       {/* ── SECTION 5: THE INTELLIGENCE ── */}
       <div className="section-wrap" style={{ ...s.section, textAlign: 'center', border: 'none', background: 'transparent' }} data-testid="section-intelligence">
         <div style={s.sectionBadge(false)}>{t.intelligence.badge}</div>
@@ -550,8 +553,8 @@ export default function Pricing() {
       </div>
       </div>{/* close intelligence band */}
 
-      {/* ── BAND: VS OLD WORLD — white bg ── */}
-      <div style={{ background: '#fff', borderTop: '1px solid #ebebeb', borderBottom: '1px solid #ebebeb', padding: '48px 20px' }}>
+      {/* ── BAND 5: VS OLD WORLD — white ── */}
+      <div style={{ background: '#fff', borderTop: '1px solid #ebebeb', padding: '48px 20px' }}>
       {/* ── SECTION 6: VS THE OLD WORLD ── */}
       <div className="section-wrap" style={{ ...s.section, border: 'none', background: 'transparent' }} data-testid="section-old-world">
         <div style={{ marginBottom: 32 }}>
@@ -583,8 +586,8 @@ export default function Pricing() {
       </div>
       </div>{/* close old world band */}
 
-      {/* ── BAND: GUARANTEE — warm bg ── */}
-      <div style={{ padding: '48px 20px' }}>
+      {/* ── BAND 6: GUARANTEE — gray ── */}
+      <div style={{ background: '#f4f4f1', borderTop: '1px solid #ebebeb', padding: '48px 20px' }}>
       {/* ── SECTION 7: 30-DAY GUARANTEE ── */}
       <div style={s.finalCta} data-testid="section-guarantee">
         <div style={s.finalBadge}><Shield size={13} /> {t.guarantee.badge}</div>
