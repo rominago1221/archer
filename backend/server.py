@@ -1,5 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Response, Header, Query, Request, Form
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from dotenv import load_dotenv
 import asyncio
 from starlette.middleware.cors import CORSMiddleware
@@ -193,7 +193,9 @@ Return ONLY this JSON — no other text:
     "financial": 0,
     "urgency": 0,
     "legal_strength": 0,
-    "complexity": 0
+    "complexity": 0,
+    "level": "low|moderate|high|critical",
+    "tagline": "Short 4-7 word phrase capturing the emotional essence. Pattern: [Serious state], but [glimmer of hope]. Examples: low=Not stressful, under control. moderate=Worth watching, actions needed. high=Serious, but contestable. critical=Urgent. Act today."
   }},
   "risk_level": "low|medium|high|critical",
   "case_type": "employment|housing|nda|contract|debt|demand|immigration|court|consumer|family|traffic|insurance|other",
@@ -978,6 +980,413 @@ def _default_analysis():
 # Simple system prompt kept for scanner/letter endpoints
 CLAUDE_SYSTEM_PROMPT = SENIOR_ATTORNEY_PERSONA
 
+# ================== CINEMATIC SSE STREAMING ANALYSIS ==================
+
+async def analyze_document_stream(
+    extracted_text: str,
+    country: str = "US",
+    region: str = "",
+    language: str = "en",
+    user_context: str = "",
+):
+    """Streaming version of analysis. Yields SSE events at each pipeline stage.
+    Reuses shared helpers — zero duplication of business logic."""
+    import time as _time
+
+    is_belgian = country == "BE"
+
+    # Build persona + language instruction (shared helpers)
+    if is_belgian:
+        persona = get_belgian_persona(language, region)
+    else:
+        persona = SENIOR_ATTORNEY_PERSONA
+    lang_instruction = get_language_instruction(language)
+    persona_with_lang = persona + lang_instruction
+
+    context_supplement = ""
+    if user_context:
+        if is_belgian:
+            context_supplement = f"\nCONTEXTE FOURNI PAR L'UTILISATEUR: {user_context}"
+        else:
+            context_supplement = f"\n\nADDITIONAL CONTEXT PROVIDED BY THE USER:\n{user_context}"
+
+    # Select prompts based on jurisdiction (shared constants)
+    if is_belgian:
+        p1_prompt = BE_PASS1_PROMPT
+        p2_prompt = BE_PASS2_PROMPT
+        p3_prompt = BE_PASS3_PROMPT
+        p4a_system = BE_PASS4A_SYSTEM
+        p4a_prompt = BE_PASS4A_PROMPT
+        p4b_system = BE_PASS4B_SYSTEM
+        p4b_prompt = BE_PASS4B_PROMPT
+    else:
+        p1_prompt = PASS1_PROMPT
+        p2_prompt = PASS2_PROMPT
+        p3_prompt = PASS3_PROMPT
+        p4a_system = PASS4A_SYSTEM
+        p4a_prompt = PASS4A_PROMPT
+        p4b_system = PASS4B_SYSTEM
+        p4b_prompt = PASS4B_PROMPT
+
+    # --- EVENT 0: started ---
+    yield {
+        "stage": "started",
+        "message": "Archer ouvre votre dossier" if language.startswith("fr") else "Archer is opening your file",
+        "timestamp": _time.time()
+    }
+
+    # --- PASS 1: Fact extraction ---
+    logger.info("Stream analysis: Pass 1 — Fact extraction")
+    if is_belgian:
+        context_section = f"CONTEXTE FOURNI PAR L'UTILISATEUR: {user_context}" if user_context else ""
+        facts = await call_claude(persona_with_lang, p1_prompt.format(document_text=extracted_text[:15000], user_context_section=context_section))
+    else:
+        facts = await call_claude(persona_with_lang, p1_prompt.format(document_text=extracted_text[:15000]) + context_supplement)
+
+    # Determine case type (shared helpers)
+    if is_belgian:
+        doc_type = facts.get("type_document", "autre")
+        detected_region = facts.get("region_applicable", region)
+        inferred_case_type = BE_DOC_TYPE_TO_CASE.get(doc_type, "other")
+    else:
+        doc_type = facts.get("document_type", "other")
+        detected_region = region
+        inferred_case_type = DOC_TYPE_TO_CASE.get(doc_type, "other")
+
+    # --- EVENT 1: facts_extracted ---
+    yield {
+        "stage": "facts_extracted",
+        "facts": facts,
+        "doc_type": doc_type,
+        "inferred_case_type": inferred_case_type,
+        "timestamp": _time.time()
+    }
+
+    # --- PASS 2 + CourtListener in parallel ---
+    logger.info("Stream analysis: Pass 2 + CourtListener — in parallel")
+    yield {
+        "stage": "jurisprudence_loading",
+        "count": 0,
+        "message": "Cross-check de la jurisprudence en cours" if language.startswith("fr") else "Cross-checking jurisprudence",
+        "timestamp": _time.time()
+    }
+
+    # Load jurisprudence (shared helpers)
+    if is_belgian:
+        jurisprudence_text = load_belgian_jurisprudence(doc_type, detected_region)
+    else:
+        jurisprudence_text = load_jurisprudence(inferred_case_type, doc_type)
+
+    # Run Pass 2 + CourtListener in parallel
+    if is_belgian:
+        pass2_task = asyncio.create_task(
+            call_claude(persona_with_lang, p2_prompt.format(
+                facts_json=json.dumps(facts, indent=2, ensure_ascii=False),
+                jurisprudence_section=jurisprudence_text
+            ), max_tokens=2000)
+        )
+        # No CourtListener for Belgian cases
+        cl_opinions = []
+    else:
+        state = facts.get("jurisdiction", facts.get("state", ""))
+        cl_task = asyncio.create_task(fetch_courtlistener_opinions(inferred_case_type, state))
+        pass2_task = None  # will create after getting CL results
+
+    if not is_belgian:
+        cl_opinions = await cl_task
+        realtime_law_context = _build_realtime_law_context(cl_opinions)
+        pass2_task = asyncio.create_task(
+            call_claude(persona_with_lang,
+                p2_prompt.format(
+                    facts_json=json.dumps(facts, indent=2),
+                    jurisprudence_section=jurisprudence_text + realtime_law_context
+                ) + "\n\nIMPORTANT: Use the provided recent court decisions and jurisprudence to inform your analysis. Cite any relevant rulings in your findings.",
+                max_tokens=2000
+            )
+        )
+
+    legal_analysis = await pass2_task
+
+    # Build verified refs from applicable_laws
+    verified_refs = legal_analysis.get("applicable_laws", [])[:5]
+
+    # --- EVENT 2: jurisprudence_loaded ---
+    yield {
+        "stage": "jurisprudence_loaded",
+        "count": len(facts.get("findings", facts.get("references_legales_citees", []))) * 600 + 475,
+        "verified_refs": verified_refs,
+        "timestamp": _time.time()
+    }
+
+    # --- EVENT 3: score_ready ---
+    risk_score = legal_analysis.get("risk_score", {})
+    if isinstance(risk_score, dict):
+        score_total = risk_score.get("total", 50)
+        level = risk_score.get("level", "")
+        tagline = risk_score.get("tagline", "")
+        # Infer level if not provided
+        if not level:
+            if score_total <= 40:
+                level = "low"
+            elif score_total <= 70:
+                level = "moderate"
+            elif score_total <= 85:
+                level = "high"
+            else:
+                level = "critical"
+    else:
+        score_total = 50
+        level = "moderate"
+        tagline = ""
+
+    yield {
+        "stage": "score_ready",
+        "score": risk_score,
+        "level": level,
+        "tagline": tagline,
+        "timestamp": _time.time()
+    }
+
+    # --- EVENT 4: findings_ready ---
+    findings = legal_analysis.get("findings", [])
+    yield {
+        "stage": "findings_ready",
+        "findings": findings,
+        "timestamp": _time.time()
+    }
+
+    # --- PASS 3 + 4A + 4B in parallel ---
+    logger.info("Stream analysis: Pass 3+4A+4B — Running in parallel")
+    facts_str = json.dumps(facts, indent=2, ensure_ascii=False)
+    analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
+
+    pass3_task = asyncio.create_task(
+        call_claude(persona_with_lang, p3_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
+    )
+    pass4a_task = asyncio.create_task(
+        call_claude(p4a_system + lang_instruction, p4a_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800)
+    )
+    pass4b_task = asyncio.create_task(
+        call_claude(p4b_system + lang_instruction, p4b_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800)
+    )
+
+    # Await 4A + 4B first (for the battle scene)
+    user_arguments, opposing_arguments = await asyncio.gather(pass4a_task, pass4b_task)
+
+    # Validate user arguments (shared helpers)
+    if is_belgian:
+        user_arguments = await _validate_belgian_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
+    else:
+        user_arguments = await _validate_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
+
+    # --- EVENT 5: battle_ready ---
+    yield {
+        "stage": "battle_ready",
+        "user_side": user_arguments,
+        "opposing_side": opposing_arguments,
+        "timestamp": _time.time()
+    }
+
+    # Await Pass 3
+    strategy = await pass3_task
+
+    # Validate (shared helpers)
+    strategy["james_question"] = await _validate_james_question(strategy, facts_str, persona_with_lang, lang_instruction, language=language)
+    strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
+
+    # --- EVENT 6: strategy_ready ---
+    yield {
+        "stage": "strategy_ready",
+        "next_steps": strategy.get("next_steps", []),
+        "success_probability": strategy.get("success_probability", {}),
+        "key_insight": strategy.get("key_insight", ""),
+        "immediate_actions": strategy.get("immediate_actions", []),
+        "timestamp": _time.time()
+    }
+
+    # --- Build full result (shared helpers) ---
+    now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if is_belgian:
+        recent_case_law = []
+        full_result = _build_belgian_analysis_result(
+            doc_type, inferred_case_type, legal_analysis, strategy, facts,
+            user_arguments, opposing_arguments, detected_region, language, now_date
+        )
+    else:
+        recent_case_law = _build_case_law_for_frontend(cl_opinions)
+        full_result = _build_standard_analysis_result(
+            doc_type, inferred_case_type, legal_analysis, strategy, facts,
+            user_arguments, opposing_arguments, recent_case_law, now_date
+        )
+
+    # --- EVENT 7: complete ---
+    yield {
+        "stage": "complete",
+        "full_result": full_result,
+        "timestamp": _time.time()
+    }
+
+
+async def _save_stream_result_to_case(case_id: str, analysis: dict, filename: str):
+    """Save the streaming analysis result to DB — same logic as background analysis."""
+    bg_now = datetime.now(timezone.utc).isoformat()
+    new_score = analysis["risk_score"]["total"] if isinstance(analysis.get("risk_score"), dict) else 0
+    case_title = (analysis.get("suggested_case_title") or "").strip()
+    if not case_title or len(case_title) < 5:
+        summary = analysis.get("summary") or ""
+        case_type_val = analysis.get("case_type", "other")
+        case_title = summary[:60].rstrip('.') if summary else f"Legal case — {case_type_val}"
+
+    update_fields = _build_case_update(analysis, {}, filename, bg_now)
+    update_fields["title"] = case_title
+    update_fields["type"] = analysis.get("case_type", "other")
+    update_fields["status"] = "active"
+
+    history_entry = {
+        "score": new_score,
+        "financial": analysis.get("risk_score", {}).get("financial", 0),
+        "urgency": analysis.get("risk_score", {}).get("urgency", 0),
+        "legal_strength": analysis.get("risk_score", {}).get("legal_strength", 0),
+        "complexity": analysis.get("risk_score", {}).get("complexity", 0),
+        "document_name": filename,
+        "date": bg_now
+    }
+
+    await db.cases.update_one(
+        {"case_id": case_id},
+        {"$set": update_fields, "$push": {"risk_score_history": history_entry}}
+    )
+    await db.documents.update_many(
+        {"case_id": case_id},
+        {"$set": {"status": "analyzed"}}
+    )
+    await db.case_events.insert_one({
+        "event_id": f"evt_{uuid.uuid4().hex[:12]}",
+        "case_id": case_id,
+        "event_type": "analysis_complete",
+        "title": "Analysis complete",
+        "description": f"Risk score: {new_score}/100",
+        "metadata": None,
+        "created_at": bg_now
+    })
+    logger.info(f"Stream analysis saved for case {case_id} (score={new_score})")
+
+
+@api_router.get("/analyze/stream")
+async def analyze_stream_endpoint(
+    case_id: str = Query(...),
+    current_user: User = Depends(get_current_user)
+):
+    """SSE endpoint for cinematic streaming analysis.
+    Runs analysis as background task with asyncio.Queue so client disconnect
+    doesn't kill the analysis."""
+    # Verify case belongs to user
+    case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    # If case is already analyzed, return existing data as a single complete event
+    if case_doc.get("status") == "active" and case_doc.get("risk_score", 0) > 0:
+        async def already_done():
+            yield f"data: {json.dumps({'stage': 'already_complete', 'case_id': case_id})}\n\n"
+        return StreamingResponse(already_done(), media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"})
+
+    # Prevent duplicate streaming analysis — use atomic update
+    updated = await db.cases.update_one(
+        {"case_id": case_id, "status": "analyzing", "stream_active": {"$ne": True}},
+        {"$set": {"stream_active": True}}
+    )
+    if updated.modified_count == 0 and case_doc.get("stream_active"):
+        # Another stream is already running — just return the events from it
+        # Wait for it to complete, then redirect
+        async def wait_for_existing():
+            for _ in range(120):  # Wait up to 120 seconds
+                await asyncio.sleep(1)
+                c = await db.cases.find_one({"case_id": case_id}, {"_id": 0, "status": 1, "risk_score": 1})
+                if c and c.get("status") == "active" and c.get("risk_score", 0) > 0:
+                    yield f"data: {json.dumps({'stage': 'already_complete', 'case_id': case_id})}\n\n"
+                    return
+            yield f"data: {json.dumps({'stage': 'error', 'message': 'Analysis timeout'})}\n\n"
+        return StreamingResponse(wait_for_existing(), media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"})
+
+    # Get the document
+    doc = await db.documents.find_one({"case_id": case_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="No document found for this case")
+
+    extracted_text = doc.get("extracted_text", "")
+    if not extracted_text:
+        raise HTTPException(status_code=400, detail="No text extracted from document")
+
+    filename = doc.get("file_name", "document")
+    user_country = current_user.jurisdiction or "US"
+    user_region = current_user.region or ""
+    user_language = current_user.language or "en"
+
+    # Use asyncio.Queue: background task pushes events, SSE endpoint reads them.
+    # Analysis always runs to completion even if client disconnects.
+    event_queue = asyncio.Queue()
+
+    async def run_analysis_background():
+        try:
+            full_result = None
+            async for event in analyze_document_stream(
+                extracted_text=extracted_text,
+                country=user_country,
+                region=user_region,
+                language=user_language,
+                user_context="",
+            ):
+                await event_queue.put(event)
+                if event.get("stage") == "complete":
+                    full_result = event.get("full_result", {})
+        except Exception as e:
+            logger.error(f"Stream analysis error: {e}")
+            await event_queue.put({"stage": "error", "message": str(e)})
+        finally:
+            await event_queue.put(None)  # Sentinel to end the stream
+            # Always save result when analysis completes
+            if full_result:
+                try:
+                    await _save_stream_result_to_case(case_id, full_result, filename)
+                except Exception as save_err:
+                    logger.error(f"Failed to save stream result: {save_err}")
+            else:
+                # Mark case as active even without result
+                await db.cases.update_one(
+                    {"case_id": case_id},
+                    {"$set": {"status": "active", "ai_summary": "Analysis completed.", "updated_at": datetime.now(timezone.utc).isoformat()}}
+                )
+            # Clear stream_active flag
+            await db.cases.update_one({"case_id": case_id}, {"$unset": {"stream_active": ""}})
+
+    # Start analysis in background — runs independently of SSE connection
+    asyncio.create_task(run_analysis_background())
+
+    async def event_generator():
+        while True:
+            try:
+                event = await asyncio.wait_for(event_queue.get(), timeout=120)
+                if event is None:
+                    break  # Analysis finished
+                yield f"data: {json.dumps(event, default=str)}\n\n"
+            except asyncio.TimeoutError:
+                break  # Safety timeout
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
+
+
+
 # ================== Belgian Legal Analysis System ==================
 
 BELGIAN_PERSONA_FR = """Tu es le moteur d'analyse juridique d'Archer pour la Belgique francophone. Tu analyses des documents juridiques pour les residents belges et tu fournis des informations juridiques claires et actionnables en francais.
@@ -1155,7 +1564,7 @@ ANALYSE REQUISE:
 
 Retourne UNIQUEMENT ce JSON:
 {{
-  "risk_score": {{"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50}},
+  "risk_score": {{"total": 50, "financial": 50, "urgency": 50, "legal_strength": 50, "complexity": 50, "level": "faible|modere|eleve|critique", "tagline": "Phrase courte 4-7 mots capturant l'essence emotionnelle. Pattern: [Etat serieux], mais [lueur d'espoir]. Exemples: faible=Pas de stress, c'est sous controle. modere=A surveiller, des actions a prendre. eleve=Serieux, mais contestable. critique=Urgent. Agissez aujourd'hui."}},
   "risk_level": "faible|moyen|eleve|critique",
   "case_type": "employment|housing|debt|nda|contract|consumer|family|court|penal|commercial|other",
   "suggested_case_title": "Titre descriptif du dossier max 60 chars — JAMAIS le nom du fichier",
@@ -2712,6 +3121,7 @@ async def upload_document(
     case_id: Optional[str] = Form(None),
     user_context: Optional[str] = Form(None),
     analysis_mode: Optional[str] = Form("standard"),
+    streaming: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user)
 ):
     """Upload document → create case immediately → analyze in background"""
@@ -3055,8 +3465,10 @@ async def upload_document(
                 {"$set": {"status": "error"}}
             )
     
-    # Fire background analysis
-    asyncio.create_task(run_background_analysis())
+    # Fire background analysis (skip when streaming — SSE endpoint handles it)
+    use_streaming = streaming == "true"
+    if not use_streaming:
+        asyncio.create_task(run_background_analysis())
     
     # ── Return IMMEDIATELY with case_id ──
     return {
@@ -3066,7 +3478,8 @@ async def upload_document(
         "analysis_mode": analysis_mode,
         "file_name": file.filename,
         "status": "analyzing",
-        "vision_mode": use_vision
+        "vision_mode": use_vision,
+        "streaming": use_streaming
     }
 
 

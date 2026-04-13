@@ -100,6 +100,7 @@ const Upload = () => {
       if (selectedCaseId && analysisMode === 'standard') formData.append('case_id', selectedCaseId);
       if (userContext.trim()) formData.append('user_context', userContext.trim());
       formData.append('analysis_mode', analysisMode);
+      formData.append('streaming', 'true');
 
       const uploadPromise = axios.post(`${API}/documents/upload`, formData, {
         withCredentials: true,
@@ -116,9 +117,13 @@ const Upload = () => {
       setUploadStage('done');
       await delay(400);
       
-      // Auto-redirect to dashboard — case was created and analysis runs in background
+      // Redirect to cinematic analysis when streaming, else dashboard
       if (response.data?.case_id) {
-        navigate('/dashboard');
+        if (response.data?.streaming) {
+          navigate(`/analyze/${response.data.case_id}`);
+        } else {
+          navigate('/dashboard');
+        }
         return;
       }
       setResult(response.data);

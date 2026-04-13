@@ -36,6 +36,7 @@ import VideoCall from './pages/VideoCall';
 import Pricing from './pages/Pricing';
 import WinningCases from './pages/WinningCases';
 import HowItWorks from './pages/HowItWorks';
+import CinematicAnalysis from './components/CinematicAnalysis/CinematicAnalysis';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -83,6 +84,7 @@ const AppRouter = () => {
       <Route path="/:lang/how-it-works" element={<HowItWorks />} />
       <Route path="/admin/attorneys" element={<ProtectedRoute><AdminAttorneys /></ProtectedRoute>} />
       <Route path="/documents/:documentId" element={<ProtectedRoute><DocumentViewer /></ProtectedRoute>} />
+      <Route path="/analyze/:caseId" element={<ProtectedRoute><CinematicAnalysis /></ProtectedRoute>} />
       
       {/* Attorney protected routes */}
       <Route path="/attorney" element={<AttorneyRoute><AttorneyLayout /></AttorneyRoute>}>
