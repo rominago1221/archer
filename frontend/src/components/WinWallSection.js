@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, Shield, Check, Upload } from 'lucide-react';
+import { Trophy, Shield, Check, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
 
 /* ─── CATEGORY COLORS ─── */
 const CAT = {
@@ -197,7 +197,7 @@ const WinWallSection = ({ jurisdiction = 'US', language = 'en' }) => {
 
   const resetCarousel = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => setCurrent(c => (c + 1) % 5), 4500);
+    timerRef.current = setInterval(() => setCurrent(c => (c + 1) % 5), 2000);
   }, []);
 
   useEffect(() => {
@@ -292,6 +292,8 @@ const WinWallSection = ({ jurisdiction = 'US', language = 'en' }) => {
       <div className="section-wrap gray">
         <div className="section-inner">
           <div style={{ position: 'relative', maxWidth: 760, margin: '0 auto', minHeight: 280 }}>
+            <button data-testid="carousel-prev" onClick={() => goSlide((current - 1 + 5) % 5)} style={{ position: 'absolute', left: -52, top: '50%', transform: 'translateY(-50%)', zIndex: 2, width: 40, height: 40, borderRadius: '50%', background: '#fff', border: '0.5px solid #e2e0db', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}><ChevronLeft size={20} color="#555" /></button>
+            <button data-testid="carousel-next" onClick={() => goSlide((current + 1) % 5)} style={{ position: 'absolute', right: -52, top: '50%', transform: 'translateY(-50%)', zIndex: 2, width: 40, height: 40, borderRadius: '50%', background: '#fff', border: '0.5px solid #e2e0db', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}><ChevronRight size={20} color="#555" /></button>
             {t.carousel.map((sl, i) => (
               <div key={i} className={`carousel-slide ${i === current ? 'active' : ''}`} style={s.slide}>
                 <div style={s.slideBadge}><Check size={9} /> {t.featured}</div>
