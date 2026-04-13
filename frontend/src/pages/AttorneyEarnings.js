@@ -54,7 +54,7 @@ const AttorneyEarnings = () => {
         <table className="w-full">
           <thead className="bg-[#fafafa] border-b border-[#ebebeb]">
             <tr>
-              {['Date', 'Client', 'Gross', 'Jasper fee', 'Your payout', 'Rating', 'Status'].map(h => (
+              {['Date', 'Client', 'Gross', 'Archer fee', 'Your payout', 'Rating', 'Status'].map(h => (
                 <th key={h} className="px-4 py-2.5 text-left text-[9px] font-medium text-[#9ca3af] uppercase tracking-wider">{h}</th>
               ))}
             </tr>
@@ -67,7 +67,7 @@ const AttorneyEarnings = () => {
                 <td className="px-4 py-2.5 text-[10px] text-[#555]">{s.scheduled_at ? new Date(s.scheduled_at).toLocaleDateString() : '—'}</td>
                 <td className="px-4 py-2.5 text-[10px] font-medium text-[#333]">{s.client_name}</td>
                 <td className="px-4 py-2.5 text-[10px] text-[#333]">${s.price}</td>
-                <td className="px-4 py-2.5 text-[10px] text-[#dc2626]">-${s.jasper_fee}</td>
+                <td className="px-4 py-2.5 text-[10px] text-[#dc2626]">-${s.archer_fee}</td>
                 <td className="px-4 py-2.5 text-[10px] font-semibold text-[#16a34a]">${s.attorney_payout}</td>
                 <td className="px-4 py-2.5 text-[10px] text-[#f59e0b]">{s.client_rating ? '★'.repeat(s.client_rating) : '—'}</td>
                 <td className="px-4 py-2.5">

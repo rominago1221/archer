@@ -202,7 +202,7 @@ const Upload = () => {
         {isBelgian && (
           <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-[#111827] text-white rounded-xl" data-testid="belgian-mode-indicator">
             <span className="text-xs">🇧🇪</span>
-            <span className="text-xs font-medium">Jasper Belgique</span>
+            <span className="text-xs font-medium">Archer Belgique</span>
             <span className="text-[10px] text-white/60 ml-1">
               {user?.region || 'Belgique'} &middot; Droit belge applicable
             </span>
@@ -218,7 +218,7 @@ const Upload = () => {
             </div>
             {isImageFile && (
               <div className="mb-4 px-4 py-2 bg-[#eff6ff] rounded-lg text-xs text-[#1d4ed8]" data-testid="vision-mode-indicator">
-                This appears to be a scanned document. Jasper is using advanced image recognition to analyze it...
+                This appears to be a scanned document. Archer is using advanced image recognition to analyze it...
               </div>
             )}
             <div className="max-w-xs mx-auto space-y-3">
@@ -361,13 +361,13 @@ const Upload = () => {
             {/* User context textarea */}
             <div className="card p-4 mb-4" data-testid="user-context-section">
               <div className="text-sm font-medium text-[#111827] mb-1">
-                {isContractGuard ? 'Tell Jasper about your negotiation goals' : 'Tell Jasper about your situation'}{' '}
+                {isContractGuard ? 'Tell Archer about your negotiation goals' : 'Tell Archer about your situation'}{' '}
                 <span className="text-[#9ca3af] font-normal">(optional)</span>
               </div>
               <div className="text-xs text-[#6b7280] mb-3">
                 {isContractGuard
                   ? 'What matters most to you? What are your deal-breakers?'
-                  : 'Your context helps Jasper analyze more accurately.'}
+                  : 'Your context helps Archer analyze more accurately.'}
               </div>
               <textarea
                 value={userContext}
@@ -396,7 +396,7 @@ const Upload = () => {
                   <div className="text-sm font-medium text-[#111827]">Document Scanner</div>
                   <span className="badge badge-blue text-[10px]">AI OCR</span>
                 </div>
-                <p className="text-xs text-[#6b7280] mb-3">Take a photo of a letter, contract, or notice. Jasper will scan and analyze it instantly.</p>
+                <p className="text-xs text-[#6b7280] mb-3">Take a photo of a letter, contract, or notice. Archer will scan and analyze it instantly.</p>
                 <input
                   type="file" ref={cameraInputRef} accept="image/*" capture="environment"
                   onChange={handleCameraCapture} className="hidden" data-testid="camera-input"

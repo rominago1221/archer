@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 STORAGE_URL = "https://integrations.emergentagent.com/objstore/api/v1/storage"
 EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY")
-APP_NAME = "jasper-legal"
+APP_NAME = "archer-legal"
 storage_key = None
 
 

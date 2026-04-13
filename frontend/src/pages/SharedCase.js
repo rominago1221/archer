@@ -64,7 +64,7 @@ const SharedCase = () => {
         </div>
         <div className="text-lg font-semibold text-[#111827] mb-2">Link unavailable</div>
         <div className="text-sm text-[#6b7280] mb-6">{error}</div>
-        <Link to="/" className="btn-pill btn-blue inline-block" data-testid="try-jasper-btn">Try Jasper free</Link>
+        <Link to="/" className="btn-pill btn-blue inline-block" data-testid="try-jasper-btn">Try Archer free</Link>
       </div>
     </div>
   );
@@ -77,7 +77,7 @@ const SharedCase = () => {
     <div className="min-h-screen bg-[#f8f8f8]" data-testid="shared-case-page">
       {/* Header */}
       <div className="bg-white border-b border-[#ebebeb] px-6 py-3 flex items-center justify-between">
-        <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '20px', fontWeight: 500, letterSpacing: '-0.5px', color: '#1a56db' }} data-testid="shared-case-logo">Jasper</div>
+        <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '20px', }} data-testid="shared-case-logo"><img src="/logos/archer-logo-wordmark.svg" alt="Archer" style={{ height: 28 }} /></div>
         <span className="text-xs text-[#9ca3af] bg-[#f5f5f5] px-3 py-1 rounded-full">View only</span>
       </div>
 
@@ -248,14 +248,14 @@ const SharedCase = () => {
         {/* Viral CTA */}
         <div className="card p-6 text-center bg-[#eff6ff] border-[#bfdbfe]">
           <div className="text-sm font-medium text-[#1a56db] mb-1">Got a legal problem?</div>
-          <div className="text-xs text-[#3b82f6] mb-4">Jasper analyzes any document in 60 seconds — free.</div>
-          <Link to="/signup" className="btn-pill btn-blue inline-block" data-testid="signup-cta-btn">Try Jasper free</Link>
+          <div className="text-xs text-[#3b82f6] mb-4">Archer analyzes any document in 60 seconds — free.</div>
+          <Link to="/signup" className="btn-pill btn-blue inline-block" data-testid="signup-cta-btn">Try Archer free</Link>
         </div>
       </div>
 
       {/* Disclaimer */}
       <div className="text-center text-[10px] text-[#9ca3af] py-6 px-4">
-        Jasper provides legal information only, not legal advice. Consult a licensed attorney for advice specific to your situation.
+        Archer provides legal information only, not legal advice. Consult a licensed attorney for advice specific to your situation.
       </div>
     </div>
   );

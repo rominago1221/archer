@@ -26,8 +26,8 @@ const Sidebar = () => {
     <div className="sidebar" data-testid="sidebar">
       {/* Logo */}
       <div className="p-5 border-b border-[#ebebeb]">
-        <div onClick={() => navigate('/')} style={{ fontFamily: 'Outfit, sans-serif', fontSize: '20px', fontWeight: 500, letterSpacing: '-0.5px', color: '#1a56db', cursor: 'pointer' }} data-testid="sidebar-logo">
-          Jasper
+        <div onClick={() => navigate('/')} style={{ cursor: 'pointer' }} data-testid="sidebar-logo">
+          <img src="/logos/archer-logo-wordmark.svg" alt="Archer" style={{ height: 28 }} />
         </div>
       </div>
 

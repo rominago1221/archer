@@ -89,7 +89,7 @@ const AttorneyApply = () => {
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="text-xl font-semibold text-[#111827] tracking-tight">Join Jasper as an Attorney</h1>
+          <h1 className="text-xl font-semibold text-[#111827] tracking-tight">Join Archer as an Attorney</h1>
           <p className="text-xs text-[#6b7280] mt-1">Receive pre-qualified clients and grow your practice</p>
         </div>
 
@@ -193,7 +193,7 @@ const AttorneyApply = () => {
           {step === 5 && (
             <div data-testid="step-5">
               <h3 className="text-[13px] font-semibold text-[#111827] mb-1">Set your session price</h3>
-              <p className="text-[10px] text-[#6b7280] mb-5">Clients pay your rate directly. Jasper takes a 20% platform fee.</p>
+              <p className="text-[10px] text-[#6b7280] mb-5">Clients pay your rate directly. Archer takes a 20% platform fee.</p>
               <div className="text-center mb-4">
                 <div className="text-3xl font-bold text-[#111827]">${form.session_price}</div>
                 <div className="text-[11px] text-[#6b7280]">per 30-minute session</div>
@@ -208,7 +208,7 @@ const AttorneyApply = () => {
                   <DollarSign size={14} className="text-[#16a34a]" />
                   <span className="text-[12px] font-semibold text-[#16a34a]">You receive: ${payout}/session</span>
                 </div>
-                <span className="text-[10px] text-[#6b7280]">after Jasper's 20% fee</span>
+                <span className="text-[10px] text-[#6b7280]">after Archer's 20% fee</span>
               </div>
             </div>
           )}

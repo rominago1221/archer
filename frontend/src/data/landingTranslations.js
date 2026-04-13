@@ -10,7 +10,7 @@ const translations = {
     hero: {
       badge: 'Trusted by 12,000+ Americans',
       h1: ['Your lawyer,', 'without the', 'lawyer fees.'],
-      sub: 'Got a legal problem? Upload your document. Jasper analyzes your risk in 60 seconds, tells you <strong>exactly what to do</strong> — and connects you to a real attorney only when you need one.',
+      sub: 'Got a legal problem? Upload your document. Archer analyzes your risk in 60 seconds, tells you <strong>exactly what to do</strong> — and connects you to a real attorney only when you need one.',
       cta: 'Analyze my document — free',
       ctaLawyer: 'Talk to a lawyer now',
       footnote: 'No credit card · 60 seconds · Licensed US attorneys on demand',
@@ -19,10 +19,10 @@ const translations = {
       availableNow: '3 attorneys available now',
     },
     animated: {
-      label: 'See Jasper in action',
-      h2: ['Whatever your situation —', 'Jasper is already on it.'],
+      label: 'See Archer in action',
+      h2: ['Whatever your situation —', 'Archer is already on it.'],
       sub: 'Every case tracked. Every deadline visible. Every risk scored instantly.',
-      aiBar: 'Jasper AI — <span class="text-[#1a56db] font-medium">78% of cases resolved by AI alone — no lawyer needed.</span>',
+      aiBar: 'Archer AI — <span class="text-[#1a56db] font-medium">78% of cases resolved by AI alone — no lawyer needed.</span>',
     },
     stats: {
       docs: '47,284', docsLabel: 'Documents analyzed',
@@ -33,9 +33,9 @@ const translations = {
     trust: ['Licensed US attorneys', 'Results in 60 seconds', '256-bit encryption', 'Attorney-reviewed AI', 'No hidden fees'],
     press: 'As seen in',
     categories: {
-      sectionLabel: 'What Jasper handles',
-      h2: 'Whatever your legal problem — Jasper handles it.',
-      sub: 'From demand letters to employment disputes, lease issues to business contracts — Jasper covers every common legal situation Americans face every day.',
+      sectionLabel: 'What Archer handles',
+      h2: 'Whatever your legal problem — Archer handles it.',
+      sub: 'From demand letters to employment disputes, lease issues to business contracts — Archer covers every common legal situation Americans face every day.',
       items: [
         { title: 'Demand letters', desc: 'Received a threatening legal letter? Know your rights and how to respond.', badge: 'Most common', badgeClass: 'badge-blue' },
         { title: 'Employment disputes', desc: 'Wrongful termination, unpaid wages, discrimination, non-compete clauses.', badge: 'High risk', badgeClass: 'badge-red' },
@@ -51,7 +51,7 @@ const translations = {
     problem: {
       label: 'The problem',
       h2: 'Legal help used to cost $500 just to ask a question.',
-      p: "You received a demand letter. A contract you don't understand. An eviction notice. You're stressed — and a real lawyer costs $500/hr just to pick up the phone. Jasper changes that.",
+      p: "You received a demand letter. A contract you don't understand. An eviction notice. You're stressed — and a real lawyer costs $500/hr just to pick up the phone. Archer changes that.",
       steps: ['Upload your document in seconds', 'Get your Risk Score instantly', 'Know exactly what to do next', 'Talk to a real lawyer for $149 — not $500/hr'],
       mockFile: 'demand_letter.pdf uploaded',
       mockAnalyzing: 'Analyzing in 60 seconds...',
@@ -84,35 +84,35 @@ const translations = {
       h2: 'Lawyer-level help. Not lawyer-level prices.',
       free: { name: 'Free', price: '$0', period: 'forever', cta: 'Start for free', features: ['1 free document analysis', 'Risk Score overview'], disabled: ['Full risk report', 'Live case file', 'Attorney access'] },
       pro: { name: 'Pro', price: '$69', period: 'per month', cta: 'Get started', badge: 'Most popular', features: ['Unlimited analyses', 'Full risk reports', 'Live case file', 'Dynamic Risk Score', 'Priority support'] },
-      attorney: { name: 'Attorney call', price: '$149', period: 'per session', cta: 'Book a call', features: ['30-min video call', 'Licensed US attorney', 'Pre-briefed by Jasper AI', 'Written follow-up', 'Same-day availability'] },
+      attorney: { name: 'Attorney call', price: '$149', period: 'per session', cta: 'Book a call', features: ['30-min video call', 'Licensed US attorney', 'Pre-briefed by Archer AI', 'Written follow-up', 'Same-day availability'] },
     },
     reviews: {
       label: 'Reviews',
       h2: 'Real people. Real results.',
       items: [
-        { text: '"I got a demand letter and panicked. Jasper told me my risk was 78/100 and exactly what to do. The attorney call saved me from a huge mistake."', name: 'Michael R.', loc: 'New York, NY' },
+        { text: '"I got a demand letter and panicked. Archer told me my risk was 78/100 and exactly what to do. The attorney call saved me from a huge mistake."', name: 'Michael R.', loc: 'New York, NY' },
         { text: '"The attorney already knew my entire case before we spoke. Best $149 I ever spent. Would have paid $2,000 at a regular firm."', name: 'Jennifer L.', loc: 'Austin, TX' },
-        { text: '"My landlord sent an illegal eviction notice. Jasper caught it instantly. My score dropped from 71 to 14 after I sent the response it helped me draft."', name: 'Carlos M.', loc: 'Miami, FL' },
+        { text: '"My landlord sent an illegal eviction notice. Archer caught it instantly. My score dropped from 71 to 14 after I sent the response it helped me draft."', name: 'Carlos M.', loc: 'Miami, FL' },
       ],
     },
     faq: {
       label: 'FAQ',
       h2: 'Questions you probably have',
       items: [
-        { q: 'Is Jasper giving me real legal advice?', a: 'Jasper provides legal information and document analysis — not legal advice. When you need actual legal advice, Jasper connects you to a licensed attorney.' },
+        { q: 'Is Archer giving me real legal advice?', a: 'Archer provides legal information and document analysis — not legal advice. When you need actual legal advice, Archer connects you to a licensed attorney.' },
         { q: 'Is my document secure?', a: 'All documents are encrypted with 256-bit encryption in transit and at rest. We never share your documents with third parties. You can delete your data anytime.' },
-        { q: 'Who are the attorneys on Jasper?', a: 'All attorneys are independently licensed in their US states, with a minimum of 5 years of experience, and go through a rigorous vetting process before joining Jasper.' },
-        { q: 'What if I need a lawyer in court?', a: 'Jasper is designed for advice and document analysis — not court representation. Our attorneys can advise you and refer you to the right specialist if needed.' },
+        { q: 'Who are the attorneys on Archer?', a: 'All attorneys are independently licensed in their US states, with a minimum of 5 years of experience, and go through a rigorous vetting process before joining Archer.' },
+        { q: 'What if I need a lawyer in court?', a: 'Archer is designed for advice and document analysis — not court representation. Our attorneys can advise you and refer you to the right specialist if needed.' },
         { q: 'How accurate is the Risk Score?', a: 'The Risk Score is generated by AI trained on thousands of legal documents and validated by licensed attorneys. It is a guidance tool to help you understand urgency and complexity.' },
         { q: 'Can I cancel my subscription anytime?', a: 'Yes. Cancel anytime with one click. No questions asked, no cancellation fees. Your case files remain accessible until the end of your billing period.' },
       ],
     },
     finalCta: {
       h2: ['Your lawyer, without', 'the lawyer fees.'],
-      p: 'Join 12,000+ Americans who use Jasper to protect themselves — for less.',
+      p: 'Join 12,000+ Americans who use Archer to protect themselves — for less.',
       cta: 'Analyze my document — it\'s free',
     },
-    footer: 'Jasper provides legal information and document analysis, not legal advice. Attorney consultations are conducted by independent, licensed legal professionals. Jasper does not create an attorney-client relationship.',
+    footer: 'Archer provides legal information and document analysis, not legal advice. Attorney consultations are conducted by independent, licensed legal professionals. Archer does not create an attorney-client relationship.',
     lawyers: [
       { name: 'Sarah Mitchell, Esq.', specialty: 'Employment Law', bar: 'New York Bar', years: 12, tags: ['Wrongful termination', 'Discrimination'], rating: 5.0, sessions: 214, status: 'now', photo: 'https://images.unsplash.com/photo-1585240975858-7264fd020798?w=200&h=200&fit=crop' },
       { name: 'James Carter, Esq.', specialty: 'Contract Law', bar: 'California Bar', years: 9, tags: ['Business disputes', 'NDA'], rating: 4.9, sessions: 187, status: '8 min', photo: 'https://images.unsplash.com/photo-1644268756851-3f69ffb9553f?w=200&h=200&fit=crop' },
@@ -131,7 +131,7 @@ const translations = {
     hero: {
       badge: 'Utilis\u00e9 par 4 200+ Belges',
       h1: ['Votre avocat,', 'sans les', 'honoraires.'],
-      sub: "Un probl\u00e8me juridique ? T\u00e9l\u00e9chargez votre document. Jasper analyse votre risque en 60 secondes, vous dit <strong>exactement quoi faire</strong> \u2014 et vous connecte \u00e0 un vrai avocat uniquement quand c'est n\u00e9cessaire.",
+      sub: "Un probl\u00e8me juridique ? T\u00e9l\u00e9chargez votre document. Archer analyse votre risque en 60 secondes, vous dit <strong>exactement quoi faire</strong> \u2014 et vous connecte \u00e0 un vrai avocat uniquement quand c'est n\u00e9cessaire.",
       cta: 'Analyser mon document — gratuit',
       ctaLawyer: 'Parler \u00e0 un avocat maintenant',
       footnote: 'Sans carte bancaire \u00b7 60 secondes \u00b7 Avocats belges agr\u00e9\u00e9s',
@@ -140,10 +140,10 @@ const translations = {
       availableNow: '3 avocats disponibles',
     },
     animated: {
-      label: 'Jasper en action',
-      h2: ['Quelle que soit votre situation \u2014', 'Jasper s\'en occupe d\u00e9j\u00e0.'],
+      label: 'Archer en action',
+      h2: ['Quelle que soit votre situation \u2014', 'Archer s\'en occupe d\u00e9j\u00e0.'],
       sub: 'Chaque dossier suivi. Chaque d\u00e9lai visible. Chaque risque \u00e9valu\u00e9 instantan\u00e9ment.',
-      aiBar: 'Jasper AI \u2014 <span class="text-[#1a56db] font-medium">78% des dossiers r\u00e9solus par l\'IA seule \u2014 sans avocat.</span>',
+      aiBar: 'Archer AI \u2014 <span class="text-[#1a56db] font-medium">78% des dossiers r\u00e9solus par l\'IA seule \u2014 sans avocat.</span>',
     },
     stats: {
       docs: '11 832', docsLabel: 'Documents analys\u00e9s',
@@ -154,9 +154,9 @@ const translations = {
     trust: ['Avocats belges agr\u00e9\u00e9s', 'R\u00e9sultats en 60 secondes', 'Chiffrement 256-bit', 'IA valid\u00e9e par des avocats', 'Aucun frais cach\u00e9'],
     press: 'Vu dans',
     categories: {
-      sectionLabel: 'Ce que Jasper g\u00e8re',
-      h2: 'Quel que soit votre probl\u00e8me juridique \u2014 Jasper le g\u00e8re.',
-      sub: 'Des mises en demeure aux litiges de travail, des baux aux contrats commerciaux \u2014 Jasper couvre toutes les situations juridiques courantes en Belgique.',
+      sectionLabel: 'Ce que Archer g\u00e8re',
+      h2: 'Quel que soit votre probl\u00e8me juridique \u2014 Archer le g\u00e8re.',
+      sub: 'Des mises en demeure aux litiges de travail, des baux aux contrats commerciaux \u2014 Archer couvre toutes les situations juridiques courantes en Belgique.',
       items: [
         { title: 'Mises en demeure', desc: 'Re\u00e7u une lettre mena\u00e7ante ? Connaissez vos droits et comment r\u00e9pondre.', badge: 'Fr\u00e9quent', badgeClass: 'badge-blue' },
         { title: 'Droit du travail', desc: 'Licenciement abusif, salaires impay\u00e9s, discrimination, clause de non-concurrence.', badge: 'Haut risque', badgeClass: 'badge-red' },
@@ -172,7 +172,7 @@ const translations = {
     problem: {
       label: 'Le probl\u00e8me',
       h2: "L'aide juridique co\u00fbtait 300\u20ac rien que pour poser une question.",
-      p: "Vous avez re\u00e7u une mise en demeure. Un contrat incompr\u00e9hensible. Un avis d'expulsion. Vous \u00eates stress\u00e9 \u2014 et un vrai avocat co\u00fbte 250\u20ac/h rien que pour d\u00e9crocher le t\u00e9l\u00e9phone. Jasper change la donne.",
+      p: "Vous avez re\u00e7u une mise en demeure. Un contrat incompr\u00e9hensible. Un avis d'expulsion. Vous \u00eates stress\u00e9 \u2014 et un vrai avocat co\u00fbte 250\u20ac/h rien que pour d\u00e9crocher le t\u00e9l\u00e9phone. Archer change la donne.",
       steps: ['T\u00e9l\u00e9chargez votre document en secondes', 'Obtenez votre Score de Risque instantan\u00e9ment', 'Savez exactement quoi faire ensuite', 'Parlez \u00e0 un vrai avocat pour 139\u20ac \u2014 pas 250\u20ac/h'],
       mockFile: 'mise_en_demeure.pdf t\u00e9l\u00e9charg\u00e9',
       mockAnalyzing: 'Analyse en cours... 60 secondes',
@@ -205,35 +205,35 @@ const translations = {
       h2: "L'aide d'un avocat. Pas le prix d'un avocat.",
       free: { name: 'Gratuit', price: '0\u20ac', period: 'pour toujours', cta: 'Commencer gratuitement', features: ['1 analyse de document gratuite', 'Aper\u00e7u du Score de Risque'], disabled: ['Rapport complet', 'Dossier en direct', 'Acc\u00e8s avocat'] },
       pro: { name: 'Pro', price: '65\u20ac', period: 'par mois', cta: 'Commencer', badge: 'Le plus populaire', features: ['Analyses illimit\u00e9es', 'Rapports complets', 'Dossier en direct', 'Score de Risque dynamique', 'Support prioritaire'] },
-      attorney: { name: 'Appel avocat', price: '139\u20ac', period: 'par session', cta: 'R\u00e9server', features: ['Appel vid\u00e9o de 30 min', 'Avocat belge agr\u00e9\u00e9', 'Brief\u00e9 par Jasper AI', 'Suivi \u00e9crit', 'Disponibilit\u00e9 le jour m\u00eame'] },
+      attorney: { name: 'Appel avocat', price: '139\u20ac', period: 'par session', cta: 'R\u00e9server', features: ['Appel vid\u00e9o de 30 min', 'Avocat belge agr\u00e9\u00e9', 'Brief\u00e9 par Archer AI', 'Suivi \u00e9crit', 'Disponibilit\u00e9 le jour m\u00eame'] },
     },
     reviews: {
       label: 'T\u00e9moignages',
       h2: 'De vrais t\u00e9moignages. De vrais r\u00e9sultats.',
       items: [
-        { text: '"J\'ai re\u00e7u une mise en demeure et j\'ai paniqu\u00e9. Jasper m\'a dit que mon risque \u00e9tait de 78/100 et exactement quoi faire. L\'appel avec l\'avocat m\'a sauv\u00e9 d\'une grosse erreur."', name: 'Marc D.', loc: 'Bruxelles, Belgique' },
+        { text: '"J\'ai re\u00e7u une mise en demeure et j\'ai paniqu\u00e9. Archer m\'a dit que mon risque \u00e9tait de 78/100 et exactement quoi faire. L\'appel avec l\'avocat m\'a sauv\u00e9 d\'une grosse erreur."', name: 'Marc D.', loc: 'Bruxelles, Belgique' },
         { text: '"L\'avocat connaissait d\u00e9j\u00e0 tout mon dossier avant notre appel. Les meilleurs 139\u20ac que j\'ai d\u00e9pens\u00e9s. J\'aurais pay\u00e9 1 500\u20ac dans un cabinet classique."', name: 'Sophie V.', loc: 'Li\u00e8ge, Belgique' },
-        { text: '"Mon propri\u00e9taire m\'a envoy\u00e9 un avis d\'expulsion ill\u00e9gal. Jasper l\'a d\u00e9tect\u00e9 imm\u00e9diatement. Mon score est pass\u00e9 de 71 \u00e0 14 apr\u00e8s avoir envoy\u00e9 la r\u00e9ponse."', name: 'Thomas B.', loc: 'Namur, Belgique' },
+        { text: '"Mon propri\u00e9taire m\'a envoy\u00e9 un avis d\'expulsion ill\u00e9gal. Archer l\'a d\u00e9tect\u00e9 imm\u00e9diatement. Mon score est pass\u00e9 de 71 \u00e0 14 apr\u00e8s avoir envoy\u00e9 la r\u00e9ponse."', name: 'Thomas B.', loc: 'Namur, Belgique' },
       ],
     },
     faq: {
       label: 'FAQ',
       h2: 'Questions fr\u00e9quentes',
       items: [
-        { q: 'Jasper donne-t-il de vrais conseils juridiques ?', a: 'Jasper fournit des informations juridiques et une analyse de documents \u2014 pas des conseils juridiques. Quand vous avez besoin de vrais conseils, Jasper vous connecte \u00e0 un avocat agr\u00e9\u00e9.' },
+        { q: 'Archer donne-t-il de vrais conseils juridiques ?', a: 'Archer fournit des informations juridiques et une analyse de documents \u2014 pas des conseils juridiques. Quand vous avez besoin de vrais conseils, Archer vous connecte \u00e0 un avocat agr\u00e9\u00e9.' },
         { q: 'Mon document est-il s\u00e9curis\u00e9 ?', a: 'Tous les documents sont chiffr\u00e9s avec un chiffrement 256-bit en transit et au repos. Nous ne partageons jamais vos documents. Vous pouvez supprimer vos donn\u00e9es \u00e0 tout moment.' },
-        { q: 'Qui sont les avocats sur Jasper ?', a: 'Tous les avocats sont inscrits au Barreau belge, avec un minimum de 5 ans d\'exp\u00e9rience, et passent par un processus de v\u00e9rification rigoureux.' },
-        { q: 'Jasper comprend-il le droit belge ?', a: 'Oui. Jasper est form\u00e9 sur le Code civil belge, le Code judiciaire, le droit du travail belge, les r\u00e9glementations r\u00e9gionales (Wallonie, Flandre, Bruxelles) et la jurisprudence belge.' },
+        { q: 'Qui sont les avocats sur Archer ?', a: 'Tous les avocats sont inscrits au Barreau belge, avec un minimum de 5 ans d\'exp\u00e9rience, et passent par un processus de v\u00e9rification rigoureux.' },
+        { q: 'Archer comprend-il le droit belge ?', a: 'Oui. Archer est form\u00e9 sur le Code civil belge, le Code judiciaire, le droit du travail belge, les r\u00e9glementations r\u00e9gionales (Wallonie, Flandre, Bruxelles) et la jurisprudence belge.' },
         { q: 'Quelle est la pr\u00e9cision du Score de Risque ?', a: "Le Score de Risque est g\u00e9n\u00e9r\u00e9 par une IA form\u00e9e sur des milliers de documents juridiques et valid\u00e9e par des avocats. C'est un outil d'orientation." },
         { q: 'Puis-je annuler mon abonnement \u00e0 tout moment ?', a: 'Oui. Annulez \u00e0 tout moment en un clic. Sans questions, sans frais d\'annulation. Vos dossiers restent accessibles jusqu\'\u00e0 la fin de votre p\u00e9riode de facturation.' },
       ],
     },
     finalCta: {
       h2: ['Votre avocat, sans', 'les honoraires.'],
-      p: 'Rejoignez 4 200+ Belges qui utilisent Jasper pour se prot\u00e9ger \u2014 pour moins cher.',
+      p: 'Rejoignez 4 200+ Belges qui utilisent Archer pour se prot\u00e9ger \u2014 pour moins cher.',
       cta: 'Analyser mon document \u2014 c\'est gratuit',
     },
-    footer: "Jasper fournit des informations juridiques et une analyse de documents, pas des conseils juridiques. Les consultations d'avocats sont r\u00e9alis\u00e9es par des professionnels ind\u00e9pendants agr\u00e9\u00e9s. Jasper ne cr\u00e9e pas de relation avocat-client.",
+    footer: "Archer fournit des informations juridiques et une analyse de documents, pas des conseils juridiques. Les consultations d'avocats sont r\u00e9alis\u00e9es par des professionnels ind\u00e9pendants agr\u00e9\u00e9s. Archer ne cr\u00e9e pas de relation avocat-client.",
     lawyers: [
       { name: 'Sophie Lecomte', specialty: 'Droit du travail', bar: 'Barreau de Bruxelles', years: 10, tags: ['Licenciement', 'Discrimination'], rating: 5.0, sessions: 167, status: 'now', photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop' },
       { name: 'Thomas Dupont', specialty: 'Droit immobilier', bar: 'Barreau de Li\u00e8ge', years: 8, tags: ['Bail', 'Copropri\u00e9t\u00e9'], rating: 4.9, sessions: 134, status: '10 min', photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop' },
@@ -252,7 +252,7 @@ const translations = {
     hero: {
       badge: 'Vertrouwd door 4.200+ Belgen',
       h1: ['Uw advocaat,', 'zonder de', 'advocaatkosten.'],
-      sub: 'Een juridisch probleem? Upload uw document. Jasper analyseert uw risico in 60 seconden, vertelt u <strong>precies wat u moet doen</strong> \u2014 en verbindt u met een echte advocaat alleen wanneer dat nodig is.',
+      sub: 'Een juridisch probleem? Upload uw document. Archer analyseert uw risico in 60 seconden, vertelt u <strong>precies wat u moet doen</strong> \u2014 en verbindt u met een echte advocaat alleen wanneer dat nodig is.',
       cta: 'Analyseer mijn document \u2014 gratis',
       ctaLawyer: 'Spreek nu met een advocaat',
       footnote: 'Geen creditcard \u00b7 60 seconden \u00b7 Erkende Belgische advocaten',
@@ -261,10 +261,10 @@ const translations = {
       availableNow: '3 advocaten beschikbaar',
     },
     animated: {
-      label: 'Jasper in actie',
-      h2: ['Wat uw situatie ook is \u2014', 'Jasper is er al mee bezig.'],
+      label: 'Archer in actie',
+      h2: ['Wat uw situatie ook is \u2014', 'Archer is er al mee bezig.'],
       sub: 'Elk dossier gevolgd. Elke deadline zichtbaar. Elk risico onmiddellijk beoordeeld.',
-      aiBar: 'Jasper AI \u2014 <span class="text-[#1a56db] font-medium">78% van de dossiers opgelost door AI alleen \u2014 geen advocaat nodig.</span>',
+      aiBar: 'Archer AI \u2014 <span class="text-[#1a56db] font-medium">78% van de dossiers opgelost door AI alleen \u2014 geen advocaat nodig.</span>',
     },
     stats: {
       docs: '11.832', docsLabel: 'Documenten geanalyseerd',
@@ -275,9 +275,9 @@ const translations = {
     trust: ['Erkende Belgische advocaten', 'Resultaten in 60 seconden', '256-bit encryptie', 'Door advocaten gevalideerde AI', 'Geen verborgen kosten'],
     press: 'Bekend van',
     categories: {
-      sectionLabel: 'Wat Jasper behandelt',
-      h2: 'Wat uw juridisch probleem ook is \u2014 Jasper regelt het.',
-      sub: 'Van ingebrekestellingen tot arbeidsgeschillen, van huurproblemen tot handelscontracten \u2014 Jasper dekt alle veelvoorkomende juridische situaties in Belgi\u00eb.',
+      sectionLabel: 'Wat Archer behandelt',
+      h2: 'Wat uw juridisch probleem ook is \u2014 Archer regelt het.',
+      sub: 'Van ingebrekestellingen tot arbeidsgeschillen, van huurproblemen tot handelscontracten \u2014 Archer dekt alle veelvoorkomende juridische situaties in Belgi\u00eb.',
       items: [
         { title: 'Ingebrekestellingen', desc: 'Een dreigende juridische brief ontvangen? Ken uw rechten en hoe u moet reageren.', badge: 'Frequent', badgeClass: 'badge-blue' },
         { title: 'Arbeidsrecht', desc: 'Onrechtmatig ontslag, onbetaalde lonen, discriminatie, concurrentiebeding.', badge: 'Hoog risico', badgeClass: 'badge-red' },
@@ -293,7 +293,7 @@ const translations = {
     problem: {
       label: 'Het probleem',
       h2: 'Juridische hulp kostte \u20ac300 alleen al om een vraag te stellen.',
-      p: 'U heeft een ingebrekestelling ontvangen. Een onbegrijpelijk contract. Een uitzettingsbericht. U bent gestrest \u2014 en een echte advocaat kost \u20ac250/uur. Jasper verandert dat.',
+      p: 'U heeft een ingebrekestelling ontvangen. Een onbegrijpelijk contract. Een uitzettingsbericht. U bent gestrest \u2014 en een echte advocaat kost \u20ac250/uur. Archer verandert dat.',
       steps: ['Upload uw document in seconden', 'Krijg uw Risicoscore onmiddellijk', 'Weet precies wat u moet doen', 'Spreek met een echte advocaat voor \u20ac139 \u2014 niet \u20ac250/uur'],
       mockFile: 'ingebrekestelling.pdf ge\u00fcpload',
       mockAnalyzing: 'Analyseren in 60 seconden...',
@@ -326,35 +326,35 @@ const translations = {
       h2: 'Hulp op advocaatniveau. Niet de prijs van een advocaat.',
       free: { name: 'Gratis', price: '\u20ac0', period: 'voor altijd', cta: 'Gratis beginnen', features: ['1 gratis documentanalyse', 'Overzicht Risicoscore'], disabled: ['Volledig rapport', 'Live dossier', 'Toegang advocaat'] },
       pro: { name: 'Pro', price: '\u20ac65', period: 'per maand', cta: 'Beginnen', badge: 'Meest populair', features: ['Onbeperkte analyses', 'Volledige rapporten', 'Live dossier', 'Dynamische Risicoscore', 'Prioritaire support'] },
-      attorney: { name: 'Advocaat gesprek', price: '\u20ac139', period: 'per sessie', cta: 'Boeken', features: ['30 min videogesprek', 'Erkende Belgische advocaat', 'Gebrieft door Jasper AI', 'Schriftelijke opvolging', 'Dezelfde dag beschikbaar'] },
+      attorney: { name: 'Advocaat gesprek', price: '\u20ac139', period: 'per sessie', cta: 'Boeken', features: ['30 min videogesprek', 'Erkende Belgische advocaat', 'Gebrieft door Archer AI', 'Schriftelijke opvolging', 'Dezelfde dag beschikbaar'] },
     },
     reviews: {
       label: 'Beoordelingen',
       h2: 'Echte mensen. Echte resultaten.',
       items: [
-        { text: '"Ik kreeg een ingebrekestelling en raakte in paniek. Jasper vertelde me dat mijn risico 78/100 was en precies wat ik moest doen. Het gesprek met de advocaat redde me van een grote fout."', name: 'Jan V.', loc: 'Antwerpen, Belgi\u00eb' },
+        { text: '"Ik kreeg een ingebrekestelling en raakte in paniek. Archer vertelde me dat mijn risico 78/100 was en precies wat ik moest doen. Het gesprek met de advocaat redde me van een grote fout."', name: 'Jan V.', loc: 'Antwerpen, Belgi\u00eb' },
         { text: '"De advocaat kende al mijn hele dossier voor we spraken. Beste \u20ac139 die ik ooit heb uitgegeven. Bij een gewoon kantoor had ik \u20ac1.500 betaald."', name: 'Lies D.', loc: 'Gent, Belgi\u00eb' },
-        { text: '"Mijn verhuurder stuurde een illegaal uitzettingsbericht. Jasper herkende het meteen. Mijn score daalde van 71 naar 14 na het versturen van het antwoord."', name: 'Pieter M.', loc: 'Leuven, Belgi\u00eb' },
+        { text: '"Mijn verhuurder stuurde een illegaal uitzettingsbericht. Archer herkende het meteen. Mijn score daalde van 71 naar 14 na het versturen van het antwoord."', name: 'Pieter M.', loc: 'Leuven, Belgi\u00eb' },
       ],
     },
     faq: {
       label: 'FAQ',
       h2: 'Veelgestelde vragen',
       items: [
-        { q: 'Geeft Jasper echt juridisch advies?', a: 'Jasper biedt juridische informatie en documentanalyse \u2014 geen juridisch advies. Wanneer u echt advies nodig heeft, verbindt Jasper u met een erkende advocaat.' },
+        { q: 'Geeft Archer echt juridisch advies?', a: 'Archer biedt juridische informatie en documentanalyse \u2014 geen juridisch advies. Wanneer u echt advies nodig heeft, verbindt Archer u met een erkende advocaat.' },
         { q: 'Is mijn document veilig?', a: 'Alle documenten zijn versleuteld met 256-bit encryptie. We delen uw documenten nooit met derden. U kunt uw gegevens op elk moment verwijderen.' },
-        { q: 'Wie zijn de advocaten op Jasper?', a: 'Alle advocaten zijn ingeschreven bij de Belgische Balie, met minimaal 5 jaar ervaring, en doorlopen een streng verificatieproces.' },
-        { q: 'Begrijpt Jasper Belgisch recht?', a: 'Ja. Jasper is getraind op het Belgisch Burgerlijk Wetboek, het Gerechtelijk Wetboek, Belgisch arbeidsrecht, regionale regelgeving en Belgische rechtspraak.' },
+        { q: 'Wie zijn de advocaten op Archer?', a: 'Alle advocaten zijn ingeschreven bij de Belgische Balie, met minimaal 5 jaar ervaring, en doorlopen een streng verificatieproces.' },
+        { q: 'Begrijpt Archer Belgisch recht?', a: 'Ja. Archer is getraind op het Belgisch Burgerlijk Wetboek, het Gerechtelijk Wetboek, Belgisch arbeidsrecht, regionale regelgeving en Belgische rechtspraak.' },
         { q: 'Hoe nauwkeurig is de Risicoscore?', a: 'De Risicoscore wordt gegenereerd door AI getraind op duizenden juridische documenten en gevalideerd door advocaten. Het is een ori\u00ebntatietool.' },
         { q: 'Kan ik mijn abonnement op elk moment opzeggen?', a: 'Ja. Opzeggen op elk moment met \u00e9\u00e9n klik. Geen vragen, geen opzegkosten. Uw dossiers blijven toegankelijk tot het einde van uw factureringsperiode.' },
       ],
     },
     finalCta: {
       h2: ['Uw advocaat, zonder', 'de advocaatkosten.'],
-      p: 'Sluit u aan bij 4.200+ Belgen die Jasper gebruiken om zichzelf te beschermen \u2014 voor minder.',
+      p: 'Sluit u aan bij 4.200+ Belgen die Archer gebruiken om zichzelf te beschermen \u2014 voor minder.',
       cta: 'Analyseer mijn document \u2014 het is gratis',
     },
-    footer: 'Jasper biedt juridische informatie en documentanalyse, geen juridisch advies. Advocaatconsultaties worden uitgevoerd door onafhankelijke, erkende juridische professionals. Jasper cre\u00ebert geen advocaat-cli\u00ebntrelatie.',
+    footer: 'Archer biedt juridische informatie en documentanalyse, geen juridisch advies. Advocaatconsultaties worden uitgevoerd door onafhankelijke, erkende juridische professionals. Archer cre\u00ebert geen advocaat-cli\u00ebntrelatie.',
     lawyers: [
       { name: 'Pieter Van den Berg', specialty: 'Arbeidsrecht', bar: 'Balie Gent', years: 9, tags: ['Ontslag', 'Discriminatie'], rating: 5.0, sessions: 145, status: 'now', photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop' },
       { name: 'Laura Janssen', specialty: 'Huurrecht', bar: 'Balie Antwerpen', years: 7, tags: ['Huurgeschillen', 'Uitzetting'], rating: 4.9, sessions: 112, status: '8 min', photo: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&h=200&fit=crop' },
@@ -373,7 +373,7 @@ const translations = {
     hero: {
       badge: 'Von 4.200+ Belgiern genutzt',
       h1: ['Ihr Anwalt,', 'ohne die', 'Anwaltskosten.'],
-      sub: 'Ein rechtliches Problem? Laden Sie Ihr Dokument hoch. Jasper analysiert Ihr Risiko in 60 Sekunden, sagt Ihnen <strong>genau was zu tun ist</strong> \u2014 und verbindet Sie mit einem echten Anwalt nur wenn n\u00f6tig.',
+      sub: 'Ein rechtliches Problem? Laden Sie Ihr Dokument hoch. Archer analysiert Ihr Risiko in 60 Sekunden, sagt Ihnen <strong>genau was zu tun ist</strong> \u2014 und verbindet Sie mit einem echten Anwalt nur wenn n\u00f6tig.',
       cta: 'Mein Dokument analysieren \u2014 kostenlos',
       ctaLawyer: 'Jetzt mit einem Anwalt sprechen',
       footnote: 'Keine Kreditkarte \u00b7 60 Sekunden \u00b7 Zugelassene belgische Anw\u00e4lte',
@@ -382,10 +382,10 @@ const translations = {
       availableNow: '3 Anw\u00e4lte verf\u00fcgbar',
     },
     animated: {
-      label: 'Jasper in Aktion',
-      h2: ['Egal was Ihre Situation ist \u2014', 'Jasper k\u00fcmmert sich bereits darum.'],
+      label: 'Archer in Aktion',
+      h2: ['Egal was Ihre Situation ist \u2014', 'Archer k\u00fcmmert sich bereits darum.'],
       sub: 'Jeder Fall verfolgt. Jede Frist sichtbar. Jedes Risiko sofort bewertet.',
-      aiBar: 'Jasper AI \u2014 <span class="text-[#1a56db] font-medium">78% der F\u00e4lle durch KI allein gel\u00f6st \u2014 kein Anwalt n\u00f6tig.</span>',
+      aiBar: 'Archer AI \u2014 <span class="text-[#1a56db] font-medium">78% der F\u00e4lle durch KI allein gel\u00f6st \u2014 kein Anwalt n\u00f6tig.</span>',
     },
     stats: {
       docs: '11.832', docsLabel: 'Dokumente analysiert',
@@ -396,9 +396,9 @@ const translations = {
     trust: ['Zugelassene belgische Anw\u00e4lte', 'Ergebnisse in 60 Sekunden', '256-Bit-Verschl\u00fcsselung', 'Von Anw\u00e4lten validierte KI', 'Keine versteckten Kosten'],
     press: 'Bekannt aus',
     categories: {
-      sectionLabel: 'Was Jasper behandelt',
-      h2: 'Egal was Ihr rechtliches Problem ist \u2014 Jasper l\u00f6st es.',
-      sub: 'Von Abmahnungen bis Arbeitsstreitigkeiten, von Mietproblemen bis Handelsvertr\u00e4gen \u2014 Jasper deckt alle h\u00e4ufigen Rechtssituationen in Belgien ab.',
+      sectionLabel: 'Was Archer behandelt',
+      h2: 'Egal was Ihr rechtliches Problem ist \u2014 Archer l\u00f6st es.',
+      sub: 'Von Abmahnungen bis Arbeitsstreitigkeiten, von Mietproblemen bis Handelsvertr\u00e4gen \u2014 Archer deckt alle h\u00e4ufigen Rechtssituationen in Belgien ab.',
       items: [
         { title: 'Abmahnungen', desc: 'Einen drohenden Rechtsbrief erhalten? Kennen Sie Ihre Rechte und wie Sie reagieren k\u00f6nnen.', badge: 'H\u00e4ufig', badgeClass: 'badge-blue' },
         { title: 'Arbeitsrecht', desc: 'Unrechtm\u00e4\u00dfige K\u00fcndigung, unbezahlte L\u00f6hne, Diskriminierung, Wettbewerbsverbot.', badge: 'Hohes Risiko', badgeClass: 'badge-red' },
@@ -414,7 +414,7 @@ const translations = {
     problem: {
       label: 'Das Problem',
       h2: 'Rechtshilfe kostete \u20ac300 nur um eine Frage zu stellen.',
-      p: 'Sie haben eine Abmahnung erhalten. Einen unverst\u00e4ndlichen Vertrag. Eine R\u00e4umungsankündigung. Sie sind gestresst \u2014 und ein echter Anwalt kostet \u20ac250/Stunde. Jasper \u00e4ndert das.',
+      p: 'Sie haben eine Abmahnung erhalten. Einen unverst\u00e4ndlichen Vertrag. Eine R\u00e4umungsankündigung. Sie sind gestresst \u2014 und ein echter Anwalt kostet \u20ac250/Stunde. Archer \u00e4ndert das.',
       steps: ['Laden Sie Ihr Dokument in Sekunden hoch', 'Erhalten Sie Ihren Risikoscore sofort', 'Wissen Sie genau was zu tun ist', 'Sprechen Sie mit einem echten Anwalt f\u00fcr \u20ac139 \u2014 nicht \u20ac250/Std.'],
       mockFile: 'abmahnung.pdf hochgeladen',
       mockAnalyzing: 'Analyse in 60 Sekunden...',
@@ -447,35 +447,35 @@ const translations = {
       h2: 'Hilfe auf Anwaltsniveau. Nicht der Preis eines Anwalts.',
       free: { name: 'Kostenlos', price: '\u20ac0', period: 'f\u00fcr immer', cta: 'Kostenlos starten', features: ['1 kostenlose Dokumentenanalyse', '\u00dcbersicht Risikoscore'], disabled: ['Vollst\u00e4ndiger Bericht', 'Live-Akte', 'Anwaltszugang'] },
       pro: { name: 'Pro', price: '\u20ac65', period: 'pro Monat', cta: 'Loslegen', badge: 'Am beliebtesten', features: ['Unbegrenzte Analysen', 'Vollst\u00e4ndige Berichte', 'Live-Akte', 'Dynamischer Risikoscore', 'Priorit\u00e4tssupport'] },
-      attorney: { name: 'Anwaltsgespr\u00e4ch', price: '\u20ac139', period: 'pro Sitzung', cta: 'Buchen', features: ['30-Min-Videoanruf', 'Zugelassener belgischer Anwalt', 'Von Jasper AI gebrieft', 'Schriftliche Nachverfolgung', 'Am selben Tag verf\u00fcgbar'] },
+      attorney: { name: 'Anwaltsgespr\u00e4ch', price: '\u20ac139', period: 'pro Sitzung', cta: 'Buchen', features: ['30-Min-Videoanruf', 'Zugelassener belgischer Anwalt', 'Von Archer AI gebrieft', 'Schriftliche Nachverfolgung', 'Am selben Tag verf\u00fcgbar'] },
     },
     reviews: {
       label: 'Bewertungen',
       h2: 'Echte Menschen. Echte Ergebnisse.',
       items: [
-        { text: '"Ich bekam eine Abmahnung und geriet in Panik. Jasper sagte mir, dass mein Risiko 78/100 betrug und genau was ich tun sollte. Das Gespr\u00e4ch mit dem Anwalt rettete mich vor einem gro\u00dfen Fehler."', name: 'Klaus M.', loc: 'Eupen, Belgien' },
+        { text: '"Ich bekam eine Abmahnung und geriet in Panik. Archer sagte mir, dass mein Risiko 78/100 betrug und genau was ich tun sollte. Das Gespr\u00e4ch mit dem Anwalt rettete mich vor einem gro\u00dfen Fehler."', name: 'Klaus M.', loc: 'Eupen, Belgien' },
         { text: '"Der Anwalt kannte meinen gesamten Fall bevor wir sprachen. Die besten \u20ac139 die ich je ausgegeben habe. Bei einer normalen Kanzlei h\u00e4tte ich \u20ac1.500 gezahlt."', name: 'Anna S.', loc: 'Malmedy, Belgien' },
-        { text: '"Mein Vermieter schickte eine illegale R\u00e4umungsanzeige. Jasper erkannte es sofort. Mein Score sank von 71 auf 14 nachdem ich die Antwort geschickt habe."', name: 'Peter K.', loc: 'Sankt Vith, Belgien' },
+        { text: '"Mein Vermieter schickte eine illegale R\u00e4umungsanzeige. Archer erkannte es sofort. Mein Score sank von 71 auf 14 nachdem ich die Antwort geschickt habe."', name: 'Peter K.', loc: 'Sankt Vith, Belgien' },
       ],
     },
     faq: {
       label: 'FAQ',
       h2: 'H\u00e4ufig gestellte Fragen',
       items: [
-        { q: 'Gibt Jasper echte Rechtsberatung?', a: 'Jasper bietet rechtliche Informationen und Dokumentenanalyse \u2014 keine Rechtsberatung. Wenn Sie echte Beratung ben\u00f6tigen, verbindet Jasper Sie mit einem zugelassenen Anwalt.' },
+        { q: 'Gibt Archer echte Rechtsberatung?', a: 'Archer bietet rechtliche Informationen und Dokumentenanalyse \u2014 keine Rechtsberatung. Wenn Sie echte Beratung ben\u00f6tigen, verbindet Archer Sie mit einem zugelassenen Anwalt.' },
         { q: 'Ist mein Dokument sicher?', a: 'Alle Dokumente sind mit 256-Bit-Verschl\u00fcsselung verschl\u00fcsselt. Wir teilen Ihre Dokumente niemals mit Dritten. Sie k\u00f6nnen Ihre Daten jederzeit l\u00f6schen.' },
-        { q: 'Wer sind die Anw\u00e4lte bei Jasper?', a: 'Alle Anw\u00e4lte sind bei der belgischen Anwaltskammer zugelassen, mit mindestens 5 Jahren Erfahrung und einem strengen Pr\u00fcfungsverfahren.' },
-        { q: 'Versteht Jasper belgisches Recht?', a: 'Ja. Jasper ist auf das belgische Zivilgesetzbuch, das Gerichtsgesetzbuch, belgisches Arbeitsrecht, regionale Vorschriften und belgische Rechtsprechung geschult.' },
+        { q: 'Wer sind die Anw\u00e4lte bei Archer?', a: 'Alle Anw\u00e4lte sind bei der belgischen Anwaltskammer zugelassen, mit mindestens 5 Jahren Erfahrung und einem strengen Pr\u00fcfungsverfahren.' },
+        { q: 'Versteht Archer belgisches Recht?', a: 'Ja. Archer ist auf das belgische Zivilgesetzbuch, das Gerichtsgesetzbuch, belgisches Arbeitsrecht, regionale Vorschriften und belgische Rechtsprechung geschult.' },
         { q: 'Wie genau ist der Risikoscore?', a: 'Der Risikoscore wird von einer KI generiert, die auf Tausenden von Rechtsdokumenten trainiert und von Anw\u00e4lten validiert wurde. Es ist ein Orientierungswerkzeug.' },
         { q: 'Kann ich mein Abonnement jederzeit k\u00fcndigen?', a: 'Ja. K\u00fcndigen Sie jederzeit mit einem Klick. Keine Fragen, keine K\u00fcndigungsgeb\u00fchren. Ihre Akten bleiben bis zum Ende Ihres Abrechnungszeitraums zug\u00e4nglich.' },
       ],
     },
     finalCta: {
       h2: ['Ihr Anwalt, ohne', 'die Anwaltskosten.'],
-      p: 'Schlie\u00dfen Sie sich 4.200+ Belgiern an, die Jasper nutzen um sich zu sch\u00fctzen \u2014 f\u00fcr weniger.',
+      p: 'Schlie\u00dfen Sie sich 4.200+ Belgiern an, die Archer nutzen um sich zu sch\u00fctzen \u2014 f\u00fcr weniger.',
       cta: 'Mein Dokument analysieren \u2014 kostenlos',
     },
-    footer: 'Jasper bietet rechtliche Informationen und Dokumentenanalyse, keine Rechtsberatung. Anwaltsberatungen werden von unabh\u00e4ngigen, zugelassenen Rechtsexperten durchgef\u00fchrt. Jasper begr\u00fcndet kein Anwalts-Mandanten-Verh\u00e4ltnis.',
+    footer: 'Archer bietet rechtliche Informationen und Dokumentenanalyse, keine Rechtsberatung. Anwaltsberatungen werden von unabh\u00e4ngigen, zugelassenen Rechtsexperten durchgef\u00fchrt. Archer begr\u00fcndet kein Anwalts-Mandanten-Verh\u00e4ltnis.',
     lawyers: [
       { name: 'Klaus Mueller', specialty: 'Arbeitsrecht', bar: 'Anwaltskammer Eupen', years: 10, tags: ['K\u00fcndigung', 'Diskriminierung'], rating: 5.0, sessions: 98, status: 'now', photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop' },
       { name: 'Anna Schreiber', specialty: 'Familienrecht', bar: 'Anwaltskammer Malmedy', years: 8, tags: ['Scheidung', 'Sorgerecht'], rating: 4.9, sessions: 76, status: '15 min', photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop' },
@@ -494,7 +494,7 @@ const translations = {
     hero: {
       badge: 'Confiado por mas de 12,000 estadounidenses',
       h1: ['Tu abogado,', 'sin los', 'honorarios.'],
-      sub: 'Tienes un problema legal? Sube tu documento. Jasper analiza tu riesgo en 60 segundos, te dice <strong>exactamente que hacer</strong> — y te conecta con un abogado real solo cuando lo necesitas.',
+      sub: 'Tienes un problema legal? Sube tu documento. Archer analiza tu riesgo en 60 segundos, te dice <strong>exactamente que hacer</strong> — y te conecta con un abogado real solo cuando lo necesitas.',
       cta: 'Analizar mi documento — gratis',
       ctaLawyer: 'Hablar con un abogado ahora',
       footnote: 'Sin tarjeta de credito \u00b7 60 segundos \u00b7 Abogados licenciados disponibles',
@@ -503,10 +503,10 @@ const translations = {
       availableNow: '3 abogados disponibles ahora',
     },
     animated: {
-      label: 'Jasper en accion',
-      h2: ['Sea cual sea tu situacion —', 'Jasper ya esta trabajando.'],
+      label: 'Archer en accion',
+      h2: ['Sea cual sea tu situacion —', 'Archer ya esta trabajando.'],
       sub: 'Cada caso rastreado. Cada fecha limite visible. Cada riesgo evaluado al instante.',
-      aiBar: 'Jasper AI — <span class="text-[#1a56db] font-medium">78% de los casos resueltos por IA — sin abogado.</span>',
+      aiBar: 'Archer AI — <span class="text-[#1a56db] font-medium">78% de los casos resueltos por IA — sin abogado.</span>',
     },
     stats: {
       docs: '12,847', docsLabel: 'Documentos analizados',
@@ -517,9 +517,9 @@ const translations = {
     trust: ['Abogados licenciados en EE.UU.', 'Resultados en 60 segundos', 'Cifrado 256-bit', 'IA revisada por abogados', 'Sin costos ocultos'],
     press: 'Visto en',
     categories: {
-      sectionLabel: 'Lo que Jasper maneja',
-      h2: 'Sea cual sea tu problema legal — Jasper lo maneja.',
-      sub: 'Desde contratos laborales hasta disputas de alquiler, deudas hasta divorcios — Jasper cubre cada situacion legal comun que enfrentan los estadounidenses.',
+      sectionLabel: 'Lo que Archer maneja',
+      h2: 'Sea cual sea tu problema legal — Archer lo maneja.',
+      sub: 'Desde contratos laborales hasta disputas de alquiler, deudas hasta divorcios — Archer cubre cada situacion legal comun que enfrentan los estadounidenses.',
       items: [
         { title: 'Contratos laborales', desc: 'Despido injustificado, clausulas de no competencia, acoso laboral, EEOC.', badge: 'Mas comun', badgeClass: 'badge-blue' },
         { title: 'Disputas de vivienda', desc: 'Desalojos, depositos, condiciones de habitabilidad, derechos del inquilino.', badge: 'Muy comun', badgeClass: 'badge-green' },
@@ -535,7 +535,7 @@ const translations = {
     problem: {
       label: 'El problema',
       h2: 'La ayuda legal costaba $350 solo por hacer una pregunta.',
-      p: 'Recibiste una carta de cobro. Un contrato que no entiendes. Un aviso de desalojo. Estas estresado — y un abogado real cuesta $350/hora solo por contestar el telefono. Jasper cambia eso.',
+      p: 'Recibiste una carta de cobro. Un contrato que no entiendes. Un aviso de desalojo. Estas estresado — y un abogado real cuesta $350/hora solo por contestar el telefono. Archer cambia eso.',
       steps: ['Sube tu documento en segundos', 'Obtiene tu puntuacion de riesgo al instante', 'Sabe exactamente que hacer', 'Habla con un abogado real por $149 — no $350/hora'],
       mockFile: 'demand_letter.pdf subido',
       mockAnalyzing: 'Analizando en 60 segundos...',
@@ -568,35 +568,35 @@ const translations = {
       h2: 'Ayuda nivel abogado. Sin precios de abogado.',
       free: { name: 'Gratis', price: '$0', period: 'para siempre', cta: 'Comenzar gratis', features: ['1 analisis gratuito', 'Vista general de riesgo'], disabled: ['Informe completo', 'Expediente activo', 'Acceso a abogado'] },
       pro: { name: 'Pro', price: '$69', period: 'por mes', cta: 'Comenzar', badge: 'Mas popular', features: ['Analisis ilimitados', 'Informes completos', 'Expediente activo', 'Puntuacion dinamica', 'Soporte prioritario'] },
-      attorney: { name: 'Llamada con abogado', price: '$149', period: 'por sesion', cta: 'Reservar llamada', features: ['Videollamada de 30 min', 'Abogado licenciado EE.UU.', 'Pre-informado por Jasper AI', 'Seguimiento escrito', 'Disponibilidad inmediata'] },
+      attorney: { name: 'Llamada con abogado', price: '$149', period: 'por sesion', cta: 'Reservar llamada', features: ['Videollamada de 30 min', 'Abogado licenciado EE.UU.', 'Pre-informado por Archer AI', 'Seguimiento escrito', 'Disponibilidad inmediata'] },
     },
     reviews: {
       label: 'Opiniones',
       h2: 'Personas reales. Resultados reales.',
       items: [
-        { text: '"Mi empleador me despidio injustamente. Jasper identifico 3 violaciones de la ley laboral y recupere toda mi indemnizacion. La llamada con el abogado valio cada centavo."', name: 'Carlos M.', loc: 'Miami, FL' },
-        { text: '"Mi propietario intento subirme el alquiler un 40%. Jasper me mostro la ley y redacto una carta. Problema resuelto en 48 horas."', name: 'Maria L.', loc: 'Houston, TX' },
-        { text: '"Recibi una carta de cobranza por una deuda vieja. Jasper me explico mis derechos bajo la FDCPA y me ahorro el panico."', name: 'Roberto P.', loc: 'Los Angeles, CA' },
+        { text: '"Mi empleador me despidio injustamente. Archer identifico 3 violaciones de la ley laboral y recupere toda mi indemnizacion. La llamada con el abogado valio cada centavo."', name: 'Carlos M.', loc: 'Miami, FL' },
+        { text: '"Mi propietario intento subirme el alquiler un 40%. Archer me mostro la ley y redacto una carta. Problema resuelto en 48 horas."', name: 'Maria L.', loc: 'Houston, TX' },
+        { text: '"Recibi una carta de cobranza por una deuda vieja. Archer me explico mis derechos bajo la FDCPA y me ahorro el panico."', name: 'Roberto P.', loc: 'Los Angeles, CA' },
       ],
     },
     faq: {
       label: 'Preguntas frecuentes',
       h2: 'Preguntas que probablemente tienes',
       items: [
-        { q: 'Jasper me da asesoria legal real?', a: 'Jasper proporciona informacion legal y analisis de documentos, no asesoria legal. Cuando necesitas asesoria legal real, Jasper te conecta con un abogado licenciado.' },
+        { q: 'Archer me da asesoria legal real?', a: 'Archer proporciona informacion legal y analisis de documentos, no asesoria legal. Cuando necesitas asesoria legal real, Archer te conecta con un abogado licenciado.' },
         { q: 'Mi documento esta seguro?', a: 'Todos los documentos se cifran con encriptacion de 256 bits. Nunca compartimos tus documentos con terceros. Puedes eliminar tus datos en cualquier momento.' },
-        { q: 'Quienes son los abogados en Jasper?', a: 'Todos los abogados estan licenciados en EE.UU., con un minimo de 5 anos de experiencia, y pasan por un riguroso proceso de verificacion.' },
-        { q: 'Jasper entiende la ley de EE.UU.?', a: 'Si. Jasper esta entrenado en leyes federales y estatales de EE.UU., incluyendo FDCPA, FCRA, leyes de inquilinos, derecho laboral y mas.' },
+        { q: 'Quienes son los abogados en Archer?', a: 'Todos los abogados estan licenciados en EE.UU., con un minimo de 5 anos de experiencia, y pasan por un riguroso proceso de verificacion.' },
+        { q: 'Archer entiende la ley de EE.UU.?', a: 'Si. Archer esta entrenado en leyes federales y estatales de EE.UU., incluyendo FDCPA, FCRA, leyes de inquilinos, derecho laboral y mas.' },
         { q: 'Que tan precisa es la puntuacion de riesgo?', a: 'La puntuacion de riesgo es generada por IA entrenada en miles de documentos legales y validada por abogados licenciados. Es una herramienta de orientacion.' },
         { q: 'Puedo cancelar mi suscripcion?', a: 'Si. Cancela en cualquier momento con un clic. Sin preguntas, sin cargos por cancelacion.' },
       ],
     },
     finalCta: {
       h2: ['Tu abogado, sin', 'los honorarios.'],
-      p: 'Unete a mas de 12,000 estadounidenses que usan Jasper para protegerse — por menos.',
+      p: 'Unete a mas de 12,000 estadounidenses que usan Archer para protegerse — por menos.',
       cta: 'Analizar mi documento — es gratis',
     },
-    footer: 'Jasper proporciona informacion legal y analisis de documentos, no asesoria legal. Las consultas con abogados son realizadas por profesionales legales independientes y licenciados.',
+    footer: 'Archer proporciona informacion legal y analisis de documentos, no asesoria legal. Las consultas con abogados son realizadas por profesionales legales independientes y licenciados.',
     lawyers: [
       { name: 'Sarah Mitchell, Esq.', specialty: 'Derecho laboral', bar: 'Colegio de Abogados de NY', years: 12, tags: ['Despido', 'Discriminacion'], rating: 5.0, sessions: 234, status: 'now', photo: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&h=200&fit=crop' },
       { name: 'James Carter, Esq.', specialty: 'Derecho contractual', bar: 'Colegio de Abogados de CA', years: 9, tags: ['Contratos', 'NDA'], rating: 4.9, sessions: 187, status: '8 min', photo: 'https://images.unsplash.com/photo-1644268756851-3f69ffb9553f?w=200&h=200&fit=crop' },
@@ -615,7 +615,7 @@ const translations = {
     hero: {
       badge: 'Trusted by 5,000+ Belgian residents',
       h1: ['Your lawyer,', 'without the', 'lawyer fees.'],
-      sub: 'Got a legal problem? Upload your document. Jasper analyzes your risk in 60 seconds, tells you <strong>exactly what to do</strong> — and connects you to a real attorney only when you need one.',
+      sub: 'Got a legal problem? Upload your document. Archer analyzes your risk in 60 seconds, tells you <strong>exactly what to do</strong> — and connects you to a real attorney only when you need one.',
       cta: 'Analyze my document — free',
       ctaLawyer: 'Talk to a lawyer now',
       footnote: 'No credit card \u00b7 60 seconds \u00b7 Licensed Belgian attorneys',
@@ -624,10 +624,10 @@ const translations = {
       availableNow: '3 attorneys available now',
     },
     animated: {
-      label: 'See Jasper in action',
-      h2: ['Whatever your situation —', 'Jasper is already on it.'],
+      label: 'See Archer in action',
+      h2: ['Whatever your situation —', 'Archer is already on it.'],
       sub: 'Every case tracked. Every deadline visible. Every risk scored instantly.',
-      aiBar: 'Jasper AI — <span class="text-[#1a56db] font-medium">78% of cases resolved by AI alone — no lawyer needed.</span>',
+      aiBar: 'Archer AI — <span class="text-[#1a56db] font-medium">78% of cases resolved by AI alone — no lawyer needed.</span>',
     },
     stats: {
       docs: '6,291', docsLabel: 'Documents analyzed',
@@ -638,9 +638,9 @@ const translations = {
     trust: ['Licensed Belgian attorneys', 'Results in 60 seconds', '256-bit encryption', 'Attorney-reviewed AI', 'No hidden fees'],
     press: 'As seen in',
     categories: {
-      sectionLabel: 'What Jasper handles',
-      h2: 'Whatever your legal problem — Jasper handles it.',
-      sub: 'From employment contracts to tenancy disputes, debt collection to family law — Jasper covers every common legal situation Belgian residents face.',
+      sectionLabel: 'What Archer handles',
+      h2: 'Whatever your legal problem — Archer handles it.',
+      sub: 'From employment contracts to tenancy disputes, debt collection to family law — Archer covers every common legal situation Belgian residents face.',
       items: [
         { title: 'Employment contracts', desc: 'Unfair dismissal, notice periods, non-compete clauses under Belgian Labour Law.', badge: 'Most common', badgeClass: 'badge-blue' },
         { title: 'Housing disputes', desc: 'Lease termination, deposit recovery, rent regulations.', badge: 'Very common', badgeClass: 'badge-green' },
@@ -656,7 +656,7 @@ const translations = {
     problem: {
       label: 'The problem',
       h2: 'Legal help used to cost \u20ac200 just to ask a question.',
-      p: "You received a demand letter. A contract you don't understand. A bailiff notice. You're stressed — and a real lawyer costs \u20ac150/hr just to pick up the phone. Jasper changes that.",
+      p: "You received a demand letter. A contract you don't understand. A bailiff notice. You're stressed — and a real lawyer costs \u20ac150/hr just to pick up the phone. Archer changes that.",
       steps: ['Upload your document in seconds', 'Get your Risk Score instantly', 'Know exactly what to do next', 'Talk to a real lawyer for \u20ac149 — not \u20ac150/hr'],
       mockFile: 'mise_en_demeure.pdf uploaded',
       mockAnalyzing: 'Analyzing in 60 seconds...',
@@ -689,35 +689,35 @@ const translations = {
       h2: 'Lawyer-level help. Not lawyer-level prices.',
       free: { name: 'Free', price: '\u20ac0', period: 'forever', cta: 'Start for free', features: ['1 free document analysis', 'Risk Score overview'], disabled: ['Full risk report', 'Live case file', 'Attorney access'] },
       pro: { name: 'Pro', price: '\u20ac69', period: 'per month', cta: 'Get started', badge: 'Most popular', features: ['Unlimited analyses', 'Full risk reports', 'Live case file', 'Dynamic Risk Score', 'Priority support'] },
-      attorney: { name: 'Attorney call', price: '\u20ac149', period: 'per session', cta: 'Book a call', features: ['30-min video call', 'Licensed Belgian attorney', 'Pre-briefed by Jasper AI', 'Written follow-up', 'Same-day availability'] },
+      attorney: { name: 'Attorney call', price: '\u20ac149', period: 'per session', cta: 'Book a call', features: ['30-min video call', 'Licensed Belgian attorney', 'Pre-briefed by Archer AI', 'Written follow-up', 'Same-day availability'] },
     },
     reviews: {
       label: 'Reviews',
       h2: 'Real people. Real results.',
       items: [
-        { text: '"My employer dismissed me unfairly. Jasper identified 3 Labour Law violations and I got my full severance. The attorney call was invaluable."', name: 'Mark D.', loc: 'Brussels, Belgium' },
-        { text: '"Landlord tried to keep my deposit. Jasper showed me the law and drafted a demand letter. Got my money back in 2 weeks."', name: 'Sophie V.', loc: 'Antwerp, Belgium' },
-        { text: '"Received a bailiff notice. Jasper explained my options and helped me negotiate a payment plan. Crisis averted."', name: 'Thomas L.', loc: 'Ghent, Belgium' },
+        { text: '"My employer dismissed me unfairly. Archer identified 3 Labour Law violations and I got my full severance. The attorney call was invaluable."', name: 'Mark D.', loc: 'Brussels, Belgium' },
+        { text: '"Landlord tried to keep my deposit. Archer showed me the law and drafted a demand letter. Got my money back in 2 weeks."', name: 'Sophie V.', loc: 'Antwerp, Belgium' },
+        { text: '"Received a bailiff notice. Archer explained my options and helped me negotiate a payment plan. Crisis averted."', name: 'Thomas L.', loc: 'Ghent, Belgium' },
       ],
     },
     faq: {
       label: 'FAQ',
       h2: 'Questions you probably have',
       items: [
-        { q: 'Is Jasper giving me real legal advice?', a: 'Jasper provides legal information and document analysis, not legal advice. When you need advice, it connects you to a licensed attorney.' },
+        { q: 'Is Archer giving me real legal advice?', a: 'Archer provides legal information and document analysis, not legal advice. When you need advice, it connects you to a licensed attorney.' },
         { q: 'Is my document secure?', a: 'All documents are encrypted with 256-bit encryption. We never share them with third parties.' },
         { q: 'Who are the attorneys?', a: 'All attorneys are licensed in Belgium, with a minimum of 5 years of experience.' },
-        { q: 'Does Jasper understand Belgian law?', a: 'Yes. Jasper is trained on Belgian federal and regional law, jurisprudence, and CCTs.' },
+        { q: 'Does Archer understand Belgian law?', a: 'Yes. Archer is trained on Belgian federal and regional law, jurisprudence, and CCTs.' },
         { q: 'How accurate is the Risk Score?', a: 'The Risk Score is AI-generated and validated by licensed attorneys. It is a guidance tool.' },
         { q: 'Can I cancel anytime?', a: 'Yes. Cancel anytime. No cancellation fees.' },
       ],
     },
     finalCta: {
       h2: ['Your lawyer, without', 'the lawyer fees.'],
-      p: 'Join 5,000+ Belgian residents who use Jasper to protect themselves.',
+      p: 'Join 5,000+ Belgian residents who use Archer to protect themselves.',
       cta: 'Analyze my document — it\'s free',
     },
-    footer: 'Jasper provides legal information and document analysis, not legal advice.',
+    footer: 'Archer provides legal information and document analysis, not legal advice.',
     lawyers: [
       { name: 'Sophie Lecomte', specialty: 'Labour Law', bar: 'Brussels Bar', years: 10, tags: ['Dismissal', 'Contracts'], rating: 5.0, sessions: 167, status: 'now', photo: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&h=200&fit=crop' },
       { name: 'Jan Vermeersch', specialty: 'Housing Law', bar: 'Antwerp Bar', years: 8, tags: ['Lease', 'Eviction'], rating: 4.9, sessions: 134, status: '10 min', photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop' },
@@ -749,7 +749,7 @@ export const getLocaleFromPrefs = (jurisdiction, language) => {
 
 export const getStoredLocale = () => {
   try {
-    const stored = localStorage.getItem('jasper_locale');
+    const stored = localStorage.getItem('archer_locale');
     if (stored && typeof stored === 'string' && translations[stored]) return stored;
   } catch (e) {
     console.error('getStoredLocale read error:', e);
@@ -760,7 +760,7 @@ export const getStoredLocale = () => {
 export const setStoredLocale = (key) => {
   try {
     if (key && typeof key === 'string') {
-      localStorage.setItem('jasper_locale', key);
+      localStorage.setItem('archer_locale', key);
     }
   } catch (e) {
     console.error('setStoredLocale write error:', e);

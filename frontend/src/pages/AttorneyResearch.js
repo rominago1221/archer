@@ -83,7 +83,7 @@ const AttorneyResearch = () => {
             {sending && (
               <div className="flex gap-2 mb-3">
                 <div className="px-3.5 py-2.5 rounded-xl rounded-tl-sm bg-[#fafafa] border border-[#ebebeb] text-[11px] text-[#6b7280]">
-                  Researching<span className="inline-flex gap-[3px] ml-1">{[0,1,2].map(i => <span key={i} className="w-[4px] h-[4px] rounded-full bg-[#6b7280]" style={{ animation: `jasper-blink 1.4s ease-in-out ${i*0.2}s infinite` }} />)}</span>
+                  Researching<span className="inline-flex gap-[3px] ml-1">{[0,1,2].map(i => <span key={i} className="w-[4px] h-[4px] rounded-full bg-[#6b7280]" style={{ animation: `archer-blink 1.4s ease-in-out ${i*0.2}s infinite` }} />)}</span>
                 </div>
               </div>
             )}

@@ -33,7 +33,7 @@ ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@jasper.legal")
 EMAIL_FROM = os.environ.get("EMAIL_FROM", "james@jasper.legal")
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
 APP_URL = os.environ.get("APP_URL", "https://predict-outcome.preview.emergentagent.com")
-ADMIN_SECRET = os.environ.get("ADMIN_SECRET", "jasper-admin-2026")
+ADMIN_SECRET = os.environ.get("ADMIN_SECRET", "archer-admin-2026")
 
 async def send_email(to: str, subject: str, html_body: str):
     if SENDGRID_API_KEY:
@@ -41,7 +41,7 @@ async def send_email(to: str, subject: str, html_body: str):
             import httpx
             await httpx.AsyncClient().post("https://api.sendgrid.com/v3/mail/send",
                 headers={"Authorization": f"Bearer {SENDGRID_API_KEY}", "Content-Type": "application/json"},
-                json={"personalizations": [{"to": [{"email": to}]}], "from": {"email": EMAIL_FROM, "name": "Jasper Legal"}, "subject": subject, "content": [{"type": "text/html", "value": html_body}]},
+                json={"personalizations": [{"to": [{"email": to}]}], "from": {"email": EMAIL_FROM, "name": "Archer Legal"}, "subject": subject, "content": [{"type": "text/html", "value": html_body}]},
                 timeout=10.0)
             logger.info(f"Email sent to {to}: {subject}")
         except Exception as e:
@@ -123,7 +123,7 @@ async def attorney_apply(body: AttorneyApplication):
         "specialties": body.specialties, "bio": body.bio[:300],
         "photo_url": body.photo_url, "languages": body.languages,
         "linkedin_url": body.linkedin_url,
-        "session_price": body.session_price, "jasper_commission": STRIPE_PLATFORM_FEE_PERCENT / 100,
+        "session_price": body.session_price, "archer_commission": STRIPE_PLATFORM_FEE_PERCENT / 100,
         "attorney_payout": payout,
         "stripe_connect_id": None, "stripe_connect_status": "pending",
         "application_status": "pending", "rejection_reason": None,
@@ -152,14 +152,14 @@ async def attorney_apply(body: AttorneyApplication):
     # Send emails asynchronously
     asyncio.create_task(send_email(
         to=email,
-        subject="Application received — Jasper Legal",
+        subject="Application received — Archer Legal",
         html_body=f"""<p>Hi {body.full_name},</p>
-        <p>Your application to join Jasper as a licensed attorney has been received.</p>
+        <p>Your application to join Archer as a licensed attorney has been received.</p>
         <p>We will verify your credentials within 24 hours. You will receive an email as soon as your profile is approved and live.</p>
         <p>In the meantime, you can:</p>
         <ul><li>Complete your profile (photo, bio, specialties)</li><li>Set your session price</li><li>Connect your Stripe account</li></ul>
         <p><a href="{APP_URL}/attorney/dashboard" style="display:inline-block;padding:10px 24px;background:#1a56db;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Login to your dashboard</a></p>
-        <p>— The Jasper Team</p>"""
+        <p>— The Archer Team</p>"""
     ))
     asyncio.create_task(send_email(
         to=ADMIN_EMAIL,
@@ -317,7 +317,7 @@ async def book_attorney_call(body: BookAttorneyCall, current_user: User = Depend
         "client_user_id": current_user.user_id,
         "client_name": current_user.name, "case_id": body.case_id,
         "scheduled_at": scheduled, "price": price, "attorney_payout": payout,
-        "jasper_fee": price - payout, "status": "scheduled",
+        "archer_fee": price - payout, "status": "scheduled",
         "room_name": None, "room_url": None,
         "client_rating": None, "client_review": None,
         "attorney_notes": None, "brief_generated": False,
@@ -385,7 +385,7 @@ async def create_video_room(call_id: str, current_user: User = Depends(get_curre
     if call.get("room_url"):
         return {"room_url": call["room_url"], "room_name": call["room_name"]}
 
-    room_name = f"jasper-{call_id}"
+    room_name = f"archer-{call_id}"
     exp_time = int((datetime.now(timezone.utc) + timedelta(hours=2)).timestamp())
     try:
         async with httpx.AsyncClient() as http_client:
@@ -497,7 +497,7 @@ async def save_attorney_notes(call_id: str, body: dict, current_user: User = Dep
 
 # --- AI Case Brief ---
 
-CASE_BRIEF_SYSTEM = """You are Jasper AI preparing a confidential pre-call brief for a licensed attorney.
+CASE_BRIEF_SYSTEM = """You are Archer AI preparing a confidential pre-call brief for a licensed attorney.
 Structure your brief exactly as follows:
 1. CASE OVERVIEW: document type, risk score, date received, key parties, jurisdiction, financial exposure
 2. KEY FINDINGS: top 3 findings with exact legal references
@@ -689,7 +689,7 @@ async def get_attorney_earnings(current_user: User = Depends(get_current_user)):
         "sessions": [{
             "call_id": c["call_id"], "client_name": c.get("client_name", "Client"),
             "scheduled_at": c.get("scheduled_at"), "price": c.get("price", 0),
-            "jasper_fee": c.get("jasper_fee", 0), "attorney_payout": c.get("attorney_payout", 0),
+            "archer_fee": c.get("archer_fee", 0), "attorney_payout": c.get("attorney_payout", 0),
             "status": "Paid" if c.get("payout_processed") else "Pending",
             "client_rating": c.get("client_rating")
         } for c in all_completed[:50]],
@@ -797,8 +797,8 @@ async def admin_approve_attorney(attorney_id: str, admin: User = Depends(verify_
         raise HTTPException(status_code=404, detail="Attorney not found or already processed")
     prof = await db.attorney_profiles.find_one({"attorney_id": attorney_id}, {"_id": 0})
     if prof:
-        await send_email(prof["email"], "Your Jasper profile is now live!",
-            f"<p>Hi {prof['full_name']},</p><p>Your profile has been approved. You are now live on Jasper.</p><p><a href='{APP_URL}/attorney/dashboard' style='display:inline-block;padding:10px 24px;background:#16a34a;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;'>Go online now</a></p><p>— The Jasper Team</p>")
+        await send_email(prof["email"], "Your Archer profile is now live!",
+            f"<p>Hi {prof['full_name']},</p><p>Your profile has been approved. You are now live on Archer.</p><p><a href='{APP_URL}/attorney/dashboard' style='display:inline-block;padding:10px 24px;background:#16a34a;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;'>Go online now</a></p><p>— The Archer Team</p>")
     return {"status": "approved", "attorney_id": attorney_id}
 
 class RejectBody(BaseModel):
@@ -815,8 +815,8 @@ async def admin_reject_attorney(attorney_id: str, body: RejectBody, admin: User 
         raise HTTPException(status_code=404, detail="Attorney not found")
     prof = await db.attorney_profiles.find_one({"attorney_id": attorney_id}, {"_id": 0})
     if prof:
-        await send_email(prof["email"], "Jasper attorney application update",
-            f"<p>Hi {prof['full_name']},</p><p>Unfortunately we could not approve your application.</p><p><strong>Reason:</strong> {body.reason}</p><p>You may reapply: <a href='{APP_URL}/attorney/apply'>Reapply</a></p><p>— The Jasper Team</p>")
+        await send_email(prof["email"], "Archer attorney application update",
+            f"<p>Hi {prof['full_name']},</p><p>Unfortunately we could not approve your application.</p><p><strong>Reason:</strong> {body.reason}</p><p>You may reapply: <a href='{APP_URL}/attorney/apply'>Reapply</a></p><p>— The Archer Team</p>")
     return {"status": "rejected", "attorney_id": attorney_id}
 
 @router.get("/admin/quick-action/{attorney_id}/{action}/{token}")
@@ -828,8 +828,8 @@ async def admin_quick_action(attorney_id: str, action: str, token: str):
         await db.attorney_profiles.update_one({"attorney_id": attorney_id}, {"$set": {"application_status": "approved", "approved_at": now}})
         prof = await db.attorney_profiles.find_one({"attorney_id": attorney_id}, {"_id": 0})
         if prof:
-            await send_email(prof["email"], "Your Jasper profile is now live!",
-                f"<p>Hi {prof['full_name']},</p><p>Your profile has been approved. <a href='{APP_URL}/attorney/dashboard'>Go online now</a></p><p>— The Jasper Team</p>")
+            await send_email(prof["email"], "Your Archer profile is now live!",
+                f"<p>Hi {prof['full_name']},</p><p>Your profile has been approved. <a href='{APP_URL}/attorney/dashboard'>Go online now</a></p><p>— The Archer Team</p>")
         return JSONResponse(content={"status": "approved", "message": f"Attorney has been approved."})
     elif action == "reject":
         return JSONResponse(content={"status": "redirect", "message": "Please use the admin panel to reject (reason required).", "url": f"{APP_URL}/admin/attorneys"})

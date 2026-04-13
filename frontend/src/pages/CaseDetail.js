@@ -20,7 +20,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const L = {
   en: {
     back: 'My Cases', brief: 'Download brief', share: 'Share', addDoc: 'Add document', talkLawyer: 'Talk to a lawyer',
-    riskLabel: 'Jasper Risk Score', riskHigh: 'High risk', riskMed: 'Medium risk', riskLow: 'Low risk',
+    riskLabel: 'Archer Risk Score', riskHigh: 'High risk', riskMed: 'Medium risk', riskLow: 'Low risk',
     dimFin: 'Financial', dimUrg: 'Urgency', dimLeg: 'Legal', dimCom: 'Complexity',
     analysisTitle: 'James Analysis — Real-time update', live: 'Live',
     battleTitle: 'Legal Battle Preview — James vs Opposing Counsel', yourArgs: 'Your arguments', theirArgs: 'Their arguments',
@@ -55,7 +55,7 @@ const L = {
   },
   fr: {
     back: 'Mes dossiers', brief: 'Télécharger le résumé', share: 'Partager', addDoc: 'Ajouter un document', talkLawyer: 'Parler à un avocat',
-    riskLabel: 'Score de risque Jasper', riskHigh: 'Risque élevé', riskMed: 'Risque modéré', riskLow: 'Risque faible',
+    riskLabel: 'Score de risque Archer', riskHigh: 'Risque élevé', riskMed: 'Risque modéré', riskLow: 'Risque faible',
     dimFin: 'Financier', dimUrg: 'Urgence', dimLeg: 'Juridique', dimCom: 'Complexité',
     analysisTitle: 'Analyse de James — Mise à jour en temps réel', live: 'Live',
     battleTitle: 'Aperçu juridique — James vs Avocat adverse', yourArgs: 'Vos arguments', theirArgs: 'Leurs arguments',
@@ -90,7 +90,7 @@ const L = {
   },
   nl: {
     back: 'Mijn dossiers', brief: 'Download samenvatting', share: 'Delen', addDoc: 'Document toevoegen', talkLawyer: 'Praat met een advocaat',
-    riskLabel: 'Jasper Risicoscore', riskHigh: 'Hoog risico', riskMed: 'Gemiddeld risico', riskLow: 'Laag risico',
+    riskLabel: 'Archer Risicoscore', riskHigh: 'Hoog risico', riskMed: 'Gemiddeld risico', riskLow: 'Laag risico',
     dimFin: 'Financieel', dimUrg: 'Urgentie', dimLeg: 'Juridisch', dimCom: 'Complexiteit',
     analysisTitle: 'Analyse van James — Realtime update', live: 'Live',
     battleTitle: 'Juridisch overzicht — James vs Tegenpartij', yourArgs: 'Uw argumenten', theirArgs: 'Hun argumenten',

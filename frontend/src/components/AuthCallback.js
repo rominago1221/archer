@@ -38,7 +38,7 @@ const AuthCallback = () => {
   return (
     <div className="auth-wrap">
       <div className="auth-card text-center">
-        <div className="text-2xl font-semibold text-[#1a56db] mb-4">Jasper</div>
+        <div className="text-2xl font-semibold text-[#1a56db] mb-4"><img src="/logos/archer-logo-wordmark.svg" alt="Archer" style={{ height: 36 }} /></div>
         <div className="text-gray-600">Signing you in...</div>
         <div className="mt-4 flex justify-center">
           <div className="w-8 h-8 border-2 border-[#1a56db] border-t-transparent rounded-full animate-spin"></div>

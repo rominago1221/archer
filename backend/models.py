@@ -1,4 +1,4 @@
-"""Pydantic models for the Jasper application."""
+"""Pydantic models for the Archer application."""
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import List, Optional, Any, Dict
 

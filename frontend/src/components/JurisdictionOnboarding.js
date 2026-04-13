@@ -128,7 +128,7 @@ const STEPS = {
   },
 };
 
-const SEEN_KEY = 'jasper_jurisdiction_onboarded';
+const SEEN_KEY = 'archer_jurisdiction_onboarded';
 
 export const hasSeenOnboarding = (jurisdiction) => {
   try {

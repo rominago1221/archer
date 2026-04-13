@@ -40,7 +40,7 @@ const Landing = () => {
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-[#ebebeb] z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div onClick={() => navigate('/')} style={{ fontFamily: 'Outfit, sans-serif', fontSize: '20px', fontWeight: 500, letterSpacing: '-0.5px', color: '#1a56db', cursor: 'pointer' }} data-testid="landing-logo">Jasper</div>
+          <div onClick={() => navigate('/')} style={{ cursor: 'pointer' }} data-testid="landing-logo"><img src="/logos/archer-logo-wordmark.svg" alt="Archer" style={{ height: 32 }} /></div>
           <div className="hidden md:flex items-center gap-6 text-sm text-[#555]">
             <a href="#how" className="hover:text-[#1a56db]">{t.nav.howItWorks}</a>
             <a href="#attorneys" className="hover:text-[#1a56db]">{t.nav.attorneys}</a>
@@ -139,7 +139,7 @@ const Landing = () => {
             <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"></div>
             <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]"></div>
             <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]"></div>
-            <div className="flex-1 mx-2 px-3 py-1 bg-white border border-[#e0e0e0] rounded-md text-[11px] text-[#aaa] text-left">app.jasper.com/dashboard</div>
+            <div className="flex-1 mx-2 px-3 py-1 bg-white border border-[#e0e0e0] rounded-md text-[11px] text-[#aaa] text-left">app.archer.law/dashboard</div>
           </div>
           <div className="px-5 py-3.5 border-b border-[#f0f0f0] flex items-center justify-between bg-white">
             <div className="text-left">
@@ -152,16 +152,16 @@ const Landing = () => {
             <div className="px-3.5 py-1.5 bg-[#1a56db] text-white text-[11px] font-medium rounded-full">+ New case</div>
           </div>
           <div className="h-[280px] overflow-hidden relative px-5 pt-4 group"
-            onMouseEnter={(e) => { const track = e.currentTarget.querySelector('.jasper-track'); if (track) track.style.animationPlayState = 'paused'; }}
-            onMouseLeave={(e) => { const track = e.currentTarget.querySelector('.jasper-track'); if (track) track.style.animationPlayState = 'running'; }}
+            onMouseEnter={(e) => { const track = e.currentTarget.querySelector('.archer-track'); if (track) track.style.animationPlayState = 'paused'; }}
+            onMouseLeave={(e) => { const track = e.currentTarget.querySelector('.archer-track'); if (track) track.style.animationPlayState = 'running'; }}
           >
-            <div className="jasper-track flex flex-col gap-2" style={{ animation: 'jasperScroll 25s linear infinite' }}>
+            <div className="archer-track flex flex-col gap-2" style={{ animation: 'archerScroll 25s linear infinite' }}>
               {[
                 { cat: 'Traffic · Court notice', title: 'Speeding ticket — 89mph in 65mph zone · Court summons', action: 'Respond by Apr 14', detail: 'Fine up to $1,200 + license points', score: '82/100', risk: 'High risk', color: '#dc2626', bg: '#fff5f5' },
                 { cat: 'Debt collection', title: 'Collector harassment — 12 calls in 3 days · FDCPA violation', action: 'Send cease & desist now', detail: '$4,800 claimed', score: '64/100', risk: 'Medium risk', color: '#f59e0b', bg: '#fef3c7' },
                 { cat: 'Employment', title: 'Wrongful termination — demand letter · $8,400 claimed', action: 'Respond within 10 days', detail: 'Strong negotiation opportunity', score: '58/100', risk: 'Medium risk', color: '#f59e0b', bg: '#fef3c7' },
                 { cat: 'Housing · Eviction', title: '3-Day Notice to Quit — unpaid rent $6,030', action: 'Respond by Apr 12', detail: 'Payment plan available', score: '85/100', risk: 'Critical', color: '#dc2626', bg: '#fff5f5' },
-                { cat: 'Contract', title: 'NDA review — freelance client agreement resolved', action: 'Resolved — Jasper letter worked', detail: 'No action needed', score: '12/100', risk: 'Resolved', color: '#22c55e', bg: '#f0fdf4' },
+                { cat: 'Contract', title: 'NDA review — freelance client agreement resolved', action: 'Resolved — Archer letter worked', detail: 'No action needed', score: '12/100', risk: 'Resolved', color: '#22c55e', bg: '#f0fdf4' },
                 { cat: 'Consumer rights', title: 'Refund dispute — online purchase $890 · Merchant refusing', action: 'Chargeback letter ready', detail: 'FTC complaint option available', score: '44/100', risk: 'Low risk', color: '#1a56db', bg: '#eff6ff' },
                 { cat: 'Immigration', title: 'Visa sponsorship contract — 3 unfair clauses identified', action: 'Review before signing', detail: 'Do not sign yet', score: '51/100', risk: 'Medium risk', color: '#f59e0b', bg: '#fef3c7' },
               ].concat([
@@ -229,7 +229,7 @@ const Landing = () => {
         </div>
       </div>
 
-      {/* What Jasper Handles */}
+      {/* What Archer Handles */}
       <section className="py-16 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
@@ -487,8 +487,8 @@ const Landing = () => {
 
       {/* Footer */}
       <footer className="py-8 px-6 bg-[#111] text-center">
-        <div className="text-xl font-bold text-white mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>Jasper</div>
-        <p className="text-xs text-[#666] max-w-2xl mx-auto">{t.footer} &middot; &copy; 2026 Jasper Inc.</p>
+        <div style={{ marginBottom: 16 }}><img src="/logos/archer-logo-mono-white.svg" alt="Archer" style={{ height: 36 }} /></div>
+        <p className="text-xs text-[#666] max-w-2xl mx-auto">{t.footer} &middot; &copy; 2026 Archer Inc.</p>
       </footer>
     </div>
   );

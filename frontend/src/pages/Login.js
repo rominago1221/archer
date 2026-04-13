@@ -31,7 +31,7 @@ const Login = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-semibold text-[#111827] tracking-tight">Jasper</h1>
+          <div style={{ textAlign: 'center', marginBottom: 8 }}><img src="/logos/archer-logo-full-color.svg" alt="Archer" style={{ height: 80, margin: '0 auto' }} /></div>
           <p className="text-xs text-[#6b7280] mt-1">Legal protection powered by AI</p>
         </div>
 
@@ -65,7 +65,7 @@ const Login = () => {
                     <Scale size={24} className="text-[#1a56db]" />
                   </div>
                   <div style={{ fontSize: 16, fontWeight: 600, color: '#111827' }}>I'm an attorney</div>
-                  <div style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', lineHeight: 1.4 }}>Join Jasper to receive pre-qualified clients</div>
+                  <div style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', lineHeight: 1.4 }}>Join Archer to receive pre-qualified clients</div>
                 </button>
               </div>
             </div>
@@ -128,7 +128,7 @@ const Login = () => {
                 {accountType === 'client' ? (
                   <a href="/signup" className="text-[11px] text-[#1a56db] hover:underline" data-testid="signup-link">New client? Sign up free</a>
                 ) : (
-                  <a href="/attorney/apply" className="text-[11px] text-[#1a56db] hover:underline" data-testid="attorney-apply-link">New attorney? Apply to join Jasper</a>
+                  <a href="/attorney/apply" className="text-[11px] text-[#1a56db] hover:underline" data-testid="attorney-apply-link">New attorney? Apply to join Archer</a>
                 )}
               </div>
             </div>

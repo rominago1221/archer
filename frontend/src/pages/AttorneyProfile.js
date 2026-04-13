@@ -46,7 +46,7 @@ const AttorneyProfile = () => {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-lg font-semibold text-[#111827]">My profile</h1>
-          <p className="text-[11px] text-[#6b7280]">Edit how clients see you on the Jasper directory</p>
+          <p className="text-[11px] text-[#6b7280]">Edit how clients see you on the Archer directory</p>
         </div>
         <div className="flex gap-2">
           <a href={`/attorneys/${profile.slug}`} target="_blank" rel="noreferrer"

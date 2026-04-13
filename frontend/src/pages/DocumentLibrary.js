@@ -119,7 +119,7 @@ const SignModal = ({ onClose, onSend, loading }) => {
 const DocumentLibrary = () => {
   const { user } = useAuth();
   const lang = (user?.language || 'en').replace(/-.*/, '');
-  const [mode, setMode] = useState(() => localStorage.getItem('jasper_doc_mode') || 'generate');
+  const [mode, setMode] = useState(() => localStorage.getItem('archer_doc_mode') || 'generate');
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -139,7 +139,7 @@ const DocumentLibrary = () => {
   const suggestions = SUGGESTIONS[lang] || SUGGESTIONS.en;
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, sending]);
-  useEffect(() => { localStorage.setItem('jasper_doc_mode', mode); }, [mode]);
+  useEffect(() => { localStorage.setItem('archer_doc_mode', mode); }, [mode]);
   useEffect(() => {
     (async () => { try { const r = await axios.get(`${API}/documents/james/recent`, { withCredentials: true }); setRecentDocs(r.data); } catch (e) { console.error('Failed to load recent docs:', e); } })();
   }, [latestDocId]);

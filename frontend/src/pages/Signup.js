@@ -72,8 +72,8 @@ const Signup = () => {
   return (
     <div className="auth-wrap">
       <div className="auth-card">
-        <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '28px', fontWeight: 500, letterSpacing: '-0.5px', color: '#1a56db', textAlign: 'center', marginBottom: '24px' }} data-testid="signup-logo">
-          Jasper
+        <div style={{ textAlign: 'center', marginBottom: '24px' }} data-testid="signup-logo">
+          <img src="/logos/archer-logo-full-color.svg" alt="Archer" style={{ height: 80, margin: '0 auto' }} />
         </div>
         <div className="text-xl font-semibold text-center text-[#111827] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
           Create your account
@@ -138,7 +138,7 @@ const Signup = () => {
               </div>
               <div className="p-3 bg-[#fffbeb] border border-[#fde68a] rounded-lg">
                 <div className="text-xs text-[#92400e]">
-                  <strong>Jasper Belgique:</strong> Legal analysis adapted to Belgian federal and regional law.
+                  <strong>Archer Belgique:</strong> Legal analysis adapted to Belgian federal and regional law.
                 </div>
               </div>
             </>

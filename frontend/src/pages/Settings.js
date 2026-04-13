@@ -361,7 +361,7 @@ const Settings = () => {
                   <Shield size={20} className={monitorStatus?.connected ? 'text-white' : 'text-[#9ca3af]'} />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-[#111827]">Jasper Risk Monitor</div>
+                  <div className="text-sm font-semibold text-[#111827]">Archer Risk Monitor</div>
                   <div className="flex items-center gap-1.5">
                     <span className={`w-1.5 h-1.5 rounded-full ${monitorStatus?.connected ? 'bg-[#16a34a]' : 'bg-[#dc2626]'}`}></span>
                     <span className="text-xs text-[#6b7280]">
@@ -399,7 +399,7 @@ const Settings = () => {
               ) : (
                 <div>
                   <p className="text-xs text-[#6b7280] mb-4">
-                    Connect your email to automatically detect incoming legal documents, contracts, and deadlines. Jasper scans your inbox for threats in real-time.
+                    Connect your email to automatically detect incoming legal documents, contracts, and deadlines. Archer scans your inbox for threats in real-time.
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <button
@@ -474,9 +474,9 @@ const Settings = () => {
               <div className="space-y-3">
                 {[
                   { step: '1', title: 'Connect your email', desc: 'Securely connect Gmail or Outlook' },
-                  { step: '2', title: 'AI scans incoming mail', desc: 'Jasper detects legal documents, contracts, and deadlines' },
+                  { step: '2', title: 'AI scans incoming mail', desc: 'Archer detects legal documents, contracts, and deadlines' },
                   { step: '3', title: 'Get instant alerts', desc: 'Receive notifications when a legal threat is detected' },
-                  { step: '4', title: 'One-click analysis', desc: 'Upload detected documents directly to Jasper for full analysis' }
+                  { step: '4', title: 'One-click analysis', desc: 'Upload detected documents directly to Archer for full analysis' }
                 ].map((item) => (
                   <div key={item.step} className="flex items-start gap-3">
                     <div className="w-6 h-6 rounded-full bg-[#fffbeb] text-[#d97706] flex items-center justify-center text-xs font-bold flex-shrink-0">{item.step}</div>
@@ -530,7 +530,7 @@ const Settings = () => {
                   <Toggle checked={dataSharing} onChange={setDataSharing} />
                 </div>
                 <div className="flex items-center justify-between py-2">
-                  <div><div className="text-sm font-medium text-[#111827]">Improve Jasper AI</div><div className="text-xs text-[#6b7280]">Allow anonymized data to improve analysis</div></div>
+                  <div><div className="text-sm font-medium text-[#111827]">Improve Archer AI</div><div className="text-xs text-[#6b7280]">Allow anonymized data to improve analysis</div></div>
                   <Toggle checked={improveAi} onChange={setImproveAi} />
                 </div>
               </div>

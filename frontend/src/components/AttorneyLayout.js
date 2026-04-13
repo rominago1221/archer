@@ -46,7 +46,7 @@ const AttorneyLayout = () => {
       <div className="w-[220px] flex-shrink-0 bg-white border-r border-[#ebebeb] flex flex-col" data-testid="attorney-sidebar">
         {/* Logo */}
         <div className="p-5 pb-3">
-          <div className="text-lg font-semibold text-[#111827] tracking-tight">Jasper</div>
+          <div className="text-lg font-semibold text-[#111827] tracking-tight"><img src="/logos/archer-logo-wordmark.svg" alt="Archer" style={{ height: 28 }} /></div>
         </div>
 
         {/* Attorney info */}

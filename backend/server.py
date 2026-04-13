@@ -541,7 +541,7 @@ async def fetch_courtlistener_opinions(case_type: str, state: str = "") -> list:
                 "https://www.courtlistener.com/api/rest/v4/search/",
                 params=params,
                 timeout=15.0,
-                headers={"User-Agent": "Jasper-Legal-AI/1.0"}
+                headers={"User-Agent": "Archer-Legal-AI/1.0"}
             )
             if response.status_code != 200:
                 logger.warning(f"CourtListener API returned {response.status_code}")
@@ -980,7 +980,7 @@ CLAUDE_SYSTEM_PROMPT = SENIOR_ATTORNEY_PERSONA
 
 # ================== Belgian Legal Analysis System ==================
 
-BELGIAN_PERSONA_FR = """Tu es le moteur d'analyse juridique de Jasper pour la Belgique francophone. Tu analyses des documents juridiques pour les residents belges et tu fournis des informations juridiques claires et actionnables en francais.
+BELGIAN_PERSONA_FR = """Tu es le moteur d'analyse juridique d'Archer pour la Belgique francophone. Tu analyses des documents juridiques pour les residents belges et tu fournis des informations juridiques claires et actionnables en francais.
 
 Tu N'ES PAS un avocat et ne le pretends jamais. Tu fournis des informations juridiques uniquement, pas des conseils juridiques. Ne fabrique jamais d'informations absentes du document. Recommande toujours de consulter un avocat ou un notaire belge agree.
 
@@ -1034,7 +1034,7 @@ CDI min 20, CDD min 25, Licenciement min 55, Mise en demeure min 40, Bail min 20
 
 OUTPUT FORMAT — retourne uniquement du JSON valide, rien d'autre."""
 
-BELGIAN_PERSONA_NL = """U bent de juridische analyse-engine van Jasper voor Nederlandstalig Belgie. U analyseert juridische documenten voor Belgische inwoners en verstrekt duidelijke, uitvoerbare juridische informatie in het Nederlands.
+BELGIAN_PERSONA_NL = """U bent de juridische analyse-engine van Archer voor Nederlandstalig Belgie. U analyseert juridische documenten voor Belgische inwoners en verstrekt duidelijke, uitvoerbare juridische informatie in het Nederlands.
 
 U BENT GEEN advocaat en beweert dat ook nooit te zijn. U verstrekt alleen juridische informatie, geen juridisch advies. Verzin nooit informatie die niet in het document staat. Raad altijd aan om een erkende Belgische advocaat te raadplegen.
 
@@ -1072,7 +1072,7 @@ RISICOSCORE DREMPELS: Arbeidsovereenkomst min 20, Ontslag min 55, Aanmaning min 
 
 OUTPUT FORMAT — retourneer alleen geldige JSON, niets anders."""
 
-BELGIAN_PERSONA_DE = """Sie sind die rechtliche Analyse-Engine von Jasper fuer die deutschsprachige Gemeinschaft Belgiens. Sie analysieren Rechtsdokumente fuer belgische Einwohner und liefern klare, umsetzbare Rechtsinformationen auf Deutsch.
+BELGIAN_PERSONA_DE = """Sie sind die rechtliche Analyse-Engine von Archer fuer die deutschsprachige Gemeinschaft Belgiens. Sie analysieren Rechtsdokumente fuer belgische Einwohner und liefern klare, umsetzbare Rechtsinformationen auf Deutsch.
 
 Sie SIND KEIN Anwalt und behaupten das auch nie. Sie liefern nur Rechtsinformationen, keine Rechtsberatung. Erfinden Sie niemals Informationen, die nicht im Dokument enthalten sind. Empfehlen Sie immer, einen zugelassenen belgischen Anwalt zu konsultieren.
 
@@ -1441,7 +1441,7 @@ BELGIAN_LETTER_TYPES = {
     ]
 }
 
-BELGIAN_LETTER_SYSTEM = """Tu es le moteur de communication juridique de Jasper pour la Belgique. Tu rediges des lettres professionnelles et strategiques en droit belge. Tu n'es PAS un avocat.
+BELGIAN_LETTER_SYSTEM = """Tu es le moteur de communication juridique d'Archer pour la Belgique. Tu rediges des lettres professionnelles et strategiques en droit belge. Tu n'es PAS un avocat.
 
 REGLES UNIVERSELLES LETTRES BELGES:
 1. Format date: [ville], le [JJ mois AAAA]
@@ -1464,10 +1464,10 @@ FORMAT DE SORTIE — JSON uniquement:
   "key_points": ["Point 1", "Point 2", "Point 3"],
   "warnings": ["Avertissement 1"],
   "next_if_no_response": "Prochaine etape si pas de reponse",
-  "disclaimer": "Cette lettre a ete redigee par Jasper AI comme outil de communication juridique. Elle ne constitue pas un avis juridique."
+  "disclaimer": "Cette lettre a ete redigee par Archer AI comme outil de communication juridique. Elle ne constitue pas un avis juridique."
 }}"""
 
-BELGIAN_OUTCOME_SYSTEM = """Tu es le moteur de prediction d'issue de Jasper pour la Belgique. Predis les probabilites des differents scenarios de resolution selon les statistiques judiciaires belges.
+BELGIAN_OUTCOME_SYSTEM = """Tu es le moteur de prediction d'issue d'Archer pour la Belgique. Predis les probabilites des differents scenarios de resolution selon les statistiques judiciaires belges.
 
 DONNEES STATISTIQUES BELGES:
 - 73% des litiges du travail se reglent avant jugement (SPF Emploi 2023)
@@ -1659,7 +1659,7 @@ async def analyze_contract_guard(extracted_text: str, user_context: str = "", co
 
 # ================== Letter Generation System ==================
 
-LETTER_SYSTEM_PROMPT = """You are Jasper's legal communication engine. You write professional, strategic response letters on behalf of US residents facing legal situations. You are NOT a lawyer. Your letters are legal communications, not legal advice.
+LETTER_SYSTEM_PROMPT = """You are Archer's legal communication engine. You write professional, strategic response letters on behalf of US residents facing legal situations. You are NOT a lawyer. Your letters are legal communications, not legal advice.
 
 Your letters must be:
 - Professional and formal in tone
@@ -1667,7 +1667,7 @@ Your letters must be:
 - Strategic — designed to de-escalate, buy time, or protect the user's rights
 - Compliant with US law — never ask for anything illegal
 - Clear and concise — no unnecessary legal jargon
-- Signed by the user, not by Jasper
+- Signed by the user, not by Archer
 
 LETTER WRITING RULES:
 1. NEVER admit liability or guilt
@@ -1693,7 +1693,7 @@ OUTPUT FORMAT — respond ONLY with valid JSON, no other text:
   "key_points": ["Point 1", "Point 2", "Point 3"],
   "warnings": ["Warning 1", "Warning 2"],
   "next_if_no_response": "What to do if no response",
-  "disclaimer": "This letter was drafted by Jasper AI as a legal communication tool. It does not constitute legal advice."
+  "disclaimer": "This letter was drafted by Archer AI as a legal communication tool. It does not constitute legal advice."
 }"""
 
 # Letter types by case type
@@ -3646,7 +3646,7 @@ async def get_risk_history(case_id: str, current_user: User = Depends(get_curren
 
 # ================== Outcome Predictor ==================
 
-OUTCOME_SYSTEM_PROMPT = """You are Jasper's legal outcome prediction engine. Based on case data and AI analysis, predict likely outcomes for this legal situation. You are NOT a lawyer and never claim to be one.
+OUTCOME_SYSTEM_PROMPT = """You are Archer's legal outcome prediction engine. Based on case data and AI analysis, predict likely outcomes for this legal situation. You are NOT a lawyer and never claim to be one.
 
 RULES:
 - Provide 3 scenarios: favorable, neutral, and unfavorable
@@ -3944,7 +3944,7 @@ async def scan_document(
 # ================== Stripe Payment Endpoints ==================
 
 PAYMENT_PACKAGES = {
-    "pro_monthly": {"amount": 69.00, "currency": "usd", "description": "Jasper Pro Plan - Monthly"},
+    "pro_monthly": {"amount": 69.00, "currency": "usd", "description": "Archer Pro Plan - Monthly"},
     "lawyer_call": {"amount": 149.00, "currency": "usd", "description": "Attorney Video Call - 30 min"}
 }
 
@@ -4116,7 +4116,7 @@ CRITICAL RULES:
 - Always cite the specific statute, article, or case that applies
 - Never say 'I cannot provide legal advice' as your first response — answer first, add disclaimer after
 - Never refuse to answer a legal question — provide information even if general
-- If the user has an active case in Jasper, reference it: 'Based on your [case name] case...'
+- If the user has an active case in Archer, reference it: 'Based on your [case name] case...'
 - Recommend booking an attorney call when: financial exposure > $5,000, deadline < 7 days, criminal implications, or complexity score > 70
 - End every response with one of these CTAs:
   * 'Want me to analyze a document related to this?' (if relevant)
@@ -5288,7 +5288,7 @@ async def connect_risk_monitor(request: Request, current_user: User = Depends(ge
             "preview": "This letter serves as formal notice that our client intends to pursue legal action regarding the outstanding balance...",
             "detected_at": now,
             "status": "new",
-            "recommended_action": "Upload this document to Jasper for full analysis"
+            "recommended_action": "Upload this document to Archer for full analysis"
         },
         {
             "alert_id": f"alert_{uuid.uuid4().hex[:12]}",
@@ -5401,7 +5401,7 @@ async def get_country_config(current_user: User = Depends(get_current_user)):
 
 @api_router.get("/")
 async def root():
-    return {"message": "Jasper API is running", "version": "1.0.0"}
+    return {"message": "Archer API is running", "version": "1.0.0"}
 
 @api_router.get("/health")
 async def health_check():
@@ -5462,7 +5462,7 @@ async def startup_event():
             "graduation_year": 2014, "specialties": ["Employment law", "Tenant rights", "Contract law", "Consumer protection"],
             "bio": "Former BigLaw attorney turned consumer advocate. 12 years fighting for individuals against corporations. Specialized in employment disputes and tenant protection.",
             "photo_url": None, "languages": ["en", "fr"], "linkedin_url": None,
-            "session_price": 199, "jasper_commission": 0.20, "attorney_payout": 159,
+            "session_price": 199, "archer_commission": 0.20, "attorney_payout": 159,
             "stripe_connect_id": None, "stripe_connect_status": "pending",
             "application_status": "approved", "rejection_reason": None,
             "rating": 4.8, "total_sessions": 47, "total_earnings": 7473, "review_count": 38,
