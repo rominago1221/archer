@@ -7,7 +7,6 @@ import JurisdictionPills from '../components/JurisdictionPills';
 import { useAuth } from '../contexts/AuthContext';
 import translations, { getStoredLocale, setStoredLocale, getLocaleFromPrefs } from '../data/landingTranslations';
 import { sanitizeHtml } from '../utils/sanitize';
-import WinWallSection from '../components/WinWallSection';
 
 const catIcons = [FileText, Briefcase, Home, Users, DollarSign, AlertCircle, Package, Star, Heart];
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -46,7 +45,7 @@ const Landing = () => {
             <a href="#how" className="hover:text-[#1a56db]">{t.nav.howItWorks}</a>
             <a href="#attorneys" className="hover:text-[#1a56db]">{t.nav.attorneys}</a>
             <span onClick={() => navigate('/pricing')} className="hover:text-[#1a56db] cursor-pointer">{t.nav.pricing}</span>
-            <a href="#winwall" className="hover:text-[#1a56db]">{t.nav.wins}</a>
+            <span onClick={() => navigate('/winning-cases')} className="hover:text-[#1a56db] cursor-pointer">{t.nav.wins}</span>
             <a href="#faq" className="hover:text-[#1a56db]">{t.nav.faq}</a>
           </div>
           <div className="flex items-center gap-3">
@@ -476,11 +475,6 @@ const Landing = () => {
           </div>
         </div>
       </section>
-
-      {/* Win Wall */}
-      <div id="winwall">
-        <WinWallSection jurisdiction={jurisdiction} language={language} />
-      </div>
 
       {/* Final CTA */}
       <section className="py-20 px-6 bg-[#1a56db] text-center">
