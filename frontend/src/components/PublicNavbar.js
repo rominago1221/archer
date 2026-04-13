@@ -37,7 +37,7 @@ const PublicNavbar = () => {
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         <div onClick={() => navigate('/')} style={{ cursor: 'pointer' }} data-testid="public-nav-logo"><img src="/logos/archer-logo-wordmark.svg" alt="Archer" style={{ height: 32 }} /></div>
         <div className="hidden md:flex items-center gap-6 text-sm text-[#555]">
-          <span onClick={() => navigate('/')} className="hover:text-[#1a56db] cursor-pointer">{t.nav.howItWorks}</span>
+          <span onClick={() => navigate('/how-it-works')} className="hover:text-[#1a56db] cursor-pointer">{t.nav.howItWorks}</span>
           <span onClick={() => navigate('/pricing')} className="hover:text-[#1a56db] cursor-pointer">{t.nav.pricing}</span>
           <span onClick={() => navigate('/winning-cases')} className="hover:text-[#1a56db] cursor-pointer">{t.nav.wins}</span>
         </div>

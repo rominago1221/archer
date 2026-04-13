@@ -35,6 +35,7 @@ import DocumentViewer from './pages/DocumentViewer';
 import VideoCall from './pages/VideoCall';
 import Pricing from './pages/Pricing';
 import WinningCases from './pages/WinningCases';
+import HowItWorks from './pages/HowItWorks';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -78,6 +79,8 @@ const AppRouter = () => {
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/:lang/pricing" element={<Pricing />} />
       <Route path="/winning-cases" element={<WinningCases />} />
+      <Route path="/how-it-works" element={<HowItWorks />} />
+      <Route path="/:lang/how-it-works" element={<HowItWorks />} />
       <Route path="/admin/attorneys" element={<ProtectedRoute><AdminAttorneys /></ProtectedRoute>} />
       <Route path="/documents/:documentId" element={<ProtectedRoute><DocumentViewer /></ProtectedRoute>} />
       

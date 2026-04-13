@@ -447,7 +447,7 @@ const Landing = () => {
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div onClick={() => navigate('/')} style={{ cursor: 'pointer' }} data-testid="landing-logo"><img src="/logos/archer-logo-wordmark.svg" alt="Archer" style={{ height: 32 }} /></div>
           <div className="hidden md:flex items-center gap-6 text-sm text-[#555]">
-            <a href="#pillars" className="hover:text-[#1a56db]">{t.nav.howItWorks}</a>
+            <span onClick={() => navigate('/how-it-works')} className="hover:text-[#1a56db] cursor-pointer">{t.nav.howItWorks}</span>
             <span onClick={() => navigate('/pricing')} className="hover:text-[#1a56db] cursor-pointer">{t.nav.pricing}</span>
             <span onClick={() => navigate('/winning-cases')} className="hover:text-[#1a56db] cursor-pointer">{t.nav.wins}</span>
             <a href="#faq" className="hover:text-[#1a56db]">{t.nav.faq}</a>
@@ -482,7 +482,7 @@ const Landing = () => {
         <p className="hero-sub">{c.heroSub}</p>
         <div className="hero-ctas">
           <button className="btn-p" onClick={() => navigate('/signup')} data-testid="hero-start-btn">{c.ctaStart}</button>
-          <button className="btn-o" onClick={() => { document.getElementById('pillars')?.scrollIntoView({ behavior: 'smooth' }); }}>{c.ctaHow} <ArrowR /></button>
+          <button className="btn-o" onClick={() => navigate('/how-it-works')}>{c.ctaHow} <ArrowR /></button>
         </div>
         <div className="trust-bar">
           {c.trust.map((item, i) => (
