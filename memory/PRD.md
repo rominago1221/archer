@@ -25,12 +25,14 @@ Build a complete, production-ready SaaS web application called "Jasper" — a le
 - Performance: Parallel Claude Passes, Analysis Caching
 - Code quality: XSS (DOMPurify), hook deps, array keys
 - Server.py modularization Phase 1
-- **Score History Chart redesign** (Apr 12 2026)
-  - ResizeObserver for true 100% width fill
-  - HTML tooltip: white bg, Score (bold), Time (gray), Document (blue)
-  - Fixed 200px height + overflow:hidden (no overlap)
-  - Dynamic auto-scaling Y-axis, Bezier curves, color-coded dots, dashed gridlines
-  - Integrated in both Dashboard.js and CaseDetail.js
+- Score History Chart redesign (ResizeObserver, HTML tooltip, fixed height)
+- **Pricing Page** (Apr 13 2026) — `/pricing`, `/en/pricing`, `/fr/pricing`
+  - 7 sections: Hero, Toggle, 5 Cards, Attorney Letter, Intelligence, VS Old World, 30-Day Guarantee
+  - Monthly/Yearly toggle with instant price update
+  - Full EN (USD) / FR (EUR) content separation via content object
+  - Responsive: 5-col desktop, 3-col tablet, 1-col mobile
+  - Solo card highlighted with animated "MOST POPULAR" badge
+  - Zero backend changes
 
 ## Prioritized Backlog
 
