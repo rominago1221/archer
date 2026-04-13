@@ -21,54 +21,45 @@ export function useAnalysisStream(caseId) {
   const [data, setData] = useState({});
   const [isComplete, setIsComplete] = useState(false);
   const [error, setError] = useState(null);
-
-  // All mutable state in a single ref to avoid dependency issues
-  const stateRef = useRef({
-    done: false,
-    emitted: new Set(),
-    sceneStart: Date.now(),
-    sceneTimer: null,
-    pollTimer: null,
-    delayTimers: [],
-  });
+  const mountedRef = useRef(true);
+  const sceneStartRef = useRef(Date.now());
+  const sceneTimerRef = useRef(null);
+  const emittedRef = useRef(new Set());
+  const delayTimersRef = useRef([]);
 
   useEffect(() => {
-    if (!caseId) return;
-
-    const s = stateRef.current;
-    s.done = false;
-    s.emitted = new Set();
-    s.sceneStart = Date.now();
+    mountedRef.current = true;
+    emittedRef.current = new Set();
+    sceneStartRef.current = Date.now();
 
     const API = process.env.REACT_APP_BACKEND_URL || '';
 
     const advanceScene = (targetScene) => {
-      if (s.done) return;
-      const elapsed = Date.now() - s.sceneStart;
+      if (!mountedRef.current) return;
+      const elapsed = Date.now() - sceneStartRef.current;
       const minDur = MIN_SCENE_DURATION[targetScene - 1] || 3000;
       const remaining = Math.max(0, minDur - elapsed);
 
       if (remaining > 0) {
-        if (s.sceneTimer) clearTimeout(s.sceneTimer);
-        s.sceneTimer = setTimeout(() => {
-          if (s.done) return;
+        if (sceneTimerRef.current) clearTimeout(sceneTimerRef.current);
+        sceneTimerRef.current = setTimeout(() => {
+          if (!mountedRef.current) return;
           setCurrentScene(targetScene);
-          s.sceneStart = Date.now();
+          sceneStartRef.current = Date.now();
         }, remaining);
       } else {
         setCurrentScene(targetScene);
-        s.sceneStart = Date.now();
+        sceneStartRef.current = Date.now();
       }
     };
 
     const emit = (stage, eventData) => {
-      if (s.emitted.has(stage) || s.done) return;
-      s.emitted.add(stage);
+      if (emittedRef.current.has(stage) || !mountedRef.current) return;
+      emittedRef.current.add(stage);
       setData(prev => ({ ...prev, [stage]: { stage, ...eventData } }));
       const scene = STAGE_TO_SCENE[stage];
       if (scene !== undefined && scene > 0) advanceScene(scene);
       if (stage === 'complete' || stage === 'already_complete') {
-        s.done = true;
         setIsComplete(true);
       }
     };
@@ -76,36 +67,39 @@ export function useAnalysisStream(caseId) {
     // Scene 00 immediately
     emit('started', { message: 'Archer ouvre votre dossier' });
 
-    // Trigger backend analysis
+    // Trigger backend analysis — abort after 500ms (analysis runs in background)
+    const ac = new AbortController();
     fetch(`${API}/api/analyze/stream?case_id=${caseId}`, {
       credentials: 'include',
-      headers: { Accept: 'text/event-stream' },
+      signal: ac.signal,
     }).catch(() => {});
+    setTimeout(() => ac.abort(), 500);
 
-    // Poll every 2s
-    let pollCount = 0;
+    // Recursive polling with setTimeout
+    let pollNum = 0;
+    let stopped = false;
 
-    const poll = () => {
-      if (s.done) return;
-      pollCount++;
-
-      fetch(`${API}/api/cases/${caseId}`, { credentials: 'include' })
-        .then(r => r.ok ? r.json() : null)
-        .then(c => {
-          if (!c || s.done) return;
+    const schedulePoll = () => {
+      if (stopped || !mountedRef.current) return;
+      setTimeout(async () => {
+        if (stopped || !mountedRef.current) return;
+        pollNum++;
+        try {
+          const r = await fetch(`${API}/api/cases/${caseId}`, { credentials: 'include' });
+          if (!r.ok || stopped || !mountedRef.current) { schedulePoll(); return; }
+          const c = await r.json();
           const score = c.risk_score || 0;
-          if (c.status !== 'active' || score === 0) return;
+          if (c.status !== 'active' || score === 0) { schedulePoll(); return; }
 
-          // Stop polling
-          if (s.pollTimer) clearInterval(s.pollTimer);
+          stopped = true;
 
-          // If found active on first polls → already analyzed, redirect
-          if (pollCount <= 2) {
+          // Already analyzed before this session? Redirect.
+          if (pollNum <= 2) {
             emit('already_complete', { case_id: caseId });
             return;
           }
 
-          // Emit cinematic events with delays
+          // Analysis just completed! Start cinematic events.
           const findings = c.ai_findings || [];
           const battle = c.battle_preview;
           const sp = c.success_probability;
@@ -126,7 +120,8 @@ export function useAnalysisStream(caseId) {
           const evts = [
             [5000, 'jurisprudence_loaded', { count: 2475, verified_refs: laws.slice(0, 5) }],
             [12000, 'score_ready', {
-              score: { total: score, financial: c.risk_financial || 50, urgency: c.risk_urgency || 50, legal_strength: c.risk_legal_strength || 50, complexity: c.risk_complexity || 50,
+              score: { total: score, financial: c.risk_financial || 50, urgency: c.risk_urgency || 50,
+                legal_strength: c.risk_legal_strength || 50, complexity: c.risk_complexity || 50,
                 level: score > 85 ? 'critical' : score > 70 ? 'high' : score > 40 ? 'moderate' : 'low',
                 tagline: c.key_insight || '' },
               level: score > 85 ? 'critical' : score > 70 ? 'high' : score > 40 ? 'moderate' : 'low',
@@ -138,22 +133,24 @@ export function useAnalysisStream(caseId) {
           ];
 
           evts.forEach(([delay, stage, eventData]) => {
-            const t = setTimeout(() => emit(stage, eventData), delay);
-            s.delayTimers.push(t);
+            const t = setTimeout(() => { if (mountedRef.current) emit(stage, eventData); }, delay);
+            delayTimersRef.current.push(t);
           });
-        })
-        .catch(() => {});
+        } catch {
+          if (!stopped && mountedRef.current) schedulePoll();
+        }
+      }, 2000);
     };
 
-    s.pollTimer = setInterval(poll, 2000);
+    schedulePoll();
 
     return () => {
-      s.done = true;
-      if (s.pollTimer) clearInterval(s.pollTimer);
-      if (s.sceneTimer) clearTimeout(s.sceneTimer);
-      s.delayTimers.forEach(clearTimeout);
+      mountedRef.current = false;
+      stopped = true;
+      if (sceneTimerRef.current) clearTimeout(sceneTimerRef.current);
+      delayTimersRef.current.forEach(clearTimeout);
     };
-  }, [caseId]); // Only depends on caseId — nothing else
+  }, [caseId]);
 
   return { currentScene, data, isComplete, error };
 }
