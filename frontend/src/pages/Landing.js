@@ -46,6 +46,7 @@ const Landing = () => {
             <a href="#how" className="hover:text-[#1a56db]">{t.nav.howItWorks}</a>
             <a href="#attorneys" className="hover:text-[#1a56db]">{t.nav.attorneys}</a>
             <span onClick={() => navigate('/pricing')} className="hover:text-[#1a56db] cursor-pointer">{t.nav.pricing}</span>
+            <a href="#winwall" className="hover:text-[#1a56db]">{t.nav.wins}</a>
             <a href="#faq" className="hover:text-[#1a56db]">{t.nav.faq}</a>
           </div>
           <div className="flex items-center gap-3">
@@ -477,7 +478,9 @@ const Landing = () => {
       </section>
 
       {/* Win Wall */}
-      <WinWallSection jurisdiction={jurisdiction} language={language} />
+      <div id="winwall">
+        <WinWallSection jurisdiction={jurisdiction} language={language} />
+      </div>
 
       {/* Final CTA */}
       <section className="py-20 px-6 bg-[#1a56db] text-center">

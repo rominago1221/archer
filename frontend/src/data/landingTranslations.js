@@ -6,7 +6,7 @@ const translations = {
     countryName: 'United States',
     langName: 'English',
     currency: { symbol: '$', code: 'USD' },
-    nav: { howItWorks: 'How it works', attorneys: 'Attorneys', pricing: 'Pricing', faq: 'FAQ', signIn: 'Sign in', getStarted: 'Get started' },
+    nav: { howItWorks: 'How it works', attorneys: 'Attorneys', pricing: 'Pricing', wins: 'Winning cases', faq: 'FAQ', signIn: 'Sign in', getStarted: 'Get started' },
     hero: {
       badge: 'Trusted by 12,000+ Americans',
       h1: ['Your lawyer,', 'without the', 'lawyer fees.'],
@@ -127,7 +127,7 @@ const translations = {
     countryName: 'Belgium',
     langName: 'Fran\u00e7ais',
     currency: { symbol: '\u20ac', code: 'EUR' },
-    nav: { howItWorks: 'Comment \u00e7a marche', attorneys: 'Avocats', pricing: 'Tarifs', faq: 'FAQ', signIn: 'Connexion', getStarted: 'Commencer' },
+    nav: { howItWorks: 'Comment \u00e7a marche', attorneys: 'Avocats', pricing: 'Tarifs', wins: 'Victoires', faq: 'FAQ', signIn: 'Connexion', getStarted: 'Commencer' },
     hero: {
       badge: 'Utilis\u00e9 par 4 200+ Belges',
       h1: ['Votre avocat,', 'sans les', 'honoraires.'],
@@ -248,7 +248,7 @@ const translations = {
     countryName: 'Belgium',
     langName: 'Nederlands',
     currency: { symbol: '\u20ac', code: 'EUR' },
-    nav: { howItWorks: 'Hoe het werkt', attorneys: 'Advocaten', pricing: 'Prijzen', faq: 'FAQ', signIn: 'Inloggen', getStarted: 'Beginnen' },
+    nav: { howItWorks: 'Hoe het werkt', attorneys: 'Advocaten', pricing: 'Prijzen', wins: 'Overwinningen', faq: 'FAQ', signIn: 'Inloggen', getStarted: 'Beginnen' },
     hero: {
       badge: 'Vertrouwd door 4.200+ Belgen',
       h1: ['Uw advocaat,', 'zonder de', 'advocaatkosten.'],
@@ -369,7 +369,7 @@ const translations = {
     countryName: 'Belgium',
     langName: 'Deutsch',
     currency: { symbol: '\u20ac', code: 'EUR' },
-    nav: { howItWorks: 'So funktioniert es', attorneys: 'Anw\u00e4lte', pricing: 'Preise', faq: 'FAQ', signIn: 'Anmelden', getStarted: 'Loslegen' },
+    nav: { howItWorks: 'So funktioniert es', attorneys: 'Anw\u00e4lte', pricing: 'Preise', wins: 'Erfolge', faq: 'FAQ', signIn: 'Anmelden', getStarted: 'Loslegen' },
     hero: {
       badge: 'Von 4.200+ Belgiern genutzt',
       h1: ['Ihr Anwalt,', 'ohne die', 'Anwaltskosten.'],
@@ -490,7 +490,7 @@ const translations = {
     countryName: 'Estados Unidos',
     langName: 'Espa\u00f1ol',
     currency: { symbol: '$', code: 'USD' },
-    nav: { howItWorks: 'Como funciona', attorneys: 'Abogados', pricing: 'Precios', faq: 'Preguntas', signIn: 'Iniciar sesion', getStarted: 'Comenzar' },
+    nav: { howItWorks: 'Como funciona', attorneys: 'Abogados', pricing: 'Precios', wins: 'Victorias', faq: 'Preguntas', signIn: 'Iniciar sesion', getStarted: 'Comenzar' },
     hero: {
       badge: 'Confiado por mas de 12,000 estadounidenses',
       h1: ['Tu abogado,', 'sin los', 'honorarios.'],
@@ -611,7 +611,7 @@ const translations = {
     countryName: 'Belgium',
     langName: 'English',
     currency: { symbol: '\u20ac', code: 'EUR' },
-    nav: { howItWorks: 'How it works', attorneys: 'Attorneys', pricing: 'Pricing', faq: 'FAQ', signIn: 'Sign in', getStarted: 'Get started' },
+    nav: { howItWorks: 'How it works', attorneys: 'Attorneys', pricing: 'Pricing', wins: 'Winning cases', faq: 'FAQ', signIn: 'Sign in', getStarted: 'Get started' },
     hero: {
       badge: 'Trusted by 5,000+ Belgian residents',
       h1: ['Your lawyer,', 'without the', 'lawyer fees.'],
