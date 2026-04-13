@@ -197,7 +197,7 @@ const WinWallSection = ({ jurisdiction = 'US', language = 'en' }) => {
 
   const resetCarousel = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => setCurrent(c => (c + 1) % 5), 2000);
+    timerRef.current = setInterval(() => setCurrent(c => (c + 1) % 5), 3000);
   }, []);
 
   useEffect(() => {
