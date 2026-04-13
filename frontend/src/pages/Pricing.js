@@ -279,7 +279,7 @@ const s = {
   hero: { textAlign: 'center', padding: '80px 20px 40px' },
   shieldIcon: { width: 80, height: 80, borderRadius: '50%', background: '#eff6ff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 28 },
   h1: { fontSize: 64, fontWeight: 600, letterSpacing: -2.5, lineHeight: 1, margin: '0 0 18px', color: '#0a0a0f' },
-  tagline: { fontSize: 22, color: '#1a56db', fontStyle: 'italic', margin: 0, fontWeight: 400 },
+  tagline: { fontSize: 28, color: '#1a56db', fontStyle: 'italic', margin: 0, fontWeight: 400, letterSpacing: -0.5 },
   toggleWrap: { display: 'flex', justifyContent: 'center', margin: '24px 0' },
   toggle: { display: 'inline-flex', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 30, padding: 4, gap: 0 },
   toggleOpt: (active) => ({ padding: '8px 18px', borderRadius: 24, fontSize: 13, fontWeight: 500, cursor: 'pointer', background: active ? '#0a0a0f' : 'transparent', color: active ? '#fff' : '#555', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s', border: 'none', outline: 'none', userSelect: 'none' }),
