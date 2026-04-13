@@ -26,13 +26,14 @@ Build a complete, production-ready SaaS web application called "Jasper" — a le
 - Code quality: XSS (DOMPurify), hook deps, array keys
 - Server.py modularization Phase 1
 - Score History Chart redesign (ResizeObserver, HTML tooltip, fixed height)
-- **Pricing Page** (Apr 13 2026) — `/pricing`, `/en/pricing`, `/fr/pricing`
-  - 7 sections: Hero, Toggle, 5 Cards, Attorney Letter, Intelligence, VS Old World, 30-Day Guarantee
-  - Monthly/Yearly toggle with instant price update
-  - Full EN (USD) / FR (EUR) content separation via content object
-  - Responsive: 5-col desktop, 3-col tablet, 1-col mobile
-  - Solo card highlighted with animated "MOST POPULAR" badge
-  - Zero backend changes
+- **Pricing Page** — `/pricing`, `/en/pricing`, `/fr/pricing`
+  - 7 sections with alternating white/gray backgrounds
+  - Monthly/Yearly toggle, 5 cards, responsive
+- **Win Wall Section** (Apr 13 2026) — Added to Landing page
+  - 3 versions: US ($, American cities), Belgium EN (€, Belgian cities EN), Belgium FR (€, Belgian cities FR)
+  - 6 sub-sections: Hero, Auto-rotating carousel (4.5s), Live stats counters, Colored wins grid (3x2 Option B), Cities grid (4x2 live), Final CTA
+  - Live animations: Total Saved (3.5s), Cases Won (5s, 60%), Cities (2.5-2.8s)
+  - Background alternation: white → gray → white → gray → white → blue
 
 ## Prioritized Backlog
 
