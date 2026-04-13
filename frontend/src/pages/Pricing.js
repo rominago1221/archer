@@ -323,7 +323,7 @@ const s = {
   compareLabel: (blue) => ({ fontSize: 10, fontWeight: 600, letterSpacing: 1, color: blue ? '#1a56db' : '#9ca3af', marginBottom: 6, textTransform: 'uppercase' }),
   compareTitle: (blue) => ({ fontSize: 18, fontWeight: 500, color: blue ? '#1a56db' : '#0a0a0f', marginBottom: 16 }),
   compareItem: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 8 },
-  finalCta: { background: '#eff6ff', borderRadius: 16, padding: 28, textAlign: 'center', maxWidth: 1060, margin: '0 auto' },
+  finalCta: { textAlign: 'center' },
   finalBadge: { display: 'inline-flex', alignItems: 'center', gap: 6, color: '#1a56db', fontSize: 11, fontWeight: 600, letterSpacing: 1, marginBottom: 8 },
   finalText: { fontSize: 18, fontWeight: 500, color: '#1a56db', margin: 0 },
 };
@@ -416,7 +416,7 @@ export default function Pricing() {
       <div style={{ background: '#fff' }}>
       {/* ── SECTION 1: HERO ── */}
       <div style={s.hero}>
-        <div className="shield-anim" style={s.shieldIcon}><Shield size={38} color="#1a56db" /></div>
+        <div className="shield-anim" style={s.shieldIcon}><Shield size={38} color="#16a34a" /></div>
         <h1 className="hero-h1" style={s.h1}>{t.hero.title}</h1>
         <p className="hero-tagline" style={s.tagline}>{t.hero.subtitle}</p>
       </div>
@@ -586,8 +586,8 @@ export default function Pricing() {
       </div>
       </div>{/* close old world band */}
 
-      {/* ── BAND 6: GUARANTEE — gray ── */}
-      <div style={{ background: '#f4f4f1', borderTop: '1px solid #ebebeb', padding: '48px 20px' }}>
+      {/* ── BAND 6: GUARANTEE — blue full width ── */}
+      <div style={{ background: '#eff6ff', borderTop: '1px solid #d6e4f0', padding: '48px 20px' }}>
       {/* ── SECTION 7: 30-DAY GUARANTEE ── */}
       <div style={s.finalCta} data-testid="section-guarantee">
         <div style={s.finalBadge}><Shield size={13} /> {t.guarantee.badge}</div>
