@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Shield, Clock, DollarSign, Award, Lock, Sparkles, CheckCircle, Layers } from 'lucide-react';
+import PublicNavbar from '../components/PublicNavbar';
 
 /* ─── CONTENT OBJECT ─── */
 const content = {
@@ -410,10 +411,11 @@ export default function Pricing() {
 
   return (
     <div className="pricing-page" style={{ minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif', color: '#0a0a0f' }}>
+      <PublicNavbar />
       <style>{responsiveCSS}</style>
 
       {/* ── BAND 1: HERO + TOGGLE — white ── */}
-      <div style={{ background: '#fff' }}>
+      <div style={{ background: '#fff', paddingTop: 72 }}>
       {/* ── SECTION 1: HERO ── */}
       <div style={s.hero}>
         <div className="shield-anim" style={s.shieldIcon}><Shield size={38} color="#16a34a" /></div>
