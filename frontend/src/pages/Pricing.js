@@ -300,7 +300,7 @@ const s = {
   featureRow: (ok) => ({ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: ok ? '#0a0a0f' : '#9ca3af', marginBottom: 6 }),
   checkMark: { color: '#16a34a', fontSize: 13, fontWeight: 700, width: 16, flexShrink: 0 },
   xMark: { color: '#9ca3af', fontSize: 13, fontWeight: 400, width: 16, flexShrink: 0 },
-  section: { background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 16, padding: '40px 32px', maxWidth: 1060, margin: '16px auto 0', textAlign: 'center' },
+  section: { background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 16, padding: '40px 32px', maxWidth: 1060, margin: '0 auto', textAlign: 'center' },
   sectionBadge: (green) => ({ display: 'inline-flex', alignItems: 'center', gap: 6, background: green ? '#ecfdf5' : '#eff6ff', color: green ? '#16a34a' : '#1a56db', fontSize: 10, fontWeight: 600, letterSpacing: 1, padding: '5px 14px', borderRadius: 20, marginBottom: 18 }),
   h2: { fontSize: 32, fontWeight: 500, letterSpacing: -1, lineHeight: 1.1, color: '#0a0a0f', margin: '0 0 14px' },
   accent: { color: '#1a56db' },
@@ -310,11 +310,11 @@ const s = {
   pillarTitle: { fontSize: 14, fontWeight: 500, color: '#0a0a0f', marginBottom: 2 },
   pillarSub: { fontSize: 11, color: '#9ca3af' },
   statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, maxWidth: 820, margin: '0 auto 12px' },
-  stat: { background: '#f4f4f1', borderRadius: 12, padding: '20px 14px', textAlign: 'center' },
+  stat: { background: '#fff', borderRadius: 12, padding: '20px 14px', textAlign: 'center' },
   statNum: { fontSize: 28, fontWeight: 500, color: '#1a56db', lineHeight: 1, marginBottom: 4 },
   statLabel: { fontSize: 11, color: '#555' },
   capGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, maxWidth: 820, margin: '12px auto 0' },
-  capCard: { background: '#f4f4f1', borderRadius: 12, padding: '16px 14px', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left' },
+  capCard: { background: '#fff', borderRadius: 12, padding: '16px 14px', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left' },
   capIcon: { width: 32, height: 32, borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#1a56db' },
   capTitle: { fontSize: 13, fontWeight: 500, color: '#0a0a0f' },
   capSub: { fontSize: 11, color: '#9ca3af' },
@@ -323,7 +323,7 @@ const s = {
   compareLabel: (blue) => ({ fontSize: 10, fontWeight: 600, letterSpacing: 1, color: blue ? '#1a56db' : '#9ca3af', marginBottom: 6, textTransform: 'uppercase' }),
   compareTitle: (blue) => ({ fontSize: 18, fontWeight: 500, color: blue ? '#1a56db' : '#0a0a0f', marginBottom: 16 }),
   compareItem: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 8 },
-  finalCta: { background: '#eff6ff', borderRadius: 16, padding: 28, textAlign: 'center', maxWidth: 1060, margin: '16px auto 0' },
+  finalCta: { background: '#eff6ff', borderRadius: 16, padding: 28, textAlign: 'center', maxWidth: 1060, margin: '0 auto' },
   finalBadge: { display: 'inline-flex', alignItems: 'center', gap: 6, color: '#1a56db', fontSize: 11, fontWeight: 600, letterSpacing: 1, marginBottom: 8 },
   finalText: { fontSize: 18, fontWeight: 500, color: '#1a56db', margin: 0 },
 };
@@ -427,6 +427,7 @@ export default function Pricing() {
       </div>
 
       {/* ── SECTION 3: PRICING CARDS ── */}
+      <div style={{ paddingBottom: 48 }}>
       <div className="pricing-grid-wrap">
         {t.plans.map((plan) => {
           const p = billing === 'yearly' ? plan.yearly : plan.monthly;
@@ -469,9 +470,12 @@ export default function Pricing() {
           );
         })}
       </div>
+      </div>
 
+      {/* ── BAND: ATTORNEY LETTER — white bg ── */}
+      <div style={{ background: '#fff', borderTop: '1px solid #ebebeb', borderBottom: '1px solid #ebebeb', padding: '48px 20px' }}>
       {/* ── SECTION 4: ATTORNEY LETTER ── */}
-      <div className="section-wrap" style={s.section} data-testid="section-attorney-letter">
+      <div className="section-wrap" style={{ ...s.section, border: 'none', background: 'transparent' }} data-testid="section-attorney-letter">
         <div style={s.sectionBadge(false)}>
           <Shield size={11} /> {t.attorney.badge}
         </div>
@@ -491,9 +495,12 @@ export default function Pricing() {
           ))}
         </div>
       </div>
+      </div>{/* close attorney band */}
 
+      {/* ── BAND: INTELLIGENCE — gray bg ── */}
+      <div style={{ background: '#f8f8f8', borderTop: '1px solid #ebebeb', borderBottom: '1px solid #ebebeb', padding: '48px 20px' }}>
       {/* ── SECTION 5: THE INTELLIGENCE ── */}
-      <div className="section-wrap" style={{ ...s.section, textAlign: 'center' }} data-testid="section-intelligence">
+      <div className="section-wrap" style={{ ...s.section, textAlign: 'center', border: 'none', background: 'transparent' }} data-testid="section-intelligence">
         <div style={s.sectionBadge(false)}>{t.intelligence.badge}</div>
         <h2 className="section-h2" style={s.h2}>
           {t.intelligence.h2}<br />{t.intelligence.h2br}
@@ -527,9 +534,12 @@ export default function Pricing() {
           ))}
         </div>
       </div>
+      </div>{/* close intelligence band */}
 
+      {/* ── BAND: VS OLD WORLD — white bg ── */}
+      <div style={{ background: '#fff', borderTop: '1px solid #ebebeb', borderBottom: '1px solid #ebebeb', padding: '48px 20px' }}>
       {/* ── SECTION 6: VS THE OLD WORLD ── */}
-      <div className="section-wrap" style={s.section} data-testid="section-old-world">
+      <div className="section-wrap" style={{ ...s.section, border: 'none', background: 'transparent' }} data-testid="section-old-world">
         <div style={{ marginBottom: 32 }}>
           <div style={s.sectionBadge(true)}>{t.oldWorld.badge}</div>
           <h2 className="section-h2" style={s.h2}>
@@ -557,11 +567,15 @@ export default function Pricing() {
           </div>
         </div>
       </div>
+      </div>{/* close old world band */}
 
+      {/* ── BAND: GUARANTEE — warm bg ── */}
+      <div style={{ padding: '48px 20px' }}>
       {/* ── SECTION 7: 30-DAY GUARANTEE ── */}
       <div style={s.finalCta} data-testid="section-guarantee">
         <div style={s.finalBadge}><Shield size={13} /> {t.guarantee.badge}</div>
         <p style={s.finalText}>{t.guarantee.text}</p>
+      </div>
       </div>
     </div>
   );
