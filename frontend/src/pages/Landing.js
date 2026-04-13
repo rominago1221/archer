@@ -23,11 +23,11 @@ const C = {
     ],
     pillarsSupra: 'THE COMPLETE LAW FIRM',
     pillarsTitle: ['Your entire legal case.', 'Handled from A to Z.'],
-    pillarsDesc: "Archer is not a tool. It's a complete virtual law firm that takes your case from the first diagnosis to the final resolution.",
+    pillarsDesc: 'Three steps. Most cases resolved in under 6 hours.',
     pillars: [
-      { num: '01', title: 'Diagnosis', desc: 'Archer reads your case, cross-checks 2.4M case laws, and maps every winning legal angle.', green: false },
-      { num: '02', title: 'Strategy', desc: 'The exact path to win, argument by argument. Validated by a real partner attorney.', green: false },
-      { num: '03', title: 'Execution', desc: 'Signed attorney letters, deadlines tracked, negotiations handled. Archer closes your case.', green: true },
+      { num: '01', title: 'You upload', desc: 'Drop any legal document. Archer reads it all.', green: false, output: 'formats' },
+      { num: '02', title: 'Archer analyzes', desc: 'Full case analysis in 60 seconds flat.', green: false, output: 'stats' },
+      { num: '03', title: 'You choose', desc: 'Send it yourself, or let an attorney sign it.', green: true, output: 'actions' },
     ],
     pillarsFooter: ['Average case: ', 'resolved in 6 hours'],
     intelSupra: 'THE INTELLIGENCE',
@@ -47,16 +47,30 @@ const C = {
       { t: '5 languages supported', d: 'English, French, Dutch, German, and Spanish. Native-level legal terminology.' },
       { t: 'Available 24/7', d: 'No office hours. Your legal cabinet never sleeps, never takes vacation, never makes you wait.' },
     ],
-    letterBadge: 'THE KILLER FEATURE',
-    letterTitle: ['A real lawyer.', 'In ', '4 hours.', ' For ', '$49.'],
-    letterDesc: "Forget waiting weeks for an appointment. Forget paying $800 for a simple letter. Archer delivers a real, signed, legally binding attorney letter in 4 hours — for the price of a dinner.",
-    letterFeats: [
-      { t: 'Legally binding', d: 'Same legal weight as any attorney letter. Cite real laws, demand action, set deadlines.' },
-      { t: 'Signed by a partner attorney', d: 'A real lawyer registered with the bar reviews and personally signs every letter.' },
-      { t: 'Delivered in 4 hours', d: "Archer drafts in 60 seconds. The attorney reviews and signs within 4 hours. That's it." },
-      { t: '$49 flat rate', d: 'No hourly billing. No surprises. Traditional attorneys charge $400\u2013$800 for the same.' },
+    handleSupra: 'WHAT WE HANDLE',
+    handleTitle: ["Whatever you're dealing with.", "We've seen it before."],
+    handleDesc: 'From small daily annoyances to life-changing disputes, Archer handles the legal issues real people actually face.',
+    handleCards: [
+      { t: 'Speeding tickets', d: 'Contest fines, wrong readings, procedural errors.', bg: '#eff6ff', ic: '#1a56db', icon: 'car' },
+      { t: 'Parking fines', d: 'Wrong plate, invalid zone, expired meter disputes.', bg: '#fef3c7', ic: '#b45309', icon: 'parking' },
+      { t: 'Consumer disputes', d: 'Defective products, refund refusals, scams.', bg: '#dcfce7', ic: '#15803d', icon: 'bag' },
+      { t: 'Contract disputes', d: 'Breach, unclear clauses, cancellations.', bg: '#e0e7ff', ic: '#4338ca', icon: 'file' },
+      { t: 'Wrongful eviction', d: 'Illegal notices, procedural violations, tenant rights.', bg: '#fee2e2', ic: '#b91c1c', icon: 'home' },
+      { t: 'Wrongful termination', d: 'Unfair firing, missing notice, unpaid wages.', bg: '#f3e8ff', ic: '#7c3aed', icon: 'briefcase' },
+      { t: 'Insurance denials', d: 'Bad faith claims, coverage disputes, delays.', bg: '#ffedd5', ic: '#ea580c', icon: 'shield' },
+      { t: 'Court summons', d: 'Understand, respond, prepare your defense.', bg: '#f4f4f1', ic: '#555', icon: 'scale' },
     ],
-    letterCta: 'Get my attorney letter',
+    letterBadge: 'ONE OF FOUR ACTIONS',
+    letterTitle: ['A real lawyer.', 'In ', '4 hours.', ' For ', '$49.99.'],
+    letterDesc: "For high-stakes cases \u2014 evictions, wrongful termination, insurance denials \u2014 Archer's attorneys step in. A partner attorney reviews, signs, and takes full legal responsibility.",
+    letterDisclaimer: "Most Archer cases don't need this. It's there when your case does.",
+    letterFeats: [
+      { t: 'Legally binding', d: 'Same weight as any traditional attorney letter.' },
+      { t: 'Signed by a partner attorney', d: 'Real lawyer, bar-registered, stays on your case.' },
+      { t: 'Real-time case tracking', d: 'When the other party replies, Archer re-analyzes automatically.' },
+      { t: '$49.99 flat \u00B7 Delivered in 4h', d: 'Traditional firms charge $400\u2013$800. Same output.' },
+    ],
+    letterCta: 'Request an attorney letter',
     letterTo: 'Mr. Robert Henderson', letterToSub: 'Henderson Property Management, LLC',
     letterRe: 'Notice of Legal Violations \u2014 Eviction Notice #4821',
     letterBody: '\u201CDear Mr. Henderson, We represent Ms. Sarah Mitchell in connection with the eviction notice dated... Our client\u2019s rights have been violated under three specific provisions of New York tenant law...\u201D',
@@ -80,20 +94,21 @@ const C = {
     vsOld: 'OLD WAY', vsOldLabel: 'Traditional lawyer', vsNew: 'THE ARCHER WAY', vsNewLabel: 'Archer',
     vsRows: [
       { label: 'First consultation', old: '$300\u2013500', nw: 'Free, instant' },
-      { label: 'First appointment', old: 'Wait 2\u20133 weeks', nw: '15 minutes' },
-      { label: 'Attorney letter', old: '$400\u2013800, 5\u20137 days', nw: '$49, 4 hours' },
+      { label: 'Attorney letter', old: '$400\u2013800, 5\u20137 days', nw: '$49.99, 4 hours' },
       { label: 'Case analysis', old: 'Billable hours', nw: '60 seconds, included' },
+      { label: 'DIY letter (send it yourself)', old: 'Not offered', nw: 'Free, unlimited', isNew: true },
       { label: 'Availability', old: 'Business hours', nw: '24/7/365' },
       { label: 'Monthly cost', old: '$200\u2013500/mo (insurance)', nw: '$29.99/mo Protect' },
     ],
     pricingSupra: 'ARCHER PROTECT',
-    pricingTitle: ['Protect yourself.', 'For less than a Netflix subscription.'],
-    pricingDesc: 'One plan covers everything: unlimited case analysis, Attorney Letters, live counsel, and 24/7 legal protection. Cancel anytime.',
+    pricingTitle: ['Protect yourself.', 'For less than one attorney consultation.'],
+    pricingDesc: 'Unlimited analyses, unlimited DIY letters, unlimited legal chat. Cancel anytime.',
     plans: [
-      { name: 'Protect Solo', tag: 'For individuals', price: '$29.99', period: '/month', yearly: 'Or $299/year \u2014 save $60', feats: ['2 full case analyses per month', '1 Attorney Letter per year', 'Unlimited Legal Chat', 'Document Vault included', 'Risk Monitor for emails'], cta: 'Start Solo', featured: false },
-      { name: 'Protect Family', tag: 'For up to 5 users', price: '$49.99', period: '/month', yearly: 'Or $499/year \u2014 save $100', feats: ['5 full case analyses per month', '2 Attorney Letters per year', 'Up to 5 family members', 'Everything in Solo, shared', 'Priority support'], cta: 'Start Family', featured: true, badge: 'MOST POPULAR' },
-      { name: 'Protect Pro', tag: 'For power users', price: '$89.99', period: '/month', yearly: 'Or $899/year \u2014 save $180', feats: ['Unlimited case analyses', '4 Attorney Letters per year', 'First Live Counsel call free', 'Quarterly strategy review', 'Dedicated partner attorney'], cta: 'Start Pro', featured: false },
+      { name: 'Protect Solo', tag: 'For individuals', price: '$29.99', period: '/month', yearly: 'Or $299/year \u2014 save $60', feats: [{ t: 'Unlimited document analyses', bold: true }, { t: 'Unlimited DIY letters', bold: true }, { t: 'Unlimited legal chat' }, { t: 'Document Vault + Risk Monitor' }], cta: 'Start Solo', featured: false },
+      { name: 'Protect Family', tag: 'Up to 3 family members', price: '$49.99', period: '/month', yearly: 'Or $499/year \u2014 save $100', feats: [{ t: 'Everything in Solo, for 3 people', bold: true }, { t: '1 Live Counsel session/year', bold: true, accent: '#7c3aed', value: '($149 value)' }, { t: 'Shared Document Vault' }, { t: 'Priority support' }], cta: 'Start Family', featured: true, badge: '\u2605 MOST POPULAR' },
+      { name: 'Protect Pro', tag: 'For high-stakes cases', price: '$89.99', period: '/month', yearly: 'Or $899/year \u2014 save $180', feats: [{ t: 'Everything in Solo' }, { t: '2 Attorney Letters/year', bold: true, accent: '#1a56db', value: '($100 value)' }, { t: '1 Live Counsel session/year', bold: true, accent: '#7c3aed', value: '($149 value)' }, { t: 'Dedicated attorney follow-up' }], cta: 'Start Pro', featured: false },
     ],
+    addons: { label: 'OPTIONAL ADD-ONS \u00B7 AVAILABLE TO ALL PLANS', items: [{ t: 'Certified mail', p: '$14', ic: '#b45309' }, { t: 'Attorney Letter', p: '$49.99', ic: '#1a56db' }, { t: 'Live Counsel', p: '$149', ic: '#7c3aed' }] },
     pricingLink: 'See full pricing details',
     faqSupra: 'COMMON QUESTIONS',
     faqTitle: ['Everything you need', 'to know.'],
@@ -127,11 +142,11 @@ const C = {
     ],
     pillarsSupra: 'LE CABINET JURIDIQUE COMPLET',
     pillarsTitle: ['Votre dossier juridique entier.', 'G\u00E9r\u00E9 de A \u00E0 Z.'],
-    pillarsDesc: "Archer n'est pas un outil. C'est un cabinet juridique virtuel complet qui prend en charge votre dossier, du premier diagnostic \u00E0 la r\u00E9solution finale.",
+    pillarsDesc: "Trois \u00E9tapes. La plupart des dossiers r\u00E9solus en moins de 6 heures.",
     pillars: [
-      { num: '01', title: 'Diagnostic', desc: 'Archer lit votre dossier, croise 2,4M de jurisprudences, et identifie chaque angle juridique gagnant.', green: false },
-      { num: '02', title: 'Strat\u00E9gie', desc: "Le chemin exact pour gagner, argument par argument. Valid\u00E9 par un vrai avocat partenaire.", green: false },
-      { num: '03', title: 'Ex\u00E9cution', desc: "Lettres d'avocat sign\u00E9es, d\u00E9lais suivis, n\u00E9gociations g\u00E9r\u00E9es. Archer ferme votre dossier.", green: true },
+      { num: '01', title: 'Vous t\u00E9l\u00E9versez', desc: "D\u00E9posez n'importe quel document juridique. Archer lit tout.", green: false, output: 'formats' },
+      { num: '02', title: 'Archer analyse', desc: 'Analyse compl\u00E8te du dossier en 60 secondes.', green: false, output: 'stats' },
+      { num: '03', title: 'Vous choisissez', desc: "Envoyez-le vous-m\u00EAme, ou laissez un avocat le signer.", green: true, output: 'actions' },
     ],
     pillarsFooter: ['Dossier moyen : ', 'r\u00E9solu en 6 heures'],
     intelSupra: "L'INTELLIGENCE",
@@ -151,16 +166,30 @@ const C = {
       { t: '5 langues support\u00E9es', d: 'Anglais, fran\u00E7ais, n\u00E9erlandais, allemand et espagnol. Terminologie juridique natif.' },
       { t: 'Disponible 24/7', d: 'Aucun horaire de bureau. Votre cabinet juridique ne dort jamais, ne prend jamais de vacances, ne vous fait jamais attendre.' },
     ],
-    letterBadge: 'LA FONCTIONNALIT\u00C9 KILLER',
-    letterTitle: ['Un vrai avocat.', 'En ', '4 heures.', ' Pour ', '49 \u20AC.'],
-    letterDesc: "Oubliez les semaines d'attente pour un rendez-vous. Oubliez les 800 \u20AC pour une simple lettre. Archer d\u00E9livre une vraie lettre d'avocat, sign\u00E9e, juridiquement contraignante, en 4 heures \u2014 pour le prix d'un d\u00EEner.",
-    letterFeats: [
-      { t: 'Juridiquement contraignante', d: "M\u00EAme poids juridique que n'importe quelle lettre d'avocat. Cite de vraies lois, exige des actions, fixe des d\u00E9lais." },
-      { t: 'Sign\u00E9e par un avocat partenaire', d: 'Un vrai avocat inscrit au barreau r\u00E9vise et signe personnellement chaque lettre.' },
-      { t: 'Livr\u00E9e en 4 heures', d: "Archer r\u00E9dige en 60 secondes. L'avocat r\u00E9vise et signe en 4 heures. C'est tout." },
-      { t: '49 \u20AC forfait', d: 'Pas de facturation horaire. Pas de surprises. Les avocats traditionnels facturent 400\u2013800 \u20AC pour la m\u00EAme chose.' },
+    handleSupra: 'CE QUE NOUS G\u00C9RONS',
+    handleTitle: ["\u00C0 quoi que vous fassiez face.", "On l'a d\u00E9j\u00E0 vu."],
+    handleDesc: "Des petits tracas quotidiens aux litiges qui changent une vie, Archer g\u00E8re les probl\u00E8mes juridiques auxquels les gens font vraiment face.",
+    handleCards: [
+      { t: 'Exc\u00E8s de vitesse', d: 'Contester des amendes, erreurs de lecture, vices de proc\u00E9dure.', bg: '#eff6ff', ic: '#1a56db', icon: 'car' },
+      { t: 'Amendes de stationnement', d: 'Mauvaise plaque, zone invalide, horodateur d\u00E9fectueux.', bg: '#fef3c7', ic: '#b45309', icon: 'parking' },
+      { t: 'Litiges consommateur', d: 'Produits d\u00E9fectueux, refus de remboursement, arnaques.', bg: '#dcfce7', ic: '#15803d', icon: 'bag' },
+      { t: 'Litiges contractuels', d: 'Rupture, clauses floues, r\u00E9siliations abusives.', bg: '#e0e7ff', ic: '#4338ca', icon: 'file' },
+      { t: 'Expulsion abusive', d: 'Avis ill\u00E9gaux, vices de proc\u00E9dure, droits du locataire.', bg: '#fee2e2', ic: '#b91c1c', icon: 'home' },
+      { t: 'Licenciement abusif', d: 'Renvoi injuste, pr\u00E9avis manquant, salaires impay\u00E9s.', bg: '#f3e8ff', ic: '#7c3aed', icon: 'briefcase' },
+      { t: "Refus d'assurance", d: 'Mauvaise foi, litiges de couverture, d\u00E9lais.', bg: '#ffedd5', ic: '#ea580c', icon: 'shield' },
+      { t: 'Citation au tribunal', d: 'Comprendre, r\u00E9pondre, pr\u00E9parer ta d\u00E9fense.', bg: '#f4f4f1', ic: '#555', icon: 'scale' },
     ],
-    letterCta: "Obtenir ma lettre d'avocat",
+    letterBadge: 'UNE DES QUATRE ACTIONS',
+    letterTitle: ['Un vrai avocat.', 'En ', '4 heures.', ' Pour ', '49,99 \u20AC.'],
+    letterDesc: "Pour les dossiers \u00E0 enjeux \u2014 expulsions, licenciement abusif, refus d'assurance \u2014 les avocats d'Archer interviennent. Un avocat partenaire r\u00E9vise, signe et prend l'enti\u00E8re responsabilit\u00E9 juridique.",
+    letterDisclaimer: "La plupart des dossiers Archer n'en ont pas besoin. C'est l\u00E0 quand votre dossier l'exige.",
+    letterFeats: [
+      { t: 'Juridiquement contraignante', d: "M\u00EAme poids que n'importe quelle lettre d'avocat traditionnelle." },
+      { t: 'Sign\u00E9e par un avocat partenaire', d: 'Vrai avocat, inscrit au barreau, reste sur votre dossier.' },
+      { t: 'Suivi en temps r\u00E9el', d: "Quand l'autre partie r\u00E9pond, Archer r\u00E9analyse automatiquement." },
+      { t: '49,99 \u20AC forfait \u00B7 Livr\u00E9e en 4h', d: 'Les cabinets traditionnels facturent 400\u2013800 \u20AC. M\u00EAme r\u00E9sultat.' },
+    ],
+    letterCta: "Demander une lettre d'avocat",
     letterTo: 'Mr. Robert Henderson', letterToSub: 'Henderson Property Management, SPRL',
     letterRe: "Avis de violations l\u00E9gales \u2014 Avis d'expulsion #4821",
     letterBody: '\u00AB Cher M. Henderson, Nous repr\u00E9sentons Mme Sarah Mitchell concernant l\'avis d\'expulsion dat\u00E9 du... Les droits de notre cliente ont \u00E9t\u00E9 viol\u00E9s sous trois dispositions sp\u00E9cifiques du droit des locataires de New York... \u00BB',
@@ -184,20 +213,21 @@ const C = {
     vsOld: 'ANCIENNE M\u00C9THODE', vsOldLabel: 'Avocat traditionnel', vsNew: 'LA M\u00C9THODE ARCHER', vsNewLabel: 'Archer',
     vsRows: [
       { label: 'Premi\u00E8re consultation', old: '300\u2013500 \u20AC', nw: 'Gratuit, instantan\u00E9' },
-      { label: 'Premier rendez-vous', old: 'Attente de 2\u20133 semaines', nw: '15 minutes' },
-      { label: "Lettre d'avocat", old: '400\u2013800 \u20AC, 5\u20137 jours', nw: '49 \u20AC, 4 heures' },
+      { label: "Lettre d'avocat", old: '400\u2013800 \u20AC, 5\u20137 jours', nw: '49,99 \u20AC, 4 heures' },
       { label: 'Analyse de dossier', old: 'Heures facturables', nw: '60 secondes, inclus' },
+      { label: 'Lettre DIY (envoyez-la vous-m\u00EAme)', old: 'Non propos\u00E9', nw: 'Gratuit, illimit\u00E9', isNew: true },
       { label: 'Disponibilit\u00E9', old: 'Heures de bureau', nw: '24/7/365' },
       { label: 'Co\u00FBt mensuel', old: '200\u2013500 \u20AC/mois (assurance)', nw: '29,99 \u20AC/mois Protect' },
     ],
     pricingSupra: 'ARCHER PROTECT',
-    pricingTitle: ['Prot\u00E9gez-vous.', "Pour moins qu'un abonnement Netflix."],
-    pricingDesc: "Un seul plan couvre tout : analyse de dossier illimit\u00E9e, lettres d'avocat, consultation en direct et protection juridique 24/7. R\u00E9siliation \u00E0 tout moment.",
+    pricingTitle: ['Prot\u00E9gez-vous.', "Pour moins qu'une consultation d'avocat."],
+    pricingDesc: "Analyses illimit\u00E9es, lettres DIY illimit\u00E9es, chat juridique illimit\u00E9. R\u00E9siliation \u00E0 tout moment.",
     plans: [
-      { name: 'Protect Solo', tag: 'Pour les particuliers', price: '29,99 \u20AC', period: '/mois', yearly: '\u00C9conomisez 60 \u20AC/an', feats: ['2 analyses de dossier compl\u00E8tes par mois', "1 lettre d'avocat par an", 'Chat juridique illimit\u00E9', 'Coffre-fort documents inclus', 'Surveillance des risques emails'], cta: 'Commencer Solo', featured: false },
-      { name: 'Protect Family', tag: "Jusqu'\u00E0 5 utilisateurs", price: '49,99 \u20AC', period: '/mois', yearly: '\u00C9conomisez 100 \u20AC/an', feats: ['5 analyses de dossier compl\u00E8tes par mois', "2 lettres d'avocat par an", "Jusqu'\u00E0 5 membres de la famille", 'Tout ce qu\'il y a dans Solo, partag\u00E9', 'Support prioritaire'], cta: 'Commencer Family', featured: true, badge: 'LE PLUS POPULAIRE' },
-      { name: 'Protect Pro', tag: 'Pour les utilisateurs intensifs', price: '89,99 \u20AC', period: '/mois', yearly: '\u00C9conomisez 180 \u20AC/an', feats: ['Analyses de dossier illimit\u00E9es', "4 lettres d'avocat par an", 'Premier appel Live Counsel gratuit', 'Revue strat\u00E9gique trimestrielle', 'Avocat partenaire d\u00E9di\u00E9'], cta: 'Commencer Pro', featured: false },
+      { name: 'Protect Solo', tag: 'Pour les particuliers', price: '29,99 \u20AC', period: '/mois', yearly: 'Ou 299 \u20AC/an \u2014 \u00E9conomisez 60 \u20AC', feats: [{ t: 'Analyses de documents illimit\u00E9es', bold: true }, { t: 'Lettres DIY illimit\u00E9es', bold: true }, { t: 'Chat juridique illimit\u00E9' }, { t: 'Coffre-fort + Surveillance des risques' }], cta: 'Commencer Solo', featured: false },
+      { name: 'Protect Family', tag: "Jusqu'\u00E0 3 membres", price: '49,99 \u20AC', period: '/mois', yearly: 'Ou 499 \u20AC/an \u2014 \u00E9conomisez 100 \u20AC', feats: [{ t: 'Tout Solo, pour 3 personnes', bold: true }, { t: '1 session Live Counsel/an', bold: true, accent: '#7c3aed', value: '(149 \u20AC de valeur)' }, { t: 'Coffre-fort partag\u00E9' }, { t: 'Support prioritaire' }], cta: 'Commencer Family', featured: true, badge: '\u2605 LE PLUS POPULAIRE' },
+      { name: 'Protect Pro', tag: 'Pour les dossiers s\u00E9rieux', price: '89,99 \u20AC', period: '/mois', yearly: 'Ou 899 \u20AC/an \u2014 \u00E9conomisez 180 \u20AC', feats: [{ t: 'Tout Solo inclus' }, { t: "2 lettres d'avocat/an", bold: true, accent: '#1a56db', value: '(100 \u20AC de valeur)' }, { t: '1 session Live Counsel/an', bold: true, accent: '#7c3aed', value: '(149 \u20AC de valeur)' }, { t: "Suivi avocat d\u00E9di\u00E9" }], cta: 'Commencer Pro', featured: false },
     ],
+    addons: { label: "ADD-ONS OPTIONNELS \u00B7 DISPONIBLES POUR TOUS LES PLANS", items: [{ t: 'Courrier certifi\u00E9', p: '15 \u20AC', ic: '#b45309' }, { t: "Lettre d'avocat", p: '49,99 \u20AC', ic: '#1a56db' }, { t: 'Live Counsel', p: '149 \u20AC', ic: '#7c3aed' }] },
     pricingLink: 'Voir tous les d\u00E9tails de tarification',
     faqSupra: 'QUESTIONS FR\u00C9QUENTES',
     faqTitle: ['Tout ce que vous devez', 'savoir.'],
@@ -273,6 +303,32 @@ const CSS = `
 .ah .cap{background:#fff;border:.5px solid #e2e0db;border-radius:16px;padding:24px}
 .ah .cap-h{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:14px;font-weight:700;color:#0a0a0f}
 .ah .cap p{font-size:12px;color:#555;line-height:1.6;margin:0}
+.ah .case-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:64px;max-width:1160px;margin-left:auto;margin-right:auto}
+.ah .case-card{background:#fff;border:.5px solid #e2e0db;border-radius:14px;padding:24px 22px;transition:transform .2s,border-color .2s}
+.ah .case-card:hover{transform:translateY(-2px);border-color:#1a56db}
+.ah .case-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.ah .case-card h4{font-size:15px;font-weight:800;color:#0a0a0f;letter-spacing:-.3px;line-height:1.2;margin:0 0 4px}
+.ah .case-card .cd{font-size:11px;color:#9ca3af;line-height:1.45;margin:0}
+.ah .pillar-out{margin-top:20px;padding-top:16px;border-top:.5px solid #e2e0db}
+.ah .fmt-chips{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ah .fmt-chip{background:#eff6ff;color:#1a56db;font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px;letter-spacing:.5px}
+.ah .fmt-time{font-size:11px;color:#16a34a;font-weight:700;margin-left:auto}
+.ah .pstat-row{display:flex;gap:16px;justify-content:center}
+.ah .pstat-num{font-size:18px;font-weight:800;letter-spacing:-.5px;line-height:1}
+.ah .pstat-label{font-size:9px;color:#9ca3af;font-weight:600;letter-spacing:.5px;margin-top:2px}
+.ah .pact-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.ah .pact-chip{background:#f4f4f1;border-radius:8px;padding:8px 6px;text-align:center}
+.ah .pact-chip.blue{background:#eff6ff}.ah .pact-chip.purple{background:#f3e8ff}
+.ah .pact-label{font-size:10px;color:#555;margin-bottom:2px}
+.ah .pact-price{font-size:12px;font-weight:800;letter-spacing:-.3px}
+.ah .addons-strip{background:#fff;border:.5px solid #e2e0db;border-radius:14px;padding:18px 24px;max-width:820px;margin:32px auto 24px;text-align:center}
+.ah .addons-label{font-size:10px;color:#9ca3af;font-weight:700;letter-spacing:1px;margin-bottom:10px}
+.ah .addons-row{display:flex;justify-content:center;align-items:center;gap:24px;flex-wrap:wrap}
+.ah .addons-div{width:1px;height:18px;background:#e2e0db}
+.ah .addons-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#555}
+.ah .addons-price{font-size:13px;font-weight:800;color:#0a0a0f}
+.ah .comp-row.diy{background:linear-gradient(90deg,rgba(220,252,231,.3) 0%,transparent 100%)}
+.ah .diy-new{font-size:10px;color:#15803d;font-weight:700;letter-spacing:.3px;margin-top:2px}
 .ah .split{display:grid;grid-template-columns:1.05fr 1fr;gap:80px;align-items:center}
 .ah .split-title{font-size:62px;font-weight:500;letter-spacing:-2.5px;line-height:1.05;color:#0a0a0f;margin:16px 0 20px}
 .ah .split-desc{font-size:19px;color:#555;line-height:1.6;margin-bottom:32px;max-width:520px}
@@ -346,6 +402,7 @@ const CSS = `
 .ah .pillar-arrow{transform:rotate(90deg);padding-top:0}
 .ah .stats-grid{grid-template-columns:repeat(2,1fr)}
 .ah .caps-grid{grid-template-columns:repeat(2,1fr)}
+.ah .case-grid{grid-template-columns:repeat(2,1fr)}
 .ah .split{grid-template-columns:1fr;gap:40px}
 .ah .pricing-grid{grid-template-columns:1fr}
 .ah .pcard.feat{transform:none}
@@ -363,6 +420,7 @@ const CSS = `
 .ah .final-cta h2{font-size:40px}
 .ah .trust-bar{gap:14px;padding:14px 18px}
 .ah .trust-div{display:none}
+.ah .case-grid{grid-template-columns:1fr}
 .ah .final-cta{padding:60px 20px}
 }
 `;
@@ -466,12 +524,21 @@ const Landing = () => {
                 <div className="pillar">
                   <div className="pillar-num">{p.num}</div>
                   <div className={`pillar-icon${p.green ? ' green' : ''}`}>
-                    {p.num === '01' && <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1a56db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>}
-                    {p.num === '02' && <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1a56db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>}
-                    {p.num === '03' && <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.997.398-.997.95v8a1 1 0 0 0 1 1z"/><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/></svg>}
+                    {p.num === '01' && <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a56db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
+                    {p.num === '02' && <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a56db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/></svg>}
+                    {p.num === '03' && <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>}
                   </div>
-                  <h3>{p.title}</h3>
+                  <h3 style={{ fontSize: 32 }}>{p.title}</h3>
                   <p>{p.desc}</p>
+                  {p.output === 'formats' && (
+                    <div className="pillar-out"><div className="fmt-chips"><div className="fmt-chip">PDF</div><div className="fmt-chip">DOCX</div><div className="fmt-chip">IMG</div><div className="fmt-time">10 sec</div></div></div>
+                  )}
+                  {p.output === 'stats' && (
+                    <div className="pillar-out"><div className="pstat-row"><div><div className="pstat-num" style={{ color: '#1a56db' }}>60s</div><div className="pstat-label">ANALYSIS</div></div><div><div className="pstat-num" style={{ color: '#15803d' }}>94%</div><div className="pstat-label">WIN RATE</div></div><div><div className="pstat-num" style={{ color: '#0a0a0f' }}>2.4M</div><div className="pstat-label">CASES</div></div></div></div>
+                  )}
+                  {p.output === 'actions' && (
+                    <div className="pillar-out"><div className="pact-row"><div className="pact-chip"><div className="pact-label">Download</div><div className="pact-price" style={{ color: '#16a34a' }}>FREE</div></div><div className="pact-chip"><div className="pact-label">Mail</div><div className="pact-price" style={{ color: '#b45309' }}>{language === 'fr' ? '15 \u20AC' : '$14'}</div></div><div className="pact-chip blue"><div className="pact-label">Attorney</div><div className="pact-price" style={{ color: '#1a56db' }}>{language === 'fr' ? '49,99 \u20AC' : '$49.99'}</div></div><div className="pact-chip purple"><div className="pact-label">Live call</div><div className="pact-price" style={{ color: '#7c3aed' }}>{language === 'fr' ? '149 \u20AC' : '$149'}</div></div></div></div>
+                  )}
                 </div>
               </React.Fragment>
             ))}
@@ -512,7 +579,39 @@ const Landing = () => {
         </div>
       </div>
 
-      {/* ── 4. ATTORNEY LETTER ── */}
+      {/* ── 4. WHAT WE HANDLE ── */}
+      <div className="sw white" data-testid="section-what-we-handle">
+        <div className="si" style={{ textAlign: 'center' }}>
+          <div className="supra">{c.handleSupra}</div>
+          <h2 className="stitle">{c.handleTitle[0]}<br /><span className="ac">{c.handleTitle[1]}</span></h2>
+          <p className="sdesc">{c.handleDesc}</p>
+          <div className="case-grid">
+            {c.handleCards.map((card, i) => {
+              const IconEl = () => {
+                const s = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: card.ic, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' };
+                if (card.icon === 'car') return <svg {...s}><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2-4H8L6 10l-2.5 1.1C2.7 11.3 2 12.1 2 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>;
+                if (card.icon === 'parking') return <svg {...s}><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg>;
+                if (card.icon === 'bag') return <svg {...s}><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>;
+                if (card.icon === 'file') return <svg {...s}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>;
+                if (card.icon === 'home') return <svg {...s}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
+                if (card.icon === 'briefcase') return <svg {...s}><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>;
+                if (card.icon === 'shield') return <svg {...s}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
+                if (card.icon === 'scale') return <svg {...s}><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>;
+                return null;
+              };
+              return (
+                <div key={i} className="case-card">
+                  <div className="case-icon" style={{ background: card.bg }}><IconEl /></div>
+                  <h4>{card.t}</h4>
+                  <div className="cd">{card.d}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── 5. ATTORNEY LETTER ── */}
       <div className="sw gray">
         <div className="si">
           <div className="split">
@@ -520,6 +619,7 @@ const Landing = () => {
               <div className="split-badge amber"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>{c.letterBadge}</div>
               <h2 className="split-title">{c.letterTitle[0]}<br />{c.letterTitle[1]}<span className="ac" style={{ fontWeight: 800 }}>{c.letterTitle[2]}</span>{c.letterTitle[3]}<span className="ac" style={{ fontWeight: 800 }}>{c.letterTitle[4]}</span></h2>
               <p className="split-desc">{c.letterDesc}</p>
+              {c.letterDisclaimer && <p style={{ fontSize: 13, fontStyle: 'italic', color: '#9ca3af', marginBottom: 24, maxWidth: 520 }}>{c.letterDisclaimer}</p>}
               <div className="feat-list">
                 {c.letterFeats.map((f, i) => (
                   <div key={i} className="feat-item">
@@ -632,8 +732,8 @@ const Landing = () => {
               <div className="comp-hdr-archer"><div style={{ fontSize: 11, color: '#1a56db', letterSpacing: 1, fontWeight: 700, marginBottom: 6 }}>{c.vsNew}</div><div style={{ fontSize: 18, fontWeight: 800, color: '#1a56db', letterSpacing: -.3 }}>{c.vsNewLabel}</div></div>
             </div>
             {c.vsRows.map((r, i) => (
-              <div key={i} className="comp-row">
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#0a0a0f' }}>{r.label}</div>
+              <div key={i} className={`comp-row${r.isNew ? ' diy' : ''}`}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#0a0a0f' }}>{r.label}{r.isNew && <div className="diy-new">{'\u2605'} NEW {'\u00B7'} ARCHER EXCLUSIVE</div>}</div>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#555' }}><XSvg />{r.old}</div>
                 <div className="archer-cell" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: '#15803d' }}><ChkSvg />{r.nw}</div>
               </div>
@@ -656,11 +756,31 @@ const Landing = () => {
                 <div className="pcard-tag">{p.tag}</div>
                 <div><span className="pcard-price">{p.price}</span><span className="pcard-per">{p.period}</span></div>
                 <div className="pcard-yr">{p.yearly}</div>
-                <ul className="pcard-feats">{p.feats.map((f, fi) => <li key={fi}><ChkSvg /><span>{f}</span></li>)}</ul>
+                <ul className="pcard-feats">{p.feats.map((f, fi) => {
+                  const feat = typeof f === 'string' ? { t: f } : f;
+                  return <li key={fi}><ChkSvg /><span style={{ fontWeight: feat.bold ? 700 : 400, color: feat.accent || '#0a0a0f' }}>{feat.t}{feat.value && <span style={{ fontSize: 11, color: feat.accent || '#555', marginLeft: 4 }}>{feat.value}</span>}</span></li>;
+                })}</ul>
                 <button className={`pcard-cta${p.featured ? ' primary' : ''}`} onClick={() => navigate('/signup')}>{p.cta}</button>
               </div>
             ))}
           </div>
+          {c.addons && (
+            <div className="addons-strip">
+              <div className="addons-label">{c.addons.label}</div>
+              <div className="addons-row">
+                {c.addons.items.map((a, ai) => (
+                  <React.Fragment key={ai}>
+                    {ai > 0 && <div className="addons-div" />}
+                    <div className="addons-item">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={a.ic} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+                      <span>{a.t}</span>
+                      <span className="addons-price">{a.p}</span>
+                    </div>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          )}
           <div style={{ marginTop: 40, textAlign: 'center' }}>
             <span onClick={() => navigate('/pricing')} style={{ fontSize: 14, color: '#1a56db', fontWeight: 600, cursor: 'pointer' }}>{c.pricingLink} <ArrowR /></span>
           </div>

@@ -19,23 +19,20 @@ Build a complete, production-ready SaaS web application called "Archer" — a le
 - Attorney Letter Modal (Part 1), Global Letter Tone Distinction
 - Case Delete, Performance Optimizations, Code Quality Fixes
 - Score History Chart (ResizeObserver, HTML tooltip, fixed height)
-- **Pricing Page** — /pricing, /en/pricing, /fr/pricing (7 sections)
-- **Win Wall** — /winning-cases (3 versions: US/$, BE-EN/€, BE-FR/€)
-- **PublicNavbar** — Shared navbar for Pricing + Winning Cases
-- **Jasper → Archer rename** — All UI, prompts, emails, meta, 5 SVG logos
-- **NEW: Archer Home Page** (Apr 13 2026) — Complete 10-section rebuild:
+- Pricing Page — /pricing, /en/pricing, /fr/pricing (7 sections)
+- Win Wall — /winning-cases (3 versions)
+- PublicNavbar, Jasper→Archer rename, 5 SVG logos
+- **Archer Home Page V1+V2+V3** (Apr 13 2026) — 11-section rebuild:
   1. Hero (Meet Archer 128px, sparkle badge, trust bar)
-  2. Pillars (Diagnosis → Strategy → Execution, animated arrows)
-  3. Intelligence (4 stats 2.4M/60s/5/94%, 6 capabilities)
-  4. Attorney Letter (split layout, letter mockup with VERIFIED seal)
-  5. Live Counsel (split, video call mockup, pricing blocks)
-  6. VS Old World (6-row comparison table)
-  7. Pricing Teaser (3 plans, Family featured)
-  8. FAQ (8 questions, 2x4 grid)
-  9. Final CTA (full-bleed blue)
-  - Full EN/FR bilingual via C.en/C.fr content objects
-  - CSS animations: badge-glow, sparkle-twinkle, pulse-anim, draw-line, fade-in
-  - Responsive: 1920px, 1100px, 640px breakpoints
+  2. Pillars V2 (You upload / Archer analyzes / You choose + mini outputs)
+  3. Intelligence (4 stats + 6 capabilities)
+  4. **What We Handle** (NEW V3 - 8 case type cards in 2x4 grid)
+  5. Attorney Letter (reframed: "ONE OF FOUR ACTIONS", $49.99, disclaimer)
+  6. Live Counsel (split layout + video mockup)
+  7. VS Old World (removed "First appointment", added DIY letter NEW row)
+  8. Pricing Teaser (unlimited analyses, 3 members Family, add-ons strip)
+  9. FAQ (8 questions)
+  10. Final CTA (full-bleed blue)
 
 ## Prioritized Backlog
 ### P0
