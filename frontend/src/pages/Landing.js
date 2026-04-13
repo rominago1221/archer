@@ -7,6 +7,7 @@ import JurisdictionPills from '../components/JurisdictionPills';
 import { useAuth } from '../contexts/AuthContext';
 import translations, { getStoredLocale, setStoredLocale, getLocaleFromPrefs } from '../data/landingTranslations';
 import { sanitizeHtml } from '../utils/sanitize';
+import WinWallSection from '../components/WinWallSection';
 
 const catIcons = [FileText, Briefcase, Home, Users, DollarSign, AlertCircle, Package, Star, Heart];
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -474,6 +475,9 @@ const Landing = () => {
           </div>
         </div>
       </section>
+
+      {/* Win Wall */}
+      <WinWallSection jurisdiction={jurisdiction} language={language} />
 
       {/* Final CTA */}
       <section className="py-20 px-6 bg-[#1a56db] text-center">
