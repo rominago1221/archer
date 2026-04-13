@@ -33,6 +33,7 @@ import PublicAttorneyProfile from './pages/PublicAttorneyProfile';
 import AdminAttorneys from './pages/AdminAttorneys';
 import DocumentViewer from './pages/DocumentViewer';
 import VideoCall from './pages/VideoCall';
+import Pricing from './pages/Pricing';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -73,6 +74,8 @@ const AppRouter = () => {
       <Route path="/shared/:token" element={<SharedCase />} />
       <Route path="/attorney/apply" element={<AttorneyApply />} />
       <Route path="/attorneys/:slug" element={<PublicAttorneyProfile />} />
+      <Route path="/pricing" element={<Pricing />} />
+      <Route path="/:lang/pricing" element={<Pricing />} />
       <Route path="/admin/attorneys" element={<ProtectedRoute><AdminAttorneys /></ProtectedRoute>} />
       <Route path="/documents/:documentId" element={<ProtectedRoute><DocumentViewer /></ProtectedRoute>} />
       
