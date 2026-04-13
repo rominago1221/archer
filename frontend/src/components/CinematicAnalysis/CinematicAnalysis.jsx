@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAnalysisStream } from './hooks/useAnalysisStream';
@@ -19,11 +19,12 @@ export default function CinematicAnalysis() {
   const language = user?.language || (user?.jurisdiction === 'BE' ? 'fr' : 'en');
   const { currentScene, data, isComplete, error } = useAnalysisStream(caseId);
 
-  // If already analyzed, redirect directly
-  if (data.already_complete && isComplete) {
-    navigate(`/cases/${caseId}`, { replace: true });
-    return null;
-  }
+  // If already analyzed, redirect to case detail via useEffect (not during render)
+  useEffect(() => {
+    if (data.already_complete && isComplete) {
+      navigate(`/cases/${caseId}`, { replace: true });
+    }
+  }, [data.already_complete, isComplete, caseId, navigate]);
 
   if (error) {
     return (

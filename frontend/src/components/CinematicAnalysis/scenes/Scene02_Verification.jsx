@@ -35,7 +35,7 @@ function AnimatedCounter({ target, duration = 4000 }) {
 
   return (
     <span style={{
-      fontSize: 56, fontWeight: 900, color: '#1a56db', letterSpacing: -2,
+      fontSize: 72, fontWeight: 900, color: '#1a56db', letterSpacing: -3,
       lineHeight: 1, fontVariantNumeric: 'tabular-nums',
     }}>
       {value.toLocaleString('fr-FR')}
@@ -111,9 +111,9 @@ export default function Scene02_Verification({ data, language }) {
   return (
     <div data-testid="scene-02" style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#fafaf8', padding: '0 24px',
+      background: '#fafaf8', padding: '0 32px',
     }}>
-      <div style={{ maxWidth: 680, width: '100%', animation: 'fadeIn 0.4s ease forwards' }}>
+      <div style={{ maxWidth: 780, width: '100%', animation: 'fadeIn 0.4s ease forwards' }}>
         {/* Header with live badge */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24,

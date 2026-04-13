@@ -107,23 +107,17 @@ const Upload = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      const delay = (ms) => new Promise(r => setTimeout(r, ms));
-      await delay(isImageUpload ? 2000 : 3000);
-      setUploadStage('analyzing');
-      await delay(isImageUpload ? 8000 : 5000);
-      setUploadStage('scoring');
-
+      // For streaming mode: skip fake delays, redirect as soon as upload returns
       const response = await uploadPromise;
-      setUploadStage('done');
-      await delay(400);
-      
-      // Redirect to cinematic analysis when streaming, else dashboard
+
+      if (response.data?.case_id && response.data?.streaming) {
+        navigate(`/analyze/${response.data.case_id}`);
+        return;
+      }
+
+      // Fallback: non-streaming redirect to dashboard
       if (response.data?.case_id) {
-        if (response.data?.streaming) {
-          navigate(`/analyze/${response.data.case_id}`);
-        } else {
-          navigate('/dashboard');
-        }
+        navigate('/dashboard');
         return;
       }
       setResult(response.data);

@@ -64,7 +64,7 @@ const SharedCase = () => {
         </div>
         <div className="text-lg font-semibold text-[#111827] mb-2">Link unavailable</div>
         <div className="text-sm text-[#6b7280] mb-6">{error}</div>
-        <Link to="/" className="btn-pill btn-blue inline-block" data-testid="try-jasper-btn">Try Archer free</Link>
+        <Link to="/" className="btn-pill btn-blue inline-block" data-testid="try-archer-btn">Try Archer free</Link>
       </div>
     </div>
   );

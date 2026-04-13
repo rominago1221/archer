@@ -6,35 +6,35 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const T = {
   en: {
-    title: 'Chat with James',
+    title: 'Chat with Archer',
     subtitle: 'About your case',
-    placeholder: 'Ask James about your case...',
+    placeholder: 'Ask Archer about your case...',
     send: 'Send',
-    typing: 'James is thinking...',
+    typing: 'Archer is thinking...',
     close: 'Close',
     intro: "Hi. I've reviewed your case in detail. To sharpen my analysis, I need one more piece of information.",
   },
   fr: {
-    title: 'Discuter avec James',
+    title: 'Discuter avec Archer',
     subtitle: 'À propos de votre dossier',
-    placeholder: 'Posez une question à James sur votre dossier...',
+    placeholder: 'Posez une question à Archer sur votre dossier...',
     send: 'Envoyer',
-    typing: 'James réfléchit...',
+    typing: 'Archer réfléchit...',
     close: 'Fermer',
     intro: "Bonjour. J'ai analysé votre dossier en détail. Pour affiner mon analyse, j'ai besoin d'un élément supplémentaire.",
   },
   nl: {
-    title: 'Chat met James',
+    title: 'Chat met Archer',
     subtitle: 'Over uw dossier',
-    placeholder: 'Stel James een vraag over uw dossier...',
+    placeholder: 'Stel Archer een vraag over uw dossier...',
     send: 'Versturen',
-    typing: 'James denkt na...',
+    typing: 'Archer denkt na...',
     close: 'Sluiten',
     intro: 'Hallo. Ik heb uw dossier in detail bekeken. Om mijn analyse te verfijnen, heb ik nog één element nodig.',
   },
 };
 
-const CaseChatDrawer = ({ caseId, caseTitle, lang, onClose, initialMessage, jamesQuestion, lastAnswer }) => {
+const CaseChatDrawer = ({ caseId, caseTitle, lang, onClose, initialMessage, archerQuestion, lastAnswer }) => {
   const t = T[lang] || T.en;
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -46,18 +46,18 @@ const CaseChatDrawer = ({ caseId, caseTitle, lang, onClose, initialMessage, jame
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // James speaks FIRST when drawer opens — send context silently to API
+  // Archer speaks FIRST when drawer opens — send context silently to API
   useEffect(() => {
     if (!convId) {
       const init = async () => {
-        // Build James's opening message
-        let jamesIntro = t.intro;
-        if (jamesQuestion) {
-          jamesIntro += '\n\n' + jamesQuestion;
+        // Build Archer's opening message
+        let archerIntro = t.intro;
+        if (archerQuestion) {
+          archerIntro += '\n\n' + archerQuestion;
         }
 
-        // Show James's intro as an assistant message (left-aligned, white bubble)
-        setMessages([{ role: 'assistant', content: jamesIntro, ts: Date.now() }]);
+        // Show Archer's intro as an assistant message (left-aligned, white bubble)
+        setMessages([{ role: 'assistant', content: archerIntro, ts: Date.now() }]);
 
         // Send context to API silently (no user bubble shown)
         setSending(true);
@@ -92,7 +92,7 @@ const CaseChatDrawer = ({ caseId, caseTitle, lang, onClose, initialMessage, jame
       if (!convId) setConvId(res.data.conversation_id);
       setMessages(prev => [...prev, { role: 'assistant', content: res.data.response, ts: Date.now() }]);
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: lang === 'fr' ? 'James est temporairement indisponible.' : 'James is temporarily unavailable.', ts: Date.now() }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: lang === 'fr' ? 'Archer est temporairement indisponible.' : 'Archer is temporarily unavailable.', ts: Date.now() }]);
     }
     setSending(false);
   };

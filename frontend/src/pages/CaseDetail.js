@@ -22,22 +22,22 @@ const L = {
     back: 'My Cases', brief: 'Download brief', share: 'Share', addDoc: 'Add document', talkLawyer: 'Talk to a lawyer',
     riskLabel: 'Archer Risk Score', riskHigh: 'High risk', riskMed: 'Medium risk', riskLow: 'Low risk',
     dimFin: 'Financial', dimUrg: 'Urgency', dimLeg: 'Legal', dimCom: 'Complexity',
-    analysisTitle: 'James Analysis — Real-time update', live: 'Live',
-    battleTitle: 'Legal Battle Preview — James vs Opposing Counsel', yourArgs: 'Your arguments', theirArgs: 'Their arguments',
+    analysisTitle: 'Archer Analysis — Real-time update', live: 'Live',
+    battleTitle: 'Legal Battle Preview — Archer vs Opposing Counsel', yourArgs: 'Your arguments', theirArgs: 'Their arguments',
     nextActions: 'Next actions', documents: 'Documents', keyDoc: 'Key',
     critDeadline: 'Critical deadline', days: 'days', expired: 'Expired', before: 'Before',
     overview: 'Overview', scoreHistory: 'Score History', outcomePred: 'Outcome Predictor',
-    jamesQ: 'James needs clarification',
+    archerQ: 'Archer needs clarification',
     jurisTitle: 'Recent legal updates — relevant to your case', whyMatters: 'Why this matters for your case',
-    riskMonitor: 'Never miss a legal document', riskMonitorSub: 'Connect your inbox — James monitors it and alerts you instantly',
+    riskMonitor: 'Never miss a legal document', riskMonitorSub: 'Connect your inbox — Archer monitors it and alerts you instantly',
     connectGmail: 'Connect Gmail', connectOutlook: 'Connect Outlook', connected: 'connected — Risk Monitor active',
     shareTitle: 'Share this case — read-only access', shareDesc: 'Generate a secure link', shareCopy: 'Copy link', shareExpiry: 'Link expires in',
     genLetter: 'Generate letter', downloading: 'Generating...', close: 'Close', downloadPdf: 'Download PDF',
-    openedOn: 'Opened', docCount: 'documents', updatedBy: 'Updated by James',
+    openedOn: 'Opened', docCount: 'documents', updatedBy: 'Updated by Archer',
     caseType: { housing: 'Housing', employment: 'Employment', debt: 'Debt', insurance: 'Insurance', contract: 'Contract', consumer: 'Consumer', family: 'Family', court: 'Court', nda: 'NDA', penal: 'Criminal', commercial: 'Commercial', other: 'Other' },
-    analyzing: 'James is analyzing...', reanalyze: 'Re-analyze',
-    newCase: 'Open a new case', tagline: 'Your virtual legal cabinet', jamesRole: 'Senior Legal Advisor',
-    overlayTitle: 'What is your problem?', overlaySub: 'James will handle your case immediately.', backCase: 'Back to case',
+    analyzing: 'Archer is analyzing...', reanalyze: 'Re-analyze',
+    newCase: 'Open a new case', tagline: 'Your virtual legal cabinet', archerRole: 'Senior Legal Advisor',
+    overlayTitle: 'What is your problem?', overlaySub: 'Archer will handle your case immediately.', backCase: 'Back to case',
     sit: [
       { icon: '🏠', bg: '#fef3c7', title: 'My landlord is causing problems', desc: 'Eviction, rent, repairs, deposit' },
       { icon: '⚡', bg: '#fff5f5', title: 'I received a threatening letter', desc: 'Demand letter, attorney, bailiff' },
@@ -46,33 +46,33 @@ const L = {
       { icon: '📄', bg: '#eff6ff', title: 'I signed something worrying', desc: 'Contract, NDA, agreement' },
       { icon: '⚖️', bg: '#fdf4ff', title: 'I received a court summons', desc: 'Judgment, debt, hearing' },
       { icon: '💳', bg: '#fff5f5', title: 'A debt collector is harassing me', desc: 'Collector, bailiff, recovery' },
-      { icon: '💬', bg: '#f0fdf4', title: 'Other legal situation', desc: 'Describe your problem to James' },
+      { icon: '💬', bg: '#f0fdf4', title: 'Other legal situation', desc: 'Describe your problem to Archer' },
     ],
     stat1: '847K+', stat1l: 'live sources', stat2: '20 yrs', stat2l: 'experience', stat3: 'Live', stat3l: 'case law', stat4: '#1', stat4l: 'Legal AI',
     activeCases: 'Active cases', navUpload: 'Upload', navLawyers: 'Lawyers', navDocs: 'Documents', navChat: 'Legal chat', navSettings: 'Settings',
     deadlineIn: 'Deadline in',
-    moreQuestions: 'James has more questions — ask him directly',
+    moreQuestions: 'Archer has more questions — ask him directly',
   },
   fr: {
     back: 'Mes dossiers', brief: 'Télécharger le résumé', share: 'Partager', addDoc: 'Ajouter un document', talkLawyer: 'Parler à un avocat',
     riskLabel: 'Score de risque Archer', riskHigh: 'Risque élevé', riskMed: 'Risque modéré', riskLow: 'Risque faible',
     dimFin: 'Financier', dimUrg: 'Urgence', dimLeg: 'Juridique', dimCom: 'Complexité',
-    analysisTitle: 'Analyse de James — Mise à jour en temps réel', live: 'Live',
-    battleTitle: 'Aperçu juridique — James vs Avocat adverse', yourArgs: 'Vos arguments', theirArgs: 'Leurs arguments',
+    analysisTitle: "Analyse d'Archer — Mise à jour en temps réel", live: 'Live',
+    battleTitle: 'Aperçu juridique — Archer vs Avocat adverse', yourArgs: 'Vos arguments', theirArgs: 'Leurs arguments',
     nextActions: 'Prochaines actions', documents: 'Documents', keyDoc: 'Clé',
     critDeadline: 'Échéance critique', days: 'jours', expired: 'Expiré', before: 'Avant le',
     overview: 'Vue d\'ensemble', scoreHistory: 'Historique du score', outcomePred: 'Prédiction d\'issue',
-    jamesQ: 'James a besoin d\'une précision',
+    archerQ: 'Archer a besoin d\'une précision',
     jurisTitle: 'Jurisprudence récente — pertinente pour votre dossier', whyMatters: 'Pertinence pour votre dossier',
-    riskMonitor: 'Ne ratez jamais un document juridique', riskMonitorSub: 'Connectez votre boîte mail — James la surveille et vous alerte instantanément',
+    riskMonitor: 'Ne ratez jamais un document juridique', riskMonitorSub: 'Connectez votre boîte mail — Archer la surveille et vous alerte instantanément',
     connectGmail: 'Connecter Gmail', connectOutlook: 'Connecter Outlook', connected: 'connecté — Risk Monitor actif',
     shareTitle: 'Partager ce dossier — accès en lecture seule', shareDesc: 'Générer un lien sécurisé', shareCopy: 'Copier le lien', shareExpiry: 'Lien expire dans',
     genLetter: 'Générer la lettre', downloading: 'Génération...', close: 'Fermer', downloadPdf: 'Télécharger PDF',
-    openedOn: 'Ouvert le', docCount: 'documents', updatedBy: 'Mis à jour par James',
+    openedOn: 'Ouvert le', docCount: 'documents', updatedBy: 'Mis à jour par Archer',
     caseType: { housing: 'Logement', employment: 'Emploi', debt: 'Dettes', insurance: 'Assurance', contract: 'Contrat', consumer: 'Consommation', family: 'Famille', court: 'Tribunal', nda: 'NDA', penal: 'Pénal', commercial: 'Commercial', other: 'Autre' },
-    analyzing: 'James analyse...', reanalyze: 'Ré-analyser',
-    newCase: 'Ouvrir un nouveau dossier', tagline: 'Votre cabinet juridique virtuel', jamesRole: 'Conseiller juridique senior',
-    overlayTitle: 'Quel est votre problème ?', overlaySub: 'James va prendre votre dossier en charge immédiatement.', backCase: 'Retour au dossier',
+    analyzing: 'Archer analyse...', reanalyze: 'Ré-analyser',
+    newCase: 'Ouvrir un nouveau dossier', tagline: 'Votre cabinet juridique virtuel', archerRole: 'Conseiller juridique senior',
+    overlayTitle: 'Quel est votre problème ?', overlaySub: 'Archer va prendre votre dossier en charge immédiatement.', backCase: 'Retour au dossier',
     sit: [
       { icon: '🏠', bg: '#fef3c7', title: 'Mon propriétaire me cause des problèmes', desc: 'Expulsion, loyer, réparations, dépôt' },
       { icon: '⚡', bg: '#fff5f5', title: 'J\'ai reçu une lettre menaçante', desc: 'Mise en demeure, avocat, huissier' },
@@ -81,33 +81,33 @@ const L = {
       { icon: '📄', bg: '#eff6ff', title: 'J\'ai signé quelque chose d\'inquiétant', desc: 'Contrat, NDA, accord, engagement' },
       { icon: '⚖️', bg: '#fdf4ff', title: 'J\'ai reçu une convocation au tribunal', desc: 'Jugement, dette, citation, audience' },
       { icon: '💳', bg: '#fff5f5', title: 'On me réclame une dette', desc: 'Collecteur, huissier, recouvrement' },
-      { icon: '💬', bg: '#f0fdf4', title: 'Autre situation juridique', desc: 'Décrivez votre problème à James' },
+      { icon: '💬', bg: '#f0fdf4', title: 'Autre situation juridique', desc: 'Décrivez votre problème à Archer' },
     ],
     stat1: '847K+', stat1l: 'sources live', stat2: '20 ans', stat2l: 'expérience', stat3: 'Live', stat3l: 'jurisprudence', stat4: '#1', stat4l: 'IA juridique',
     activeCases: 'Dossiers actifs', navUpload: 'Téléverser', navLawyers: 'Avocats', navDocs: 'Documents', navChat: 'Chat juridique', navSettings: 'Paramètres',
     deadlineIn: 'Échéance dans',
-    moreQuestions: 'James a d\'autres questions — demandez-lui directement',
+    moreQuestions: 'Archer a d\'autres questions — demandez-lui directement',
   },
   nl: {
     back: 'Mijn dossiers', brief: 'Download samenvatting', share: 'Delen', addDoc: 'Document toevoegen', talkLawyer: 'Praat met een advocaat',
     riskLabel: 'Archer Risicoscore', riskHigh: 'Hoog risico', riskMed: 'Gemiddeld risico', riskLow: 'Laag risico',
     dimFin: 'Financieel', dimUrg: 'Urgentie', dimLeg: 'Juridisch', dimCom: 'Complexiteit',
-    analysisTitle: 'Analyse van James — Realtime update', live: 'Live',
-    battleTitle: 'Juridisch overzicht — James vs Tegenpartij', yourArgs: 'Uw argumenten', theirArgs: 'Hun argumenten',
+    analysisTitle: 'Analyse van Archer — Realtime update', live: 'Live',
+    battleTitle: 'Juridisch overzicht — Archer vs Tegenpartij', yourArgs: 'Uw argumenten', theirArgs: 'Hun argumenten',
     nextActions: 'Volgende acties', documents: 'Documenten', keyDoc: 'Sleutel',
     critDeadline: 'Kritieke deadline', days: 'dagen', expired: 'Verlopen', before: 'Voor',
     overview: 'Overzicht', scoreHistory: 'Score Geschiedenis', outcomePred: 'Uitkomstvoorspelling',
-    jamesQ: 'James heeft verduidelijking nodig',
+    archerQ: 'Archer heeft verduidelijking nodig',
     jurisTitle: 'Recente rechtspraak — relevant voor uw dossier', whyMatters: 'Waarom dit belangrijk is',
-    riskMonitor: 'Mis nooit een juridisch document', riskMonitorSub: 'Verbind uw inbox — James bewaakt en waarschuwt u direct',
+    riskMonitor: 'Mis nooit een juridisch document', riskMonitorSub: 'Verbind uw inbox — Archer bewaakt en waarschuwt u direct',
     connectGmail: 'Verbind Gmail', connectOutlook: 'Verbind Outlook', connected: 'verbonden — Risk Monitor actief',
     shareTitle: 'Deel dit dossier — alleen-lezen', shareDesc: 'Genereer een beveiligde link', shareCopy: 'Link kopiëren', shareExpiry: 'Link verloopt in',
     genLetter: 'Brief genereren', downloading: 'Genereren...', close: 'Sluiten', downloadPdf: 'Download PDF',
-    openedOn: 'Geopend op', docCount: 'documenten', updatedBy: 'Bijgewerkt door James',
+    openedOn: 'Geopend op', docCount: 'documenten', updatedBy: 'Bijgewerkt door Archer',
     caseType: { housing: 'Huisvesting', employment: 'Werk', debt: 'Schulden', insurance: 'Verzekering', contract: 'Contract', consumer: 'Consument', family: 'Familie', court: 'Rechtbank', nda: 'NDA', penal: 'Strafrecht', commercial: 'Commercieel', other: 'Overig' },
-    analyzing: 'James analyseert...', reanalyze: 'Heranalyse',
-    newCase: 'Nieuw dossier openen', tagline: 'Uw virtueel juridisch kantoor', jamesRole: 'Senior Juridisch Adviseur',
-    overlayTitle: 'Wat is uw probleem?', overlaySub: 'James neemt uw dossier onmiddellijk in behandeling.', backCase: 'Terug naar dossier',
+    analyzing: 'Archer analyseert...', reanalyze: 'Heranalyse',
+    newCase: 'Nieuw dossier openen', tagline: 'Uw virtueel juridisch kantoor', archerRole: 'Senior Juridisch Adviseur',
+    overlayTitle: 'Wat is uw probleem?', overlaySub: 'Archer neemt uw dossier onmiddellijk in behandeling.', backCase: 'Terug naar dossier',
     sit: [
       { icon: '🏠', bg: '#fef3c7', title: 'Mijn verhuurder veroorzaakt problemen', desc: 'Uitzetting, huur, reparaties, borg' },
       { icon: '⚡', bg: '#fff5f5', title: 'Ik heb een dreigbrief ontvangen', desc: 'Aanmaning, advocaat, deurwaarder' },
@@ -116,12 +116,12 @@ const L = {
       { icon: '📄', bg: '#eff6ff', title: 'Ik heb iets verontrustends getekend', desc: 'Contract, NDA, overeenkomst' },
       { icon: '⚖️', bg: '#fdf4ff', title: 'Ik heb een dagvaarding ontvangen', desc: 'Vonnis, schuld, zitting' },
       { icon: '💳', bg: '#fff5f5', title: 'Er wordt een schuld van mij geëist', desc: 'Incassobureau, deurwaarder' },
-      { icon: '💬', bg: '#f0fdf4', title: 'Andere juridische situatie', desc: 'Beschrijf uw probleem aan James' },
+      { icon: '💬', bg: '#f0fdf4', title: 'Andere juridische situatie', desc: 'Beschrijf uw probleem aan Archer' },
     ],
     stat1: '847K+', stat1l: 'live bronnen', stat2: '20 jaar', stat2l: 'ervaring', stat3: 'Live', stat3l: 'rechtspraak', stat4: '#1', stat4l: 'Juridische AI',
     activeCases: 'Actieve dossiers', navUpload: 'Uploaden', navLawyers: 'Advocaten', navDocs: 'Documenten', navChat: 'Juridische chat', navSettings: 'Instellingen',
     deadlineIn: 'Deadline in',
-    moreQuestions: 'James heeft meer vragen — stel ze direct',
+    moreQuestions: 'Archer heeft meer vragen — stel ze direct',
   },
 };
 const getLang = (u) => { const l = u?.language || 'en'; return l === 'nl' ? 'nl' : (l === 'fr' || l === 'fr-BE') ? 'fr' : 'en'; };
@@ -206,7 +206,7 @@ const CaseDetail = () => {
   const caseLaw = sc?.recent_case_law || [];
   const prob = sc?.success_probability;
 
-  const handleJamesAnswer = async (answer) => {
+  const handleArcherAnswer = async (answer) => {
     if (!jq || answerLoading) return;
     setAnswerLoading(true);
     setJqSelectedAnswer(answer);
@@ -222,7 +222,7 @@ const CaseDetail = () => {
       setJqAnswered(true);
       await fetchData();
     } catch (e) {
-      console.error('James answer error:', e);
+      console.error('Archer answer error:', e);
       setJqAnswered(true);
     }
     setAnswerLoading(false);
@@ -275,11 +275,11 @@ const CaseDetail = () => {
             <div onClick={() => navigate('/')} style={{ fontSize: 19, fontWeight: 500, color: '#1a1a2e', letterSpacing: '0.3px', cursor: 'pointer' }} data-testid="logo-link">Jas<span style={{ color: '#1a56db' }}>per</span></div>
             <div style={{ fontSize: 15, color: '#9ca3af', marginTop: 1 }}>{t.tagline}</div>
           </div>
-          {/* James Card */}
+          {/* Archer Card */}
           <div style={{ margin: 10, padding: 11, background: '#eff6ff', borderRadius: 11, border: '0.5px solid #bfdbfe' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 8 }}>
-              <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#fff', flexShrink: 0 }}>J</div>
-              <div><div style={{ fontSize: 16, fontWeight: 700, color: '#1e40af' }}>James</div><div style={{ fontSize: 15, color: '#3b82f6' }}>{t.jamesRole}</div></div>
+              <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#fff', flexShrink: 0 }}>A</div>
+              <div><div style={{ fontSize: 16, fontWeight: 700, color: '#1e40af' }}>Archer</div><div style={{ fontSize: 15, color: '#3b82f6' }}>{t.archerRole}</div></div>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', marginLeft: 'auto', animation: 'pulse 1.5s infinite' }} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
@@ -366,7 +366,7 @@ const CaseDetail = () => {
                   }}>
                     <Loader2 size={14} className="animate-spin" style={{ color: '#1a56db' }} />
                     <div style={{ fontSize: 15, fontWeight: 600, color: '#1e40af' }}>
-                      {lang === 'fr' ? 'James ré-analyse votre dossier complet...' : lang === 'nl' ? 'James heranalyseert uw volledig dossier...' : 'James is re-analyzing your complete case...'}
+                      {lang === 'fr' ? 'Archer ré-analyse votre dossier complet...' : lang === 'nl' ? 'Archer heranalyseert uw volledig dossier...' : 'Archer is re-analyzing your complete case...'}
                     </div>
                     <div style={{ marginLeft: 'auto', display: 'flex', gap: 3 }}>{[0,1,2].map(i => <div key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: '#1a56db', animation: `pulse 1.5s infinite ${i*0.3}s` }} />)}</div>
                   </div>
@@ -407,7 +407,7 @@ const CaseDetail = () => {
                   <ScoreHistoryChart history={history} title={t.scoreHistory} />
                 )}
 
-                {/* James Analysis */}
+                {/* Archer Analysis */}
                 <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                     <div style={{ position: 'relative', width: 32, height: 32, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
@@ -426,20 +426,20 @@ const CaseDetail = () => {
                   <AnalysisFindings findings={findings} lang={lang} isCompact={false} />
                 </div>
 
-                {/* James Question Card — max 1 question */}
+                {/* Archer Question Card — max 1 question */}
                 {(jq || jqImpact) && (
-                  <div data-testid="james-question" style={{ background: '#fffbeb', borderRadius: 12, padding: '12px 14px', border: '0.5px solid #fde68a', marginBottom: 10 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a2e', marginBottom: 5 }}>💬 {t.jamesQ}</div>
+                  <div data-testid="archer-question" style={{ background: '#fffbeb', borderRadius: 12, padding: '12px 14px', border: '0.5px solid #fde68a', marginBottom: 10 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a2e', marginBottom: 5 }}>💬 {t.archerQ}</div>
                     {/* Previous answer impact — shown after answer */}
                     {jqAnswered && jqImpact && (
                       <>
                         <div data-testid="james-impact" style={{ fontSize: 12, color: '#1a56db', lineHeight: 1.5, marginBottom: 8, padding: '6px 10px', background: '#eff6ff', borderRadius: 8, border: '0.5px solid #bfdbfe' }}>
-                          <span style={{ fontWeight: 600 }}>James:</span> {jqImpact}
+                          <span style={{ fontWeight: 600 }}>Archer:</span> {jqImpact}
                         </div>
                         <button data-testid="ask-james-directly"
                           onClick={() => setChatDrawer({
                             initial: `${lang === 'fr' ? 'Mon dossier' : 'My case'}: "${sc?.title}". ${jqSelectedAnswer || ''}`,
-                            jamesQuestion: jq?.text || '',
+                            archerQuestion: jq?.text || '',
                             lastAnswer: jqSelectedAnswer,
                           })}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#1a56db', fontWeight: 500, padding: 0, marginBottom: jq ? 10 : 0 }}>
@@ -455,7 +455,7 @@ const CaseDetail = () => {
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           {(jq.options || []).slice(0, 4).map((opt, optIdx) => (
                             <button key={`jq-opt-${optIdx}-${opt.slice(0, 15)}`} data-testid={`james-answer-${optIdx}`}
-                              onClick={() => handleJamesAnswer(opt)}
+                              onClick={() => handleArcherAnswer(opt)}
                               disabled={answerLoading}
                               style={{
                                 padding: '6px 14px',
@@ -661,7 +661,7 @@ const CaseDetail = () => {
             lang={lang}
             onClose={() => setChatDrawer(null)}
             initialMessage={chatDrawer.initial}
-            jamesQuestion={chatDrawer.jamesQuestion}
+            archerQuestion={chatDrawer.archerQuestion}
             lastAnswer={chatDrawer.lastAnswer}
           />
         )}
@@ -690,7 +690,7 @@ const CaseDetail = () => {
           }}>
             <div style={{ background: '#fff', borderRadius: 18, border: '0.5px solid #e2e0db', padding: 24, width: '100%', maxWidth: 680 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#fff' }}>J</div>
+                <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#fff' }}>A</div>
                 <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e' }}>{t.overlayTitle}</div>
               </div>
               <div style={{ fontSize: 15, color: '#6b7280', marginBottom: 20 }}>{t.overlaySub}</div>

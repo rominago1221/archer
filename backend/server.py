@@ -626,7 +626,7 @@ async def _validate_james_question(strategy: dict, facts_str: str, persona: str,
     if jq and isinstance(jq, dict) and jq.get("text") and jq.get("options") and len(jq.get("options", [])) >= 2:
         return jq
 
-    logger.warning("James question missing or invalid — retrying")
+    logger.warning("Archer question missing or invalid — retrying")
     is_french = language.startswith("fr")
     is_dutch = language.startswith("nl")
     is_german = language.startswith("de")
@@ -654,7 +654,7 @@ async def _validate_james_question(strategy: dict, facts_str: str, persona: str,
         if jq_retry and jq_retry.get("text") and jq_retry.get("options") and len(jq_retry.get("options", [])) >= 2:
             return jq_retry
     except Exception as e:
-        logger.error(f"James question retry failed: {e}")
+        logger.error(f"Archer question retry failed: {e}")
 
     return fallback
 
@@ -3622,7 +3622,7 @@ async def download_document(
 
 @api_router.post("/cases/{case_id}/james-answer")
 async def james_answer(case_id: str, body: dict, current_user: User = Depends(get_current_user)):
-    """Process user answer to James's question, update analysis"""
+    """Process user answer to Archer's question, update analysis"""
     case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
     if not case_doc:
         raise HTTPException(status_code=404, detail="Case not found")
@@ -3641,7 +3641,7 @@ async def james_answer(case_id: str, body: dict, current_user: User = Depends(ge
     elif user_language.startswith("de"):
         lang_note = "Respond entirely in German."
     
-    system = f"""You are James, a senior legal AI advisor. The user answered your clarifying question about their legal case.
+    system = f"""You are Archer, a senior legal AI advisor. The user answered your clarifying question about their legal case.
 Based on this new information, provide an updated assessment.
 {lang_note}
 Return JSON:
@@ -3655,7 +3655,7 @@ Return JSON:
     "legal_ref": "Relevant legal reference if applicable"
   }},
   "next_question": {{
-    "text": "The NEXT most important question James should ask (cite specific details from the case)",
+    "text": "The NEXT most important question Archer should ask (cite specific details from the case)",
     "options": ["Answer option 1", "Answer option 2", "Answer option 3"]
   }} or null if no more questions needed,
   "updated_next_steps": [
@@ -3668,7 +3668,7 @@ Case type: {case_doc.get('type', '')}
 Current risk score: {case_doc.get('risk_score', 0)}/100
 Current findings: {json.dumps(case_doc.get('ai_findings', [])[:3], default=str)}
 
-James asked: "{question}"
+Archer asked: "{question}"
 User answered: "{answer}"
 
 Analyze the impact of this answer on the case."""
@@ -3676,7 +3676,7 @@ Analyze the impact of this answer on the case."""
     try:
         result = await call_claude_fast(system, user_msg, max_tokens=600)
     except Exception as e:
-        logger.error(f"James Q&A error: {e}")
+        logger.error(f"Archer Q&A error: {e}")
         raise HTTPException(status_code=500, detail="Analysis failed")
     
     now = datetime.now(timezone.utc).isoformat()
@@ -3735,7 +3735,7 @@ async def generate_action_letter(case_id: str, body: dict, current_user: User = 
     elif user_language.startswith("de"):
         lang_note = "Write the letter entirely in German."
     
-    system = f"""You are James, drafting a legal letter.
+    system = f"""You are Archer, drafting a legal letter.
 {lang_note}
 {tone_instruction}
 The letter must cite specific laws and statutes, and be ready to send.
@@ -4508,7 +4508,7 @@ async def stripe_webhook(request: Request):
 
 # ================== Legal Chat ==================
 
-JAMES_SYSTEM_PROMPT = """You are James, a Senior Legal Advisor with 20 years of experience representing individuals — never corporations — in employment disputes, tenant rights, contract law, debt collection defense, consumer protection, and civil litigation across the United States and Belgium.
+ARCHER_SYSTEM_PROMPT = """You are Archer, a Senior Legal Advisor with 20 years of experience representing individuals — never corporations — in employment disputes, tenant rights, contract law, debt collection defense, consumer protection, and civil litigation across the United States and Belgium.
 
 You have personally handled over 2,000 cases and have access to 847,000+ legal articles, statutes, and court decisions from Cornell Law LII, CourtListener, Belgian ejustice.be, and cnt-nar.be.
 
@@ -4688,7 +4688,7 @@ async def send_chat_message(
     claude_messages = [{"role": m["role"], "content": m["content"]} for m in history]
 
     # Build system prompt with optional case context
-    system_prompt = JAMES_SYSTEM_PROMPT
+    system_prompt = ARCHER_SYSTEM_PROMPT
     user_language = getattr(current_user, 'language', 'en') or 'en'
     user_jurisdiction = getattr(current_user, 'jurisdiction', 'US') or 'US'
     system_prompt += get_language_instruction(user_language)
@@ -4705,7 +4705,7 @@ async def send_chat_message(
             findings_text = "; ".join([f.get('text', '') for f in case_findings if f.get('text')])
             case_steps = case_doc.get('ai_next_steps', [])[:3]
             steps_text = "; ".join([s.get('title', '') if isinstance(s, dict) else str(s) for s in case_steps])
-            system_prompt += f"\n\nCONTEXT: The user has an active case: '{case_doc.get('title', '')}'. Type: {case_doc.get('type', '')}. Risk Score: {case_doc.get('risk_score', 0)}/100. Summary: {case_doc.get('ai_summary', 'N/A')}. Key findings: {findings_text}. Next steps: {steps_text}. They may ask questions related to this case. Continue the conversation naturally as James, their legal advisor."
+            system_prompt += f"\n\nCONTEXT: The user has an active case: '{case_doc.get('title', '')}'. Type: {case_doc.get('type', '')}. Risk Score: {case_doc.get('risk_score', 0)}/100. Summary: {case_doc.get('ai_summary', 'N/A')}. Key findings: {findings_text}. Next steps: {steps_text}. They may ask questions related to this case. Continue the conversation naturally as Archer, their legal advisor."
 
     # Call Claude via Emergent integration — fast with lower token budget
     try:
@@ -4718,7 +4718,7 @@ async def send_chat_message(
         # Send conversation history as context + latest message
         history_text = ""
         for m in claude_messages[:-1]:
-            role_label = "User" if m["role"] == "user" else "James"
+            role_label = "User" if m["role"] == "user" else "Archer"
             history_text += f"{role_label}: {m['content']}\n\n"
         
         latest = claude_messages[-1]["content"] if claude_messages else data.content
@@ -4727,10 +4727,10 @@ async def send_chat_message(
         msg = UserMessage(text=full_msg)
         ai_text = await chat.send_message(msg)
         if not ai_text:
-            ai_text = "James is temporarily unavailable — please try again in a moment."
+            ai_text = "Archer is temporarily unavailable — please try again in a moment."
     except Exception as e:
         logger.error(f"Chat Claude error: {e}")
-        ai_text = "James is temporarily unavailable — please try again in a moment."
+        ai_text = "Archer is temporarily unavailable — please try again in a moment."
 
     # Save AI response
     ai_msg = {
@@ -4960,8 +4960,8 @@ async def seed_lawyers():
             "language": "en"
         },
         {
-            "lawyer_id": "lawyer_james",
-            "name": "James Carter, Esq.",
+            "lawyer_id": "lawyer_archer",
+            "name": "Archer Legal AI",
             "specialty": "Contract Law",
             "bar_state": "California",
             "years_experience": 9,
@@ -5388,9 +5388,9 @@ async def send_for_signature(body: SignatureRequest, current_user: User = Depend
     return {"status": "error", "message": "HelloSign integration not yet configured"}
 
 
-# ================== James Document Creator (Conversational) ==================
+# ================== Archer Document Creator (Conversational) ==================
 
-JAMES_DOC_CREATOR_PROMPT = """You are James, a Senior Legal Advisor with 20 years of experience. You are helping the user create a legal document. You have generated legal documents for thousands of clients across employment, housing, contracts, consumer protection, and business law.
+ARCHER_DOC_CREATOR_PROMPT = """You are Archer, a Senior Legal Advisor with 20 years of experience. You are helping the user create a legal document. You have generated legal documents for thousands of clients across employment, housing, contracts, consumer protection, and business law.
 
 YOUR APPROACH:
 1. Identify the exact document type needed from the user's description
@@ -5429,14 +5429,14 @@ JURISDICTION: Apply laws of {jurisdiction}
 LANGUAGE: Respond in {language}"""
 
 
-class JamesDocMessage(BaseModel):
+class ArcherDocMessage(BaseModel):
     message: str
     conversation_id: Optional[str] = None
 
 
 @api_router.post("/documents/james/send")
-async def james_doc_send(data: JamesDocMessage, current_user: User = Depends(get_current_user)):
-    """James conversational document creator — send message and get AI response"""
+async def james_doc_send(data: ArcherDocMessage, current_user: User = Depends(get_current_user)):
+    """Archer conversational document creator — send message and get AI response"""
     conv_id = data.conversation_id
     now = datetime.now(timezone.utc).isoformat()
 
@@ -5461,7 +5461,7 @@ async def james_doc_send(data: JamesDocMessage, current_user: User = Depends(get
         })
         if doc_count >= 3:
             return {
-                "response": "You've created your 3 free documents. Upgrade to Pro for unlimited document creation with James.",
+                "response": "You've created your 3 free documents. Upgrade to Pro for unlimited document creation with Archer.",
                 "conversation_id": conv_id,
                 "limit_reached": True
             }
@@ -5491,7 +5491,7 @@ async def james_doc_send(data: JamesDocMessage, current_user: User = Depends(get
     lang_name = lang_map.get(user_language, "English")
 
     jurisdiction_text = "US Federal + applicable state law" if user_jurisdiction == "US" else "Belgian federal + regional law"
-    system = JAMES_DOC_CREATOR_PROMPT.format(jurisdiction=jurisdiction_text, language=lang_name)
+    system = ARCHER_DOC_CREATOR_PROMPT.format(jurisdiction=jurisdiction_text, language=lang_name)
     system += get_language_instruction(user_language)
 
     # Call Claude
@@ -5519,10 +5519,10 @@ async def james_doc_send(data: JamesDocMessage, current_user: User = Depends(get
                 if block.get("type") == "text":
                     ai_text += block["text"]
             if not ai_text:
-                ai_text = "James is temporarily unavailable. Please try again."
+                ai_text = "Archer is temporarily unavailable. Please try again."
     except Exception as e:
-        logger.error(f"James doc creator error: {e}")
-        ai_text = "James is temporarily unavailable. Please try again."
+        logger.error(f"Archer doc creator error: {e}")
+        ai_text = "Archer is temporarily unavailable. Please try again."
 
     # Save AI response
     ai_msg = {
@@ -5591,7 +5591,7 @@ async def james_doc_send(data: JamesDocMessage, current_user: User = Depends(get
 
 @api_router.get("/documents/james/conversations")
 async def get_james_doc_conversations(current_user: User = Depends(get_current_user)):
-    """Get user's recent James document conversations"""
+    """Get user's recent Archer document conversations"""
     convs = await db.james_doc_conversations.find(
         {"user_id": current_user.user_id},
         {"_id": 0}
@@ -5601,7 +5601,7 @@ async def get_james_doc_conversations(current_user: User = Depends(get_current_u
 
 @api_router.get("/documents/james/conversations/{conversation_id}/messages")
 async def get_james_doc_messages(conversation_id: str, current_user: User = Depends(get_current_user)):
-    """Get messages for a James document conversation"""
+    """Get messages for a Archer document conversation"""
     conv = await db.james_doc_conversations.find_one(
         {"conversation_id": conversation_id, "user_id": current_user.user_id},
         {"_id": 0}

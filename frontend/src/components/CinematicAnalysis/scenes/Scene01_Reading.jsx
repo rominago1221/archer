@@ -38,7 +38,7 @@ function FactItem({ text, delay, isLast }) {
       borderRadius: 8, animation: 'fadeUp 0.3s ease forwards',
     }}>
       <Chk />
-      <span style={{ fontSize: 12, color: '#0a0a0f', fontWeight: 600 }}>{text}</span>
+      <span style={{ fontSize: 13, color: '#0a0a0f', fontWeight: 600 }}>{text}</span>
     </div>
   );
 }
@@ -76,21 +76,21 @@ export default function Scene01_Reading({ data, language }) {
   return (
     <div data-testid="scene-01" style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#fafaf8', padding: '0 24px',
+      background: '#fafaf8', padding: '0 32px',
     }}>
       <div style={{
-        display: 'grid', gridTemplateColumns: '200px 1fr', gap: 48,
-        alignItems: 'center', maxWidth: 760, width: '100%',
+        display: 'grid', gridTemplateColumns: '280px 1fr', gap: 64,
+        alignItems: 'center', maxWidth: 960, width: '100%',
         animation: 'fadeIn 0.4s ease forwards',
       }}>
-        {/* Document mockup */}
+        {/* Document mockup — bigger */}
         <div style={{ position: 'relative' }}>
           <div style={{
-            width: 200, height: 260, background: '#fff', border: '0.5px solid #e2e0db',
-            borderRadius: 12, padding: '24px 20px', boxShadow: '0 16px 40px rgba(10,10,15,0.08)',
-            display: 'flex', flexDirection: 'column', gap: 5,
+            width: 280, height: 360, background: '#fff', border: '0.5px solid #e2e0db',
+            borderRadius: 16, padding: '32px 28px', boxShadow: '0 24px 60px rgba(10,10,15,0.1)',
+            display: 'flex', flexDirection: 'column', gap: 7,
           }}>
-            <div style={{ position: 'absolute', top: 12, right: 12, fontSize: 9, color: '#1a56db', fontWeight: 800 }}>PDF</div>
+            <div style={{ position: 'absolute', top: 16, right: 16, fontSize: 11, color: '#1a56db', fontWeight: 800 }}>PDF</div>
             {/* Document lines with some highlighted */}
             {[
               { w: '70%', bg: '#0a0a0f', h: 5 },
@@ -114,26 +114,26 @@ export default function Scene01_Reading({ data, language }) {
           </div>
           {/* Mini Archer avatar on document */}
           <div style={{
-            position: 'absolute', bottom: -16, right: -16, width: 44, height: 44,
+            position: 'absolute', bottom: -20, right: -20, width: 56, height: 56,
             borderRadius: '50%', background: 'linear-gradient(135deg, #1a56db, #1e40af)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: 18, fontWeight: 800, border: '3px solid #fafaf8',
-            boxShadow: '0 8px 20px rgba(26,86,219,0.25)',
+            color: '#fff', fontSize: 22, fontWeight: 800, border: '4px solid #fafaf8',
+            boxShadow: '0 12px 28px rgba(26,86,219,0.25)',
           }}>
             A
           </div>
         </div>
 
-        {/* Facts list */}
+        {/* Facts list — bigger text */}
         <div>
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14,
+            display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18,
           }}>
             <span style={{
-              width: 6, height: 6, borderRadius: '50%', background: '#16a34a', display: 'inline-block',
+              width: 8, height: 8, borderRadius: '50%', background: '#16a34a', display: 'inline-block',
             }} />
             <span style={{
-              fontSize: 10, fontWeight: 800, color: '#15803d', letterSpacing: '0.8px',
+              fontSize: 12, fontWeight: 800, color: '#15803d', letterSpacing: '0.8px',
               fontFamily: '"SF Mono", Monaco, monospace',
             }}>
               {isFr ? 'FAITS IDENTIFIÉS' : 'FACTS IDENTIFIED'} · {displayFacts.length}
