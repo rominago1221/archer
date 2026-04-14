@@ -111,6 +111,8 @@ const Upload = () => {
       const response = await uploadPromise;
 
       if (response.data?.case_id && response.data?.streaming) {
+        // Fire-and-forget: trigger analysis before navigating (no await — just fire)
+        axios.post(`${API}/analyze/trigger?case_id=${response.data.case_id}`, null, { withCredentials: true }).catch(() => {});
         navigate(`/analyze/${response.data.case_id}`);
         return;
       }

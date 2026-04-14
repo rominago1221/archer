@@ -1387,6 +1387,74 @@ async def analyze_stream_endpoint(
 
 
 
+@api_router.post("/analyze/trigger")
+async def analyze_trigger_endpoint(
+    case_id: str = Query(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Fire-and-forget endpoint: starts analysis in background, returns immediately.
+    Frontend polls /api/cases/:id for progress."""
+    case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    # Already analyzed
+    if case_doc.get("status") == "active" and case_doc.get("risk_score", 0) > 0:
+        return {"status": "already_complete", "case_id": case_id}
+
+    # Already running
+    if case_doc.get("stream_active"):
+        return {"status": "in_progress", "case_id": case_id}
+
+    # Prevent duplicates
+    updated = await db.cases.update_one(
+        {"case_id": case_id, "status": "analyzing", "stream_active": {"$ne": True}},
+        {"$set": {"stream_active": True}}
+    )
+    if updated.modified_count == 0:
+        return {"status": "in_progress", "case_id": case_id}
+
+    doc = await db.documents.find_one({"case_id": case_id}, {"_id": 0})
+    if not doc or not doc.get("extracted_text"):
+        return {"status": "error", "message": "No document text found"}
+
+    extracted_text = doc.get("extracted_text", "")
+    filename = doc.get("file_name", "document")
+    user_country = current_user.jurisdiction or "US"
+    user_region = current_user.region or ""
+    user_language = current_user.language or "en"
+
+    async def run_background():
+        full_result = None
+        try:
+            async for event in analyze_document_stream(
+                extracted_text=extracted_text,
+                country=user_country,
+                region=user_region,
+                language=user_language,
+            ):
+                if event.get("stage") == "complete":
+                    full_result = event.get("full_result", {})
+        except Exception as e:
+            logger.error(f"Trigger analysis error: {e}")
+        finally:
+            if full_result:
+                try:
+                    await _save_stream_result_to_case(case_id, full_result, filename)
+                except Exception as se:
+                    logger.error(f"Save error: {se}")
+            else:
+                await db.cases.update_one(
+                    {"case_id": case_id},
+                    {"$set": {"status": "active", "updated_at": datetime.now(timezone.utc).isoformat()}}
+                )
+            await db.cases.update_one({"case_id": case_id}, {"$unset": {"stream_active": ""}})
+
+    asyncio.create_task(run_background())
+    return {"status": "started", "case_id": case_id}
+
+
+
 # ================== Belgian Legal Analysis System ==================
 
 BELGIAN_PERSONA_FR = """Tu es le moteur d'analyse juridique d'Archer pour la Belgique francophone. Tu analyses des documents juridiques pour les residents belges et tu fournis des informations juridiques claires et actionnables en francais.
