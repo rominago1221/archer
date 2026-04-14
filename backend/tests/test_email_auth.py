@@ -1,5 +1,5 @@
 """
-Test Email/Password Authentication for Jasper Legal App
+Test Email/Password Authentication for Archer Legal App
 Tests: Register, Login, /auth/me, Logout endpoints
 """
 import pytest

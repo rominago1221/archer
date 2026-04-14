@@ -1,4 +1,4 @@
-# Auth Testing Playbook for Jasper
+# Auth Testing Playbook for Archer
 
 ## Step 1: Create Test User & Session
 ```bash
@@ -56,7 +56,7 @@ curl -X GET "$API_URL/api/dashboard/stats" \
 await page.context.add_cookies([{
     "name": "session_token",
     "value": "YOUR_SESSION_TOKEN",
-    "domain": "jasper-doc-analysis.preview.emergentagent.com",
+    "domain": "archer-doc-analysis.preview.emergentagent.com",
     "path": "/",
     "httpOnly": True,
     "secure": True,

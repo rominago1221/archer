@@ -13,7 +13,7 @@
   },
 
   "passed_tests": [
-    "Backend: POST /api/auth/login works with test@jasper.com/password123",
+    "Backend: POST /api/auth/login works with test@archer.com/password123",
     "Backend: GET /api/cases returns cases list for authenticated user",
     "Backend: POST /api/documents/upload accepts .txt files and extracts text correctly",
     "Backend: POST /api/documents/upload returns analysis with risk_score, findings, next_steps",
@@ -62,7 +62,7 @@
   },
 
   "test_credentials": {
-    "test_user": "test@jasper.com / password123",
+    "test_user": "test@archer.com / password123",
     "user_plan": "pro (can upload multiple documents)"
   },
 

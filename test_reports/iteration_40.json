@@ -30,9 +30,9 @@
   },
 
   "features_verified": {
-    "us_pro_login": "PASS - test@jasper.legal / JasperPro2026!",
-    "belgium_pro_login": "PASS - belgium@jasper.legal / JasperPro2026!",
-    "attorney_login": "PASS - attorney@jasper.com / attorney123",
+    "us_pro_login": "PASS - test@archer.legal / ArcherPro2026!",
+    "belgium_pro_login": "PASS - belgium@archer.legal / ArcherPro2026!",
+    "attorney_login": "PASS - attorney@archer.com / attorney123",
     "dashboard_loads": "PASS - Cases list, risk score, findings, battle preview, outcome predictor, score history all render",
     "upload_page": "PASS - No runtime errors (stray 'ad;' fix verified)",
     "settings_page": "PASS - All tabs work (Account, Plan, Monitor, Notifications, Privacy)",
@@ -51,7 +51,7 @@
   "critical_code_review_comments": [
     "FIXED: Dashboard.js had 2 occurrences of undefined 'i' variable after array key refactoring - both now corrected",
     "Upload.js stray 'ad;' at end of file was already fixed by main agent",
-    "Backend helper functions (_build_realtime_law_context, _build_case_law_for_frontend, _validate_james_question, _validate_user_arguments, _validate_success_probability, _build_standard_analysis_result, _ensure_contract_guard_fields) are properly extracted and used",
+    "Backend helper functions (_build_realtime_law_context, _build_case_law_for_frontend, _validate_archer_question, _validate_user_arguments, _validate_success_probability, _build_standard_analysis_result, _ensure_contract_guard_fields) are properly extracted and used",
     "All 11 backend API tests pass (100%)",
     "Minor: Signup.js has eslint warning for missing 'clearError' dependency in useEffect - not critical"
   ],
@@ -66,9 +66,9 @@
   },
 
   "test_credentials": {
-    "us_pro_user": "test@jasper.legal / JasperPro2026!",
-    "belgium_pro_user": "belgium@jasper.legal / JasperPro2026!",
-    "attorney": "attorney@jasper.com / attorney123"
+    "us_pro_user": "test@archer.legal / ArcherPro2026!",
+    "belgium_pro_user": "belgium@archer.legal / ArcherPro2026!",
+    "attorney": "attorney@archer.com / attorney123"
   },
 
   "seed_data_creation": "None - used existing seeded data",

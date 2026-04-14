@@ -15,7 +15,7 @@
   "features_verified": {
     "1_admin_login": {
       "status": "PASS",
-      "evidence": "Login with test@jasper.legal / JasperPro2026! successful, redirects to /dashboard"
+      "evidence": "Login with test@archer.legal / ArcherPro2026! successful, redirects to /dashboard"
     },
     "2_admin_attorneys_page_loads": {
       "status": "PASS",
@@ -112,8 +112,8 @@
   },
 
   "test_credentials": {
-    "admin_client": "test@jasper.legal / JasperPro2026!",
-    "approved_attorney": "attorney@jasper.com / attorney123",
+    "admin_client": "test@archer.legal / ArcherPro2026!",
+    "approved_attorney": "attorney@archer.com / attorney123",
     "pending_attorneys": ["jean luc dalmeiren (atty_54cad60551b4)", "Test Attorney (atty_cb515b04aa0f)"]
   },
 
@@ -123,7 +123,7 @@
 
   "should_main_agent_self_test": false,
 
-  "context_for_next_testing_agent": "Attorney onboarding & admin management feature fully tested. Admin page at /admin/attorneys accessible to test@jasper.legal (hardcoded admin). 3 attorneys exist: 2 pending (jean luc dalmeiren, Test Attorney) and 1 approved (Sarah Mitchell). Email sending is MOCKED - SendGrid not configured. To test pending attorney dashboard, need to know password for pending attorney accounts. The approved attorney dashboard shows full features without pending banner.",
+  "context_for_next_testing_agent": "Attorney onboarding & admin management feature fully tested. Admin page at /admin/attorneys accessible to test@archer.legal (hardcoded admin). 3 attorneys exist: 2 pending (jean luc dalmeiren, Test Attorney) and 1 approved (Sarah Mitchell). Email sending is MOCKED - SendGrid not configured. To test pending attorney dashboard, need to know password for pending attorney accounts. The approved attorney dashboard shows full features without pending banner.",
 
   "mocked_apis": {
     "has_mocked_apis": true,

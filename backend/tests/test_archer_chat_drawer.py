@@ -1,11 +1,11 @@
 """
-Test James Clarification Two-Step Approach:
-1. James Question Card with max 1 question + 2-3 answer buttons + 'ask directly' link
+Test Archer Clarification Two-Step Approach:
+1. Archer Question Card with max 1 question + 2-3 answer buttons + 'ask directly' link
 2. CaseChatDrawer that slides in from right with case context
 
 Tests:
 - POST /api/chat/send with case_id field
-- Verify James has case context in response
+- Verify Archer has case context in response
 - Verify chat endpoint uses emergentintegrations (LlmChat)
 """
 
@@ -47,8 +47,8 @@ def auth_session():
 
 
 @pytest.fixture(scope="module")
-def case_with_james_question(auth_session):
-    """Find a case that has james_question set"""
+def case_with_archer_question(auth_session):
+    """Find a case that has archer_question set"""
     session, user = auth_session
     
     # Get all cases
@@ -57,12 +57,12 @@ def case_with_james_question(auth_session):
     
     cases = response.json()
     
-    # Find a case with james_question
+    # Find a case with archer_question
     for case in cases:
-        if case.get("james_question"):
+        if case.get("archer_question"):
             return case
     
-    # If no case has james_question, return the first case (for testing chat without question)
+    # If no case has archer_question, return the first case (for testing chat without question)
     if cases:
         return cases[0]
     
@@ -97,10 +97,10 @@ class TestChatSendEndpoint:
         
         print(f"Chat response (no case): {data['response'][:200]}...")
     
-    def test_chat_send_with_case_id(self, auth_session, case_with_james_question):
+    def test_chat_send_with_case_id(self, auth_session, case_with_archer_question):
         """Test chat/send with case_id includes case context"""
         session, user = auth_session
-        case = case_with_james_question
+        case = case_with_archer_question
         
         response = session.post(f"{BASE_URL}/api/chat/send", json={
             "message": "What are my options for this case?",
@@ -131,10 +131,10 @@ class TestChatSendEndpoint:
         
         print(f"Chat response (with case): {data['response'][:200]}...")
     
-    def test_chat_send_continues_conversation(self, auth_session, case_with_james_question):
+    def test_chat_send_continues_conversation(self, auth_session, case_with_archer_question):
         """Test sending multiple messages in same conversation"""
         session, user = auth_session
-        case = case_with_james_question
+        case = case_with_archer_question
         
         # First message
         response1 = session.post(f"{BASE_URL}/api/chat/send", json={
@@ -179,20 +179,20 @@ class TestChatSendEndpoint:
         assert response.status_code == 401
 
 
-class TestJamesQuestionCard:
-    """Test James Question Card data structure"""
+class TestArcherQuestionCard:
+    """Test Archer Question Card data structure"""
     
-    def test_james_question_structure(self, auth_session, case_with_james_question):
-        """Verify james_question has correct structure"""
-        case = case_with_james_question
+    def test_archer_question_structure(self, auth_session, case_with_archer_question):
+        """Verify archer_question has correct structure"""
+        case = case_with_archer_question
         
-        jq = case.get("james_question")
+        jq = case.get("archer_question")
         if not jq:
-            pytest.skip("Case doesn't have james_question")
+            pytest.skip("Case doesn't have archer_question")
         
         # Verify structure
-        assert "text" in jq, "james_question should have 'text' field"
-        assert "options" in jq, "james_question should have 'options' field"
+        assert "text" in jq, "archer_question should have 'text' field"
+        assert "options" in jq, "archer_question should have 'options' field"
         
         # Verify options is a list with 2-3 items
         options = jq["options"]
@@ -203,21 +203,21 @@ class TestJamesQuestionCard:
         for opt in options:
             assert isinstance(opt, str), f"Option should be string, got {type(opt)}"
         
-        print(f"James question: {jq['text']}")
+        print(f"Archer question: {jq['text']}")
         print(f"Options: {options}")
     
-    def test_james_answer_endpoint(self, auth_session, case_with_james_question):
-        """Test POST /api/cases/{case_id}/james-answer endpoint"""
+    def test_archer_answer_endpoint(self, auth_session, case_with_archer_question):
+        """Test POST /api/cases/{case_id}/archer-answer endpoint"""
         session, user = auth_session
-        case = case_with_james_question
+        case = case_with_archer_question
         
-        jq = case.get("james_question")
+        jq = case.get("archer_question")
         if not jq:
-            pytest.skip("Case doesn't have james_question")
+            pytest.skip("Case doesn't have archer_question")
         
         # Answer the question
         response = session.post(
-            f"{BASE_URL}/api/cases/{case['case_id']}/james-answer",
+            f"{BASE_URL}/api/cases/{case['case_id']}/archer-answer",
             json={
                 "question": jq["text"],
                 "answer": jq["options"][0]  # Pick first option
@@ -228,7 +228,7 @@ class TestJamesQuestionCard:
         assert response.status_code in [200, 429], f"Unexpected status: {response.status_code}"
         
         if response.status_code == 200:
-            print("James answer submitted successfully")
+            print("Archer answer submitted successfully")
         else:
             print("Rate limited - answer endpoint working but throttled")
 

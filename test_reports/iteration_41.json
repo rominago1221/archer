@@ -50,11 +50,11 @@
   },
 
   "features_verified": {
-    "us_pro_login": "PASS - test@jasper.legal / JasperPro2026!",
-    "belgium_pro_login": "PASS - belgium@jasper.legal / JasperPro2026! (fixed jurisdiction data)",
-    "attorney_login": "PASS - attorney@jasper.com / attorney123",
+    "us_pro_login": "PASS - test@archer.legal / ArcherPro2026!",
+    "belgium_pro_login": "PASS - belgium@archer.legal / ArcherPro2026! (fixed jurisdiction data)",
+    "attorney_login": "PASS - attorney@archer.com / attorney123",
     "dashboard_loads": "PASS - Cases list, risk score, findings, battle preview, outcome predictor, score history all render",
-    "case_detail_page": "PASS - All sections render including Score History chart, Next Actions with numbered steps, James Analysis",
+    "case_detail_page": "PASS - All sections render including Score History chart, Next Actions with numbered steps, Archer Analysis",
     "upload_page": "PASS - No runtime errors",
     "settings_page": "PASS - All tabs work",
     "document_library": "PASS - Browse and Generate modes work",
@@ -92,12 +92,12 @@
   },
 
   "test_credentials": {
-    "us_pro_user": "test@jasper.legal / JasperPro2026!",
-    "belgium_pro_user": "belgium@jasper.legal / JasperPro2026!",
-    "attorney": "attorney@jasper.com / attorney123"
+    "us_pro_user": "test@archer.legal / ArcherPro2026!",
+    "belgium_pro_user": "belgium@archer.legal / ArcherPro2026!",
+    "attorney": "attorney@archer.com / attorney123"
   },
 
-  "seed_data_creation": "Fixed belgium@jasper.legal user jurisdiction from US to BE",
+  "seed_data_creation": "Fixed belgium@archer.legal user jurisdiction from US to BE",
 
   "retest_needed": false,
 

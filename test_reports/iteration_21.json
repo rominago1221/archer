@@ -1,5 +1,5 @@
 {
-  "summary": "Complete testing of 4 bug fixes in Jasper legal tech platform. All 4 bugs verified fixed. Backend: 7/7 tests passed. Frontend: All bug fixes and regressions verified via Playwright.",
+  "summary": "Complete testing of 4 bug fixes in Archer legal tech platform. All 4 bugs verified fixed. Backend: 7/7 tests passed. Frontend: All bug fixes and regressions verified via Playwright.",
 
   "backend_issues": {
     "critical": [],
@@ -38,11 +38,11 @@
   "regressions_verified": {
     "Document Library /documents": {
       "status": "PASS",
-      "evidence": "Two-column layout with sidebar, James conversation mode with identity bar, suggestion chips, recent documents"
+      "evidence": "Two-column layout with sidebar, Archer conversation mode with identity bar, suggestion chips, recent documents"
     },
     "Legal Chat /chat": {
       "status": "PASS",
-      "evidence": "James header present, French UI labels, suggested questions in French, conversation sidebar"
+      "evidence": "Archer header present, French UI labels, suggested questions in French, conversation sidebar"
     },
     "Dashboard /dashboard": {
       "status": "PASS",

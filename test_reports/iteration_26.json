@@ -1,5 +1,5 @@
 {
-  "summary": "Complete testing of Case Detail Page 12-point redesign. All features verified working: breadcrumb navigation, Next Actions with letter generation, horizontal Battle Preview, James Question Card, Score History graph, Outcome Predictor percentages (85/10/4/1), Recent Jurisprudence, Risk Monitor, Share modal, PDF download, James sidebar card with stats, and 8-card new case overlay in English.",
+  "summary": "Complete testing of Case Detail Page 12-point redesign. All features verified working: breadcrumb navigation, Next Actions with letter generation, horizontal Battle Preview, Archer Question Card, Score History graph, Outcome Predictor percentages (85/10/4/1), Recent Jurisprudence, Risk Monitor, Share modal, PDF download, Archer sidebar card with stats, and 8-card new case overlay in English.",
 
   "backend_issues": {
     "critical": [],
@@ -29,9 +29,9 @@
       "status": "PASS",
       "evidence": "'Your arguments' (green) and 'Their arguments' (red) columns both display data from battle_preview.user_side.strongest_arguments and battle_preview.opposing_side.opposing_arguments"
     },
-    "5_james_question_card": {
+    "5_archer_question_card": {
       "status": "PASS",
-      "evidence": "James Question Card visible with clickable answer buttons (3 days, 7 days, 30 days, No time period was specified). POST /api/cases/{case_id}/james-answer endpoint works"
+      "evidence": "Archer Question Card visible with clickable answer buttons (3 days, 7 days, 30 days, No time period was specified). POST /api/cases/{case_id}/archer-answer endpoint works"
     },
     "6_score_history_graph": {
       "status": "PASS",
@@ -57,9 +57,9 @@
       "status": "PASS",
       "evidence": "Download brief button triggers jsPDF generation client-side"
     },
-    "12_james_sidebar_card": {
+    "12_archer_sidebar_card": {
       "status": "PASS",
-      "evidence": "James card shows stats: 847K+ live sources, 20 yrs experience, Live case law, #1 Legal AI"
+      "evidence": "Archer card shows stats: 847K+ live sources, 20 yrs experience, Live case law, #1 Legal AI"
     },
     "13_new_case_overlay": {
       "status": "PASS",
@@ -72,8 +72,8 @@
   },
 
   "backend_api_tests": {
-    "james_answer_endpoint": {
-      "endpoint": "POST /api/cases/{case_id}/james-answer",
+    "archer_answer_endpoint": {
+      "endpoint": "POST /api/cases/{case_id}/archer-answer",
       "status": "PASS",
       "tests_passed": 3,
       "details": "Returns impact_summary, risk_adjustment, new_risk_score. Validates answer required, returns 404 for invalid case"
@@ -122,7 +122,7 @@
   },
 
   "test_credentials": {
-    "us_pro_client": "test@jasper.legal / JasperPro2026!",
+    "us_pro_client": "test@archer.legal / ArcherPro2026!",
     "test_case_id": "case_ed35bd476d0a"
   },
 
@@ -132,7 +132,7 @@
 
   "should_main_agent_self_test": false,
 
-  "context_for_next_testing_agent": "Case Detail Page 12-point redesign is fully implemented and working. Key endpoints: /api/cases/{case_id}/james-answer (AI Q&A), /api/cases/{case_id}/generate-action-letter (AI letter generation), /api/cases/{case_id}/share (share link generation). The case case_ed35bd476d0a has rich test data including battle_preview with both sides, 3 jurisprudence entries, risk_score_history, and success_probability with 85/10/4/1 percentages. james_question is populated for this case showing the James Question Card.",
+  "context_for_next_testing_agent": "Case Detail Page 12-point redesign is fully implemented and working. Key endpoints: /api/cases/{case_id}/archer-answer (AI Q&A), /api/cases/{case_id}/generate-action-letter (AI letter generation), /api/cases/{case_id}/share (share link generation). The case case_ed35bd476d0a has rich test data including battle_preview with both sides, 3 jurisprudence entries, risk_score_history, and success_probability with 85/10/4/1 percentages. archer_question is populated for this case showing the Archer Question Card.",
 
   "mocked_apis": {
     "has_mocked_apis": false,

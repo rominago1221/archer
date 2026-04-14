@@ -1,5 +1,5 @@
 """
-Backend API Tests for Jasper New Features:
+Backend API Tests for Archer New Features:
 1. Risk Score History Graph
 2. Outcome Predictor
 3. Document Scanner
@@ -32,7 +32,7 @@ class TestHealthCheck:
         response = requests.get(f"{BASE_URL}/api/")
         assert response.status_code == 200
         data = response.json()
-        assert "Jasper" in data.get("message", "")
+        assert "Archer" in data.get("message", "")
         print("PASS: API root endpoint working")
 
 

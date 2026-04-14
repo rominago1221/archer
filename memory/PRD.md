@@ -17,7 +17,7 @@ Build a complete, production-ready SaaS web application called "Archer" — a le
 - Score History Chart, Attorney Letter Modal (Part 1)
 - Case Delete, Performance Optimizations, Code Quality
 - **Marketing Pages**: Home V2+V3, Pricing V3 (Freemium Capture), How It Works, Win Wall, PublicNavbar
-- **Rebranding Complete**: Jasper→Archer rename done in ALL frontend pages + backend prompts + SVG logos
+- **Rebranding Complete**: Archer→Archer rename done in ALL frontend pages + backend prompts + SVG logos
 
 ### Cinematic Analysis — ALL 8 SCENES IMPLEMENTED
 **Backend SSE:**
@@ -40,7 +40,7 @@ Build a complete, production-ready SaaS web application called "Archer" — a le
 - BUG 1: Upload now redirects immediately to `/analyze/:caseId` (no fake delays)
 - BUG 2: Already-analyzed cases redirect to `/cases/:caseId` via useEffect
 - BUG 3: Scene elements enlarged 40-50% for immersive fullscreen feel
-- BUG 4: James → Archer rename complete (Dashboard, CaseDetail, Chat, Backend prompts, Avatars J→A)
+- BUG 4: Archer → Archer rename complete (Dashboard, CaseDetail, Chat, Backend prompts, Avatars J→A)
 - BUG 5: "Made with Emergent" badge hidden
 
 ## Prioritized Backlog

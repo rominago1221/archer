@@ -32,9 +32,9 @@
       "status": "PASS",
       "evidence": "JurisdictionPills.js has language selector dropdown with data-testid='language-selector-btn'. 5 language options: EN, FR, NL, DE, ES."
     },
-    "4_backend_pass3_james_question_rule": {
+    "4_backend_pass3_archer_question_rule": {
       "status": "PASS",
-      "evidence": "server.py line 567: 'RULE 1 — james_question: You MUST generate exactly ONE specific clarifying question... Always provide 2-4 answer options as clickable buttons.'"
+      "evidence": "server.py line 567: 'RULE 1 — archer_question: You MUST generate exactly ONE specific clarifying question... Always provide 2-4 answer options as clickable buttons.'"
     },
     "5_backend_pass3_success_probability_rule": {
       "status": "PASS",
@@ -48,9 +48,9 @@
       "status": "PASS",
       "evidence": "server.py lines 620-641: 'MUST generate exactly 4-5 strongest_arguments. NEVER return fewer than 4.'"
     },
-    "8_backend_validation_james_question_retry": {
+    "8_backend_validation_archer_question_retry": {
       "status": "PASS",
-      "evidence": "server.py lines 909-926: Validation block retries james_question if missing/invalid with fallback default."
+      "evidence": "server.py lines 909-926: Validation block retries archer_question if missing/invalid with fallback default."
     },
     "9_backend_validation_user_arguments_retry": {
       "status": "PASS",
@@ -79,9 +79,9 @@
   ],
 
   "critical_code_review_comments": [
-    "Backend PASS3_PROMPT correctly includes all 3 rules: james_question with 2-4 options, success_probability 2-95% clamping, next_steps with legal references",
+    "Backend PASS3_PROMPT correctly includes all 3 rules: archer_question with 2-4 options, success_probability 2-95% clamping, next_steps with legal references",
     "Backend PASS4A_PROMPT correctly requires 4-5 strongest_arguments",
-    "Backend validation block (lines 908-963) properly implements retry logic for james_question, user_arguments, and success_probability",
+    "Backend validation block (lines 908-963) properly implements retry logic for archer_question, user_arguments, and success_probability",
     "Backend get_language_instruction (lines 2000-2022) enforces 100% language consistency with 'ZERO English words allowed'",
     "Frontend Score History graph has proper Y-axis (0,25,50,75,100) with dashed gridlines on both Dashboard and CaseDetail",
     "Frontend JurisdictionPills component includes language selector dropdown with 5 options",
@@ -99,7 +99,7 @@
   },
 
   "test_credentials": {
-    "usa_pro_client": "test@jasper.legal / JasperPro2026!"
+    "usa_pro_client": "test@archer.legal / ArcherPro2026!"
   },
 
   "seed_data_creation": "None - used existing seeded data",

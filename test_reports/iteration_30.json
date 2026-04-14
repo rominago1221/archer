@@ -1,5 +1,5 @@
 {
-  "summary": "Complete testing of James clarification two-step approach. STEP 1: James Question Card shows max 1 question with 2-3 clickable answer buttons + 'James has more questions — ask him directly →' link. STEP 2: Clicking link opens CaseChatDrawer (400px, slides from right) pre-loaded with case context. Chat uses /api/chat/send with case_id field. Backend uses emergentintegrations LlmChat (NOT direct httpx to Anthropic).",
+  "summary": "Complete testing of Archer clarification two-step approach. STEP 1: Archer Question Card shows max 1 question with 2-3 clickable answer buttons + 'Archer has more questions — ask him directly →' link. STEP 2: Clicking link opens CaseChatDrawer (400px, slides from right) pre-loaded with case context. Chat uses /api/chat/send with case_id field. Backend uses emergentintegrations LlmChat (NOT direct httpx to Anthropic).",
 
   "backend_issues": {
     "critical": [],
@@ -21,17 +21,17 @@
   },
 
   "features_verified": {
-    "1_james_question_card_dashboard": {
+    "1_archer_question_card_dashboard": {
       "status": "PASS",
-      "evidence": "James Question Card found on Dashboard with data-testid='james-question'"
+      "evidence": "Archer Question Card found on Dashboard with data-testid='archer-question'"
     },
     "2_max_3_answer_buttons": {
       "status": "PASS",
-      "evidence": "Found exactly 3 answer buttons (data-testid='james-answer-0', 'james-answer-1', 'james-answer-2')"
+      "evidence": "Found exactly 3 answer buttons (data-testid='archer-answer-0', 'archer-answer-1', 'archer-answer-2')"
     },
-    "3_ask_james_directly_link": {
+    "3_ask_archer_directly_link": {
       "status": "PASS",
-      "evidence": "Link with data-testid='ask-james-directly' found below answer buttons"
+      "evidence": "Link with data-testid='ask-archer-directly' found below answer buttons"
     },
     "4_chat_drawer_opens_from_dashboard": {
       "status": "PASS",
@@ -41,13 +41,13 @@
       "status": "PASS",
       "evidence": "Drawer has width: 400px, position: absolute right: 0, animation: slideIn"
     },
-    "6_chat_drawer_has_james_avatar": {
+    "6_chat_drawer_has_archer_avatar": {
       "status": "PASS",
-      "evidence": "James avatar (J) found in drawer header"
+      "evidence": "Archer avatar (J) found in drawer header"
     },
     "7_chat_drawer_has_case_title": {
       "status": "PASS",
-      "evidence": "'Chat with James' title with case subtitle visible"
+      "evidence": "'Chat with Archer' title with case subtitle visible"
     },
     "8_chat_drawer_has_input_and_send": {
       "status": "PASS",
@@ -55,15 +55,15 @@
     },
     "9_chat_drawer_preloaded_context": {
       "status": "PASS",
-      "evidence": "Initial message sent automatically with case title and James's question"
+      "evidence": "Initial message sent automatically with case title and Archer's question"
     },
     "10_chat_drawer_close_button": {
       "status": "PASS",
       "evidence": "data-testid='close-chat-drawer' closes drawer, user stays on same page"
     },
-    "11_case_detail_james_question_card": {
+    "11_case_detail_archer_question_card": {
       "status": "PASS",
-      "evidence": "James Question Card found on /cases/{case_id} page"
+      "evidence": "Archer Question Card found on /cases/{case_id} page"
     },
     "12_case_detail_chat_drawer": {
       "status": "PASS",
@@ -71,7 +71,7 @@
     },
     "13_backend_chat_send_with_case_id": {
       "status": "PASS",
-      "evidence": "POST /api/chat/send accepts case_id field, James responds with case context"
+      "evidence": "POST /api/chat/send accepts case_id field, Archer responds with case context"
     },
     "14_backend_uses_emergentintegrations": {
       "status": "PASS",
@@ -84,15 +84,15 @@
     "test_chat_send_with_case_id": "PASS - Chat includes case context when case_id provided",
     "test_chat_send_continues_conversation": "PASS - Multiple messages in same conversation work",
     "test_chat_send_requires_auth": "PASS - Returns 401 without authentication",
-    "test_james_question_structure": "PASS - james_question has text and 2-3 options",
-    "test_james_answer_endpoint": "PASS - POST /api/cases/{id}/james-answer works",
+    "test_archer_question_structure": "PASS - archer_question has text and 2-3 options",
+    "test_archer_answer_endpoint": "PASS - POST /api/cases/{id}/archer-answer works",
     "test_list_conversations": "PASS - GET /api/chat/conversations returns list",
     "test_get_conversation_messages": "PASS - GET /api/chat/conversations/{id}/messages returns messages"
   },
 
   "test_report_links": [
-    "/app/backend/tests/test_james_chat_drawer.py",
-    "/app/test_reports/pytest/pytest_james_chat_drawer.xml"
+    "/app/backend/tests/test_archer_chat_drawer.py",
+    "/app/test_reports/pytest/pytest_archer_chat_drawer.xml"
   ],
 
   "action_items": [],
@@ -108,7 +108,7 @@
 
   "updated_files": [
     "/app/frontend/src/pages/Dashboard.js",
-    "/app/backend/tests/test_james_chat_drawer.py"
+    "/app/backend/tests/test_archer_chat_drawer.py"
   ],
 
   "success_rate": {
@@ -117,7 +117,7 @@
   },
 
   "test_credentials": {
-    "us_pro_client": "test@jasper.legal / JasperPro2026!"
+    "us_pro_client": "test@archer.legal / ArcherPro2026!"
   },
 
   "seed_data_creation": "None - used existing seeded data with 29 cases",
@@ -126,7 +126,7 @@
 
   "should_main_agent_self_test": false,
 
-  "context_for_next_testing_agent": "James clarification two-step approach is fully implemented. STEP 1: James Question Card shows max 1 question with 2-3 answer buttons + 'ask directly' link. STEP 2: CaseChatDrawer slides in from right (400px) with case context. The drawer uses /api/chat/send which passes case_id to include case context in James's responses. Backend uses emergentintegrations LlmChat (not direct Anthropic calls). Fixed missing English translation for 'moreQuestions' in Dashboard.js.",
+  "context_for_next_testing_agent": "Archer clarification two-step approach is fully implemented. STEP 1: Archer Question Card shows max 1 question with 2-3 answer buttons + 'ask directly' link. STEP 2: CaseChatDrawer slides in from right (400px) with case context. The drawer uses /api/chat/send which passes case_id to include case context in Archer's responses. Backend uses emergentintegrations LlmChat (not direct Anthropic calls). Fixed missing English translation for 'moreQuestions' in Dashboard.js.",
 
   "mocked_apis": {
     "has_mocked_apis": false,
@@ -134,11 +134,11 @@
   },
 
   "screenshots": [
-    ".screenshots/dashboard_loaded.png - Dashboard with James Question Card visible",
-    ".screenshots/james_question_card.png - James Question Card with 3 answer buttons and 'ask directly' link",
+    ".screenshots/dashboard_loaded.png - Dashboard with Archer Question Card visible",
+    ".screenshots/archer_question_card.png - Archer Question Card with 3 answer buttons and 'ask directly' link",
     ".screenshots/chat_drawer_opened.png - CaseChatDrawer open with initial context message",
-    ".screenshots/case_detail_page.png - CaseDetail page with James Question Card",
+    ".screenshots/case_detail_page.png - CaseDetail page with Archer Question Card",
     ".screenshots/case_detail_chat_drawer.png - CaseChatDrawer on CaseDetail page",
-    ".screenshots/chat_drawer_response.png - James response with case context"
+    ".screenshots/chat_drawer_response.png - Archer response with case context"
   ]
 }

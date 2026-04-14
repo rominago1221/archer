@@ -2,7 +2,7 @@
 Test suite for the 4 fixes in iteration 38:
 1. Back button on case detail → /dashboard (not history.back)
 2. Next Actions section redesigned: bell icon, 15px bold title, blue left border accent, light blue bg #f0f7ff, stronger card borders 1px, 15px action titles
-3. Document clicking: each document navigable to /documents/{documentId} page showing filename, date, size, preview, James analysis, download/delete buttons
+3. Document clicking: each document navigable to /documents/{documentId} page showing filename, date, size, preview, Archer analysis, download/delete buttons
 4. Font size +15% on CaseDetail page
 """
 import pytest

@@ -1,5 +1,5 @@
 """
-Test Multi-Document Analysis Features for Jasper Legal Platform
+Test Multi-Document Analysis Features for Archer Legal Platform
 Tests: case_narrative, contradictions, opposing_strategy_analysis, 
        cumulative_financial_exposure, master_deadlines, risk_score_history,
        multi_doc_summary, and case brief endpoint

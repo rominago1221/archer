@@ -51,7 +51,7 @@ class TestAddDocumentUploadEndpoint:
         files = {'file': ('test_document.txt', test_content, 'text/plain')}
         data = {
             'case_id': self.test_case['case_id'],
-            'user_context': 'This is a test context for James analysis.'
+            'user_context': 'This is a test context for Archer analysis.'
         }
         
         response = self.session.post(

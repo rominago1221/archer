@@ -321,14 +321,14 @@ const Dashboard = () => {
   };
 
   const handleArcherAnswer = async (answer) => {
-    if (!sc?.james_question || answerLoading) return;
+    if (!sc?.archer_question || answerLoading) return;
     setAnswerLoading(true);
     setJqSelectedAnswer(answer);
     setJqAnswered(false);
     setJqImpact(null);
     try {
-      const res = await axios.post(`${API}/cases/${selectedId}/james-answer`, {
-        question: sc.james_question.text,
+      const res = await axios.post(`${API}/cases/${selectedId}/archer-answer`, {
+        question: sc.archer_question.text,
         answer: answer,
       }, { withCredentials: true });
       // Set impact FIRST before fetching new data
@@ -394,7 +394,7 @@ const Dashboard = () => {
   const scoreColor = riskColor(score);
   const riskText = score >= 70 ? t.riskHigh : score >= 40 ? t.riskMed : score > 0 ? t.riskLow : '—';
   const cType = sc?.type || 'other';
-  const jq = sc?.james_question;
+  const jq = sc?.archer_question;
   const history = sc?.risk_score_history || [];
   const caseLaw = sc?.recent_case_law || [];
   const prob = sc?.success_probability;

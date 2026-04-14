@@ -1,5 +1,5 @@
 {
-  "summary": "Complete testing of AddDocumentModal feature. The modal opens correctly on both Dashboard and CaseDetail pages (NOT redirecting to /upload). All modal elements verified: upload drop zone, context textarea (0/500 counter), 'Analyze with James' button (disabled until file selected), close button. Backend POST /api/documents/upload accepts case_id and user_context Form fields correctly.",
+  "summary": "Complete testing of AddDocumentModal feature. The modal opens correctly on both Dashboard and CaseDetail pages (NOT redirecting to /upload). All modal elements verified: upload drop zone, context textarea (0/500 counter), 'Analyze with Archer' button (disabled until file selected), close button. Backend POST /api/documents/upload accepts case_id and user_context Form fields correctly.",
 
   "backend_issues": {
     "critical": [],
@@ -35,7 +35,7 @@
     },
     "6_analyze_button_disabled_no_file": {
       "status": "PASS",
-      "evidence": "'Analyze with James' button (data-testid='analyze-with-james-btn') is disabled when no file selected"
+      "evidence": "'Analyze with Archer' button (data-testid='analyze-with-archer-btn') is disabled when no file selected"
     },
     "7_close_button_visible": {
       "status": "PASS",
@@ -59,7 +59,7 @@
     },
     "12_casedetail_modal_all_elements": {
       "status": "PASS",
-      "evidence": "CaseDetail modal has all elements: upload-drop-zone, doc-context-input, analyze-with-james-btn, close-add-doc-modal"
+      "evidence": "CaseDetail modal has all elements: upload-drop-zone, doc-context-input, analyze-with-archer-btn, close-add-doc-modal"
     }
   },
 
@@ -99,7 +99,7 @@
   },
 
   "test_credentials": {
-    "us_pro_client": "test@jasper.legal / JasperPro2026!"
+    "us_pro_client": "test@archer.legal / ArcherPro2026!"
   },
 
   "seed_data_creation": "None - used existing seeded data with 28 cases",
@@ -108,7 +108,7 @@
 
   "should_main_agent_self_test": false,
 
-  "context_for_next_testing_agent": "AddDocumentModal feature is fully implemented and tested. The modal opens on both Dashboard and CaseDetail pages when clicking 'Add document' button. It does NOT redirect to /upload. The modal has: drag & drop upload zone, context textarea (500 chars max), 'Analyze with James' button (disabled until file selected), Cancel button, and X close button. Backend POST /api/documents/upload accepts case_id and user_context Form fields. After upload, the modal closes and fetchCases/fetchData is called to refresh case data.",
+  "context_for_next_testing_agent": "AddDocumentModal feature is fully implemented and tested. The modal opens on both Dashboard and CaseDetail pages when clicking 'Add document' button. It does NOT redirect to /upload. The modal has: drag & drop upload zone, context textarea (500 chars max), 'Analyze with Archer' button (disabled until file selected), Cancel button, and X close button. Backend POST /api/documents/upload accepts case_id and user_context Form fields. After upload, the modal closes and fetchCases/fetchData is called to refresh case data.",
 
   "mocked_apis": {
     "has_mocked_apis": false,

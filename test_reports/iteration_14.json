@@ -24,7 +24,7 @@
     "Landing: Pricing shows USD ($0/$69/$149) for US",
     "Landing: Pricing shows AED (AED 0/AED 249/AED 549) for UAE",
     "Landing: Pricing shows EUR (0€/65€/139€) for Belgium",
-    "Landing: US lawyers shown (Sarah Mitchell, James Carter, Diana Torres)",
+    "Landing: US lawyers shown (Sarah Mitchell, Archer Carter, Diana Torres)",
     "Landing: UAE lawyers shown (Fatima Al Mazrouei, Raj Patel, Khalid Al Rashid)",
     "Landing: Belgian lawyers shown (Sophie Lecomte, Thomas Dupont, Julie Renard)",
     "Landing: localStorage persists locale selection on page refresh",
@@ -71,7 +71,7 @@
 
   "should_main_agent_self_test": false,
 
-  "context_for_next_testing_agent": "Country/Language Selector feature fully tested. Landing page has CountrySelector component in navbar between FAQ and Sign in. 5 locales: us-en, ae-en, be-fr, be-nl, be-de. Translations in /app/frontend/src/data/landingTranslations.js. localStorage key is 'jasper_locale'. Signup page reads localStorage to pre-select country. Backend accepts country US/BE/AE in POST /api/auth/register. Test file /app/backend/tests/test_country_locale_selector.py can be reused for regression testing.",
+  "context_for_next_testing_agent": "Country/Language Selector feature fully tested. Landing page has CountrySelector component in navbar between FAQ and Sign in. 5 locales: us-en, ae-en, be-fr, be-nl, be-de. Translations in /app/frontend/src/data/landingTranslations.js. localStorage key is 'archer_locale'. Signup page reads localStorage to pre-select country. Backend accepts country US/BE/AE in POST /api/auth/register. Test file /app/backend/tests/test_country_locale_selector.py can be reused for regression testing.",
 
   "features_verified": {
     "landing_country_selector": {
@@ -93,17 +93,17 @@
       "belgium_eur": "WORKING - 0€, 65€, 139€"
     },
     "country_specific_lawyers": {
-      "us_lawyers": "WORKING - Sarah Mitchell (NY), James Carter (CA), Diana Torres (TX)",
+      "us_lawyers": "WORKING - Sarah Mitchell (NY), Archer Carter (CA), Diana Torres (TX)",
       "uae_lawyers": "WORKING - Fatima Al Mazrouei (Dubai), Raj Patel (Abu Dhabi), Khalid Al Rashid (DIFC)",
       "belgian_lawyers": "WORKING - Sophie Lecomte (Bruxelles), Thomas Dupont (Liège), Julie Renard (Namur)"
     },
     "localStorage_persistence": {
-      "save_on_select": "WORKING - jasper_locale saved when locale selected",
+      "save_on_select": "WORKING - archer_locale saved when locale selected",
       "restore_on_reload": "WORKING - Locale restored from localStorage on page reload"
     },
     "signup_page": {
       "uae_option": "WORKING - Country dropdown has US, AE, BE options",
-      "localStorage_sync": "WORKING - Pre-selects country based on jasper_locale",
+      "localStorage_sync": "WORKING - Pre-selects country based on archer_locale",
       "aed_pricing": "WORKING - Shows AED 0/AED 249 when UAE selected",
       "eur_pricing": "WORKING - Shows 0 EUR/65 EUR when Belgium selected",
       "usd_pricing": "WORKING - Shows $0/$69 when US selected"

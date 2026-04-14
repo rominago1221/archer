@@ -201,7 +201,7 @@ const CaseDetail = () => {
   const steps = sc?.ai_next_steps || [];
   const bp = sc?.battle_preview;
   const dl = daysUntil(sc?.deadline);
-  const jq = sc?.james_question;
+  const jq = sc?.archer_question;
   const history = sc?.risk_score_history || [];
   const caseLaw = sc?.recent_case_law || [];
   const prob = sc?.success_probability;
@@ -213,7 +213,7 @@ const CaseDetail = () => {
     setJqAnswered(false);
     setJqImpact(null);
     try {
-      const res = await axios.post(`${API}/cases/${caseId}/james-answer`, {
+      const res = await axios.post(`${API}/cases/${caseId}/archer-answer`, {
         question: jq.text,
         answer: answer,
       }, { withCredentials: true });
@@ -433,10 +433,10 @@ const CaseDetail = () => {
                     {/* Previous answer impact — shown after answer */}
                     {jqAnswered && jqImpact && (
                       <>
-                        <div data-testid="james-impact" style={{ fontSize: 12, color: '#1a56db', lineHeight: 1.5, marginBottom: 8, padding: '6px 10px', background: '#eff6ff', borderRadius: 8, border: '0.5px solid #bfdbfe' }}>
+                        <div data-testid="archer-impact" style={{ fontSize: 12, color: '#1a56db', lineHeight: 1.5, marginBottom: 8, padding: '6px 10px', background: '#eff6ff', borderRadius: 8, border: '0.5px solid #bfdbfe' }}>
                           <span style={{ fontWeight: 600 }}>Archer:</span> {jqImpact}
                         </div>
-                        <button data-testid="ask-james-directly"
+                        <button data-testid="ask-archer-directly"
                           onClick={() => setChatDrawer({
                             initial: `${lang === 'fr' ? 'Mon dossier' : 'My case'}: "${sc?.title}". ${jqSelectedAnswer || ''}`,
                             archerQuestion: jq?.text || '',
@@ -454,7 +454,7 @@ const CaseDetail = () => {
                         <div style={{ fontSize: 15, color: '#78350f', lineHeight: 1.6, marginBottom: 8 }}>{jq.text}</div>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           {(jq.options || []).slice(0, 4).map((opt, optIdx) => (
-                            <button key={`jq-opt-${optIdx}-${opt.slice(0, 15)}`} data-testid={`james-answer-${optIdx}`}
+                            <button key={`jq-opt-${optIdx}-${opt.slice(0, 15)}`} data-testid={`archer-answer-${optIdx}`}
                               onClick={() => handleArcherAnswer(opt)}
                               disabled={answerLoading}
                               style={{

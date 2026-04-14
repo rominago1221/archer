@@ -1,5 +1,5 @@
 {
-  "summary": "Tested expanded Jasper Response Letters feature. All backend API tests passed (17/17). Frontend UI tests passed - 8 letter cards displayed in 2-column grid for housing case, cards show title/subtitle, clicking opens modal, selected card highlights blue. Regression tests passed for login and case detail page.",
+  "summary": "Tested expanded Archer Response Letters feature. All backend API tests passed (17/17). Frontend UI tests passed - 8 letter cards displayed in 2-column grid for housing case, cards show title/subtitle, clicking opens modal, selected card highlights blue. Regression tests passed for login and case detail page.",
 
   "backend_issues": {
     "critical": [],
@@ -28,10 +28,10 @@
     "Backend: POST /api/letters/generate requires authentication (401)",
     "Backend: POST /api/letters/generate works with housing letter type IDs",
     "Backend: POST /api/letters/generate accepts new NDA letter type IDs",
-    "Regression: Login with email/password works (test@jasper.com/password123)",
+    "Regression: Login with email/password works (test@archer.com/password123)",
     "Regression: GET /api/cases/{case_id} returns case with risk_score and type",
     "Frontend: Case detail page loads with data-testid='case-detail-page'",
-    "Frontend: 'Jasper Response Letters' section found",
+    "Frontend: 'Archer Response Letters' section found",
     "Frontend: 8 letter buttons displayed for housing case type",
     "Frontend: Letter cards show title (bold) and description (gray)",
     "Frontend: Clicking letter card opens generation modal",
@@ -63,7 +63,7 @@
   },
 
   "test_credentials": {
-    "test_user": "test@jasper.com / password123",
+    "test_user": "test@archer.com / password123",
     "test_case": "case_325e9b859a01 (housing type, 90/100 risk score)"
   },
 

@@ -17,7 +17,7 @@ class TestAuthLogin:
     """Test login flows for different user types"""
     
     def test_us_pro_user_login(self):
-        """Test US Pro user login - test@jasper.legal"""
+        """Test US Pro user login - test@archer.legal"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": TEST_US_EMAIL, "password": TEST_US_PASSWORD
         })
@@ -32,7 +32,7 @@ class TestAuthLogin:
         print(f"✓ US Pro user login successful, plan: {data['user']['plan']}")
     
     def test_belgium_pro_user_login(self):
-        """Test Belgium Pro user login - belgium@jasper.legal"""
+        """Test Belgium Pro user login - belgium@archer.legal"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": TEST_BE_EMAIL, "password": TEST_BE_PASSWORD
         })
@@ -45,7 +45,7 @@ class TestAuthLogin:
         print(f"✓ Belgium Pro user login successful, jurisdiction: {data['user'].get('jurisdiction', data['user'].get('country'))}")
     
     def test_attorney_login(self):
-        """Test attorney login - attorney@jasper.com"""
+        """Test attorney login - attorney@archer.com"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
             "email": TEST_ATTORNEY_EMAIL, "password": TEST_ATTORNEY_PASSWORD
         })

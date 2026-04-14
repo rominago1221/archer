@@ -20,10 +20,10 @@
       "4. Right panel 240px": "PASS - data-testid='right-panel' found"
     },
     "Left Sidebar": {
-      "5. Jasper logo with blue 'per'": "PASS - Logo text 'Jasper' with blue styling",
+      "5. Archer logo with blue 'per'": "PASS - Logo text 'Archer' with blue styling",
       "6. Tagline": "PASS - EN: 'Your virtual legal cabinet', FR: 'Votre cabinet juridique virtuel'",
-      "7. James card with avatar": "PASS - Blue 'J' avatar with green live dot",
-      "8. James name and role": "PASS - EN: 'Senior Legal Advisor', FR: 'Conseiller juridique senior'",
+      "7. Archer card with avatar": "PASS - Blue 'J' avatar with green live dot",
+      "8. Archer name and role": "PASS - EN: 'Senior Legal Advisor', FR: 'Conseiller juridique senior'",
       "9. 4 stat boxes": "PASS - 847K+, 20 yrs/ans, Live, #1 Legal AI",
       "10. Active cases section": "PASS - EN: 'Active cases', FR: 'Dossiers actifs'",
       "11. Case items with colored dot": "PASS - Risk color dot + title + score + type + deadline",
@@ -32,17 +32,17 @@
       "14. Sign out button": "PASS - EN: 'Sign out', FR: 'Déconnexion'"
     },
     "Center Main Area": {
-      "15. James banner": "PASS - Avatar with green online dot, greeting text",
+      "15. Archer banner": "PASS - Avatar with green online dot, greeting text",
       "16. Credential pills": "PASS - 847K+ sources, Live, Urgent (when score >= 70)",
       "17. Case type badge": "PASS - Emoji + category name (e.g., 'Case Other', 'Dossier Dettes')",
-      "18. Case title and metadata": "PASS - Title, date, doc count, 'Updated by James'",
+      "18. Case title and metadata": "PASS - Title, date, doc count, 'Updated by Archer'",
       "19. Add document button": "PASS - Navigates to /upload",
       "20. Talk to lawyer button": "PASS - Navigates to /lawyers",
       "21. Risk score big number": "PASS - data-testid='risk-score-big', displays score (0-100)",
       "22. Risk progress bar": "PASS - Color-coded based on score",
       "23. 4 dimension cards": "PASS - Financial, Urgency, Legal, Complexity",
-      "24. James Analysis section": "PASS - Findings with colored dots, legal references",
-      "25. James question card": "PASS - Yellow background, key insight, action buttons",
+      "24. Archer Analysis section": "PASS - Findings with colored dots, legal references",
+      "25. Archer question card": "PASS - Yellow background, key insight, action buttons",
       "26. Empty state": "PASS - Icon + text + new case button when no cases"
     },
     "Right Panel": {
@@ -59,8 +59,8 @@
       "35. Situation card navigation": "PASS - Clicking card navigates to /upload"
     },
     "Language Switching": {
-      "36. US user English": "PASS - All text in English for test@jasper.legal",
-      "37. Belgian FR user French": "PASS - All text in French for belgium@jasper.legal",
+      "36. US user English": "PASS - All text in English for test@archer.legal",
+      "37. Belgian FR user French": "PASS - All text in French for belgium@archer.legal",
       "38. Sidebar text changes": "PASS - 'Active cases' → 'Dossiers actifs'",
       "39. Overlay cards in French": "PASS - 'Mon propriétaire me cause des problèmes', etc."
     },
@@ -93,8 +93,8 @@
   },
 
   "test_credentials": {
-    "us_pro_client": "test@jasper.legal / JasperPro2026! (WORKING - English, 2 cases)",
-    "belgian_fr_client": "belgium@jasper.legal / JasperPro2026! (WORKING - French, 0 cases - empty state)",
+    "us_pro_client": "test@archer.legal / ArcherPro2026! (WORKING - English, 2 cases)",
+    "belgian_fr_client": "belgium@archer.legal / ArcherPro2026! (WORKING - French, 0 cases - empty state)",
     "legacy_pro_client": "test_cg@example.com / testpassword123 (WORKING - French, 32 cases with rich data)"
   },
 

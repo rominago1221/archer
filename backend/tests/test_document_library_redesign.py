@@ -1,6 +1,6 @@
 """
-Test Document Library Redesign - James Document Creator API
-Tests for /api/documents/james/* endpoints
+Test Document Library Redesign - Archer Document Creator API
+Tests for /api/documents/archer/* endpoints
 """
 import pytest
 import requests
@@ -10,8 +10,8 @@ from tests.conftest import TEST_US_EMAIL, TEST_US_PASSWORD, TEST_BE_EMAIL, TEST_
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
-class TestJamesDocumentCreator:
-    """Tests for James Document Creator API endpoints"""
+class TestArcherDocumentCreator:
+    """Tests for Archer Document Creator API endpoints"""
     
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -28,10 +28,10 @@ class TestJamesDocumentCreator:
         self.user = login_response.json().get("user", {})
         print(f"Logged in as: {self.user.get('email')}")
     
-    def test_james_send_message_creates_conversation(self):
-        """Test POST /api/documents/james/send creates new conversation"""
+    def test_archer_send_message_creates_conversation(self):
+        """Test POST /api/documents/archer/send creates new conversation"""
         response = self.session.post(
-            f"{BASE_URL}/api/documents/james/send",
+            f"{BASE_URL}/api/documents/archer/send",
             json={"message": "I need a simple NDA for a business partnership"}
         )
         
@@ -45,16 +45,16 @@ class TestJamesDocumentCreator:
         assert "limit_reached" in data, "Missing 'limit_reached' field"
         assert data["limit_reached"] == False, "Limit should not be reached for pro user"
         
-        # Verify James responded with something meaningful
-        assert len(data["response"]) > 50, "James response too short"
+        # Verify Archer responded with something meaningful
+        assert len(data["response"]) > 50, "Archer response too short"
         print(f"Conversation ID: {data['conversation_id']}")
-        print(f"James response preview: {data['response'][:200]}...")
+        print(f"Archer response preview: {data['response'][:200]}...")
     
-    def test_james_send_message_continues_conversation(self):
-        """Test POST /api/documents/james/send continues existing conversation"""
+    def test_archer_send_message_continues_conversation(self):
+        """Test POST /api/documents/archer/send continues existing conversation"""
         # First message to create conversation
         response1 = self.session.post(
-            f"{BASE_URL}/api/documents/james/send",
+            f"{BASE_URL}/api/documents/archer/send",
             json={"message": "I need an employment contract"}
         )
         assert response1.status_code == 200
@@ -65,7 +65,7 @@ class TestJamesDocumentCreator:
         
         # Second message in same conversation
         response2 = self.session.post(
-            f"{BASE_URL}/api/documents/james/send",
+            f"{BASE_URL}/api/documents/archer/send",
             json={
                 "message": "The employee name is John Smith and the company is Acme Corp",
                 "conversation_id": conv_id
@@ -77,12 +77,12 @@ class TestJamesDocumentCreator:
         
         # Verify same conversation
         assert data["conversation_id"] == conv_id, "Conversation ID should match"
-        assert len(data["response"]) > 20, "James should respond"
+        assert len(data["response"]) > 20, "Archer should respond"
         print(f"Continued conversation: {conv_id}")
     
-    def test_james_recent_documents(self):
-        """Test GET /api/documents/james/recent returns recent documents"""
-        response = self.session.get(f"{BASE_URL}/api/documents/james/recent")
+    def test_archer_recent_documents(self):
+        """Test GET /api/documents/archer/recent returns recent documents"""
+        response = self.session.get(f"{BASE_URL}/api/documents/archer/recent")
         
         assert response.status_code == 200, f"Failed: {response.text}"
         data = response.json()
@@ -102,9 +102,9 @@ class TestJamesDocumentCreator:
         else:
             print("No recent documents found (expected for new user)")
     
-    def test_james_conversations_list(self):
-        """Test GET /api/documents/james/conversations returns conversation list"""
-        response = self.session.get(f"{BASE_URL}/api/documents/james/conversations")
+    def test_archer_conversations_list(self):
+        """Test GET /api/documents/archer/conversations returns conversation list"""
+        response = self.session.get(f"{BASE_URL}/api/documents/archer/conversations")
         
         assert response.status_code == 200, f"Failed: {response.text}"
         data = response.json()
@@ -121,11 +121,11 @@ class TestJamesDocumentCreator:
         else:
             print("No conversations found")
     
-    def test_james_conversation_messages(self):
-        """Test GET /api/documents/james/conversations/{id}/messages returns messages"""
+    def test_archer_conversation_messages(self):
+        """Test GET /api/documents/archer/conversations/{id}/messages returns messages"""
         # First create a conversation
         create_response = self.session.post(
-            f"{BASE_URL}/api/documents/james/send",
+            f"{BASE_URL}/api/documents/archer/send",
             json={"message": "I need a lease agreement for a residential property"}
         )
         assert create_response.status_code == 200
@@ -136,7 +136,7 @@ class TestJamesDocumentCreator:
         
         # Get messages for this conversation
         response = self.session.get(
-            f"{BASE_URL}/api/documents/james/conversations/{conv_id}/messages"
+            f"{BASE_URL}/api/documents/archer/conversations/{conv_id}/messages"
         )
         
         assert response.status_code == 200, f"Failed: {response.text}"
@@ -157,32 +157,32 @@ class TestJamesDocumentCreator:
         
         print(f"Conversation {conv_id} has {len(messages)} messages")
     
-    def test_james_conversation_not_found(self):
-        """Test GET /api/documents/james/conversations/{id}/messages returns 404 for invalid ID"""
+    def test_archer_conversation_not_found(self):
+        """Test GET /api/documents/archer/conversations/{id}/messages returns 404 for invalid ID"""
         response = self.session.get(
-            f"{BASE_URL}/api/documents/james/conversations/invalid_conv_id_12345/messages"
+            f"{BASE_URL}/api/documents/archer/conversations/invalid_conv_id_12345/messages"
         )
         
         assert response.status_code == 404, f"Expected 404, got {response.status_code}"
     
-    def test_james_send_requires_auth(self):
-        """Test POST /api/documents/james/send requires authentication"""
+    def test_archer_send_requires_auth(self):
+        """Test POST /api/documents/archer/send requires authentication"""
         # Create new session without auth
         unauth_session = requests.Session()
         unauth_session.headers.update({"Content-Type": "application/json"})
         
         response = unauth_session.post(
-            f"{BASE_URL}/api/documents/james/send",
+            f"{BASE_URL}/api/documents/archer/send",
             json={"message": "Test message"}
         )
         
         assert response.status_code == 401, f"Expected 401, got {response.status_code}"
     
-    def test_james_recent_requires_auth(self):
-        """Test GET /api/documents/james/recent requires authentication"""
+    def test_archer_recent_requires_auth(self):
+        """Test GET /api/documents/archer/recent requires authentication"""
         unauth_session = requests.Session()
         
-        response = unauth_session.get(f"{BASE_URL}/api/documents/james/recent")
+        response = unauth_session.get(f"{BASE_URL}/api/documents/archer/recent")
         
         assert response.status_code == 401, f"Expected 401, got {response.status_code}"
 

@@ -29,7 +29,7 @@
     "Frontend: Lawyers page shows '149 EUR' pricing on book buttons",
     "Frontend: Lawyers page shows 11 Belgian lawyer cards",
     "Frontend: Belgian lawyers displayed (Me Sophie Lecomte, Me Thomas Dupont, Me Julie Renard, Mr. Pieter Van den Berg, Herr Klaus Mueller)",
-    "Frontend: Upload page shows Belgian mode indicator (🇧🇪 Jasper Belgique · Wallonie · Droit belge applicable)",
+    "Frontend: Upload page shows Belgian mode indicator (🇧🇪 Archer Belgique · Wallonie · Droit belge applicable)",
     "Frontend: Settings page Country selector shows 'Belgium / Belgique' selected",
     "Frontend: Settings page Region selector shows 'Wallonie' selected",
     "Frontend: Settings page Language selector shows 'Francais' selected"
@@ -84,7 +84,7 @@
       "lawyer_cards": "WORKING - Shows 11 Belgian lawyer cards with French/Dutch/German specialties"
     },
     "upload_page_belgian_indicator": {
-      "indicator": "WORKING - Shows 🇧🇪 Jasper Belgique · Wallonie · Droit belge applicable"
+      "indicator": "WORKING - Shows 🇧🇪 Archer Belgique · Wallonie · Droit belge applicable"
     },
     "settings_page_selectors": {
       "country_selector": "WORKING - Shows 'Belgium / Belgique' selected",

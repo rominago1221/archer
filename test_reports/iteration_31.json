@@ -106,7 +106,7 @@
   },
 
   "test_credentials": {
-    "us_pro_client": "test@jasper.legal / JasperPro2026!"
+    "us_pro_client": "test@archer.legal / ArcherPro2026!"
   },
 
   "seed_data_creation": "None - used existing seeded data with 29 cases",

@@ -21,9 +21,9 @@
       "status": "PASS",
       "evidence": "Follow-up message with conversation_id remembers context about Belgian dismissal notice"
     },
-    "Bug 1 - James UI": {
+    "Bug 1 - Archer UI": {
       "status": "PASS",
-      "evidence": "James avatar (dark blue J), 'Disponible maintenant' badge, credential bar with '847 000+', trust badges, French suggested questions for Belgian jurisdiction"
+      "evidence": "Archer avatar (dark blue J), 'Disponible maintenant' badge, credential bar with '847 000+', trust badges, French suggested questions for Belgian jurisdiction"
     },
     "Bug 1 - Chat input": {
       "status": "PASS",
@@ -35,7 +35,7 @@
     },
     "Bug 3 - French UI labels": {
       "status": "PASS",
-      "evidence": "CaseDetail shows 'Score de Risque Jasper', 'Analyse IA Jasper', 'Constatations cles', 'Televerser un nouveau document', 'Prochaines etapes recommandees'"
+      "evidence": "CaseDetail shows 'Score de Risque Archer', 'Analyse IA Archer', 'Constatations cles', 'Televerser un nouveau document', 'Prochaines etapes recommandees'"
     },
     "Bug 3 - Language aliases": {
       "status": "PASS",

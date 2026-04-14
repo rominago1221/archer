@@ -154,7 +154,7 @@ const AddDocumentModal = ({ caseId, lang, onClose, onUploadComplete }) => {
         {/* Buttons */}
         <div style={{ display: 'flex', gap: 8 }}>
           <button
-            data-testid="analyze-with-james-btn"
+            data-testid="analyze-with-archer-btn"
             onClick={handleUpload}
             disabled={!file || uploading}
             style={{

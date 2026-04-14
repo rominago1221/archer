@@ -1,5 +1,5 @@
 {
-  "summary": "Verified all 12 multi-document analysis features for Jasper legal platform. All features working correctly. Backend API returns all multi-doc fields (case_narrative, contradictions, opposing_strategy_analysis, cumulative_financial_exposure, master_deadlines, risk_score_history). Frontend displays all sections with French translations for Belgian user (fr-BE).",
+  "summary": "Verified all 12 multi-document analysis features for Archer legal platform. All features working correctly. Backend API returns all multi-doc fields (case_narrative, contradictions, opposing_strategy_analysis, cumulative_financial_exposure, master_deadlines, risk_score_history). Frontend displays all sections with French translations for Belgian user (fr-BE).",
 
   "backend_issues": {
     "critical": [],

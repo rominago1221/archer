@@ -1,5 +1,5 @@
 {
-  "summary": "Complete testing of 4 UX fixes for Jasper Legal Tech platform. All features verified working: (1) Login redirects to /dashboard with most recent case auto-selected, (2) Empty state shows James avatar + welcome text + blue 'Open a new case' button, (3) Jasper logo navigates to / on Dashboard and CaseDetail pages, (4) 'My Dashboard' button appears on landing page when logged in (replacing Sign in/Get started).",
+  "summary": "Complete testing of 4 UX fixes for Archer Legal Tech platform. All features verified working: (1) Login redirects to /dashboard with most recent case auto-selected, (2) Empty state shows Archer avatar + welcome text + blue 'Open a new case' button, (3) Archer logo navigates to / on Dashboard and CaseDetail pages, (4) 'My Dashboard' button appears on landing page when logged in (replacing Sign in/Get started).",
 
   "backend_issues": {
     "critical": [],
@@ -15,21 +15,21 @@
   "features_verified": {
     "1_login_redirect_to_dashboard": {
       "status": "PASS",
-      "evidence": "After login with test@jasper.legal / JasperPro2026!, URL redirects to /dashboard"
+      "evidence": "After login with test@archer.legal / ArcherPro2026!, URL redirects to /dashboard"
     },
     "2_most_recent_case_auto_selected": {
       "status": "PASS",
       "evidence": "Dashboard shows case with risk score 75 auto-selected. Cases sorted by created_at (most recent first) at line 202 in Dashboard.js. No 'No active case selected' text shown."
     },
-    "3_empty_state_james_avatar": {
+    "3_empty_state_archer_avatar": {
       "status": "PASS",
-      "evidence": "Code verified at lines 378-395 in Dashboard.js: James avatar (J in blue circle with green dot), 'Welcome. What's your legal situation?' text, big blue 'Open a new case' button with Plus icon. No clipboard icon."
+      "evidence": "Code verified at lines 378-395 in Dashboard.js: Archer avatar (J in blue circle with green dot), 'Welcome. What's your legal situation?' text, big blue 'Open a new case' button with Plus icon. No clipboard icon."
     },
-    "4_jasper_logo_dashboard_navigation": {
+    "4_archer_logo_dashboard_navigation": {
       "status": "PASS",
       "evidence": "Clicking [data-testid='logo-link'] in Dashboard navigates to / (landing page). Code at line 254 in Dashboard.js: onClick={() => navigate('/')"
     },
-    "5_jasper_logo_casedetail_navigation": {
+    "5_archer_logo_casedetail_navigation": {
       "status": "PASS",
       "evidence": "Clicking [data-testid='logo-link'] in CaseDetail navigates to / (landing page). Code at line 251 in CaseDetail.js: onClick={() => navigate('/')"
     },
@@ -56,7 +56,7 @@
       "line_202": "Cases sorted by created_at (most recent first): sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))",
       "line_204": "First case auto-selected: if (sorted.length > 0 && !selectedId) setSelectedId(sorted[0].case_id)",
       "line_254": "Logo click navigates to /: onClick={() => navigate('/')}",
-      "lines_378-395": "Empty state shows James avatar (J in blue circle), green dot, 'Welcome. What's your legal situation?' text, and blue 'Open a new case' button"
+      "lines_378-395": "Empty state shows Archer avatar (J in blue circle), green dot, 'Welcome. What's your legal situation?' text, and blue 'Open a new case' button"
     },
     "CaseDetail.js": {
       "line_251": "Logo click navigates to /: onClick={() => navigate('/')}"
@@ -77,7 +77,7 @@
 
   "critical_code_review_comments": [
     "All 4 UX fixes implemented correctly",
-    "Empty state uses James avatar (J in blue circle with green dot) - NOT clipboard icon",
+    "Empty state uses Archer avatar (J in blue circle with green dot) - NOT clipboard icon",
     "Cases sorted by created_at (most recent first) - NOT by risk_score",
     "Logo navigation to / works on Dashboard, CaseDetail, and Sidebar components",
     "Landing page correctly shows 'My Dashboard' when logged in, 'Sign in'/'Get started' when not logged in"
@@ -91,7 +91,7 @@
   },
 
   "test_credentials": {
-    "us_pro_client": "test@jasper.legal / JasperPro2026!"
+    "us_pro_client": "test@archer.legal / ArcherPro2026!"
   },
 
   "seed_data_creation": "None - used existing seeded data",
@@ -100,7 +100,7 @@
 
   "should_main_agent_self_test": false,
 
-  "context_for_next_testing_agent": "4 UX fixes verified: (1) Login redirect to /dashboard with most recent case auto-selected, (2) Empty state shows James avatar + welcome text + blue button (no clipboard icon), (3) Jasper logo navigates to / on all pages, (4) 'My Dashboard' button on landing page when logged in. All tests passed. The test user test@jasper.legal has existing cases, so empty state was verified via code review.",
+  "context_for_next_testing_agent": "4 UX fixes verified: (1) Login redirect to /dashboard with most recent case auto-selected, (2) Empty state shows Archer avatar + welcome text + blue button (no clipboard icon), (3) Archer logo navigates to / on all pages, (4) 'My Dashboard' button on landing page when logged in. All tests passed. The test user test@archer.legal has existing cases, so empty state was verified via code review.",
 
   "mocked_apis": {
     "has_mocked_apis": false,
@@ -110,7 +110,7 @@
   "screenshots": [
     ".screenshots/landing_not_logged_in.png - Landing page with Sign in/Get started buttons",
     ".screenshots/dashboard_after_login.png - Dashboard with case auto-selected (risk score 75)",
-    ".screenshots/landing_after_logo_click.png - Landing page after clicking Jasper logo",
+    ".screenshots/landing_after_logo_click.png - Landing page after clicking Archer logo",
     ".screenshots/landing_logged_in.png - Landing page with 'My Dashboard' button",
     ".screenshots/dashboard_final.png - Final dashboard state"
   ]

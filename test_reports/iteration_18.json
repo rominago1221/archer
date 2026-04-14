@@ -1,5 +1,5 @@
 {
-  "summary": "Verified all 13 jurisdiction/language architecture changes for Jasper. All features working correctly. UAE removed, jurisdiction (US/BE) and language (EN/FR/NL/DE/ES) are now independent selectors visible on every page. Spanish translations working on landing page and CaseDetail.",
+  "summary": "Verified all 13 jurisdiction/language architecture changes for Archer. All features working correctly. UAE removed, jurisdiction (US/BE) and language (EN/FR/NL/DE/ES) are now independent selectors visible on every page. Spanish translations working on landing page and CaseDetail.",
 
   "backend_issues": {
     "critical": [],
@@ -59,11 +59,11 @@
     },
     "Test 12 - CaseDetail renders for Belgian user": {
       "status": "PASS",
-      "evidence": "CaseDetail page renders correctly with 'Jasper Risk Score' section and Belgian law analysis"
+      "evidence": "CaseDetail page renders correctly with 'Archer Risk Score' section and Belgian law analysis"
     },
     "Test 13 - CaseDetail Spanish translation": {
       "status": "PASS",
-      "evidence": "Spanish user sees 'Puntuacion de Riesgo Jasper', 'Analisis IA Jasper', 'Proximos pasos recomendados'"
+      "evidence": "Spanish user sees 'Puntuacion de Riesgo Archer', 'Analisis IA Archer', 'Proximos pasos recomendados'"
     }
   },
 

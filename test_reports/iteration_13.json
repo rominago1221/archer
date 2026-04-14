@@ -12,7 +12,7 @@
     "design_issues": [
       {
         "screen": "Dashboard - Available lawyers section",
-        "issues": ["Shows US lawyers (Sarah Mitchell, James Carter, Diana Torres) for Belgian users instead of Belgian lawyers. This is outside the scope of signup testing but noted for future improvement."]
+        "issues": ["Shows US lawyers (Sarah Mitchell, Archer Carter, Diana Torres) for Belgian users instead of Belgian lawyers. This is outside the scope of signup testing but noted for future improvement."]
       }
     ]
   },

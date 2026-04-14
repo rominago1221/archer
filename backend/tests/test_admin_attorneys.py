@@ -41,7 +41,7 @@ class TestAdminAttorneyEndpoints:
     """Test admin attorney management endpoints"""
     
     def test_01_admin_login_success(self):
-        """Test admin can login with test@jasper.legal credentials"""
+        """Test admin can login with test@archer.legal credentials"""
         response = requests.post(
             f"{BASE_URL}/api/auth/login",
             json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}

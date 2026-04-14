@@ -141,7 +141,7 @@ const DocumentLibrary = () => {
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, sending]);
   useEffect(() => { localStorage.setItem('archer_doc_mode', mode); }, [mode]);
   useEffect(() => {
-    (async () => { try { const r = await axios.get(`${API}/documents/james/recent`, { withCredentials: true }); setRecentDocs(r.data); } catch (e) { console.error('Failed to load recent docs:', e); } })();
+    (async () => { try { const r = await axios.get(`${API}/documents/archer/recent`, { withCredentials: true }); setRecentDocs(r.data); } catch (e) { console.error('Failed to load recent docs:', e); } })();
   }, [latestDocId]);
 
   const sendMessage = async (text) => {
@@ -150,7 +150,7 @@ const DocumentLibrary = () => {
     setInput('');
     setSending(true);
     try {
-      const r = await axios.post(`${API}/documents/james/send`, { message: text, conversation_id: convId }, { withCredentials: true });
+      const r = await axios.post(`${API}/documents/archer/send`, { message: text, conversation_id: convId }, { withCredentials: true });
       if (r.data.limit_reached) { setLimitReached(true); setMessages(p => [...p, { role: 'assistant', content: r.data.response, limit: true }]); setSending(false); return; }
       setConvId(r.data.conversation_id);
       const doc = r.data.document_content;
@@ -214,12 +214,12 @@ const DocumentLibrary = () => {
               <h1 style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.7px', lineHeight: 1.1, color: '#1a1a2e', margin: 0 }}>
                 Generate any document —<br />just describe <em style={{ fontStyle: 'normal', color: '#1a56db' }}>what you need.</em>
               </h1>
-              <p style={{ fontSize: 13, color: '#6b7280', margin: '6px 0 18px' }}>James drafts it in seconds. Ready to sign.</p>
-              {/* James strip */}
-              <div style={{ background: '#ffffff', border: '1px solid #e2e0db', borderLeft: '3px solid #1a56db', borderRadius: 9, padding: '9px 13px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 2 }} data-testid="james-identity-bar">
+              <p style={{ fontSize: 13, color: '#6b7280', margin: '6px 0 18px' }}>Archer drafts it in seconds. Ready to sign.</p>
+              {/* Archer strip */}
+              <div style={{ background: '#ffffff', border: '1px solid #e2e0db', borderLeft: '3px solid #1a56db', borderRadius: 9, padding: '9px 13px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 2 }} data-testid="archer-identity-bar">
                 <JA />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, fontWeight: 500, color: '#1a1a2e' }}>James · Senior Legal Advisor</div>
+                  <div style={{ fontSize: 11, fontWeight: 500, color: '#1a1a2e' }}>Archer · Senior Legal Advisor</div>
                   <div style={{ fontSize: 10, color: '#6b7280' }}>20 years experience · 847K+ legal sources</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -233,7 +233,7 @@ const DocumentLibrary = () => {
             <div style={{ flex: 1, overflowY: 'auto', padding: '18px 32px' }} data-testid="chat-messages-area">
               {messages.length === 0 && (
                 <>
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 14 }} data-testid="james-opening-message">
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 14 }} data-testid="archer-opening-message">
                     <JA />
                     <div style={{ maxWidth: '85%', padding: '11px 14px', borderRadius: '3px 12px 12px 12px', background: '#ffffff', border: '1px solid #d1d5db', fontSize: 12, color: '#374151', lineHeight: 1.65 }}>
                       Tell me what document you need — in plain English. I'll ask a few questions and generate a complete, legally sound document.
@@ -279,7 +279,7 @@ const DocumentLibrary = () => {
                   </div>
                 );
               })}
-              {sending && <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}><JA /><div style={{ padding: '11px 14px', borderRadius: '3px 12px 12px 12px', background: '#ffffff', border: '1px solid #d1d5db', fontSize: 12, color: '#6b7280' }}>{latestDocContent ? 'James is updating the document' : messages.length > 2 ? 'James is drafting your document' : 'James is thinking'}...</div></div>}
+              {sending && <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}><JA /><div style={{ padding: '11px 14px', borderRadius: '3px 12px 12px 12px', background: '#ffffff', border: '1px solid #d1d5db', fontSize: 12, color: '#6b7280' }}>{latestDocContent ? 'Archer is updating the document' : messages.length > 2 ? 'Archer is drafting your document' : 'Archer is thinking'}...</div></div>}
               {limitReached && <div style={{ textAlign: 'center', padding: 16 }}><div style={{ display: 'inline-block', padding: '10px 20px', borderRadius: 10, background: '#fefce8', border: '0.5px solid #fde68a', fontSize: 12, color: '#854d0e' }}><Lock size={12} style={{ display: 'inline', marginRight: 4 }} />3 free documents used. <a href="/settings" style={{ color: '#1a56db', fontWeight: 600 }}>Upgrade to Pro</a></div></div>}
               <div ref={chatEndRef} />
             </div>
@@ -307,7 +307,7 @@ const DocumentLibrary = () => {
                   <ArrowUp size={15} color="#fff" />
                 </button>
               </div>
-              <p style={{ fontSize: 9, color: '#9ca3af', textAlign: 'center', marginTop: 8, opacity: 0.55 }}>James generates documents for informational purposes · Not a substitute for legal advice · 158 document types</p>
+              <p style={{ fontSize: 9, color: '#9ca3af', textAlign: 'center', marginTop: 8, opacity: 0.55 }}>Archer generates documents for informational purposes · Not a substitute for legal advice · 158 document types</p>
             </div>
           </>
         ) : (
@@ -315,7 +315,7 @@ const DocumentLibrary = () => {
           <>
             <div style={{ padding: '22px 28px 16px' }}>
               <div style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.5px', color: '#1a1a2e' }}>158 document templates</div>
-              <div style={{ fontSize: 12, color: '#6b7280', marginTop: 3, marginBottom: 14 }}>Pre-filled by James · Jurisdiction-specific · Ready to sign</div>
+              <div style={{ fontSize: 12, color: '#6b7280', marginTop: 3, marginBottom: 14 }}>Pre-filled by Archer · Jurisdiction-specific · Ready to sign</div>
               <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #d1d5db', borderRadius: 8, background: '#ffffff', padding: '0 10px' }}>
                 <Search size={13} color="#9ca3af" style={{ opacity: 0.4 }} />
                 <input value={browseSearch} onChange={e => setBrowseSearch(e.target.value)} placeholder="Search templates..."

@@ -1,5 +1,5 @@
 {
-  "summary": "Complete testing of Dashboard page with all 12 CaseDetail features. All features verified working: Download Brief, Share, Score History Graph, Horizontal Battle Preview, James Question Card with clickable answer buttons, Recent Jurisprudence, Outcome Predictor, Risk Monitor (Gmail/Outlook), Next Actions with Generate letter/Book a call links, Letter Generation Modal, Share Modal, New Case Overlay with 8 situation cards.",
+  "summary": "Complete testing of Dashboard page with all 12 CaseDetail features. All features verified working: Download Brief, Share, Score History Graph, Horizontal Battle Preview, Archer Question Card with clickable answer buttons, Recent Jurisprudence, Outcome Predictor, Risk Monitor (Gmail/Outlook), Next Actions with Generate letter/Book a call links, Letter Generation Modal, Share Modal, New Case Overlay with 8 situation cards.",
 
   "backend_issues": {
     "critical": [],
@@ -15,7 +15,7 @@
   "features_verified": {
     "1_login_redirect_to_dashboard": {
       "status": "PASS",
-      "evidence": "Login with test@jasper.legal / JasperPro2026! redirects to /dashboard with most recent case auto-selected"
+      "evidence": "Login with test@archer.legal / ArcherPro2026! redirects to /dashboard with most recent case auto-selected"
     },
     "2_download_brief_button": {
       "status": "PASS",
@@ -29,13 +29,13 @@
       "status": "PASS",
       "evidence": "Risk Score section renders with main score (75) and 4 dimension scores (Financial: 85, Urgency: 95, Legal: 45, Complexity: 75)"
     },
-    "5_james_analysis_section": {
+    "5_archer_analysis_section": {
       "status": "PASS",
-      "evidence": "James Analysis section shows findings with legal references (Florida Statute citations)"
+      "evidence": "Archer Analysis section shows findings with legal references (Florida Statute citations)"
     },
-    "6_james_question_card": {
+    "6_archer_question_card": {
       "status": "PASS",
-      "evidence": "James Question Card visible with interactive answer buttons (Yes, it is in my lease / No, I never agreed to this / I am not sure). Clicking answer submits to /api/cases/{case_id}/james-answer endpoint."
+      "evidence": "Archer Question Card visible with interactive answer buttons (Yes, it is in my lease / No, I never agreed to this / I am not sure). Clicking answer submits to /api/cases/{case_id}/archer-answer endpoint."
     },
     "7_score_history_graph": {
       "status": "PASS",
@@ -69,9 +69,9 @@
       "status": "PASS",
       "evidence": "Clicking 'Open a new case' button opens overlay with 8 situation cards in EN (landlord, threatening letter, employer, insurance, contract, court summons, debt collector, other)"
     },
-    "15_james_sidebar_stats": {
+    "15_archer_sidebar_stats": {
       "status": "PASS",
-      "evidence": "James sidebar card shows stats: 847K+ live sources, 20 yrs experience, Live case law, #1 Legal AI"
+      "evidence": "Archer sidebar card shows stats: 847K+ live sources, 20 yrs experience, Live case law, #1 Legal AI"
     }
   },
 
@@ -80,11 +80,11 @@
     "test_case_has_battle_preview": "PASS - Cases include battle_preview with user_side and opposing_side",
     "test_case_has_success_probability": "PASS - Cases include success_probability for Outcome Predictor",
     "test_case_has_recent_case_law": "PASS - Cases include recent_case_law from CourtListener",
-    "test_case_has_james_question": "PASS - Cases include james_question with text and options",
+    "test_case_has_archer_question": "PASS - Cases include archer_question with text and options",
     "test_case_has_risk_score_history": "PASS - Cases include risk_score_history for Score History graph",
     "test_generate_action_letter_endpoint": "PASS - POST /api/cases/{case_id}/generate-action-letter returns letter content",
     "test_share_case_endpoint": "PASS - POST /api/cases/{case_id}/share returns share token and ID",
-    "test_james_answer_endpoint": "PASS - POST /api/cases/{case_id}/james-answer processes answer and returns impact"
+    "test_archer_answer_endpoint": "PASS - POST /api/cases/{case_id}/archer-answer processes answer and returns impact"
   },
 
   "test_report_links": [
@@ -99,7 +99,7 @@
     "Dashboard.js is 881 lines - well-organized with clear sections for each feature",
     "Letter generation uses Claude AI via /api/cases/{case_id}/generate-action-letter endpoint",
     "Share functionality creates secure links with 7-day expiry via /api/cases/{case_id}/share endpoint",
-    "James Q&A is interactive - clicking answer buttons calls /api/cases/{case_id}/james-answer and updates case analysis",
+    "Archer Q&A is interactive - clicking answer buttons calls /api/cases/{case_id}/archer-answer and updates case analysis",
     "PDF Brief generation uses jsPDF client-side library",
     "New Case Overlay has 8 situation cards with EN/FR/NL translations"
   ],
@@ -114,7 +114,7 @@
   },
 
   "test_credentials": {
-    "us_pro_client": "test@jasper.legal / JasperPro2026!"
+    "us_pro_client": "test@archer.legal / ArcherPro2026!"
   },
 
   "seed_data_creation": "None - used existing seeded data with 28 cases",
@@ -123,7 +123,7 @@
 
   "should_main_agent_self_test": false,
 
-  "context_for_next_testing_agent": "Dashboard page now has all 12 CaseDetail features: Download Brief, Share, Score History, Battle Preview (horizontal), James Q&A (interactive), Jurisprudence, Outcome Predictor, Risk Monitor, Next Actions with Generate letter/Book a call, Letter Modal, Share Modal, New Case Overlay. All features tested and working. The test user test@jasper.legal has 28 cases with full analysis data.",
+  "context_for_next_testing_agent": "Dashboard page now has all 12 CaseDetail features: Download Brief, Share, Score History, Battle Preview (horizontal), Archer Q&A (interactive), Jurisprudence, Outcome Predictor, Risk Monitor, Next Actions with Generate letter/Book a call, Letter Modal, Share Modal, New Case Overlay. All features tested and working. The test user test@archer.legal has 28 cases with full analysis data.",
 
   "mocked_apis": {
     "has_mocked_apis": false,
@@ -131,7 +131,7 @@
   },
 
   "screenshots": [
-    ".screenshots/dashboard_top_features.png - Dashboard with Download Brief, Share, Risk Score, James Analysis, James Question Card",
+    ".screenshots/dashboard_top_features.png - Dashboard with Download Brief, Share, Risk Score, Archer Analysis, Archer Question Card",
     ".screenshots/dashboard_battle.png - Battle Preview with Your arguments and Their arguments columns",
     ".screenshots/dashboard_juris.png - Jurisprudence and Outcome Predictor sections",
     ".screenshots/dashboard_risk_monitor.png - Risk Monitor with Gmail/Outlook buttons",

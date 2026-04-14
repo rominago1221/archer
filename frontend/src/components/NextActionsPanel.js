@@ -46,7 +46,7 @@ const T = {
     bookCall: 'Book a call',
     noAction: 'No action required',
     containsArgs: (n) => `Contains ${n} argument${n > 1 ? 's' : ''}`,
-    oneLetterTo: (name) => `James drafted a single letter containing all your arguments. Send once to ${name}.`,
+    oneLetterTo: (name) => `Archer drafted a single letter containing all your arguments. Send once to ${name}.`,
   },
   fr: {
     nextActions: 'Prochaines actions',
@@ -54,7 +54,7 @@ const T = {
     bookCall: 'Réserver un appel',
     noAction: 'Aucune action requise',
     containsArgs: (n) => `Contient ${n} argument${n > 1 ? 's' : ''}`,
-    oneLetterTo: (name) => `James a rédigé une lettre unique contenant tous vos arguments. À envoyer une seule fois${name ? ` au ${name}` : ''}.`,
+    oneLetterTo: (name) => `Archer a rédigé une lettre unique contenant tous vos arguments. À envoyer une seule fois${name ? ` au ${name}` : ''}.`,
   },
   nl: {
     nextActions: 'Volgende acties',
@@ -62,7 +62,7 @@ const T = {
     bookCall: 'Bel reserveren',
     noAction: 'Geen actie vereist',
     containsArgs: (n) => `Bevat ${n} argument${n > 1 ? 'en' : ''}`,
-    oneLetterTo: (name) => `James heeft één brief opgesteld met al uw argumenten. Eenmaal verzenden naar ${name}.`,
+    oneLetterTo: (name) => `Archer heeft één brief opgesteld met al uw argumenten. Eenmaal verzenden naar ${name}.`,
   },
   de: {
     nextActions: 'Nächste Schritte',
@@ -70,7 +70,7 @@ const T = {
     bookCall: 'Anruf buchen',
     noAction: 'Keine Aktion erforderlich',
     containsArgs: (n) => `Enthält ${n} Argument${n > 1 ? 'e' : ''}`,
-    oneLetterTo: (name) => `James hat einen einzigen Brief mit allen Argumenten verfasst. Einmal an ${name} senden.`,
+    oneLetterTo: (name) => `Archer hat einen einzigen Brief mit allen Argumenten verfasst. Einmal an ${name} senden.`,
   },
   es: {
     nextActions: 'Próximas acciones',
@@ -78,7 +78,7 @@ const T = {
     bookCall: 'Reservar llamada',
     noAction: 'No se requiere acción',
     containsArgs: (n) => `Contiene ${n} argumento${n > 1 ? 's' : ''}`,
-    oneLetterTo: (name) => `James redactó una carta única con todos sus argumentos. Enviar una sola vez a ${name}.`,
+    oneLetterTo: (name) => `Archer redactó una carta única con todos sus argumentos. Enviar una sola vez a ${name}.`,
   },
 };
 

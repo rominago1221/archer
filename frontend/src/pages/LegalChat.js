@@ -55,11 +55,11 @@ const suggestedQuestions = {
 };
 
 const uiLabels = {
-  en: { typing: 'James is researching your question...', placeholder: 'Ask James a legal question...', send: 'Send', sources: 'Based on legal sources', bookCall: 'Need more certainty? Talk to a licensed attorney — pre-briefed by James.', bookBtn: 'Book a call', freeLimit: 'James has answered your 3 free questions. Upgrade to Pro for unlimited access to James.', upgrade: 'Upgrade to Pro', newChat: 'New conversation', credential: 'Senior Legal Advisor', exp: '20 years experience', analyzing: 'Analyzing from 847,000+ legal articles and court decisions', available: 'Available now', trust1: 'Instant response · No appointment needed', trust2: '847,000+ legal sources analyzed in real time', trust3: '100% confidential · Not legal advice' },
-  fr: { typing: 'James recherche la reponse a votre question...', placeholder: 'Posez une question juridique a James...', send: 'Envoyer', sources: 'Base sur des sources juridiques', bookCall: 'Besoin de plus de certitude ? Parlez a un avocat licencie — informe par James.', bookBtn: 'Reserver un appel', freeLimit: 'James a repondu a vos 3 questions gratuites. Passez a Pro pour un acces illimite a James.', upgrade: 'Passer a Pro', newChat: 'Nouvelle conversation', credential: 'Conseiller Juridique Senior', exp: '20 ans d\'experience', analyzing: 'Analyse de 847 000+ articles juridiques et decisions de justice', available: 'Disponible maintenant', trust1: 'Reponse instantanee · Sans rendez-vous', trust2: '847 000+ sources juridiques analysees en temps reel', trust3: '100% confidentiel · Pas un avis juridique' },
-  nl: { typing: 'James onderzoekt uw vraag...', placeholder: 'Stel James een juridische vraag...', send: 'Versturen', sources: 'Gebaseerd op juridische bronnen', bookCall: 'Meer zekerheid nodig? Spreek een advocaat — gebrieft door James.', bookBtn: 'Bel reserveren', freeLimit: 'James heeft uw 3 gratis vragen beantwoord. Upgrade naar Pro.', upgrade: 'Upgrade naar Pro', newChat: 'Nieuw gesprek', credential: 'Senior Juridisch Adviseur', exp: '20 jaar ervaring', analyzing: 'Analyse van 847.000+ juridische bronnen', available: 'Nu beschikbaar', trust1: 'Direct antwoord · Geen afspraak nodig', trust2: '847.000+ juridische bronnen', trust3: '100% vertrouwelijk' },
-  de: { typing: 'James recherchiert Ihre Frage...', placeholder: 'Stellen Sie James eine Rechtsfrage...', send: 'Senden', sources: 'Basierend auf Rechtsquellen', bookCall: 'Mehr Sicherheit? Sprechen Sie mit einem Anwalt.', bookBtn: 'Anruf buchen', freeLimit: 'James hat Ihre 3 kostenlosen Fragen beantwortet. Upgrade auf Pro.', upgrade: 'Upgrade auf Pro', newChat: 'Neues Gesprach', credential: 'Senior Rechtsberater', exp: '20 Jahre Erfahrung', analyzing: 'Analyse von 847.000+ Rechtsquellen', available: 'Jetzt verfugbar', trust1: 'Sofortige Antwort', trust2: '847.000+ Rechtsquellen', trust3: '100% vertraulich' },
-  es: { typing: 'James esta investigando su pregunta...', placeholder: 'Haga una pregunta legal a James...', send: 'Enviar', sources: 'Basado en fuentes legales', bookCall: 'Necesita mas certeza? Hable con un abogado licenciado.', bookBtn: 'Reservar llamada', freeLimit: 'James ha respondido sus 3 preguntas gratuitas. Actualice a Pro.', upgrade: 'Actualizar a Pro', newChat: 'Nueva conversacion', credential: 'Asesor Legal Senior', exp: '20 anos de experiencia', analyzing: 'Analizando 847,000+ articulos legales', available: 'Disponible ahora', trust1: 'Respuesta instantanea', trust2: '847,000+ fuentes legales', trust3: '100% confidencial' },
+  en: { typing: 'Archer is researching your question...', placeholder: 'Ask Archer a legal question...', send: 'Send', sources: 'Based on legal sources', bookCall: 'Need more certainty? Talk to a licensed attorney — pre-briefed by Archer.', bookBtn: 'Book a call', freeLimit: 'Archer has answered your 3 free questions. Upgrade to Pro for unlimited access to Archer.', upgrade: 'Upgrade to Pro', newChat: 'New conversation', credential: 'Senior Legal Advisor', exp: '20 years experience', analyzing: 'Analyzing from 847,000+ legal articles and court decisions', available: 'Available now', trust1: 'Instant response · No appointment needed', trust2: '847,000+ legal sources analyzed in real time', trust3: '100% confidential · Not legal advice' },
+  fr: { typing: 'Archer recherche la reponse a votre question...', placeholder: 'Posez une question juridique a Archer...', send: 'Envoyer', sources: 'Base sur des sources juridiques', bookCall: 'Besoin de plus de certitude ? Parlez a un avocat licencie — informe par Archer.', bookBtn: 'Reserver un appel', freeLimit: 'Archer a repondu a vos 3 questions gratuites. Passez a Pro pour un acces illimite a Archer.', upgrade: 'Passer a Pro', newChat: 'Nouvelle conversation', credential: 'Conseiller Juridique Senior', exp: '20 ans d\'experience', analyzing: 'Analyse de 847 000+ articles juridiques et decisions de justice', available: 'Disponible maintenant', trust1: 'Reponse instantanee · Sans rendez-vous', trust2: '847 000+ sources juridiques analysees en temps reel', trust3: '100% confidentiel · Pas un avis juridique' },
+  nl: { typing: 'Archer onderzoekt uw vraag...', placeholder: 'Stel Archer een juridische vraag...', send: 'Versturen', sources: 'Gebaseerd op juridische bronnen', bookCall: 'Meer zekerheid nodig? Spreek een advocaat — gebrieft door Archer.', bookBtn: 'Bel reserveren', freeLimit: 'Archer heeft uw 3 gratis vragen beantwoord. Upgrade naar Pro.', upgrade: 'Upgrade naar Pro', newChat: 'Nieuw gesprek', credential: 'Senior Juridisch Adviseur', exp: '20 jaar ervaring', analyzing: 'Analyse van 847.000+ juridische bronnen', available: 'Nu beschikbaar', trust1: 'Direct antwoord · Geen afspraak nodig', trust2: '847.000+ juridische bronnen', trust3: '100% vertrouwelijk' },
+  de: { typing: 'Archer recherchiert Ihre Frage...', placeholder: 'Stellen Sie Archer eine Rechtsfrage...', send: 'Senden', sources: 'Basierend auf Rechtsquellen', bookCall: 'Mehr Sicherheit? Sprechen Sie mit einem Anwalt.', bookBtn: 'Anruf buchen', freeLimit: 'Archer hat Ihre 3 kostenlosen Fragen beantwortet. Upgrade auf Pro.', upgrade: 'Upgrade auf Pro', newChat: 'Neues Gesprach', credential: 'Senior Rechtsberater', exp: '20 Jahre Erfahrung', analyzing: 'Analyse von 847.000+ Rechtsquellen', available: 'Jetzt verfugbar', trust1: 'Sofortige Antwort', trust2: '847.000+ Rechtsquellen', trust3: '100% vertraulich' },
+  es: { typing: 'Archer esta investigando su pregunta...', placeholder: 'Haga una pregunta legal a Archer...', send: 'Enviar', sources: 'Basado en fuentes legales', bookCall: 'Necesita mas certeza? Hable con un abogado licenciado.', bookBtn: 'Reservar llamada', freeLimit: 'Archer ha respondido sus 3 preguntas gratuitas. Actualice a Pro.', upgrade: 'Actualizar a Pro', newChat: 'Nueva conversacion', credential: 'Asesor Legal Senior', exp: '20 anos de experiencia', analyzing: 'Analizando 847,000+ articulos legales', available: 'Disponible ahora', trust1: 'Respuesta instantanea', trust2: '847,000+ fuentes legales', trust3: '100% confidencial' },
 };
 
 const LegalChat = () => {
@@ -135,7 +135,7 @@ const LegalChat = () => {
         setConversations(prev => [{ conversation_id: res.data.conversation_id, title: text.trim().substring(0, 50), created_at: new Date().toISOString() }, ...prev]);
       }
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: lang === 'fr' ? 'James est temporairement indisponible — veuillez reessayer dans un moment.' : 'James is temporarily unavailable — please try again in a moment.', created_at: new Date().toISOString() }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: lang === 'fr' ? 'Archer est temporairement indisponible — veuillez reessayer dans un moment.' : 'Archer is temporarily unavailable — please try again in a moment.', created_at: new Date().toISOString() }]);
     } finally {
       setSending(false);
     }
@@ -166,15 +166,15 @@ const LegalChat = () => {
 
       {/* Main chat area */}
       <div className="flex-1 flex flex-col bg-[#fafafa]">
-        {/* James header */}
-        <div className="bg-white border-b border-[#ebebeb] px-6 py-4" data-testid="james-header">
+        {/* Archer header */}
+        <div className="bg-white border-b border-[#ebebeb] px-6 py-4" data-testid="archer-header">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-full bg-[#1e3a5f] flex items-center justify-center flex-shrink-0" data-testid="james-avatar">
+            <div className="w-12 h-12 rounded-full bg-[#1e3a5f] flex items-center justify-center flex-shrink-0" data-testid="archer-avatar">
               <span className="text-white text-lg font-bold">J</span>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-base font-bold text-[#111827]" data-testid="james-name">James</span>
+                <span className="text-base font-bold text-[#111827]" data-testid="archer-name">Archer</span>
                 <span className="flex items-center gap-1 text-[10px] text-[#16a34a] font-medium bg-[#f0fdf4] px-1.5 py-0.5 rounded-full">
                   <span className="w-1.5 h-1.5 bg-[#16a34a] rounded-full" /> {ui.available}
                 </span>
@@ -182,7 +182,7 @@ const LegalChat = () => {
               <div className="text-xs text-[#6b7280]">{ui.credential} · {ui.exp}</div>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-[#6b7280] mb-2" data-testid="james-credential-bar">
+          <div className="flex items-center gap-1.5 text-[11px] text-[#6b7280] mb-2" data-testid="archer-credential-bar">
             <BookOpen size={11} className="text-[#1a56db]" />
             <span>{ui.analyzing}</span>
             <span className="mx-1">·</span>
@@ -202,7 +202,7 @@ const LegalChat = () => {
               <div className="w-16 h-16 rounded-full bg-[#1e3a5f] flex items-center justify-center mb-4">
                 <span className="text-white text-2xl font-bold">J</span>
               </div>
-              <h3 className="text-base font-semibold text-[#111827] mb-1">James</h3>
+              <h3 className="text-base font-semibold text-[#111827] mb-1">Archer</h3>
               <p className="text-xs text-[#6b7280] mb-6">{ui.credential} · {ui.exp}</p>
               <div className="grid grid-cols-2 gap-2 max-w-md" data-testid="suggested-questions">
                 {questions.map((q, qIdx) => (

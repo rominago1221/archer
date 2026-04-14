@@ -125,7 +125,7 @@ class Case(BaseModel):
     documents_to_gather: List[dict] = []
     recent_case_law: List[dict] = []
     case_law_updated: Optional[str] = None
-    james_question: Optional[dict] = None
+    archer_question: Optional[dict] = None
     opposing_party_name: Optional[str] = None
     opposing_party_address: Optional[str] = None
     document_date: Optional[str] = None

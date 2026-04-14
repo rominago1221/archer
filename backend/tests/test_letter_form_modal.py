@@ -38,7 +38,7 @@ class TestLetterFormModalBackend:
         assert "name" in profile, "Profile missing 'name' field"
         assert "email" in profile, "Profile missing 'email' field"
         assert profile["name"] == "Alex Thompson", f"Expected name 'Alex Thompson', got '{profile.get('name')}'"
-        assert profile["email"] == TEST_US_EMAIL, f"Expected email 'test@jasper.legal', got '{profile.get('email')}'"
+        assert profile["email"] == TEST_US_EMAIL, f"Expected email 'test@archer.legal', got '{profile.get('email')}'"
         
         # Check if address exists (should be empty for this test user)
         address = profile.get("address")

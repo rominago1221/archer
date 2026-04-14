@@ -115,7 +115,7 @@ const translations = {
     footer: 'Archer provides legal information and document analysis, not legal advice. Attorney consultations are conducted by independent, licensed legal professionals. Archer does not create an attorney-client relationship.',
     lawyers: [
       { name: 'Sarah Mitchell, Esq.', specialty: 'Employment Law', bar: 'New York Bar', years: 12, tags: ['Wrongful termination', 'Discrimination'], rating: 5.0, sessions: 214, status: 'now', photo: 'https://images.unsplash.com/photo-1585240975858-7264fd020798?w=200&h=200&fit=crop' },
-      { name: 'James Carter, Esq.', specialty: 'Contract Law', bar: 'California Bar', years: 9, tags: ['Business disputes', 'NDA'], rating: 4.9, sessions: 187, status: '8 min', photo: 'https://images.unsplash.com/photo-1644268756851-3f69ffb9553f?w=200&h=200&fit=crop' },
+      { name: 'Archer Carter, Esq.', specialty: 'Contract Law', bar: 'California Bar', years: 9, tags: ['Business disputes', 'NDA'], rating: 4.9, sessions: 187, status: '8 min', photo: 'https://images.unsplash.com/photo-1644268756851-3f69ffb9553f?w=200&h=200&fit=crop' },
       { name: 'Diana Torres, Esq.', specialty: 'Tenant Rights', bar: 'Texas Bar', years: 7, tags: ['Lease disputes', 'Eviction'], rating: 4.9, sessions: 156, status: '22 min', photo: 'https://images.unsplash.com/photo-1685760259914-ee8d2c92d2e0?w=200&h=200&fit=crop' },
     ],
   },
@@ -599,7 +599,7 @@ const translations = {
     footer: 'Archer proporciona informacion legal y analisis de documentos, no asesoria legal. Las consultas con abogados son realizadas por profesionales legales independientes y licenciados.',
     lawyers: [
       { name: 'Sarah Mitchell, Esq.', specialty: 'Derecho laboral', bar: 'Colegio de Abogados de NY', years: 12, tags: ['Despido', 'Discriminacion'], rating: 5.0, sessions: 234, status: 'now', photo: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&h=200&fit=crop' },
-      { name: 'James Carter, Esq.', specialty: 'Derecho contractual', bar: 'Colegio de Abogados de CA', years: 9, tags: ['Contratos', 'NDA'], rating: 4.9, sessions: 187, status: '8 min', photo: 'https://images.unsplash.com/photo-1644268756851-3f69ffb9553f?w=200&h=200&fit=crop' },
+      { name: 'Archer Carter, Esq.', specialty: 'Derecho contractual', bar: 'Colegio de Abogados de CA', years: 9, tags: ['Contratos', 'NDA'], rating: 4.9, sessions: 187, status: '8 min', photo: 'https://images.unsplash.com/photo-1644268756851-3f69ffb9553f?w=200&h=200&fit=crop' },
       { name: 'Diana Torres, Esq.', specialty: 'Derechos del inquilino', bar: 'Colegio de Abogados de TX', years: 7, tags: ['Arrendamiento', 'Desalojo'], rating: 4.9, sessions: 156, status: '22 min', photo: 'https://images.unsplash.com/photo-1685760259914-ee8d2c92d2e0?w=200&h=200&fit=crop' },
     ],
   },

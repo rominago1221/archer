@@ -22,7 +22,7 @@ const FloatingChatButton = () => {
     <div className="fixed bottom-6 right-6 z-40" data-testid="floating-chat-btn">
       {tooltip && (
         <div className="absolute bottom-16 right-0 bg-[#1e3a5f] text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap shadow-lg">
-          Ask James a legal question
+          Ask Archer a legal question
         </div>
       )}
       <button

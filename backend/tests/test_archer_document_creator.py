@@ -1,5 +1,5 @@
 """
-Test James Document Creator API endpoints
+Test Archer Document Creator API endpoints
 Tests for the conversational document generator feature on /documents page
 """
 import pytest
@@ -9,8 +9,8 @@ import time
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
-class TestJamesDocumentCreator:
-    """Tests for James Document Creator API endpoints"""
+class TestArcherDocumentCreator:
+    """Tests for Archer Document Creator API endpoints"""
     
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -25,12 +25,12 @@ class TestJamesDocumentCreator:
         self.user_data = login_resp.json()
         # Session cookie is set automatically
         
-    def test_01_james_send_creates_conversation(self):
-        """Test POST /api/documents/james/send creates new conversation"""
-        resp = self.session.post(f"{BASE_URL}/api/documents/james/send", json={
+    def test_01_archer_send_creates_conversation(self):
+        """Test POST /api/documents/archer/send creates new conversation"""
+        resp = self.session.post(f"{BASE_URL}/api/documents/archer/send", json={
             "message": "I need an NDA for a business partnership"
         })
-        assert resp.status_code == 200, f"James send failed: {resp.text}"
+        assert resp.status_code == 200, f"Archer send failed: {resp.text}"
         data = resp.json()
         
         # Verify response structure
@@ -43,12 +43,12 @@ class TestJamesDocumentCreator:
         # Store conversation_id for follow-up tests
         self.conv_id = data["conversation_id"]
         print(f"✓ Created conversation: {self.conv_id}")
-        print(f"✓ James response (first 200 chars): {data['response'][:200]}...")
+        print(f"✓ Archer response (first 200 chars): {data['response'][:200]}...")
         
-    def test_02_james_send_continues_conversation(self):
-        """Test POST /api/documents/james/send with existing conversation_id"""
+    def test_02_archer_send_continues_conversation(self):
+        """Test POST /api/documents/archer/send with existing conversation_id"""
         # First create a conversation
-        resp1 = self.session.post(f"{BASE_URL}/api/documents/james/send", json={
+        resp1 = self.session.post(f"{BASE_URL}/api/documents/archer/send", json={
             "message": "I need a simple NDA"
         })
         assert resp1.status_code == 200
@@ -58,7 +58,7 @@ class TestJamesDocumentCreator:
         time.sleep(2)
         
         # Continue the conversation
-        resp2 = self.session.post(f"{BASE_URL}/api/documents/james/send", json={
+        resp2 = self.session.post(f"{BASE_URL}/api/documents/archer/send", json={
             "message": "The parties are Acme Corp and Beta Inc",
             "conversation_id": conv_id
         })
@@ -71,9 +71,9 @@ class TestJamesDocumentCreator:
         print(f"✓ Continued conversation {conv_id}")
         print(f"✓ Follow-up response (first 200 chars): {data['response'][:200]}...")
         
-    def test_03_james_response_in_user_language(self):
-        """Test James responds in user's language (French for Belgian user)"""
-        resp = self.session.post(f"{BASE_URL}/api/documents/james/send", json={
+    def test_03_archer_response_in_user_language(self):
+        """Test Archer responds in user's language (French for Belgian user)"""
+        resp = self.session.post(f"{BASE_URL}/api/documents/archer/send", json={
             "message": "J'ai besoin d'un contrat de travail"
         })
         assert resp.status_code == 200
@@ -88,8 +88,8 @@ class TestJamesDocumentCreator:
         print(f"✓ Response preview: {data['response'][:300]}...")
         
     def test_04_get_conversations_list(self):
-        """Test GET /api/documents/james/conversations returns user's conversations"""
-        resp = self.session.get(f"{BASE_URL}/api/documents/james/conversations")
+        """Test GET /api/documents/archer/conversations returns user's conversations"""
+        resp = self.session.get(f"{BASE_URL}/api/documents/archer/conversations")
         assert resp.status_code == 200, f"Get conversations failed: {resp.text}"
         data = resp.json()
         
@@ -106,8 +106,8 @@ class TestJamesDocumentCreator:
             print("✓ No conversations yet (empty list)")
             
     def test_05_get_recent_documents(self):
-        """Test GET /api/documents/james/recent returns recent generated docs"""
-        resp = self.session.get(f"{BASE_URL}/api/documents/james/recent")
+        """Test GET /api/documents/archer/recent returns recent generated docs"""
+        resp = self.session.get(f"{BASE_URL}/api/documents/archer/recent")
         assert resp.status_code == 200, f"Get recent docs failed: {resp.text}"
         data = resp.json()
         
@@ -124,16 +124,16 @@ class TestJamesDocumentCreator:
             print("✓ No generated documents yet (empty list)")
             
     def test_06_get_conversation_messages(self):
-        """Test GET /api/documents/james/conversations/{id}/messages"""
+        """Test GET /api/documents/archer/conversations/{id}/messages"""
         # First create a conversation
-        resp1 = self.session.post(f"{BASE_URL}/api/documents/james/send", json={
+        resp1 = self.session.post(f"{BASE_URL}/api/documents/archer/send", json={
             "message": "I need a lease agreement"
         })
         assert resp1.status_code == 200
         conv_id = resp1.json()["conversation_id"]
         
         # Get messages for this conversation
-        resp2 = self.session.get(f"{BASE_URL}/api/documents/james/conversations/{conv_id}/messages")
+        resp2 = self.session.get(f"{BASE_URL}/api/documents/archer/conversations/{conv_id}/messages")
         assert resp2.status_code == 200, f"Get messages failed: {resp2.text}"
         messages = resp2.json()
         
@@ -151,7 +151,7 @@ class TestJamesDocumentCreator:
         
     def test_07_invalid_conversation_returns_404(self):
         """Test GET messages for non-existent conversation returns 404"""
-        resp = self.session.get(f"{BASE_URL}/api/documents/james/conversations/invalid_conv_id/messages")
+        resp = self.session.get(f"{BASE_URL}/api/documents/archer/conversations/invalid_conv_id/messages")
         assert resp.status_code == 404, f"Expected 404, got {resp.status_code}"
         print("✓ Invalid conversation correctly returns 404")
         
@@ -160,14 +160,14 @@ class TestJamesDocumentCreator:
         # Create new session without login
         new_session = requests.Session()
         
-        resp = new_session.post(f"{BASE_URL}/api/documents/james/send", json={
+        resp = new_session.post(f"{BASE_URL}/api/documents/archer/send", json={
             "message": "Test message"
         })
         assert resp.status_code == 401, f"Expected 401, got {resp.status_code}"
         print("✓ Unauthenticated request correctly returns 401")
 
 
-class TestJamesDocumentGeneration:
+class TestArcherDocumentGeneration:
     """Tests for document generation flow"""
     
     @pytest.fixture(autouse=True)
@@ -183,7 +183,7 @@ class TestJamesDocumentGeneration:
     def test_document_generation_flow(self):
         """Test full document generation flow with multiple messages"""
         # Start conversation
-        resp1 = self.session.post(f"{BASE_URL}/api/documents/james/send", json={
+        resp1 = self.session.post(f"{BASE_URL}/api/documents/archer/send", json={
             "message": "I need a simple NDA between two companies"
         })
         assert resp1.status_code == 200
@@ -202,7 +202,7 @@ class TestJamesDocumentGeneration:
         has_document = False
         for i, answer in enumerate(answers):
             time.sleep(3)  # Wait for AI processing
-            resp = self.session.post(f"{BASE_URL}/api/documents/james/send", json={
+            resp = self.session.post(f"{BASE_URL}/api/documents/archer/send", json={
                 "message": answer,
                 "conversation_id": conv_id
             })
@@ -220,10 +220,10 @@ class TestJamesDocumentGeneration:
             else:
                 print(f"  Message {i+1}: Answered question, waiting for next...")
                 
-        # Note: Document may not be generated in 5 messages if James asks more questions
-        # This is expected behavior - James asks 3-5 questions
+        # Note: Document may not be generated in 5 messages if Archer asks more questions
+        # This is expected behavior - Archer asks 3-5 questions
         if not has_document:
-            print("✓ Conversation ongoing - James may need more information")
+            print("✓ Conversation ongoing - Archer may need more information")
 
 
 class TestTemplateLibraryIntegration:

@@ -336,7 +336,7 @@ const Settings = () => {
                     {[
                       { date: 'November 2026', desc: 'Pro plan · Nov 15', amount: '$69.00' },
                       { date: 'October 2026', desc: 'Pro plan · Oct 15', amount: '$69.00' },
-                      { date: 'Attorney call', desc: 'James Carter · Oct 8', amount: '$149.00' }
+                      { date: 'Attorney call', desc: 'Archer Carter · Oct 8', amount: '$149.00' }
                     ].map((item) => (
                       <div key={item.date} className="flex items-center justify-between py-2 border-b border-[#f5f5f5] last:border-0">
                         <div><div className="text-sm font-medium text-[#111827]">{item.date}</div><div className="text-xs text-[#6b7280]">{item.desc}</div></div>

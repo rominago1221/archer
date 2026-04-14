@@ -1,5 +1,5 @@
 """
-Test suite for expanded Jasper Response Letters feature.
+Test suite for expanded Archer Response Letters feature.
 Tests the GET /api/letters/types/{case_type} endpoint for all case types.
 Tests POST /api/letters/generate with new letter type IDs.
 """

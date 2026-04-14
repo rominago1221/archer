@@ -1,5 +1,5 @@
 {
-  "summary": "Tested structural refactoring of Jasper Legal Tech platform (iteration 42). Server.py monolith broken into modular FastAPI structure with extracted modules: db.py, models.py, auth.py, storage.py, routes/auth_routes.py, routes/attorney_routes.py. All 20 backend API tests pass (100%). All frontend pages load correctly without errors.",
+  "summary": "Tested structural refactoring of Archer Legal Tech platform (iteration 42). Server.py monolith broken into modular FastAPI structure with extracted modules: db.py, models.py, auth.py, storage.py, routes/auth_routes.py, routes/attorney_routes.py. All 20 backend API tests pass (100%). All frontend pages load correctly without errors.",
 
   "backend_issues": {
     "critical": [],
@@ -21,9 +21,9 @@
     "backend_endpoints": {
       "health_check": "PASS - GET /api/health returns 200",
       "root_endpoint": "PASS - GET /api/ returns 200",
-      "auth_login_us_pro": "PASS - POST /api/auth/login with test@jasper.legal",
-      "auth_login_belgium_pro": "PASS - POST /api/auth/login with belgium@jasper.legal",
-      "auth_login_attorney": "PASS - POST /api/auth/login with attorney@jasper.com",
+      "auth_login_us_pro": "PASS - POST /api/auth/login with test@archer.legal",
+      "auth_login_belgium_pro": "PASS - POST /api/auth/login with belgium@archer.legal",
+      "auth_login_attorney": "PASS - POST /api/auth/login with attorney@archer.com",
       "auth_login_invalid": "PASS - Returns 401 for invalid credentials",
       "auth_me_with_token": "PASS - GET /api/auth/me returns user data",
       "auth_me_without_token": "PASS - Returns 401 without auth",
@@ -45,7 +45,7 @@
       "upload_page": "PASS - Document upload, scanner, context input all visible",
       "settings_page": "PASS - Account, Plan & billing, Risk Monitor, Notifications, Privacy tabs work",
       "document_library": "PASS - Generate document mode with categories visible",
-      "legal_chat": "PASS - James chat interface with suggested questions",
+      "legal_chat": "PASS - Archer chat interface with suggested questions",
       "attorney_dashboard": "PASS - Metrics, upcoming calls, recent activity, navigation all work"
     }
   },
@@ -84,9 +84,9 @@
   },
 
   "test_credentials": {
-    "us_pro_user": "test@jasper.legal / JasperPro2026!",
-    "belgium_pro_user": "belgium@jasper.legal / JasperPro2026!",
-    "attorney": "attorney@jasper.com / attorney123"
+    "us_pro_user": "test@archer.legal / ArcherPro2026!",
+    "belgium_pro_user": "belgium@archer.legal / ArcherPro2026!",
+    "attorney": "attorney@archer.com / attorney123"
   },
 
   "seed_data_creation": "None - used existing seeded data",

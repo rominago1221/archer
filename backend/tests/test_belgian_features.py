@@ -1,5 +1,5 @@
 """
-Test Belgian Legal Analysis Features for Jasper
+Test Belgian Legal Analysis Features for Archer
 - Settings page: Country/Region/Language selectors
 - Profile API: PUT /api/profile with country, region, language
 - Country config API: GET /api/user/country-config

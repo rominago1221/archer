@@ -118,12 +118,12 @@ const DocumentViewer = () => {
             </div>
           )}
 
-          {/* James analysis summary */}
+          {/* Archer analysis summary */}
           {doc.extracted_text && (
             <div style={{ background: '#fff', border: '1px solid #e2e0db', borderRadius: 12, padding: 18, marginBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                 <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700 }}>J</div>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>James analysis</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>Archer analysis</span>
               </div>
               <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.6, maxHeight: 200, overflowY: 'auto' }} data-testid="doc-analysis">
                 {doc.extracted_text.substring(0, 500)}{doc.extracted_text.length > 500 ? '...' : ''}

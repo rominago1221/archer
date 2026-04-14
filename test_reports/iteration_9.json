@@ -22,7 +22,7 @@
     "Backend: GET /api/library/generated returns user's generated documents",
     "Backend: POST /api/library/sign returns 404 for non-existent document",
     "Backend: POST /api/library/generate returns 404 for non-existent template",
-    "Backend: Login with email/password works (test@jasper.com/password123)",
+    "Backend: Login with email/password works (test@archer.com/password123)",
     "Backend: Dashboard stats endpoint works after login",
     "Frontend: /documents page renders with 'Document Library' title",
     "Frontend: Category tabs visible and clickable (All, Employment, Housing & Lease, NDA & Confidentiality, etc.)",
@@ -31,7 +31,7 @@
     "Frontend: Sidebar shows 'Document Library' nav item between 'My cases' and 'Upload document'",
     "Frontend: Clicking Generate on a template opens the questionnaire form",
     "Frontend: Questionnaire form shows category-specific fields (NDA: discloser_name, recipient_name, purpose, duration)",
-    "Frontend: Browser tab shows 'Jasper — Your lawyer, without the lawyer fees.'",
+    "Frontend: Browser tab shows 'Archer — Your lawyer, without the lawyer fees.'",
     "Regression: Login with email/password works",
     "Regression: Dashboard loads after login with 11 active cases"
   ],
@@ -61,7 +61,7 @@
   },
 
   "test_credentials": {
-    "test_user": "test@jasper.com / password123",
+    "test_user": "test@archer.com / password123",
     "user_plan": "pro (can access all 158 templates)"
   },
 
@@ -98,7 +98,7 @@
       "label": "Document Library",
       "icon": "FileText"
     },
-    "browser_tab_title": "CORRECT - 'Jasper — Your lawyer, without the lawyer fees.'",
+    "browser_tab_title": "CORRECT - 'Archer — Your lawyer, without the lawyer fees.'",
     "regression": {
       "login": "WORKING",
       "dashboard": "WORKING - 11 active cases"

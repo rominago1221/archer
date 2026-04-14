@@ -70,7 +70,7 @@ const AttorneyResearch = () => {
               <div className="text-center py-12">
                 <Scale size={28} className="mx-auto text-[#ccc] mb-3" />
                 <h3 className="text-[13px] font-semibold text-[#111827] mb-1">Legal Research Assistant</h3>
-                <p className="text-[11px] text-[#6b7280] max-w-sm mx-auto">Ask any legal question. James will provide detailed, technical analysis with case citations, statutory references, and procedural nuances.</p>
+                <p className="text-[11px] text-[#6b7280] max-w-sm mx-auto">Ask any legal question. Archer will provide detailed, technical analysis with case citations, statutory references, and procedural nuances.</p>
               </div>
             )}
             {messages.map((m, i) => (

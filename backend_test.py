@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Jasper Legal Tech Platform - Backend API Testing
+Archer Legal Tech Platform - Backend API Testing
 Tests all backend endpoints including auth-gated APIs
 """
 
@@ -11,7 +11,7 @@ from datetime import datetime
 import subprocess
 import os
 
-class JasperAPITester:
+class ArcherAPITester:
     def __init__(self):
         # Get backend URL from frontend .env
         self.base_url = "https://predict-outcome.preview.emergentagent.com/api"
@@ -271,7 +271,7 @@ print('Test data cleaned');
 
     def run_all_tests(self):
         """Run all backend tests"""
-        print("🚀 Starting Jasper Backend API Tests")
+        print("🚀 Starting Archer Backend API Tests")
         print(f"📍 Testing against: {self.base_url}")
         
         # Create test session for auth-gated endpoints
@@ -305,7 +305,7 @@ print('Test data cleaned');
             return 1
 
 def main():
-    tester = JasperAPITester()
+    tester = ArcherAPITester()
     return tester.run_all_tests()
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 """
-Test suite for Jasper Legal Tech - Iteration 42
+Test suite for Archer Legal Tech - Iteration 42
 Testing structural refactoring: server.py monolith broken into modular FastAPI structure
 Extracted modules: db.py, models.py, auth.py, storage.py, routes/auth_routes.py, routes/attorney_routes.py
 """
@@ -286,10 +286,10 @@ class TestAdminEndpoints:
     
     @pytest.fixture
     def admin_token(self):
-        """Get auth token for admin user (test@jasper.legal has admin access)"""
+        """Get auth token for admin user (test@archer.legal has admin access)"""
         response = requests.post(
             f"{BASE_URL}/api/auth/login",
-            json=US_PRO_USER,  # test@jasper.legal has admin access
+            json=US_PRO_USER,  # test@archer.legal has admin access
             timeout=10
         )
         return response.json()["session_token"]

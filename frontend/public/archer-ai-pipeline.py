@@ -188,7 +188,7 @@ Think through ALL possible paths:
 
 CRITICAL RULES — you MUST follow ALL of these:
 
-RULE 1 — james_question: You MUST generate exactly ONE specific clarifying question that references something specific found in the document. Always provide 2-4 answer options. NEVER skip this field.
+RULE 1 — archer_question: You MUST generate exactly ONE specific clarifying question that references something specific found in the document. Always provide 2-4 answer options. NEVER skip this field.
 
 RULE 2 — success_probability: Realistic outcome probabilities. No outcome below 2% or above 95%. All four values MUST sum to 100.
 
@@ -236,12 +236,12 @@ Return ONLY this JSON — no other text:
     "full_loss": 5
   }},
   "key_insight": "The most important thing the user must know in one sentence",
-  "james_question": {{
+  "archer_question": {{
     "text": "A SPECIFIC clarifying question referencing a fact from the document (e.g. 'The notice mentions a $150 fee — did you agree to this fee in your lease?' or 'Avez-vous une preuve écrite de votre signalement de harcèlement ?')",
     "options": ["Answer option 1", "Answer option 2", "Answer option 3"]
   }}
 }}
-MANDATORY: james_question MUST be present with 2-4 options. success_probability values MUST sum to 100 with no value below 2 or above 95. next_steps MUST have exactly 3 items with specific legal references."""
+MANDATORY: archer_question MUST be present with 2-4 options. success_probability values MUST sum to 100 with no value below 2 or above 95. next_steps MUST have exactly 3 items with specific legal references."""
 
 PASS4A_SYSTEM = """You are a senior attorney representing the user. Your job is to make the STRONGEST possible case for your client. Find every argument, every procedural defect, every legal protection that benefits your client. Be aggressive and thorough. You MUST produce exactly 4-5 strong arguments — NEVER leave arguments empty."""
 
@@ -529,13 +529,13 @@ def _build_case_law_for_frontend(courtlistener_opinions: list) -> list:
     return result
 
 
-async def _validate_james_question(strategy: dict, facts_str: str, persona: str, lang_instruction: str, language: str = "en") -> dict:
-    """Ensure james_question exists with valid text and options, retrying if needed."""
-    jq = strategy.get("james_question")
+async def _validate_archer_question(strategy: dict, facts_str: str, persona: str, lang_instruction: str, language: str = "en") -> dict:
+    """Ensure archer_question exists with valid text and options, retrying if needed."""
+    jq = strategy.get("archer_question")
     if jq and isinstance(jq, dict) and jq.get("text") and jq.get("options") and len(jq.get("options", [])) >= 2:
         return jq
 
-    logger.warning("James question missing or invalid — retrying")
+    logger.warning("Archer question missing or invalid — retrying")
     is_french = language.startswith("fr")
     is_dutch = language.startswith("nl")
     is_german = language.startswith("de")
@@ -563,7 +563,7 @@ async def _validate_james_question(strategy: dict, facts_str: str, persona: str,
         if jq_retry and jq_retry.get("text") and jq_retry.get("options") and len(jq_retry.get("options", [])) >= 2:
             return jq_retry
     except Exception as e:
-        logger.error(f"James question retry failed: {e}")
+        logger.error(f"Archer question retry failed: {e}")
 
     return fallback
 
@@ -685,7 +685,7 @@ def _build_standard_analysis_result(
         "lawyer_recommendation": strategy.get("lawyer_recommendation"),
         "success_probability": strategy.get("success_probability"),
         "key_insight": strategy.get("key_insight", ""),
-        "james_question": strategy.get("james_question"),
+        "archer_question": strategy.get("archer_question"),
         "battle_preview": {
             "user_side": user_arguments,
             "opposing_side": opposing_arguments
@@ -758,7 +758,7 @@ def _build_belgian_analysis_result(
         "lawyer_recommendation": strategy.get("lawyer_recommendation"),
         "success_probability": strategy.get("success_probability"),
         "key_insight": strategy.get("key_insight", ""),
-        "james_question": strategy.get("james_question"),
+        "archer_question": strategy.get("archer_question"),
         "battle_preview": {"user_side": user_arguments, "opposing_side": opposing_arguments},
         "recent_case_law": [],
         "case_law_updated": now_date,
@@ -824,7 +824,7 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
         logger.info("Advanced analysis: All 5 passes complete")
 
         # ═══ VALIDATION — enforce global rules ═══
-        strategy["james_question"] = await _validate_james_question(strategy, facts_str, persona, lang_instruction, language=language)
+        strategy["archer_question"] = await _validate_archer_question(strategy, facts_str, persona, lang_instruction, language=language)
         user_arguments = await _validate_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
         strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
 

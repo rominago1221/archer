@@ -54,7 +54,7 @@
     },
     "9_document_viewer_page": {
       "status": "PASS",
-      "evidence": "DocumentViewer.js renders at /documents/:documentId. Shows filename, upload date, size, PDF preview iframe, James analysis, Download and Delete buttons. All data-testid attributes present."
+      "evidence": "DocumentViewer.js renders at /documents/:documentId. Shows filename, upload date, size, PDF preview iframe, Archer analysis, Download and Delete buttons. All data-testid attributes present."
     },
     "10_document_viewer_back_button": {
       "status": "PASS",
@@ -91,7 +91,7 @@
     "CaseDetail.js line 175: Empty catch block for document fetch - should log errors for debugging",
     "Back button correctly uses navigate('/dashboard') instead of history.back() - verified in code",
     "NextActionsPanel.js implements all required styling: blue left border, light blue bg, bell icon, 15px bold titles, 1px card borders, 14px padding",
-    "DocumentViewer.js is a complete implementation with all required features: filename, date, size, preview, James analysis, download/delete buttons",
+    "DocumentViewer.js is a complete implementation with all required features: filename, date, size, preview, Archer analysis, download/delete buttons",
     "Font sizes in CaseDetail.js are consistently 15px for body text as specified"
   ],
 
@@ -105,7 +105,7 @@
   },
 
   "test_credentials": {
-    "usa_pro_client": "test@jasper.legal / JasperPro2026!"
+    "usa_pro_client": "test@archer.legal / ArcherPro2026!"
   },
 
   "seed_data_creation": "None - used existing seeded data",

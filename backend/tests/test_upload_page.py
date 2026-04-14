@@ -20,14 +20,14 @@ class TestAuth:
     def test_login_success(self):
         """Test login with email/password works"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "test@jasper.com",
+            "email": "test@archer.com",
             "password": "password123"
         })
         assert response.status_code == 200, f"Login failed: {response.text}"
         data = response.json()
         assert "session_token" in data, "No session_token in response"
         assert "user" in data, "No user in response"
-        assert data["user"]["email"] == "test@jasper.com"
+        assert data["user"]["email"] == "test@archer.com"
         assert data["user"]["plan"] == "pro", "User should be on pro plan"
         print(f"Login successful, user plan: {data['user']['plan']}")
         return data["session_token"]
@@ -40,7 +40,7 @@ class TestDashboard:
     def auth_token(self):
         """Get auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "test@jasper.com",
+            "email": "test@archer.com",
             "password": "password123"
         })
         return response.json()["session_token"]
@@ -64,7 +64,7 @@ class TestDocumentUpload:
     def auth_token(self):
         """Get auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "test@jasper.com",
+            "email": "test@archer.com",
             "password": "password123"
         })
         return response.json()["session_token"]
@@ -190,7 +190,7 @@ class TestDocxExtraction:
     def auth_token(self):
         """Get auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "test@jasper.com",
+            "email": "test@archer.com",
             "password": "password123"
         })
         return response.json()["session_token"]

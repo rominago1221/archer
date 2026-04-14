@@ -16,7 +16,7 @@ class TestUserContextUpload:
     def test_user(self):
         """Create a test user with 'pro' plan for unlimited uploads"""
         unique_id = uuid.uuid4().hex[:8]
-        email = f"test_context_{unique_id}@jasper.com"
+        email = f"test_context_{unique_id}@archer.com"
         password = "password123"
         name = "Test Context User"
         
@@ -229,7 +229,7 @@ class TestUploadEndpointExists:
         """Test that upload endpoint requires file"""
         # First login to get token
         unique_id = uuid.uuid4().hex[:8]
-        email = f"test_nofile_{unique_id}@jasper.com"
+        email = f"test_nofile_{unique_id}@archer.com"
         
         reg_resp = requests.post(
             f"{BASE_URL}/api/auth/register",

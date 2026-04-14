@@ -279,7 +279,7 @@ Think through ALL possible paths:
 
 CRITICAL RULES — you MUST follow ALL of these:
 
-RULE 1 — james_question: You MUST generate exactly ONE specific clarifying question that references something specific found in the document. Always provide 2-4 answer options. NEVER skip this field.
+RULE 1 — archer_question: You MUST generate exactly ONE specific clarifying question that references something specific found in the document. Always provide 2-4 answer options. NEVER skip this field.
 
 RULE 2 — success_probability: Realistic outcome probabilities. No outcome below 2% or above 95%. All four values MUST sum to 100.
 
@@ -327,12 +327,12 @@ Return ONLY this JSON — no other text:
     "full_loss": 5
   }},
   "key_insight": "The most important thing the user must know in one sentence",
-  "james_question": {{
+  "archer_question": {{
     "text": "A SPECIFIC clarifying question referencing a fact from the document (e.g. 'The notice mentions a $150 fee — did you agree to this fee in your lease?' or 'Avez-vous une preuve écrite de votre signalement de harcèlement ?')",
     "options": ["Answer option 1", "Answer option 2", "Answer option 3"]
   }}
 }}
-MANDATORY: james_question MUST be present with 2-4 options. success_probability values MUST sum to 100 with no value below 2 or above 95. next_steps MUST have exactly 3 items with specific legal references."""
+MANDATORY: archer_question MUST be present with 2-4 options. success_probability values MUST sum to 100 with no value below 2 or above 95. next_steps MUST have exactly 3 items with specific legal references."""
 
 PASS4A_SYSTEM = """You are a senior attorney representing the user. Your job is to make the STRONGEST possible case for your client. Find every argument, every procedural defect, every legal protection that benefits your client. Be aggressive and thorough. You MUST produce exactly 4-5 strong arguments — NEVER leave arguments empty."""
 
@@ -620,9 +620,9 @@ def _build_case_law_for_frontend(courtlistener_opinions: list) -> list:
     return result
 
 
-async def _validate_james_question(strategy: dict, facts_str: str, persona: str, lang_instruction: str, language: str = "en") -> dict:
-    """Ensure james_question exists with valid text and options, retrying if needed."""
-    jq = strategy.get("james_question")
+async def _validate_archer_question(strategy: dict, facts_str: str, persona: str, lang_instruction: str, language: str = "en") -> dict:
+    """Ensure archer_question exists with valid text and options, retrying if needed."""
+    jq = strategy.get("archer_question")
     if jq and isinstance(jq, dict) and jq.get("text") and jq.get("options") and len(jq.get("options", [])) >= 2:
         return jq
 
@@ -776,7 +776,7 @@ def _build_standard_analysis_result(
         "lawyer_recommendation": strategy.get("lawyer_recommendation"),
         "success_probability": strategy.get("success_probability"),
         "key_insight": strategy.get("key_insight", ""),
-        "james_question": strategy.get("james_question"),
+        "archer_question": strategy.get("archer_question"),
         "battle_preview": {
             "user_side": user_arguments,
             "opposing_side": opposing_arguments
@@ -849,7 +849,7 @@ def _build_belgian_analysis_result(
         "lawyer_recommendation": strategy.get("lawyer_recommendation"),
         "success_probability": strategy.get("success_probability"),
         "key_insight": strategy.get("key_insight", ""),
-        "james_question": strategy.get("james_question"),
+        "archer_question": strategy.get("archer_question"),
         "battle_preview": {"user_side": user_arguments, "opposing_side": opposing_arguments},
         "recent_case_law": [],
         "case_law_updated": now_date,
@@ -915,7 +915,7 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
         logger.info("Advanced analysis: All 5 passes complete")
 
         # ═══ VALIDATION — enforce global rules ═══
-        strategy["james_question"] = await _validate_james_question(strategy, facts_str, persona, lang_instruction, language=language)
+        strategy["archer_question"] = await _validate_archer_question(strategy, facts_str, persona, lang_instruction, language=language)
         user_arguments = await _validate_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
         strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
 
@@ -1191,7 +1191,7 @@ async def analyze_document_stream(
     strategy = await pass3_task
 
     # Validate (shared helpers)
-    strategy["james_question"] = await _validate_james_question(strategy, facts_str, persona_with_lang, lang_instruction, language=language)
+    strategy["archer_question"] = await _validate_archer_question(strategy, facts_str, persona_with_lang, lang_instruction, language=language)
     strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
 
     # --- EVENT 6: strategy_ready ---
@@ -1696,7 +1696,7 @@ INDICES POUR DETECTER LE STADE:
 
 OBLIGATOIRE: Chaque next_step DOIT inclure un champ "recipient" indiquant a QUI la lettre/action est destinee.
 
-REGLE CRITIQUE JAMES_QUESTION: Tu DOIS generer une question specifique basee sur les faits du document. La question doit referencer un fait precis du document. JAMAIS de question generique. La question DOIT avoir 2-4 options de reponse cliquables.
+REGLE CRITIQUE ARCHER_QUESTION: Tu DOIS generer une question specifique basee sur les faits du document. La question doit referencer un fait precis du document. JAMAIS de question generique. La question DOIT avoir 2-4 options de reponse cliquables.
 
 Retourne UNIQUEMENT ce JSON:
 {{
@@ -1717,9 +1717,9 @@ Retourne UNIQUEMENT ce JSON:
   "lawyer_recommendation": {{"necessaire": true, "urgence": "immediatement|dans_3_jours|dans_la_semaine|optionnel", "raison": "Raison", "type_avocat": "droit_du_travail|droit_du_bail|droit_penal|consommateur"}},
   "success_probability": {{"resolution_favorable": 35, "compromis_negocie": 48, "perte_partielle": 12, "perte_totale": 5}},
   "key_insight": "La phrase la plus importante",
-  "james_question": {{"text": "Question SPECIFIQUE", "options": ["Option 1", "Option 2", "Option 3"]}}
+  "archer_question": {{"text": "Question SPECIFIQUE", "options": ["Option 1", "Option 2", "Option 3"]}}
 }}
-OBLIGATOIRE: james_question DOIT etre present. case_stage DOIT etre detecte correctement."""
+OBLIGATOIRE: archer_question DOIT etre present. case_stage DOIT etre detecte correctement."""
 
 BE_PASS4A_SYSTEM = """Tu es un avocat senior en Belgique representant l'utilisateur. Ton travail est de construire le dossier LE PLUS SOLIDE possible pour ton client. Trouve chaque argument, chaque vice de procedure, chaque protection legale qui beneficie a ton client. Sois agressif et exhaustif.
 
@@ -1862,7 +1862,7 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
         logger.info("Belgian analysis: 5 passes complete")
 
         # ═══ VALIDATION — enforce global rules for Belgian analysis ═══
-        strategy["james_question"] = await _validate_james_question(strategy, facts_str, persona_with_lang, lang_instruction, language=language)
+        strategy["archer_question"] = await _validate_archer_question(strategy, facts_str, persona_with_lang, lang_instruction, language=language)
         user_arguments = await _validate_belgian_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
         strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
 
@@ -2484,7 +2484,7 @@ def get_language_instruction(language: str) -> str:
 
 MANDATORY LANGUAGE RULE — NON-NEGOTIABLE:
 You MUST write 100% of your response in {lang_name} ({native}).
-This includes ALL of the following: findings text, next_steps titles and descriptions, key_insight, summary, james_question text and options, battle_preview arguments, opening_argument, success_probability labels, error messages, and every single text field in your JSON response.
+This includes ALL of the following: findings text, next_steps titles and descriptions, key_insight, summary, archer_question text and options, battle_preview arguments, opening_argument, success_probability labels, error messages, and every single text field in your JSON response.
 ZERO English words allowed. Not even one. If you write a single English word, the entire response is rejected.
 The user's interface language is {lang_name} — respect it completely.
 """
@@ -2756,7 +2756,7 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Complete")
 
     # ═══ VALIDATION — enforce global rules for Belgian multi-doc ═══
-    strategy["james_question"] = await _validate_james_question(strategy, facts_str, persona_with_lang, lang_instruction, language=language)
+    strategy["archer_question"] = await _validate_archer_question(strategy, facts_str, persona_with_lang, lang_instruction, language=language)
     user_arguments = await _validate_belgian_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
     strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
 
@@ -3173,7 +3173,7 @@ def _build_case_update(analysis, case_before, filename, ts):
         "cumulative_financial_exposure": a.get("cumulative_financial_exposure") or cb.get("cumulative_financial_exposure"),
         "master_deadlines": a.get("master_deadlines") or cb.get("master_deadlines", []),
         "multi_doc_summary": a.get("case_narrative") or cb.get("multi_doc_summary"),
-        "james_question": a.get("james_question"),
+        "archer_question": a.get("archer_question") or a.get("james_question"),
         # Extracted party/document info for letter auto-fill
         "opposing_party_name": opp_name or cb.get("opposing_party_name"),
         "opposing_party_address": cb.get("opposing_party_address"),
@@ -3613,7 +3613,7 @@ async def reanalyze_case(case_id: str, current_user: User = Depends(get_current_
             "leverage_points": analysis.get("leverage_points", []),
             "red_lines": analysis.get("red_lines", []),
             "key_insight": analysis.get("key_insight", ""),
-            "james_question": analysis.get("james_question"),
+            "archer_question": analysis.get("archer_question") or analysis.get("james_question"),
             "strategy": analysis.get("strategy"),
             "lawyer_recommendation": analysis.get("lawyer_recommendation"),
             "user_rights": analysis.get("user_rights", []),
@@ -3688,8 +3688,8 @@ async def download_document(
 # ================== Letter Generation Endpoints ==================
 
 
-@api_router.post("/cases/{case_id}/james-answer")
-async def james_answer(case_id: str, body: dict, current_user: User = Depends(get_current_user)):
+@api_router.post("/cases/{case_id}/archer-answer")
+async def archer_answer(case_id: str, body: dict, current_user: User = Depends(get_current_user)):
     """Process user answer to Archer's question, update analysis"""
     case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
     if not case_doc:
@@ -3767,19 +3767,25 @@ Analyze the impact of this answer on the case."""
     
     next_q = result.get("next_question")
     if next_q:
-        update["$set"]["james_question"] = next_q
+        update["$set"]["archer_question"] = next_q
     else:
-        update["$set"]["james_question"] = None
+        update["$set"]["archer_question"] = None
     
     # Store Q&A in history
     qa_entry = {"question": question, "answer": answer, "impact": result.get("impact_summary", ""), "timestamp": now}
-    update.setdefault("$push", {})["james_qa_history"] = qa_entry
+    update.setdefault("$push", {})["archer_qa_history"] = qa_entry
     
     await db.cases.update_one({"case_id": case_id}, update)
     
     result["new_risk_score"] = new_score
     result["old_risk_score"] = old_score
     return result
+
+
+# DEPRECATED: alias kept for backward compatibility — remove after prod validation
+@api_router.post("/cases/{case_id}/james-answer")
+async def james_answer_deprecated(case_id: str, body: dict, current_user: User = Depends(get_current_user)):
+    return await archer_answer(case_id, body, current_user)
 
 
 @api_router.post("/cases/{case_id}/generate-action-letter")
@@ -5502,8 +5508,8 @@ class ArcherDocMessage(BaseModel):
     conversation_id: Optional[str] = None
 
 
-@api_router.post("/documents/james/send")
-async def james_doc_send(data: ArcherDocMessage, current_user: User = Depends(get_current_user)):
+@api_router.post("/documents/archer/send")
+async def archer_doc_send(data: ArcherDocMessage, current_user: User = Depends(get_current_user)):
     """Archer conversational document creator — send message and get AI response"""
     conv_id = data.conversation_id
     now = datetime.now(timezone.utc).isoformat()
@@ -5519,13 +5525,13 @@ async def james_doc_send(data: ArcherDocMessage, current_user: User = Depends(ge
             "created_at": now,
             "updated_at": now,
         }
-        await db.james_doc_conversations.insert_one(conv_doc)
+        await db.archer_doc_conversations.insert_one(conv_doc)
 
     # Free plan: limit to 3 generated documents
     if current_user.plan == "free":
         doc_count = await db.generated_documents.count_documents({
             "user_id": current_user.user_id,
-            "created_via": "james_conversation"
+            "created_via": "archer_conversation"
         })
         if doc_count >= 3:
             return {
@@ -5542,10 +5548,10 @@ async def james_doc_send(data: ArcherDocMessage, current_user: User = Depends(ge
         "content": data.message,
         "created_at": now
     }
-    await db.james_doc_messages.insert_one(user_msg)
+    await db.archer_doc_messages.insert_one(user_msg)
 
     # Build conversation history
-    history = await db.james_doc_messages.find(
+    history = await db.archer_doc_messages.find(
         {"conversation_id": conv_id},
         {"_id": 0, "role": 1, "content": 1}
     ).sort("created_at", 1).to_list(100)
@@ -5600,8 +5606,8 @@ async def james_doc_send(data: ArcherDocMessage, current_user: User = Depends(ge
         "content": ai_text,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
-    await db.james_doc_messages.insert_one(ai_msg)
-    await db.james_doc_conversations.update_one(
+    await db.archer_doc_messages.insert_one(ai_msg)
+    await db.archer_doc_conversations.update_one(
         {"conversation_id": conv_id},
         {"$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
     )
@@ -5620,7 +5626,7 @@ async def james_doc_send(data: ArcherDocMessage, current_user: User = Depends(ge
             if len(doc_title) > 100:
                 doc_title = doc_title[:100]
             # Get first user message as fallback context
-            first_msg = await db.james_doc_messages.find_one(
+            first_msg = await db.archer_doc_messages.find_one(
                 {"conversation_id": conv_id, "role": "user"},
                 {"_id": 0, "content": 1}
             )
@@ -5630,7 +5636,7 @@ async def james_doc_send(data: ArcherDocMessage, current_user: User = Depends(ge
             doc_record = {
                 "doc_id": doc_id,
                 "user_id": current_user.user_id,
-                "created_via": "james_conversation",
+                "created_via": "archer_conversation",
                 "conversation_id": conv_id,
                 "document_title": doc_title,
                 "original_request": first_request,
@@ -5641,7 +5647,7 @@ async def james_doc_send(data: ArcherDocMessage, current_user: User = Depends(ge
             }
             await db.generated_documents.insert_one(doc_record)
             # Update conversation with doc reference
-            await db.james_doc_conversations.update_one(
+            await db.archer_doc_conversations.update_one(
                 {"conversation_id": conv_id},
                 {"$set": {"last_doc_id": doc_id, "document_title": doc_title}}
             )
@@ -5657,37 +5663,37 @@ async def james_doc_send(data: ArcherDocMessage, current_user: User = Depends(ge
     }
 
 
-@api_router.get("/documents/james/conversations")
-async def get_james_doc_conversations(current_user: User = Depends(get_current_user)):
+@api_router.get("/documents/archer/conversations")
+async def get_archer_doc_conversations(current_user: User = Depends(get_current_user)):
     """Get user's recent Archer document conversations"""
-    convs = await db.james_doc_conversations.find(
+    convs = await db.archer_doc_conversations.find(
         {"user_id": current_user.user_id},
         {"_id": 0}
     ).sort("updated_at", -1).to_list(20)
     return convs
 
 
-@api_router.get("/documents/james/conversations/{conversation_id}/messages")
-async def get_james_doc_messages(conversation_id: str, current_user: User = Depends(get_current_user)):
+@api_router.get("/documents/archer/conversations/{conversation_id}/messages")
+async def get_archer_doc_messages(conversation_id: str, current_user: User = Depends(get_current_user)):
     """Get messages for a Archer document conversation"""
-    conv = await db.james_doc_conversations.find_one(
+    conv = await db.archer_doc_conversations.find_one(
         {"conversation_id": conversation_id, "user_id": current_user.user_id},
         {"_id": 0}
     )
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    messages = await db.james_doc_messages.find(
+    messages = await db.archer_doc_messages.find(
         {"conversation_id": conversation_id},
         {"_id": 0}
     ).sort("created_at", 1).to_list(200)
     return messages
 
 
-@api_router.get("/documents/james/recent")
+@api_router.get("/documents/archer/recent")
 async def get_recent_generated_docs(current_user: User = Depends(get_current_user)):
     """Get last 5 generated documents for sidebar"""
     docs = await db.generated_documents.find(
-        {"user_id": current_user.user_id, "created_via": "james_conversation"},
+        {"user_id": current_user.user_id, "created_via": "archer_conversation"},
         {"_id": 0, "doc_id": 1, "document_title": 1, "created_at": 1, "signature_status": 1}
     ).sort("created_at", -1).to_list(5)
     return docs
@@ -5928,7 +5934,7 @@ async def startup_event():
         now = datetime.now(timezone.utc).isoformat()
         pw_hash = hash_password("attorney123")
         await db.users.insert_one({
-            "user_id": atty_user_id, "email": "attorney@jasper.com", "name": "Sarah Mitchell",
+            "user_id": atty_user_id, "email": "attorney@archer.com", "name": "Sarah Mitchell",
             "picture": None, "password_hash": pw_hash, "auth_provider": "email",
             "plan": "pro", "country": "US", "jurisdiction": "US", "language": "en",
             "account_type": "attorney", "created_at": now,
@@ -5937,7 +5943,7 @@ async def startup_event():
         })
         await db.attorney_profiles.insert_one({
             "attorney_id": atty_id, "user_id": atty_user_id, "slug": f"sarah-mitchell-{atty_id[-6:]}",
-            "full_name": "Sarah Mitchell", "email": "attorney@jasper.com", "phone": "+1-555-0199",
+            "full_name": "Sarah Mitchell", "email": "attorney@archer.com", "phone": "+1-555-0199",
             "bar_number": "NY-2847561", "states_licensed": ["New York", "California", "New Jersey"],
             "country": "US", "years_experience": 12, "law_school": "Columbia Law School",
             "graduation_year": 2014, "specialties": ["Employment law", "Tenant rights", "Contract law", "Consumer protection"],
@@ -5952,12 +5958,12 @@ async def startup_event():
             "blocked_dates": [], "buffer_minutes": 15, "timezone": "America/New_York",
             "created_at": now, "approved_at": now,
         })
-        logger.info("Test attorney seeded: attorney@jasper.com / attorney123")
+        logger.info("Test attorney seeded: attorney@archer.com / attorney123")
 
     # Seed Pro test accounts
     for acct in [
-        {"email": "test@jasper.legal", "name": "Alex Thompson", "country": "US", "jurisdiction": "US", "language": "en"},
-        {"email": "belgium@jasper.legal", "name": "Marie Dupont", "country": "BE", "jurisdiction": "BE", "language": "fr"},
+        {"email": "test@archer.legal", "name": "Alex Thompson", "country": "US", "jurisdiction": "US", "language": "en"},
+        {"email": "belgium@archer.legal", "name": "Marie Dupont", "country": "BE", "jurisdiction": "BE", "language": "fr"},
     ]:
         existing = await db.users.find_one({"email": acct["email"]})
         if not existing:
@@ -5965,7 +5971,7 @@ async def startup_event():
             now = datetime.now(timezone.utc).isoformat()
             await db.users.insert_one({
                 "user_id": uid, "email": acct["email"], "name": acct["name"],
-                "picture": None, "password_hash": hash_password("JasperPro2026!"),
+                "picture": None, "password_hash": hash_password("ArcherPro2026!"),
                 "auth_provider": "email", "plan": "pro", "country": acct["country"],
                 "jurisdiction": acct["jurisdiction"], "language": acct["language"],
                 "account_type": "client", "created_at": now,

@@ -29,8 +29,8 @@ STRIPE_PLATFORM_FEE_PERCENT = int(os.environ.get("STRIPE_PLATFORM_FEE_PERCENT", 
 # =============================================================================
 # Email Utility
 # =============================================================================
-ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@jasper.legal")
-EMAIL_FROM = os.environ.get("EMAIL_FROM", "james@jasper.legal")
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@archer.legal")
+EMAIL_FROM = os.environ.get("EMAIL_FROM", "archer@archer.legal")
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
 APP_URL = os.environ.get("APP_URL", "https://predict-outcome.preview.emergentagent.com")
 ADMIN_SECRET = os.environ.get("ADMIN_SECRET", "archer-admin-2026")
@@ -50,8 +50,8 @@ async def send_email(to: str, subject: str, html_body: str):
         logger.info(f"EMAIL (SendGrid not configured) → To: {to} | Subject: {subject}")
 
 async def verify_admin(current_user: User = Depends(get_current_user)):
-    admin_email = os.environ.get("ADMIN_EMAIL", "admin@jasper.legal")
-    is_admin = getattr(current_user, 'is_admin', False) or current_user.email == admin_email or current_user.email == "test@jasper.legal"
+    admin_email = os.environ.get("ADMIN_EMAIL", "admin@archer.legal")
+    is_admin = getattr(current_user, 'is_admin', False) or current_user.email == admin_email or current_user.email == "test@archer.legal"
     if not is_admin:
         raise HTTPException(status_code=403, detail="Admin access required")
     return current_user
@@ -599,9 +599,9 @@ async def save_case_notes(case_id: str, body: dict, current_user: User = Depends
     return {"status": "saved"}
 
 
-# --- Attorney Legal Research (James for attorneys) ---
+# --- Attorney Legal Research (Archer for attorneys) ---
 
-ATTORNEY_JAMES_PROMPT = """You are James, a legal research assistant helping a licensed attorney.
+ATTORNEY_ARCHER_PROMPT = """You are Archer, a legal research assistant helping a licensed attorney.
 Provide detailed, technical legal analysis including:
 - Case citations with full case names and reporter references
 - Statutory references with section numbers
@@ -639,7 +639,7 @@ async def attorney_research_send(data: dict, current_user: User = Depends(get_cu
 
     jurisdiction = "US Federal + applicable state law" if current_user.jurisdiction == "US" else "Belgian federal + regional law"
     lang_map = {"en": "English", "fr": "French", "nl": "Dutch", "de": "German", "es": "Spanish"}
-    system = ATTORNEY_JAMES_PROMPT.format(jurisdiction=jurisdiction, language=lang_map.get(current_user.language, "English"))
+    system = ATTORNEY_ARCHER_PROMPT.format(jurisdiction=jurisdiction, language=lang_map.get(current_user.language, "English"))
 
     try:
         async with httpx.AsyncClient() as http_client:

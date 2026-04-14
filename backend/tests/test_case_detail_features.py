@@ -1,6 +1,6 @@
 """
 Test Case Detail Page 12-Point Redesign Features
-Tests for: james-answer, generate-action-letter, share endpoints
+Tests for: archer-answer, generate-action-letter, share endpoints
 """
 import pytest
 import requests
@@ -17,7 +17,7 @@ CASE_ID = "case_ed35bd476d0a"
 
 
 class TestCaseDetailFeatures:
-    """Test Case Detail page features including james-answer, generate-action-letter, share"""
+    """Test Case Detail page features including archer-answer, generate-action-letter, share"""
     
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -150,19 +150,19 @@ class TestCaseDetailFeatures:
         
         print(f"PASS: ai_next_steps has {len(steps)} items, first: {step['title']}")
     
-    # ============ James Answer Endpoint Tests ============
+    # ============ Archer Answer Endpoint Tests ============
     
-    def test_james_answer_endpoint(self):
-        """Test POST /api/cases/{case_id}/james-answer"""
+    def test_archer_answer_endpoint(self):
+        """Test POST /api/cases/{case_id}/archer-answer"""
         response = self.session.post(
-            f"{BASE_URL}/api/cases/{CASE_ID}/james-answer",
+            f"{BASE_URL}/api/cases/{CASE_ID}/archer-answer",
             json={
                 "question": "Did you receive the eviction notice in writing?",
                 "answer": "Yes"
             }
         )
         
-        assert response.status_code == 200, f"james-answer failed: {response.text}"
+        assert response.status_code == 200, f"archer-answer failed: {response.text}"
         
         data = response.json()
         
@@ -172,12 +172,12 @@ class TestCaseDetailFeatures:
         assert "new_risk_score" in data, "Response should have new_risk_score"
         assert "old_risk_score" in data, "Response should have old_risk_score"
         
-        print(f"PASS: james-answer returned impact: {data.get('impact_summary', '')[:100]}...")
+        print(f"PASS: archer-answer returned impact: {data.get('impact_summary', '')[:100]}...")
     
-    def test_james_answer_requires_answer(self):
-        """Test james-answer requires answer field"""
+    def test_archer_answer_requires_answer(self):
+        """Test archer-answer requires answer field"""
         response = self.session.post(
-            f"{BASE_URL}/api/cases/{CASE_ID}/james-answer",
+            f"{BASE_URL}/api/cases/{CASE_ID}/archer-answer",
             json={
                 "question": "Test question",
                 "answer": ""  # Empty answer
@@ -185,12 +185,12 @@ class TestCaseDetailFeatures:
         )
         
         assert response.status_code == 400, "Should return 400 for empty answer"
-        print("PASS: james-answer correctly rejects empty answer")
+        print("PASS: archer-answer correctly rejects empty answer")
     
-    def test_james_answer_invalid_case(self):
-        """Test james-answer returns 404 for invalid case"""
+    def test_archer_answer_invalid_case(self):
+        """Test archer-answer returns 404 for invalid case"""
         response = self.session.post(
-            f"{BASE_URL}/api/cases/invalid_case_id/james-answer",
+            f"{BASE_URL}/api/cases/invalid_case_id/archer-answer",
             json={
                 "question": "Test",
                 "answer": "Yes"
@@ -198,7 +198,7 @@ class TestCaseDetailFeatures:
         )
         
         assert response.status_code == 404, "Should return 404 for invalid case"
-        print("PASS: james-answer correctly returns 404 for invalid case")
+        print("PASS: archer-answer correctly returns 404 for invalid case")
     
     # ============ Generate Action Letter Endpoint Tests ============
     
@@ -308,12 +308,12 @@ class TestCaseDetailFeatures:
         unauth_session = requests.Session()
         unauth_session.headers.update({"Content-Type": "application/json"})
         
-        # Test james-answer
+        # Test archer-answer
         response = unauth_session.post(
-            f"{BASE_URL}/api/cases/{CASE_ID}/james-answer",
+            f"{BASE_URL}/api/cases/{CASE_ID}/archer-answer",
             json={"question": "test", "answer": "Yes"}
         )
-        assert response.status_code == 401, "james-answer should require auth"
+        assert response.status_code == 401, "archer-answer should require auth"
         
         # Test generate-action-letter
         response = unauth_session.post(
@@ -337,7 +337,7 @@ class TestLoginFlow:
     """Test login flow for Case Detail page access"""
     
     def test_login_with_test_credentials(self):
-        """Test login with test@jasper.legal / JasperPro2026!"""
+        """Test login with test@archer.legal / ArcherPro2026!"""
         session = requests.Session()
         session.headers.update({"Content-Type": "application/json"})
         

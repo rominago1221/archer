@@ -1,5 +1,5 @@
 {
-  "summary": "Complete testing of Document Library redesign. All backend tests passed (9/9). All frontend UI tests passed. The page implements two modes: GENERATE mode (default) with James chat interface, category cards, suggestion chips, and BROWSE mode with 143 templates (note: UI shows '158' but actual count is 143), filter pills, search bar, and 2-column grid layout.",
+  "summary": "Complete testing of Document Library redesign. All backend tests passed (9/9). All frontend UI tests passed. The page implements two modes: GENERATE mode (default) with Archer chat interface, category cards, suggestion chips, and BROWSE mode with 143 templates (note: UI shows '158' but actual count is 143), filter pills, search bar, and 2-column grid layout.",
 
   "backend_issues": {
     "critical": [],
@@ -20,19 +20,19 @@
   "features_verified": {
     "1_login_navigate_documents": {
       "status": "PASS",
-      "evidence": "Login with test@jasper.legal / JasperPro2026! successful, navigated to /documents"
+      "evidence": "Login with test@archer.legal / ArcherPro2026! successful, navigated to /documents"
     },
     "2_generate_mode_default": {
       "status": "PASS",
-      "evidence": "GENERATE mode is default with James identity bar visible, opening message displayed"
+      "evidence": "GENERATE mode is default with Archer identity bar visible, opening message displayed"
     },
     "3_generate_mode_title": {
       "status": "PASS",
       "evidence": "Title 'Generate any document — just describe what you need.' visible"
     },
-    "4_james_strip": {
+    "4_archer_strip": {
       "status": "PASS",
-      "evidence": "James strip shows 'James · Senior Legal Advisor', '20 years experience · 847K+ legal sources', 'Available now' status"
+      "evidence": "Archer strip shows 'Archer · Senior Legal Advisor', '20 years experience · 847K+ legal sources', 'Available now' status"
     },
     "5_category_cards_grid": {
       "status": "PASS",
@@ -40,7 +40,7 @@
     },
     "6_left_sidebar": {
       "status": "PASS",
-      "evidence": "Sidebar contains: Jasper logo, Generate/Browse mode toggle buttons, 158 count pill, Recent documents section"
+      "evidence": "Sidebar contains: Archer logo, Generate/Browse mode toggle buttons, 158 count pill, Recent documents section"
     },
     "7_suggestion_chips": {
       "status": "PASS",
@@ -52,15 +52,15 @@
     },
     "9_category_card_click": {
       "status": "PASS",
-      "evidence": "Clicking Employment category card sends 'I need a employment document' to James chat, James responds with questions"
+      "evidence": "Clicking Employment category card sends 'I need a employment document' to Archer chat, Archer responds with questions"
     },
     "10_suggestion_chip_click": {
       "status": "PASS",
-      "evidence": "Clicking 'I need an NDA' chip sends message to James, James responds with NDA-related questions"
+      "evidence": "Clicking 'I need an NDA' chip sends message to Archer, Archer responds with NDA-related questions"
     },
     "11_manual_message_enter": {
       "status": "PASS",
-      "evidence": "Typing message and pressing Enter sends message, appears as user bubble, James responds"
+      "evidence": "Typing message and pressing Enter sends message, appears as user bubble, Archer responds"
     },
     "12_browse_mode_switch": {
       "status": "PASS",
@@ -96,31 +96,31 @@
     },
     "20_mode_persistence": {
       "status": "PASS",
-      "evidence": "Browse mode persists after page refresh (localStorage 'jasper_doc_mode' working)"
+      "evidence": "Browse mode persists after page refresh (localStorage 'archer_doc_mode' working)"
     },
     "21_new_document_button": {
       "status": "PASS",
       "evidence": "'+ New document' button appears after starting conversation, clicking resets conversation"
     },
-    "22_backend_james_send": {
+    "22_backend_archer_send": {
       "status": "PASS",
-      "evidence": "POST /api/documents/james/send works, creates conversation, returns James response"
+      "evidence": "POST /api/documents/archer/send works, creates conversation, returns Archer response"
     },
-    "23_backend_james_recent": {
+    "23_backend_archer_recent": {
       "status": "PASS",
-      "evidence": "GET /api/documents/james/recent returns recent documents list"
+      "evidence": "GET /api/documents/archer/recent returns recent documents list"
     },
-    "24_backend_james_conversations": {
+    "24_backend_archer_conversations": {
       "status": "PASS",
-      "evidence": "GET /api/documents/james/conversations returns conversation list"
+      "evidence": "GET /api/documents/archer/conversations returns conversation list"
     },
-    "25_backend_james_messages": {
+    "25_backend_archer_messages": {
       "status": "PASS",
-      "evidence": "GET /api/documents/james/conversations/{id}/messages returns messages for conversation"
+      "evidence": "GET /api/documents/archer/conversations/{id}/messages returns messages for conversation"
     },
     "26_backend_auth_required": {
       "status": "PASS",
-      "evidence": "All James endpoints return 401 for unauthenticated requests"
+      "evidence": "All Archer endpoints return 401 for unauthenticated requests"
     }
   },
 
@@ -137,7 +137,7 @@
     "DocumentLibrary.js implements clean 2-column layout with CSS grid (220px sidebar + 1fr main)",
     "Mode toggle uses localStorage for persistence - good UX pattern",
     "ALL_TEMPLATES array contains 143 templates but UI displays '158' - minor discrepancy",
-    "James chat integration uses /api/documents/james/send endpoint correctly",
+    "Archer chat integration uses /api/documents/archer/send endpoint correctly",
     "Filter pills and search work client-side for fast filtering",
     "Template card hover effect uses CSS transition for smooth 'Generate →' reveal",
     "data-testid attributes properly implemented for all interactive elements"
@@ -153,7 +153,7 @@
   },
 
   "test_credentials": {
-    "usa_pro_client": "test@jasper.legal / JasperPro2026!"
+    "usa_pro_client": "test@archer.legal / ArcherPro2026!"
   },
 
   "seed_data_creation": "None - used existing seeded data",
@@ -162,7 +162,7 @@
 
   "should_main_agent_self_test": false,
 
-  "context_for_next_testing_agent": "Document Library redesign fully tested. Two modes work correctly: GENERATE mode (default) with James chat for document creation, BROWSE mode with 143 templates across 13 categories. All backend James document creator APIs working. Minor issue: UI shows '158 templates' but actual count is 143. Mode persistence via localStorage works. Template click pre-fills input and switches to generate mode.",
+  "context_for_next_testing_agent": "Document Library redesign fully tested. Two modes work correctly: GENERATE mode (default) with Archer chat for document creation, BROWSE mode with 143 templates across 13 categories. All backend Archer document creator APIs working. Minor issue: UI shows '158 templates' but actual count is 143. Mode persistence via localStorage works. Template click pre-fills input and switches to generate mode.",
 
   "mocked_apis": {
     "has_mocked_apis": false,

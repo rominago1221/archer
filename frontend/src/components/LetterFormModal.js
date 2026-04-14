@@ -7,46 +7,46 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const T = {
   en: {
-    header: 'James is drafting your letter',
+    header: 'Archer is drafting your letter',
     name: 'Your full name', address: 'Your address', email: 'Your email',
     recipientName: 'Recipient name', recipientAddress: 'Recipient address',
     docDate: 'Date of the document', amount: 'Key amount',
-    note: 'Add a personal note for James', noteMax: '200 characters',
-    generate: 'Generate letter with James', generating: 'James is writing',
+    note: 'Add a personal note for Archer', noteMax: '200 characters',
+    generate: 'Generate letter with Archer', generating: 'Archer is writing',
     downloadPdf: 'Download PDF', sendHelloSign: 'Send via HelloSign',
-    editJames: 'Edit with James', close: 'Close',
+    editArcher: 'Edit with Archer', close: 'Close',
     preview: 'Letter Preview',
-    detected: 'Detected by James from your document',
+    detected: 'Detected by Archer from your document',
     profileLocked: 'From your profile',
     incompleteProfile: 'Complete your profile to never fill this again',
     completeProfile: 'Complete profile',
   },
   fr: {
-    header: 'James rédige votre lettre',
+    header: 'Archer rédige votre lettre',
     name: 'Votre nom complet', address: 'Votre adresse', email: 'Votre email',
     recipientName: 'Nom du destinataire', recipientAddress: 'Adresse du destinataire',
     docDate: 'Date du document', amount: 'Montant clé',
-    note: 'Ajoutez une note personnelle pour James', noteMax: '200 caractères',
-    generate: 'Générer la lettre avec James', generating: 'James rédige',
+    note: 'Ajoutez une note personnelle pour Archer', noteMax: '200 caractères',
+    generate: 'Générer la lettre avec Archer', generating: 'Archer rédige',
     downloadPdf: 'Télécharger PDF', sendHelloSign: 'Envoyer via HelloSign',
-    editJames: 'Modifier avec James', close: 'Fermer',
+    editArcher: 'Modifier avec Archer', close: 'Fermer',
     preview: 'Aperçu de la lettre',
-    detected: 'Détecté par James dans votre document',
+    detected: 'Détecté par Archer dans votre document',
     profileLocked: 'De votre profil',
     incompleteProfile: 'Complétez votre profil pour ne plus remplir ceci',
     completeProfile: 'Compléter le profil',
   },
   nl: {
-    header: 'James stelt uw brief op',
+    header: 'Archer stelt uw brief op',
     name: 'Uw volledige naam', address: 'Uw adres', email: 'Uw email',
     recipientName: 'Naam ontvanger', recipientAddress: 'Adres ontvanger',
     docDate: 'Datum van het document', amount: 'Belangrijkst bedrag',
-    note: 'Voeg een persoonlijke noot toe voor James', noteMax: '200 tekens',
-    generate: 'Genereer brief met James', generating: 'James schrijft',
+    note: 'Voeg een persoonlijke noot toe voor Archer', noteMax: '200 tekens',
+    generate: 'Genereer brief met Archer', generating: 'Archer schrijft',
     downloadPdf: 'Download PDF', sendHelloSign: 'Verstuur via HelloSign',
-    editJames: 'Bewerk met James', close: 'Sluiten',
+    editArcher: 'Bewerk met Archer', close: 'Sluiten',
     preview: 'Briefvoorbeeld',
-    detected: 'Gedetecteerd door James uit uw document',
+    detected: 'Gedetecteerd door Archer uit uw document',
     profileLocked: 'Van uw profiel',
     incompleteProfile: 'Vul uw profiel aan zodat u dit nooit meer hoeft in te vullen',
     completeProfile: 'Profiel aanvullen',
@@ -81,7 +81,7 @@ const LetterFormModal = ({ step, caseId, caseData, userName, userEmail, userAddr
   const hasAddress = !!userAddress;
   const profileComplete = hasName && hasAddress;
 
-  // Pre-fill from case data (extracted by James)
+  // Pre-fill from case data (extracted by Archer)
   const oppName = caseData?.opposing_party_name || '';
   const oppAddr = caseData?.opposing_party_address || '';
   const docDate = caseData?.document_date || '';
@@ -193,7 +193,7 @@ const LetterFormModal = ({ step, caseId, caseData, userName, userEmail, userAddr
             <div style={{ marginBottom: 10, marginTop: 4 }}>
               <label style={{ fontSize: 10, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 3 }}>{t.note}</label>
               <textarea value={form.note} onChange={e => set('note')(e.target.value.slice(0, 200))}
-                placeholder={lang === 'fr' ? 'Contexte supplémentaire pour James...' : 'Additional context for James...'}
+                placeholder={lang === 'fr' ? 'Contexte supplémentaire pour Archer...' : 'Additional context for Archer...'}
                 style={{ width: '100%', minHeight: 56, padding: '7px 10px', fontSize: 11, border: '0.5px solid #e2e0db', borderRadius: 7, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5, background: '#fafafa', color: '#374151' }} />
               <div style={{ fontSize: 8, color: '#9ca3af', textAlign: 'right' }}>{form.note.length}/200</div>
             </div>
@@ -231,8 +231,8 @@ const LetterFormModal = ({ step, caseId, caseData, userName, userEmail, userAddr
             </div>
             {onOpenChat && (
               <button onClick={() => { onOpenChat(`Help me edit this letter: "${step.title}". Here is the current draft:\n\n${letter.body?.substring(0, 300)}...`); onClose(); }}
-                data-testid="edit-with-james" style={{ width: '100%', marginTop: 8, padding: '8px 0', background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: '#1a56db', fontWeight: 500 }}>
-                {t.editJames} →
+                data-testid="edit-with-archer" style={{ width: '100%', marginTop: 8, padding: '8px 0', background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: '#1a56db', fontWeight: 500 }}>
+                {t.editArcher} →
               </button>
             )}
           </>

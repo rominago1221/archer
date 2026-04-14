@@ -115,27 +115,27 @@ class TestDashboardFeatures:
         else:
             print("No cases with recent_case_law found")
     
-    def test_case_has_james_question(self):
-        """Test case data includes james_question for interactive Q&A"""
+    def test_case_has_archer_question(self):
+        """Test case data includes archer_question for interactive Q&A"""
         response = self.session.get(f"{BASE_URL}/api/cases")
         assert response.status_code == 200
         cases = response.json()
         
-        # Find a case with james_question
+        # Find a case with archer_question
         case_with_q = None
         for case in cases:
-            if case.get('james_question'):
+            if case.get('archer_question'):
                 case_with_q = case
                 break
         
         if case_with_q:
-            q = case_with_q['james_question']
-            print(f"James Question found for case: {case_with_q.get('title')}")
+            q = case_with_q['archer_question']
+            print(f"Archer Question found for case: {case_with_q.get('title')}")
             print(f"Question: {q.get('text', 'N/A')[:100]}...")
             print(f"Options: {q.get('options', [])}")
-            print("✅ James Question data valid")
+            print("✅ Archer Question data valid")
         else:
-            print("No cases with james_question found (correct behavior if null)")
+            print("No cases with archer_question found (correct behavior if null)")
     
     def test_case_has_risk_score_history(self):
         """Test case data includes risk_score_history for Score History graph"""
@@ -221,28 +221,28 @@ class TestDashboardFeatures:
         else:
             print("Share returned 403 (may be free plan)")
     
-    def test_james_answer_endpoint(self):
-        """Test POST /api/cases/{case_id}/james-answer"""
-        # Get a case with james_question
+    def test_archer_answer_endpoint(self):
+        """Test POST /api/cases/{case_id}/archer-answer"""
+        # Get a case with archer_question
         response = self.session.get(f"{BASE_URL}/api/cases")
         assert response.status_code == 200
         cases = response.json()
         
         case_with_q = None
         for case in cases:
-            if case.get('james_question'):
+            if case.get('archer_question'):
                 case_with_q = case
                 break
         
         if not case_with_q:
-            pytest.skip("No cases with james_question available")
+            pytest.skip("No cases with archer_question available")
         
         case_id = case_with_q['case_id']
-        question = case_with_q['james_question']
+        question = case_with_q['archer_question']
         
         # Test answering the question
         answer_response = self.session.post(
-            f"{BASE_URL}/api/cases/{case_id}/james-answer",
+            f"{BASE_URL}/api/cases/{case_id}/archer-answer",
             json={
                 "question": question.get('text', ''),
                 "answer": question.get('options', ['Yes'])[0]
@@ -254,11 +254,11 @@ class TestDashboardFeatures:
         
         if answer_response.status_code == 200:
             result = answer_response.json()
-            print(f"James answer processed successfully")
+            print(f"Archer answer processed successfully")
             print(f"Impact: {result.get('impact_summary', 'N/A')}")
-            print("✅ James answer endpoint working")
+            print("✅ Archer answer endpoint working")
         else:
-            print("James answer returned 500 (AI may be rate limited)")
+            print("Archer answer returned 500 (AI may be rate limited)")
 
 
 if __name__ == "__main__":

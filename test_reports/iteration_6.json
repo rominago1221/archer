@@ -13,12 +13,12 @@
   },
 
   "passed_tests": [
-    "Frontend: Upload page shows 'Tell Jasper about your situation (optional)' textarea with data-testid='user-context-section'",
+    "Frontend: Upload page shows 'Tell Archer about your situation (optional)' textarea with data-testid='user-context-section'",
     "Frontend: Textarea has placeholder text about renting apartment",
     "Frontend: Textarea shows character counter (0/500) with data-testid='char-counter'",
     "Frontend: Character counter updates as user types (tested with 46 chars -> shows '46/500')",
     "Frontend: Textarea enforces 500 character max limit (tested with 550 chars -> limited to 500)",
-    "Frontend: Textarea label says 'Your context helps Jasper analyze more accurately.'",
+    "Frontend: Textarea label says 'Your context helps Archer analyze more accurately.'",
     "Backend: POST /api/documents/upload accepts 'user_context' as optional Form field alongside file upload",
     "Backend: Upload with user_context returns analysis successfully (tested with pro user)",
     "Backend: Upload without user_context still works (backward compatible)",
@@ -28,7 +28,7 @@
     "Regression: Upload page still shows file upload zone with data-testid='upload-zone'",
     "Regression: Document Scanner section present with data-testid='document-scanner-section'",
     "Regression: Case selector present with data-testid='case-select'",
-    "Regression: Login with email/password works (test@jasper.com/password123)",
+    "Regression: Login with email/password works (test@archer.com/password123)",
     "Regression: Dashboard loads after login"
   ],
 
@@ -51,11 +51,11 @@
   },
 
   "test_credentials": {
-    "free_user": "test@jasper.com / password123 (has 1 document, will get 403 on upload)",
-    "pro_user": "test_context_check@jasper.com / password123 (unlimited uploads)"
+    "free_user": "test@archer.com / password123 (has 1 document, will get 403 on upload)",
+    "pro_user": "test_context_check@archer.com / password123 (unlimited uploads)"
   },
 
-  "seed_data_creation": "Created pro user test_context_check@jasper.com for testing unlimited uploads",
+  "seed_data_creation": "Created pro user test_context_check@archer.com for testing unlimited uploads",
 
   "retest_needed": false,
 
@@ -68,8 +68,8 @@
       "section_testid": "data-testid='user-context-section' - PRESENT",
       "input_testid": "data-testid='user-context-input' - PRESENT",
       "counter_testid": "data-testid='char-counter' - PRESENT",
-      "title": "'Tell Jasper about your situation (optional)' - PRESENT",
-      "label": "'Your context helps Jasper analyze more accurately.' - PRESENT",
+      "title": "'Tell Archer about your situation (optional)' - PRESENT",
+      "label": "'Your context helps Archer analyze more accurately.' - PRESENT",
       "placeholder": "Contains rental/eviction example - PRESENT",
       "max_length": "500 characters enforced - WORKING",
       "counter_updates": "Updates as user types - WORKING"

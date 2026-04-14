@@ -1,5 +1,5 @@
 """
-Backend API Tests for Jasper Advanced 5-Pass Analysis System:
+Backend API Tests for Archer Advanced 5-Pass Analysis System:
 1. Document upload with advanced analysis
 2. Jurisprudence loading
 3. Battle preview, success probability, procedural defects
@@ -34,7 +34,7 @@ class TestHealthAndBasics:
         response = requests.get(f"{BASE_URL}/api/")
         assert response.status_code == 200
         data = response.json()
-        assert "Jasper" in data.get("message", "")
+        assert "Archer" in data.get("message", "")
         print("PASS: API root endpoint working")
 
 

@@ -214,7 +214,7 @@ const attorneys = [
   {name:'Sarah Mitchell, Esq.',bar:'Bar #A4-12834 NY',spec:'Tenant law \u00B7 Housing disputes',specFr:'Droit locatif \u00B7 Litiges logement',yrs:'14',cases:'2,847',bg:'#fde4cf'},
   {name:'David Chen, Esq.',bar:'Bar #C8-47291 CA',spec:'Employment law \u00B7 Wrongful termination',specFr:'Droit du travail \u00B7 Licenciements abusifs',yrs:'17',cases:'3,412',bg:'#e0e7ff'},
   {name:'Marie Dubois, Esq.',bar:'Barreau Bruxelles #B-8429',spec:'Droit civil \u00B7 Litiges conso \u00B7 Assurances',specFr:'Droit civil \u00B7 Litiges conso \u00B7 Assurances',yrs:'11',cases:'1,823',bg:'#f3e8ff'},
-  {name:'James Rodriguez, Esq.',bar:'Bar #T3-28491 TX',spec:'Insurance law \u00B7 Bad faith claims',specFr:'Droit assurance \u00B7 Mauvaise foi',yrs:'19',cases:'4,156',bg:'#fef3c7'},
+  {name:'Archer Rodriguez, Esq.',bar:'Bar #T3-28491 TX',spec:'Insurance law \u00B7 Bad faith claims',specFr:'Droit assurance \u00B7 Mauvaise foi',yrs:'19',cases:'4,156',bg:'#fef3c7'},
 ];
 
 const CSS = `

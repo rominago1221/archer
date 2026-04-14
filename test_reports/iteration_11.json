@@ -29,9 +29,9 @@
     "Frontend: Settings page Country selector shows 'United States' and 'Belgium / Belgique'",
     "Frontend: When Belgium selected, Region dropdown appears with Wallonie/Bruxelles-Capitale/Vlaanderen-Flandre/Communaute germanophone",
     "Frontend: When Belgium selected, Language dropdown appears with Francais/Nederlands/Deutsch",
-    "Frontend: Yellow info banner with 'Jasper Belgique' appears when Belgium is selected",
+    "Frontend: Yellow info banner with 'Archer Belgique' appears when Belgium is selected",
     "Frontend: Save changes persists country/region/language to profile (success message shown)",
-    "Frontend: Upload page shows Belgian mode indicator (🇧🇪 Jasper Belgique · Wallonie · Droit belge applicable) when user has country=BE",
+    "Frontend: Upload page shows Belgian mode indicator (🇧🇪 Archer Belgique · Wallonie · Droit belge applicable) when user has country=BE",
     "Frontend: Mode toggle (Analyze risk vs Contract Guard) still works in Belgian mode",
     "Frontend: Risk Monitor tab still works in Settings"
   ],
@@ -76,7 +76,7 @@
       "belgium_option": "WORKING - 'Belgium / Belgique' option available",
       "region_dropdown": "WORKING - Appears when Belgium selected with 4 regions",
       "language_dropdown": "WORKING - Appears when Belgium selected with 3 languages",
-      "info_banner": "WORKING - Yellow banner with 'Jasper Belgique' text appears",
+      "info_banner": "WORKING - Yellow banner with 'Archer Belgique' text appears",
       "save_changes": "WORKING - Profile saved successfully message shown"
     },
     "profile_api": {
@@ -96,7 +96,7 @@
       "us_employment": "WORKING - US letter types (no BE_ prefixes)"
     },
     "upload_page_belgian_mode": {
-      "indicator": "WORKING - Shows 🇧🇪 Jasper Belgique · Wallonie · Droit belge applicable",
+      "indicator": "WORKING - Shows 🇧🇪 Archer Belgique · Wallonie · Droit belge applicable",
       "mode_toggle": "WORKING - Analyze risk and Contract Guard modes work"
     },
     "risk_monitor_tab": {

@@ -24,7 +24,7 @@
     },
     "Bug 2 - French UI Labels": {
       "status": "FIXED",
-      "evidence": "All 5 risk score labels in French (Score de Risque, Financier, Urgence, Solidite juridique, Complexite). 'Analyse IA Jasper' label present."
+      "evidence": "All 5 risk score labels in French (Score de Risque, Financier, Urgence, Solidite juridique, Complexite). 'Analyse IA Archer' label present."
     },
     "Bug 3 - Inline Legal References": {
       "status": "FIXED",

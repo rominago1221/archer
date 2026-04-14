@@ -1,5 +1,5 @@
 {
-  "summary": "Complete testing of NextActionsPanel redesign and LetterFormModal features. All features working correctly: TYPE A (letter - blue envelope), TYPE B (call - purple phone), TYPE C (passive - gray clock) action classification, LetterFormModal with 6 form fields + personal note, pre-filled user name from profile, letter generation via /api/cases/{case_id}/generate-action-letter, letter preview with Download PDF + Send via HelloSign + Edit with James options.",
+  "summary": "Complete testing of NextActionsPanel redesign and LetterFormModal features. All features working correctly: TYPE A (letter - blue envelope), TYPE B (call - purple phone), TYPE C (passive - gray clock) action classification, LetterFormModal with 6 form fields + personal note, pre-filled user name from profile, letter generation via /api/cases/{case_id}/generate-action-letter, letter preview with Download PDF + Send via HelloSign + Edit with Archer options.",
 
   "backend_issues": {
     "critical": [],
@@ -15,7 +15,7 @@
   "features_verified": {
     "1_login_and_dashboard": {
       "status": "PASS",
-      "evidence": "Login with test@jasper.legal / JasperPro2026! successful, dashboard loads with data-testid='dashboard-page'"
+      "evidence": "Login with test@archer.legal / ArcherPro2026! successful, dashboard loads with data-testid='dashboard-page'"
     },
     "2_right_panel_redesign": {
       "status": "PASS",
@@ -55,7 +55,7 @@
     },
     "11_generate_letter_button": {
       "status": "PASS",
-      "evidence": "'Generate letter with James' button (data-testid='generate-letter-btn') present and functional"
+      "evidence": "'Generate letter with Archer' button (data-testid='generate-letter-btn') present and functional"
     },
     "12_letter_generation_api": {
       "status": "PASS",
@@ -73,9 +73,9 @@
       "status": "PASS",
       "evidence": "'Send via HelloSign' button present after letter generation"
     },
-    "16_edit_with_james_link": {
+    "16_edit_with_archer_link": {
       "status": "PASS",
-      "evidence": "'Edit with James →' link (data-testid='edit-with-james') opens chat drawer with letter context"
+      "evidence": "'Edit with Archer →' link (data-testid='edit-with-archer') opens chat drawer with letter context"
     },
     "17_case_detail_integration": {
       "status": "PASS",
@@ -113,7 +113,7 @@
     "LetterFormModal.js properly pre-fills senderName from userName prop passed from Dashboard/CaseDetail",
     "Letter generation uses Claude AI via call_claude() with proper system prompt for legal letter formatting",
     "Character counter for personal note correctly limits to 200 characters",
-    "Edit with James link passes letter context to CaseChatDrawer for continued editing"
+    "Edit with Archer link passes letter context to CaseChatDrawer for continued editing"
   ],
 
   "updated_files": [
@@ -126,7 +126,7 @@
   },
 
   "test_credentials": {
-    "us_pro_client": "test@jasper.legal / JasperPro2026!"
+    "us_pro_client": "test@archer.legal / ArcherPro2026!"
   },
 
   "seed_data_creation": "None - used existing seeded data",
@@ -135,7 +135,7 @@
 
   "should_main_agent_self_test": false,
 
-  "context_for_next_testing_agent": "NextActionsPanel and LetterFormModal features fully implemented and tested. Action classification works via heuristic keyword matching (letter keywords: file, motion, challenge, demand, etc.; call keywords: attorney, lawyer, consult, book; passive keywords: wait, monitor, document). LetterFormModal pre-fills user name from profile, has 6 form fields + personal note with 200 char limit, generates letters via Claude AI, shows preview with Download PDF + Send via HelloSign + Edit with James options. Edit with James opens CaseChatDrawer with letter context.",
+  "context_for_next_testing_agent": "NextActionsPanel and LetterFormModal features fully implemented and tested. Action classification works via heuristic keyword matching (letter keywords: file, motion, challenge, demand, etc.; call keywords: attorney, lawyer, consult, book; passive keywords: wait, monitor, document). LetterFormModal pre-fills user name from profile, has 6 form fields + personal note with 200 char limit, generates letters via Claude AI, shows preview with Download PDF + Send via HelloSign + Edit with Archer options. Edit with Archer opens CaseChatDrawer with letter context.",
 
   "mocked_apis": {
     "has_mocked_apis": false,
@@ -146,8 +146,8 @@
     ".screenshots/dashboard_after_login.png - Dashboard with right panel showing Next Actions",
     ".screenshots/letter_form_modal.png - LetterFormModal with pre-filled name and 6 form fields",
     ".screenshots/letter_form_filled.png - LetterFormModal with filled form fields",
-    ".screenshots/letter_generation_result.png - Letter preview with Download PDF, Send via HelloSign, Edit with James",
-    ".screenshots/edit_with_james_chat.png - Chat drawer opened with letter context",
+    ".screenshots/letter_generation_result.png - Letter preview with Download PDF, Send via HelloSign, Edit with Archer",
+    ".screenshots/edit_with_archer_chat.png - Chat drawer opened with letter context",
     ".screenshots/case_detail_loaded.png - CaseDetail page with NextActionsPanel",
     ".screenshots/case_detail_letter_modal.png - LetterFormModal on CaseDetail page"
   ]

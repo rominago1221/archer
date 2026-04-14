@@ -6,7 +6,7 @@ const STEPS = {
     en: [
       {
         title: 'Welcome to Belgian Law',
-        sub: 'James now applies Belgian legislation to your cases.',
+        sub: 'Archer now applies Belgian legislation to your cases.',
         items: [
           { icon: '🏠', text: 'Housing: Belgian rental law differs significantly — bail locatif (3-month deposit max), strict eviction procedures, regional differences (Wallonia, Flanders, Brussels).' },
           { icon: '💼', text: 'Employment: Belgian labor law uses CDI (permanent) / CDD (fixed-term) contracts, mandatory notice periods based on seniority, and strict dismissal protections.' },
@@ -14,19 +14,19 @@ const STEPS = {
         ],
       },
       {
-        title: 'How James adapts',
+        title: 'How Archer adapts',
         sub: 'Everything changes automatically:',
         items: [
-          { icon: '📜', text: 'Legal references: James cites Belgian codes (Code civil, Code judiciaire), regional decrees, and Belgian case law.' },
-          { icon: '🌍', text: 'Three official languages: James understands and generates documents in French, Dutch, or German — matching your language preference.' },
-          { icon: '💡', text: 'Jurisdiction-aware: James knows the difference between Walloon, Flemish, and Brussels Capital Region regulations.' },
+          { icon: '📜', text: 'Legal references: Archer cites Belgian codes (Code civil, Code judiciaire), regional decrees, and Belgian case law.' },
+          { icon: '🌍', text: 'Three official languages: Archer understands and generates documents in French, Dutch, or German — matching your language preference.' },
+          { icon: '💡', text: 'Jurisdiction-aware: Archer knows the difference between Walloon, Flemish, and Brussels Capital Region regulations.' },
         ],
       },
     ],
     fr: [
       {
         title: 'Bienvenue dans le droit belge',
-        sub: 'James applique désormais la législation belge à vos dossiers.',
+        sub: 'Archer applique désormais la législation belge à vos dossiers.',
         items: [
           { icon: '🏠', text: 'Logement : Le droit locatif belge diffère considérablement — bail locatif (3 mois de garantie max), procédures d\'expulsion strictes, différences régionales (Wallonie, Flandre, Bruxelles).' },
           { icon: '💼', text: 'Emploi : Le droit du travail belge utilise les contrats CDI/CDD, des préavis obligatoires selon l\'ancienneté, et des protections strictes contre le licenciement.' },
@@ -34,19 +34,19 @@ const STEPS = {
         ],
       },
       {
-        title: 'Comment James s\'adapte',
+        title: 'Comment Archer s\'adapte',
         sub: 'Tout change automatiquement :',
         items: [
-          { icon: '📜', text: 'Références juridiques : James cite les codes belges (Code civil, Code judiciaire), les décrets régionaux et la jurisprudence belge.' },
-          { icon: '🌍', text: 'Trois langues officielles : James comprend et génère des documents en français, néerlandais ou allemand — selon votre préférence.' },
-          { icon: '💡', text: 'Conscience régionale : James connaît les différences entre la Wallonie, la Flandre et Bruxelles-Capitale.' },
+          { icon: '📜', text: 'Références juridiques : Archer cite les codes belges (Code civil, Code judiciaire), les décrets régionaux et la jurisprudence belge.' },
+          { icon: '🌍', text: 'Trois langues officielles : Archer comprend et génère des documents en français, néerlandais ou allemand — selon votre préférence.' },
+          { icon: '💡', text: 'Conscience régionale : Archer connaît les différences entre la Wallonie, la Flandre et Bruxelles-Capitale.' },
         ],
       },
     ],
     nl: [
       {
         title: 'Welkom bij Belgisch recht',
-        sub: 'James past nu Belgische wetgeving toe op uw dossiers.',
+        sub: 'Archer past nu Belgische wetgeving toe op uw dossiers.',
         items: [
           { icon: '🏠', text: 'Huur: Belgisch huurrecht verschilt aanzienlijk — huurwaarborg (max 3 maanden), strikte uitzettingsprocedures, regionale verschillen (Wallonië, Vlaanderen, Brussel).' },
           { icon: '💼', text: 'Arbeid: Belgisch arbeidsrecht gebruikt contracten van onbepaalde/bepaalde duur, verplichte opzegtermijnen op basis van anciënniteit, en strikte ontslagbescherming.' },
@@ -54,12 +54,12 @@ const STEPS = {
         ],
       },
       {
-        title: 'Hoe James zich aanpast',
+        title: 'Hoe Archer zich aanpast',
         sub: 'Alles verandert automatisch:',
         items: [
-          { icon: '📜', text: 'Juridische referenties: James citeert Belgische wetboeken (Burgerlijk Wetboek, Gerechtelijk Wetboek), regionale decreten en Belgische rechtspraak.' },
-          { icon: '🌍', text: 'Drie officiële talen: James begrijpt en genereert documenten in het Frans, Nederlands of Duits — afgestemd op uw taalvoorkeur.' },
-          { icon: '💡', text: 'Regiobewust: James kent het verschil tussen Waalse, Vlaamse en Brusselse regelgeving.' },
+          { icon: '📜', text: 'Juridische referenties: Archer citeert Belgische wetboeken (Burgerlijk Wetboek, Gerechtelijk Wetboek), regionale decreten en Belgische rechtspraak.' },
+          { icon: '🌍', text: 'Drie officiële talen: Archer begrijpt en genereert documenten in het Frans, Nederlands of Duits — afgestemd op uw taalvoorkeur.' },
+          { icon: '💡', text: 'Regiobewust: Archer kent het verschil tussen Waalse, Vlaamse en Brusselse regelgeving.' },
         ],
       },
     ],
@@ -68,7 +68,7 @@ const STEPS = {
     en: [
       {
         title: 'Welcome to US Law',
-        sub: 'James now applies US federal and state law to your cases.',
+        sub: 'Archer now applies US federal and state law to your cases.',
         items: [
           { icon: '🏠', text: 'Housing: US tenant protections vary by state — security deposit limits, eviction notice periods, and habitability standards differ in every jurisdiction.' },
           { icon: '💼', text: 'Employment: US labor law includes at-will employment (most states), FMLA, ADA protections, and state-specific wage & hour laws.' },
@@ -76,19 +76,19 @@ const STEPS = {
         ],
       },
       {
-        title: 'How James adapts',
+        title: 'How Archer adapts',
         sub: 'Everything changes automatically:',
         items: [
-          { icon: '📜', text: 'Legal references: James cites federal statutes (USC), state codes, and US case law from CourtListener.' },
-          { icon: '🏛️', text: 'State-aware: James applies the specific laws of your state of residence — Florida eviction law is different from California.' },
-          { icon: '💡', text: 'Court systems: James understands federal vs. state court jurisdiction and recommends the appropriate venue.' },
+          { icon: '📜', text: 'Legal references: Archer cites federal statutes (USC), state codes, and US case law from CourtListener.' },
+          { icon: '🏛️', text: 'State-aware: Archer applies the specific laws of your state of residence — Florida eviction law is different from California.' },
+          { icon: '💡', text: 'Court systems: Archer understands federal vs. state court jurisdiction and recommends the appropriate venue.' },
         ],
       },
     ],
     fr: [
       {
         title: 'Bienvenue dans le droit américain',
-        sub: 'James applique désormais le droit fédéral et étatique américain.',
+        sub: 'Archer applique désormais le droit fédéral et étatique américain.',
         items: [
           { icon: '🏠', text: 'Logement : Les protections locataires varient par État — dépôts de garantie, préavis d\'expulsion et normes d\'habitabilité diffèrent selon la juridiction.' },
           { icon: '💼', text: 'Emploi : Le droit du travail américain inclut l\'emploi « at-will », le FMLA, les protections ADA et les lois salariales spécifiques à chaque État.' },
@@ -96,19 +96,19 @@ const STEPS = {
         ],
       },
       {
-        title: 'Comment James s\'adapte',
+        title: 'Comment Archer s\'adapte',
         sub: 'Tout change automatiquement :',
         items: [
-          { icon: '📜', text: 'Références : James cite les lois fédérales (USC), les codes étatiques et la jurisprudence américaine via CourtListener.' },
-          { icon: '🏛️', text: 'Conscience étatique : James applique les lois spécifiques de votre État de résidence.' },
-          { icon: '💡', text: 'Systèmes judiciaires : James comprend la juridiction fédérale vs. étatique et recommande le tribunal approprié.' },
+          { icon: '📜', text: 'Références : Archer cite les lois fédérales (USC), les codes étatiques et la jurisprudence américaine via CourtListener.' },
+          { icon: '🏛️', text: 'Conscience étatique : Archer applique les lois spécifiques de votre État de résidence.' },
+          { icon: '💡', text: 'Systèmes judiciaires : Archer comprend la juridiction fédérale vs. étatique et recommande le tribunal approprié.' },
         ],
       },
     ],
     nl: [
       {
         title: 'Welkom bij Amerikaans recht',
-        sub: 'James past nu Amerikaans federaal en staatsrecht toe.',
+        sub: 'Archer past nu Amerikaans federaal en staatsrecht toe.',
         items: [
           { icon: '🏠', text: 'Huur: Amerikaanse huurbescherming verschilt per staat — borglimieten, opzegtermijnen en bewoonbaarheidsnormen zijn overal anders.' },
           { icon: '💼', text: 'Arbeid: Amerikaans arbeidsrecht omvat "at-will" dienstverband, FMLA, ADA-bescherming en staatsspecifieke loonwetten.' },
@@ -116,12 +116,12 @@ const STEPS = {
         ],
       },
       {
-        title: 'Hoe James zich aanpast',
+        title: 'Hoe Archer zich aanpast',
         sub: 'Alles verandert automatisch:',
         items: [
-          { icon: '📜', text: 'Referenties: James citeert federale wetten (USC), staatswetboeken en Amerikaanse rechtspraak via CourtListener.' },
-          { icon: '🏛️', text: 'Staatsbewust: James past de specifieke wetten van uw staat van verblijf toe.' },
-          { icon: '💡', text: 'Rechtssystemen: James begrijpt federale vs. staatsrechtspraak en adviseert de juiste rechtbank.' },
+          { icon: '📜', text: 'Referenties: Archer citeert federale wetten (USC), staatswetboeken en Amerikaanse rechtspraak via CourtListener.' },
+          { icon: '🏛️', text: 'Staatsbewust: Archer past de specifieke wetten van uw staat van verblijf toe.' },
+          { icon: '💡', text: 'Rechtssystemen: Archer begrijpt federale vs. staatsrechtspraak en adviseert de juiste rechtbank.' },
         ],
       },
     ],

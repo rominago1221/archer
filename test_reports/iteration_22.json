@@ -1,5 +1,5 @@
 {
-  "summary": "Complete testing of Attorney Portal features for Jasper legal tech platform. All 18 features tested and verified working. Backend: 24/24 tests passed. Frontend: All UI flows verified via Playwright.",
+  "summary": "Complete testing of Attorney Portal features for Archer legal tech platform. All 18 features tested and verified working. Backend: 24/24 tests passed. Frontend: All UI flows verified via Playwright.",
 
   "backend_issues": {
     "critical": [],
@@ -55,7 +55,7 @@
     },
     "11. ATTORNEY LEGAL RESEARCH": {
       "status": "PASS",
-      "evidence": "/attorney/research shows James research mode with 'Attorney Research Mode' badge and 'Unlimited usage' indicator"
+      "evidence": "/attorney/research shows Archer research mode with 'Attorney Research Mode' badge and 'Unlimited usage' indicator"
     },
     "12. POST /api/attorney/apply": {
       "status": "PASS",
@@ -107,7 +107,7 @@
 
   "test_credentials": {
     "client": "test_cg@example.com / testpassword123",
-    "attorney": "attorney@jasper.com / attorney123"
+    "attorney": "attorney@archer.com / attorney123"
   },
 
   "seed_data_creation": "Test attorney (Sarah Mitchell) seeded on startup with approved status, 4.8 rating, 47 sessions",

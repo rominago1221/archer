@@ -1,7 +1,7 @@
 """
 Test suite for Bug Fixes - Iteration 19
 Tests for:
-- Bug 1: Legal Chat with James persona (Claude API integration)
+- Bug 1: Legal Chat with Archer persona (Claude API integration)
 - Bug 2: Findings text display (issue/details fallback)
 - Bug 3: French UI labels (language aliases fr=fr-BE)
 """
@@ -14,7 +14,7 @@ import time
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 class TestLegalChatBug1:
-    """Bug 1: Legal Chat - James AI should return real responses, not 'trouble processing'"""
+    """Bug 1: Legal Chat - Archer AI should return real responses, not 'trouble processing'"""
     
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -184,7 +184,7 @@ class TestFrenchLabelsBug3:
         # Response should be in French
         ai_response = response.json().get("response", "")
         # French greeting response indicators
-        french_indicators = ["bonjour", "aide", "question", "juridique", "james"]
+        french_indicators = ["bonjour", "aide", "question", "juridique", "archer"]
         has_french = any(word in ai_response.lower() for word in french_indicators)
         assert has_french or len(ai_response) > 50, f"Response should be in French: {ai_response[:100]}"
 

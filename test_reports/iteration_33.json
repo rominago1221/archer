@@ -15,7 +15,7 @@
   "features_verified": {
     "1_login_dashboard_loads": {
       "status": "PASS",
-      "evidence": "Login with test@jasper.legal / JasperPro2026! successful, dashboard loads with 29 US cases"
+      "evidence": "Login with test@archer.legal / ArcherPro2026! successful, dashboard loads with 29 US cases"
     },
     "2_back_button_on_dashboard": {
       "status": "PASS",
@@ -41,9 +41,9 @@
       "status": "PASS",
       "evidence": "After switching to Belgium: 0 cases in sidebar (test user has no BE cases)"
     },
-    "8_belgium_shows_james_welcome": {
+    "8_belgium_shows_archer_welcome": {
       "status": "PASS",
-      "evidence": "Empty state shows James welcome: 'Welcome. What's your legal situation?'"
+      "evidence": "Empty state shows Archer welcome: 'Welcome. What's your legal situation?'"
     },
     "9_us_pill_restores_cases": {
       "status": "PASS",
@@ -122,7 +122,7 @@
   },
 
   "test_credentials": {
-    "us_pro_client": "test@jasper.legal / JasperPro2026!"
+    "us_pro_client": "test@archer.legal / ArcherPro2026!"
   },
 
   "seed_data_creation": "None - used existing seeded data",
@@ -131,7 +131,7 @@
 
   "should_main_agent_self_test": false,
 
-  "context_for_next_testing_agent": "Jurisdiction switching and back button features fully implemented and tested. JurisdictionPills component is used in Dashboard, CaseDetail, and Landing pages. The test user (test@jasper.legal) has US jurisdiction by default with 29 cases. Switching to Belgium filters cases server-side — this user has 0 Belgian cases, so sidebar shows empty with James welcome state. The $or filter in the backend also includes cases with no country field for backward compatibility. The back button uses window.history.back(). CaseDetail redirects to /dashboard when jurisdiction changes.",
+  "context_for_next_testing_agent": "Jurisdiction switching and back button features fully implemented and tested. JurisdictionPills component is used in Dashboard, CaseDetail, and Landing pages. The test user (test@archer.legal) has US jurisdiction by default with 29 cases. Switching to Belgium filters cases server-side — this user has 0 Belgian cases, so sidebar shows empty with Archer welcome state. The $or filter in the backend also includes cases with no country field for backward compatibility. The back button uses window.history.back(). CaseDetail redirects to /dashboard when jurisdiction changes.",
 
   "mocked_apis": {
     "has_mocked_apis": false,

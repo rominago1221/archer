@@ -1,5 +1,5 @@
 {
-  "summary": "Complete testing of Jurisdiction Onboarding feature. All 9 test cases passed: Login successful, onboarding overlay appears on first jurisdiction switch, Step 1 shows correct Belgian content (flag, title, 3 educational cards for Housing/Employment/Debt), Next button advances to Step 2, Step 2 shows 'How James adapts' with 3 cards (Legal references/Languages/Jurisdiction awareness), 'Got it — let's go' dismisses overlay, localStorage remembers seen jurisdictions (onboarding doesn't show again), X button also dismisses and saves to localStorage. Code review confirmed content exists for both BE and US jurisdictions in EN/FR/NL.",
+  "summary": "Complete testing of Jurisdiction Onboarding feature. All 9 test cases passed: Login successful, onboarding overlay appears on first jurisdiction switch, Step 1 shows correct Belgian content (flag, title, 3 educational cards for Housing/Employment/Debt), Next button advances to Step 2, Step 2 shows 'How Archer adapts' with 3 cards (Legal references/Languages/Jurisdiction awareness), 'Got it — let's go' dismisses overlay, localStorage remembers seen jurisdictions (onboarding doesn't show again), X button also dismisses and saves to localStorage. Code review confirmed content exists for both BE and US jurisdictions in EN/FR/NL.",
 
   "backend_issues": {
     "critical": [],
@@ -15,11 +15,11 @@
   "features_verified": {
     "1_login_dashboard_loads": {
       "status": "PASS",
-      "evidence": "Login with test@jasper.legal / JasperPro2026! successful, dashboard loads"
+      "evidence": "Login with test@archer.legal / ArcherPro2026! successful, dashboard loads"
     },
     "2_clear_localstorage_switch_belgium_onboarding_appears": {
       "status": "PASS",
-      "evidence": "After clearing localStorage key 'jasper_jurisdiction_onboarded', switching to Belgium triggers onboarding overlay (data-testid='jurisdiction-onboarding')"
+      "evidence": "After clearing localStorage key 'archer_jurisdiction_onboarded', switching to Belgium triggers onboarding overlay (data-testid='jurisdiction-onboarding')"
     },
     "3_step1_belgian_content": {
       "status": "PASS",
@@ -29,9 +29,9 @@
       "status": "PASS",
       "evidence": "Clicking 'Next →' button (data-testid='onboarding-next-btn') advances to step 2"
     },
-    "5_step2_how_james_adapts": {
+    "5_step2_how_archer_adapts": {
       "status": "PASS",
-      "evidence": "Step 2 shows 'How James adapts' with 3 cards: Legal references (Belgian codes), Three official languages (French/Dutch/German), Jurisdiction-aware (Walloon/Flemish/Brussels)"
+      "evidence": "Step 2 shows 'How Archer adapts' with 3 cards: Legal references (Belgian codes), Three official languages (French/Dutch/German), Jurisdiction-aware (Walloon/Flemish/Brussels)"
     },
     "6_got_it_button_dismisses": {
       "status": "PASS",
@@ -54,15 +54,15 @@
   "code_review": {
     "JurisdictionOnboarding.js": {
       "structure": "Well-structured 2-step overlay component with STEPS object containing content for BE and US in en/fr/nl",
-      "localStorage_handling": "Proper implementation with hasSeenOnboarding() and markOnboardingSeen() functions using 'jasper_jurisdiction_onboarded' key",
+      "localStorage_handling": "Proper implementation with hasSeenOnboarding() and markOnboardingSeen() functions using 'archer_jurisdiction_onboarded' key",
       "data_testids": "All required data-testid attributes present: jurisdiction-onboarding, onboarding-next-btn, close-onboarding",
       "content_verification": {
-        "BE_en": "Welcome to Belgian Law - Housing/Employment/Debt + How James adapts",
-        "BE_fr": "Bienvenue dans le droit belge - Logement/Emploi/Dettes + Comment James s'adapte",
-        "BE_nl": "Welkom bij Belgisch recht - Huur/Arbeid/Schulden + Hoe James zich aanpast",
-        "US_en": "Welcome to US Law - Housing/Employment/Debt + How James adapts",
-        "US_fr": "Bienvenue dans le droit américain - Logement/Emploi/Dettes + Comment James s'adapte",
-        "US_nl": "Welkom bij Amerikaans recht - Huur/Arbeid/Schulden + Hoe James zich aanpast"
+        "BE_en": "Welcome to Belgian Law - Housing/Employment/Debt + How Archer adapts",
+        "BE_fr": "Bienvenue dans le droit belge - Logement/Emploi/Dettes + Comment Archer s'adapte",
+        "BE_nl": "Welkom bij Belgisch recht - Huur/Arbeid/Schulden + Hoe Archer zich aanpast",
+        "US_en": "Welcome to US Law - Housing/Employment/Debt + How Archer adapts",
+        "US_fr": "Bienvenue dans le droit américain - Logement/Emploi/Dettes + Comment Archer s'adapte",
+        "US_nl": "Welkom bij Amerikaans recht - Huur/Arbeid/Schulden + Hoe Archer zich aanpast"
       }
     },
     "Dashboard.js": {
@@ -93,7 +93,7 @@
   },
 
   "test_credentials": {
-    "us_pro_client": "test@jasper.legal / JasperPro2026!"
+    "us_pro_client": "test@archer.legal / ArcherPro2026!"
   },
 
   "seed_data_creation": "None - used existing seeded data",
@@ -102,7 +102,7 @@
 
   "should_main_agent_self_test": false,
 
-  "context_for_next_testing_agent": "Jurisdiction onboarding feature fully implemented and tested. The onboarding shows only on FIRST switch to a new jurisdiction. localStorage key 'jasper_jurisdiction_onboarded' stores JSON object like {BE: true, US: true}. The test user (test@jasper.legal) has US jurisdiction by default. To test onboarding, clear localStorage first with page.evaluate('localStorage.removeItem(\"jasper_jurisdiction_onboarded\")'), then switch jurisdiction. Both US and Belgian onboarding content available in EN/FR/NL.",
+  "context_for_next_testing_agent": "Jurisdiction onboarding feature fully implemented and tested. The onboarding shows only on FIRST switch to a new jurisdiction. localStorage key 'archer_jurisdiction_onboarded' stores JSON object like {BE: true, US: true}. The test user (test@archer.legal) has US jurisdiction by default. To test onboarding, clear localStorage first with page.evaluate('localStorage.removeItem(\"archer_jurisdiction_onboarded\")'), then switch jurisdiction. Both US and Belgian onboarding content available in EN/FR/NL.",
 
   "mocked_apis": {
     "has_mocked_apis": false,

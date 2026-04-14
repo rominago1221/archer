@@ -1,5 +1,5 @@
 """
-Test suite for Jasper Jurisdiction/Language Architecture Changes
+Test suite for Archer Jurisdiction/Language Architecture Changes
 Tests:
 1. Landing page selectors (jurisdiction + language)
 2. Backend user model with jurisdiction field
