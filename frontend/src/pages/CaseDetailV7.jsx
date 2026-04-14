@@ -111,7 +111,7 @@ export default function CaseDetailV7() {
   }
 
   const progressStep = deriveProgressStep(caseDoc, letters);
-  const strategy = deriveStrategy(caseDoc, t);
+  const strategy = deriveStrategy(caseDoc, t, language);
   const documentCount = caseDoc.document_count ?? documents.length ?? 0;
 
   // Sprint 2 derivations

@@ -17,7 +17,7 @@
       "step3": "Lettre<br>rédigée",
       "step4": "Signature<br>avocat",
       "step5": "Envoi<br>recommandé",
-      "step6": "Suivi de<br>la réponse"
+      "step6": "Suivi<br>réponse"
     },
     "hero": {
       "score_label": "SCORE DE RISQUE ARCHER",
@@ -33,6 +33,10 @@
       "risk_moderate": "RISQUE MODÉRÉ",
       "risk_high": "RISQUE ÉLEVÉ",
       "risk_critical": "RISQUE CRITIQUE",
+      "tagline_low": "Solide, peu de risques.",
+      "tagline_moderate": "Sérieux, mais contestable.",
+      "tagline_high": "Difficile, mais pas perdu.",
+      "tagline_critical": "Urgent, agir maintenant.",
       "deadline_label": "ÉCHÉANCE CRITIQUE",
       "deadline_days_unit": "jours",
       "deadline_before_label": "avant majoration",
@@ -137,7 +141,10 @@
       "trend_up": "Score amélioré de {delta} points",
       "trend_down": "Score aggravé de {delta} points",
       "trend_stable": "Score stable",
-      "axis_labels": ["100", "75", "50", "0"]
+      "axis_labels": ["100", "75", "50", "0"],
+      "single_point_title": "Score actuel",
+      "single_point_message": "Ton score se mettra à jour à chaque nouveau document ajouté à ton dossier.",
+      "single_point_out_of": "/100"
     },
     "archer_questions": {
       "title_one": "Archer a {count} question sur ton dossier",
@@ -201,7 +208,7 @@
       "step3": "Letter<br>drafted",
       "step4": "Attorney<br>signature",
       "step5": "Certified<br>mailing",
-      "step6": "Response<br>tracking"
+      "step6": "Tracking"
     },
     "hero": {
       "score_label": "ARCHER RISK SCORE",
@@ -217,6 +224,10 @@
       "risk_moderate": "MODERATE RISK",
       "risk_high": "HIGH RISK",
       "risk_critical": "CRITICAL RISK",
+      "tagline_low": "Strong case, low risk.",
+      "tagline_moderate": "Serious, but contestable.",
+      "tagline_high": "Tough, but not lost.",
+      "tagline_critical": "Urgent — act now.",
       "deadline_label": "CRITICAL DEADLINE",
       "deadline_days_unit": "days",
       "deadline_before_label": "before increase",
@@ -321,7 +332,10 @@
       "trend_up": "Score improved by {delta} points",
       "trend_down": "Score worsened by {delta} points",
       "trend_stable": "Score stable",
-      "axis_labels": ["100", "75", "50", "0"]
+      "axis_labels": ["100", "75", "50", "0"],
+      "single_point_title": "Current score",
+      "single_point_message": "Your score will update every time you add a new document to this case.",
+      "single_point_out_of": "/100"
     },
     "archer_questions": {
       "title_one": "Archer has {count} question about your case",

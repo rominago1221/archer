@@ -21,6 +21,51 @@ export default function ScoreHistoryGraph({ scoreHistory = [], language = 'fr' }
   const t = useDashboardT(language);
   if (!Array.isArray(scoreHistory) || scoreHistory.length === 0) return null;
 
+  // Single data point → skip the SVG (a lone circle in a stretched viewBox
+  // renders as a flat ellipse) and show a message card instead.
+  if (scoreHistory.length === 1) {
+    const score = Number(scoreHistory[0].score) || 0;
+    const color = score >= 80 ? '#b91c1c' : score >= 60 ? '#f59e0b' : score >= 30 ? '#f59e0b' : '#16a34a';
+    return (
+      <div
+        data-testid="score-history-single"
+        style={{
+          background: '#ffffff', border: '0.5px solid #e2e0db',
+          borderRadius: 14, padding: '20px 24px', marginBottom: 20,
+        }}
+      >
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#0a0a0f', marginBottom: 16 }}>
+          {t('score_history.title')}
+        </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: 20, padding: '12px 4px',
+        }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 9, fontWeight: 800, color: '#9ca3af', letterSpacing: '1.2px', marginBottom: 6 }}>
+              {t('score_history.single_point_title')}
+            </div>
+            <div style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>
+              {t('score_history.single_point_message')}
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexShrink: 0 }}>
+            <div style={{
+              fontSize: 56, fontWeight: 900, color,
+              letterSpacing: -2, lineHeight: 0.9,
+              fontVariantNumeric: 'tabular-nums',
+            }}>
+              {score}
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: `${color}80` }}>
+              {t('score_history.single_point_out_of')}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // SVG viewBox dimensions. Fixed so the coordinate math is easy to reason about.
   const W = 600;
   const H = 140;

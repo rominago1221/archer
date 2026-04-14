@@ -111,18 +111,43 @@ function resolveLang(language) {
   return short === 'en' ? 'en' : 'fr';
 }
 
+const TARGET_COUNT = 3;
+
 export function deriveArcherQuestions(caseDoc, caseTypeV7 = 'generic', language = 'fr') {
   const lang = resolveLang(language);
-  const aq = caseDoc?.archer_question;
-  if (aq && typeof aq === 'object' && aq.text) {
-    const choices = Array.isArray(aq.options) && aq.options.length > 0
-      ? aq.options
-      : GENERIC_CHOICES[lang];
-    return [{ id: 'aq-0', text: aq.text, choices }];
+
+  // Backend currently exposes either a single `archer_question` or, in the
+  // future, an `archer_questions` list. Normalise to an array so we can
+  // merge with the generic fallbacks.
+  const backendList = [];
+  if (Array.isArray(caseDoc?.archer_questions)) {
+    backendList.push(...caseDoc.archer_questions);
+  } else if (caseDoc?.archer_question && typeof caseDoc.archer_question === 'object' && caseDoc.archer_question.text) {
+    backendList.push(caseDoc.archer_question);
   }
 
-  // Fallback — 3 generic questions per case type.
+  const fromBackend = backendList.slice(0, TARGET_COUNT).map((q, i) => ({
+    id: `aq-${i}`,
+    text: q.text,
+    choices: Array.isArray(q.options) && q.options.length > 0
+      ? q.options
+      : (Array.isArray(q.choices) && q.choices.length > 0 ? q.choices : GENERIC_CHOICES[lang]),
+  }));
+
+  if (fromBackend.length >= TARGET_COUNT) return fromBackend;
+
+  // Pad with generic fallbacks per case_type until we reach TARGET_COUNT.
   const table = FALLBACK_QUESTIONS[lang] || FALLBACK_QUESTIONS.fr;
-  const list = table[caseTypeV7] || table.generic;
-  return list.map((q, i) => ({ id: `fallback-${i}`, text: q.text, choices: q.choices }));
+  const pool = table[caseTypeV7] || table.generic;
+
+  // Skip fallback questions whose text overlaps an already-included one.
+  const seenTexts = new Set(fromBackend.map((q) => q.text.toLowerCase()));
+  const padded = [...fromBackend];
+  for (const q of pool) {
+    if (padded.length >= TARGET_COUNT) break;
+    if (seenTexts.has(q.text.toLowerCase())) continue;
+    padded.push({ id: `fallback-${padded.length}`, text: q.text, choices: q.choices });
+    seenTexts.add(q.text.toLowerCase());
+  }
+  return padded;
 }

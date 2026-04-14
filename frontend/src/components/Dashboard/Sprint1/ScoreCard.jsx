@@ -7,10 +7,29 @@ import { getRiskBand, getSubScoreColor } from '../../../utils/dashboard/riskLabe
 //   subscores   { urgency, financial, complexity, legal }
 //   tagline     string (from backend key_insight)
 //   language    'fr' | 'en'
+// Keeps the tagline short so it doesn't duplicate the longer intro rendered
+// by StrategySection. We accept the backend's key_insight only if it's
+// already tight (<= 60 chars, no sentence break); otherwise we fall back to
+// a generic tagline keyed on the risk level.
+function deriveShortTagline(raw, level, t) {
+  const genericKey = `hero.tagline_${level}`;
+  const generic = t(genericKey);
+  if (!raw || typeof raw !== 'string') return generic;
+  const trimmed = raw.trim();
+  if (!trimmed) return generic;
+  // Cut at the first sentence break; if still too long, fall back to generic.
+  const firstSentence = trimmed.split(/[.!?]/)[0].trim();
+  if (firstSentence.length > 0 && firstSentence.length <= 60 && firstSentence.split(/\s+/).length <= 8) {
+    return firstSentence.endsWith('.') ? firstSentence : `${firstSentence}.`;
+  }
+  return generic;
+}
+
 export default function ScoreCard({ score = 0, subscores = {}, tagline = '', language = 'fr' }) {
   const t = useDashboardT(language);
   const band = getRiskBand(score);
   const riskLabel = t(`hero.risk_${band.level}`);
+  const shortTagline = deriveShortTagline(tagline, band.level, t);
 
   const items = [
     { key: 'urgency', value: subscores.urgency || 0 },
@@ -63,18 +82,21 @@ export default function ScoreCard({ score = 0, subscores = {}, tagline = '', lan
         {riskLabel}
       </div>
 
-      {tagline && (
-        <div style={{
-          fontSize: 16, fontWeight: 800, color: '#0a0a0f',
-          fontStyle: 'italic', letterSpacing: -0.3, lineHeight: 1.2,
-          paddingTop: 12, paddingBottom: 12,
-          borderTop: '0.5px solid #e2e0db',
-        }}>
-          {tagline}
+      {shortTagline && (
+        <div
+          data-testid="score-tagline"
+          style={{
+            fontSize: 16, fontWeight: 800, color: '#0a0a0f',
+            fontStyle: 'italic', letterSpacing: -0.3, lineHeight: 1.2,
+            paddingTop: 12, paddingBottom: 12,
+            borderTop: '0.5px solid #e2e0db',
+          }}
+        >
+          {shortTagline}
         </div>
       )}
 
-      <div style={{ paddingTop: 12, borderTop: tagline ? 'none' : '0.5px solid #e2e0db' }}>
+      <div style={{ paddingTop: 12, borderTop: shortTagline ? 'none' : '0.5px solid #e2e0db' }}>
         <div style={{ fontSize: 9, fontWeight: 800, color: '#9ca3af', letterSpacing: '1.2px', marginBottom: 10 }}>
           {t('hero.subscores_label')}
         </div>

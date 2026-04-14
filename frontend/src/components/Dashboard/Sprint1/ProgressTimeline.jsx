@@ -46,7 +46,16 @@ export default function ProgressTimeline({ currentStep = 2, language = 'fr' }) {
           const isLast = i === steps.length - 1;
 
           return (
-            <div key={s.num} style={{ flex: 1, textAlign: 'center', position: 'relative' }}>
+            <div
+              key={s.num}
+              style={{
+                flex: '1 1 0',
+                minWidth: 0,
+                textAlign: 'center',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+            >
               {!isLast && (
                 <div style={{
                   position: 'absolute',
@@ -79,6 +88,8 @@ export default function ProgressTimeline({ currentStep = 2, language = 'fr' }) {
                   fontSize: 10, lineHeight: 1.2,
                   color: labelColor,
                   fontWeight: labelWeight,
+                  wordBreak: 'break-word',
+                  padding: '0 4px',
                 }}
                 dangerouslySetInnerHTML={{ __html: t(s.labelKey) }}
               />

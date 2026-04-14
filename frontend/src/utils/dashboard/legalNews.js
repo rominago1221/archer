@@ -37,24 +37,13 @@ function relativeDate(dateIso, ageDays, language) {
 }
 
 // Returns an array of 2-3 news items for the LegalNewsSection.
-// Prefers caseDoc.recent_case_law; falls back to per-case_type placeholders.
+//
+// TODO: replace with a real curated news service per case_type when a backend
+// endpoint is ready. Currently always using the i18n fallback because
+// recent_case_law from the backend (sourced from CourtListener) is too noisy
+// and not case-type-aware (returns random US cases on BE traffic dossiers).
 export function deriveLegalNews(caseDoc, caseTypeV7 = 'generic', language = 'fr') {
-  const backendNews = Array.isArray(caseDoc?.recent_case_law) ? caseDoc.recent_case_law : [];
   const lang = language === 'fr' ? 'fr' : 'en';
-
-  if (backendNews.length > 0) {
-    return backendNews.slice(0, 3).map((n, i) => ({
-      id: `news-${i}`,
-      type: 'jurisprudence',
-      date_label: relativeDate(n.date, null, lang),
-      text: n.ruling_summary
-        ? `${n.case_name || ''} \u2014 ${n.ruling_summary}`.replace(/^\s*\u2014\s*/, '')
-        : (n.case_name || ''),
-      impact: n.court ? `${lang === 'fr' ? 'Juridiction' : 'Jurisdiction'} : ${n.court}` : '',
-      source_url: n.source_url || null,
-    }));
-  }
-
   const table = LEGAL_NEWS_FALLBACK[lang] || LEGAL_NEWS_FALLBACK.fr;
   const list = table[caseTypeV7] || table.generic;
   return list.map((n, i) => ({

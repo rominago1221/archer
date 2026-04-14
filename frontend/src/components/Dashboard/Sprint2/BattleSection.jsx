@@ -183,9 +183,12 @@ function ArgCard({ arg, side, language }) {
   const forceColor = arg.strength === 'strong' ? '#15803d'
     : arg.strength === 'weak' ? '#b91c1c' : '#b45309';
 
+  const displayText = arg.short_title || arg.argument;
+
   return (
     <div
       data-testid={`battle-arg-${side}-${arg.number}`}
+      title={arg.argument}
       style={{
         background: '#fafaf8',
         borderRadius: 10,
@@ -202,7 +205,7 @@ function ArgCard({ arg, side, language }) {
         background: isYou ? '#eff6ff' : '#fee2e2',
       }}>#{arg.number}</span>
       <span style={{ fontSize: 12, fontWeight: 600, color: '#0a0a0f', lineHeight: 1.4 }}>
-        {arg.argument}
+        {displayText}
       </span>
       <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 6 }}>
         {t('battle.force_label')}:{' '}
