@@ -93,6 +93,56 @@
       "view_source": "Voir le texte officiel",
       "loading_explanation": "Archer prépare l'explication…",
       "no_explanation": "Archer peut t'en dire plus en chat sur cette référence."
+    },
+    "battle": {
+      "title_label": "— RAPPORT DE FORCE TACTIQUE —",
+      "title": "⚔️ Tes arguments vs ceux du {opponent}",
+      "you_label": "VOS ARGUMENTS",
+      "you_count_one": "{count} angle d'attaque",
+      "you_count_many": "{count} angles d'attaque",
+      "opponent_count_one": "{count} angle d'attaque",
+      "opponent_count_many": "{count} angles d'attaque",
+      "force_label": "Force",
+      "force_strong": "Solide",
+      "force_medium": "Moyen",
+      "force_weak": "Faible",
+      "verdict_prefix": "Verdict d'Archer : tes arguments sont plus solides sur",
+      "verdict_points_unit": "points sur {total}",
+      "verdict_advantage_suffix": "Tu as l'avantage tactique.",
+      "verdict_balanced": "Le rapport de force est équilibré."
+    },
+    "findings": {
+      "critical_title": "POINTS CRITIQUES · {count}",
+      "strong_title": "TES ARMES · {count} POINTS FORTS",
+      "badge_violation": "VIOLATION",
+      "badge_deadline": "DEADLINE",
+      "badge_opportunity": "OPPORTUNITÉ",
+      "pedagogy_consequence_label": "⚠️ CONSÉQUENCE SI TU NE FAIS RIEN",
+      "pedagogy_how_to_use_label": "✓ COMMENT TU L'UTILISES"
+    },
+    "documents": {
+      "section_title": "📄 Documents du dossier",
+      "counter_one": "{count} document analysé",
+      "counter_many": "{count} documents analysés",
+      "status_analyzed": "ANALYSÉ",
+      "status_analyzing": "EN ANALYSE",
+      "status_error": "ERREUR",
+      "add_document_btn": "+ Ajouter un document",
+      "paywall_title": "Ajouter un autre document à ce dossier",
+      "paywall_subtitle": "Tu as utilisé ton analyse gratuite. Passe en Protect pour ajouter des documents illimités.",
+      "paywall_cta": "Voir Protect →"
+    },
+    "score_history": {
+      "title": "📈 Évolution du score",
+      "trend_up": "Score amélioré de {delta} points",
+      "trend_down": "Score aggravé de {delta} points",
+      "trend_stable": "Score stable",
+      "axis_labels": ["100", "75", "50", "0"]
+    },
+    "archer_questions": {
+      "title_one": "Archer a {count} question sur ton dossier",
+      "title_many": "Archer a {count} questions sur ton dossier",
+      "subtitle": "Tes réponses vont affiner ton score et améliorer la stratégie"
     }
   },
   "en": {
@@ -189,6 +239,56 @@
       "view_source": "View official text",
       "loading_explanation": "Archer is preparing the explanation…",
       "no_explanation": "Archer can tell you more about this reference in chat."
+    },
+    "battle": {
+      "title_label": "— TACTICAL BALANCE OF POWER —",
+      "title": "⚔️ Your arguments vs the {opponent}'s",
+      "you_label": "YOUR ARGUMENTS",
+      "you_count_one": "{count} angle of attack",
+      "you_count_many": "{count} angles of attack",
+      "opponent_count_one": "{count} angle of attack",
+      "opponent_count_many": "{count} angles of attack",
+      "force_label": "Strength",
+      "force_strong": "Strong",
+      "force_medium": "Medium",
+      "force_weak": "Weak",
+      "verdict_prefix": "Archer's verdict: your arguments are stronger on",
+      "verdict_points_unit": "of {total} points",
+      "verdict_advantage_suffix": "You have the tactical advantage.",
+      "verdict_balanced": "The balance of power is even."
+    },
+    "findings": {
+      "critical_title": "CRITICAL POINTS · {count}",
+      "strong_title": "YOUR WEAPONS · {count} STRONG POINTS",
+      "badge_violation": "VIOLATION",
+      "badge_deadline": "DEADLINE",
+      "badge_opportunity": "OPPORTUNITY",
+      "pedagogy_consequence_label": "⚠️ CONSEQUENCE IF YOU DO NOTHING",
+      "pedagogy_how_to_use_label": "✓ HOW TO USE IT"
+    },
+    "documents": {
+      "section_title": "📄 Case documents",
+      "counter_one": "{count} document analyzed",
+      "counter_many": "{count} documents analyzed",
+      "status_analyzed": "ANALYZED",
+      "status_analyzing": "ANALYZING",
+      "status_error": "ERROR",
+      "add_document_btn": "+ Add a document",
+      "paywall_title": "Add another document to this case",
+      "paywall_subtitle": "You have used your free analysis. Upgrade to Protect to add unlimited documents.",
+      "paywall_cta": "See Protect →"
+    },
+    "score_history": {
+      "title": "📈 Score evolution",
+      "trend_up": "Score improved by {delta} points",
+      "trend_down": "Score worsened by {delta} points",
+      "trend_stable": "Score stable",
+      "axis_labels": ["100", "75", "50", "0"]
+    },
+    "archer_questions": {
+      "title_one": "Archer has {count} question about your case",
+      "title_many": "Archer has {count} questions about your case",
+      "subtitle": "Your answers will refine your score and improve the strategy"
     }
   }
 }

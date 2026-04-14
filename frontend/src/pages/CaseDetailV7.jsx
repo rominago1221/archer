@@ -10,8 +10,20 @@ import HeroSection from '../components/Dashboard/Sprint1/HeroSection';
 import StrategySection from '../components/Dashboard/Sprint1/StrategySection';
 import GenerateLetterCTA from '../components/Dashboard/Sprint1/GenerateLetterCTA';
 import GenerateLetterPopup from '../components/Dashboard/Sprint1/GenerateLetterPopup';
+import BattleSection from '../components/Dashboard/Sprint2/BattleSection';
+import FindingsSection from '../components/Dashboard/Sprint2/FindingsSection';
+import DocumentsSection from '../components/Dashboard/Sprint2/DocumentsSection';
+import ScoreHistoryGraph from '../components/Dashboard/Sprint2/ScoreHistoryGraph';
+import ArcherQuestionsSection from '../components/Dashboard/Sprint2/ArcherQuestionsSection';
 import { deriveProgressStep } from '../utils/dashboard/progressStep';
 import { deriveStrategy } from '../utils/dashboard/strategyFallback';
+import { deriveBattle } from '../utils/dashboard/battle';
+import { deriveFindings } from '../utils/dashboard/findings';
+import { deriveScoreHistory } from '../utils/dashboard/scoreHistory';
+import { deriveArcherQuestions } from '../utils/dashboard/archerQuestions';
+import { deriveFreemiumExhausted } from '../utils/dashboard/documents';
+import { mapBackendCaseType } from '../utils/dashboard/caseType';
+import { getOpponentLabel } from '../utils/dashboard/opponent';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -97,6 +109,27 @@ export default function CaseDetailV7() {
   const strategy = deriveStrategy(caseDoc, t);
   const documentCount = caseDoc.document_count ?? documents.length ?? 0;
 
+  // Sprint 2 derivations
+  const caseTypeV7 = mapBackendCaseType(caseDoc.type);
+  const opponentLabel = getOpponentLabel(caseTypeV7, country, language);
+  const battle = deriveBattle(caseDoc);
+  const { critical: criticalFindings, strong: strongFindings } = deriveFindings(caseDoc);
+  const scoreHistory = deriveScoreHistory(caseDoc, language);
+  const archerQuestions = deriveArcherQuestions(caseDoc, caseTypeV7, language);
+  const freemiumExhausted = deriveFreemiumExhausted(user, documents);
+
+  const handleAnswerQuestion = (payload) => {
+    // TODO(sprint-plumbing): POST /api/cases/{caseId}/archer-answer with payload
+    console.log('[stub] archer question answered', payload);
+  };
+  const handleAddDocument = () => {
+    navigate('/upload');
+  };
+  const handleUpgrade = () => {
+    // TODO(sprint-plumbing): redirect to Stripe / pricing flow
+    console.log('[stub] upgrade flow for case', caseId);
+  };
+
   return (
     <div
       data-testid="case-detail-v7"
@@ -127,6 +160,46 @@ export default function CaseDetailV7() {
           onClose={() => setPopupOpen(false)}
           onChoiceSelect={handleChoiceSelect}
           country={country}
+          language={language}
+        />
+
+        {/* ── Sprint 2 sections ──────────────────────────────────────── */}
+        <BattleSection
+          battle={battle}
+          opponentLabel={opponentLabel}
+          language={language}
+        />
+
+        <FindingsSection
+          type="critical"
+          findings={criticalFindings}
+          country={country}
+          language={language}
+        />
+
+        <FindingsSection
+          type="strong"
+          findings={strongFindings}
+          country={country}
+          language={language}
+        />
+
+        <DocumentsSection
+          documents={documents}
+          isFreemiumExhausted={freemiumExhausted}
+          onAddDocument={handleAddDocument}
+          onUpgrade={handleUpgrade}
+          language={language}
+        />
+
+        <ScoreHistoryGraph
+          scoreHistory={scoreHistory}
+          language={language}
+        />
+
+        <ArcherQuestionsSection
+          questions={archerQuestions}
+          onAnswer={handleAnswerQuestion}
           language={language}
         />
       </div>
