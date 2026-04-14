@@ -26,6 +26,8 @@ export function useAnalysisStream(caseId) {
     mountedRef.current = true;
     emittedRef.current = new Set();
     sceneStartRef.current = Date.now();
+    const startedAt = Date.now();
+    const HARD_TIMEOUT_MS = 120000;
 
     const API = process.env.REACT_APP_BACKEND_URL || '';
 
@@ -65,11 +67,25 @@ export function useAnalysisStream(caseId) {
     const pollFn = () => {
       if (stopped || !mountedRef.current) return;
       pollNum++;
+      // Hard timeout — if backend never reports active+score after 90s, surface an error.
+      if (Date.now() - startedAt > HARD_TIMEOUT_MS) {
+        stopped = true;
+        window.clearInterval(intervalId);
+        if (mountedRef.current) setError('Analysis timed out. Please try again.');
+        return;
+      }
       fetch(`${API}/api/cases/${caseId}`, { credentials: 'include' })
         .then(r => r.ok ? r.json() : null)
         .then(c => {
           if (!c || stopped || !mountedRef.current) return;
           window.__cinPollResult = { status: c.status, score: c.risk_score, pollNum };
+          // Backend signalled failure — stop polling and bubble up.
+          if (c.status === 'error') {
+            stopped = true;
+            window.clearInterval(intervalId);
+            if (mountedRef.current) setError(c.ai_summary || 'Analysis failed. Please try again.');
+            return;
+          }
           if (c.status !== 'active' || (c.risk_score || 0) === 0) return;
 
           stopped = true;

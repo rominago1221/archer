@@ -1363,7 +1363,7 @@ async def analyze_stream_endpoint(
             await db.cases.update_one({"case_id": case_id}, {"$unset": {"stream_active": ""}})
 
     # Start analysis in background — runs independently of SSE connection
-    asyncio.create_task(run_analysis_background())
+    _spawn_tracked_task(run_analysis_background())
 
     async def event_generator():
         while True:
@@ -1387,26 +1387,30 @@ async def analyze_stream_endpoint(
 
 
 
-@api_router.post("/analyze/trigger")
-async def analyze_trigger_endpoint(
-    case_id: str = Query(...),
-    current_user: User = Depends(get_current_user)
-):
-    """Fire-and-forget endpoint: starts analysis in background, returns immediately.
-    Frontend polls /api/cases/:id for progress."""
-    case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
-    if not case_doc:
-        raise HTTPException(status_code=404, detail="Case not found")
+# Module-level set to keep strong references to background tasks (prevents GC).
+_BACKGROUND_TASKS: set = set()
 
-    # Already analyzed
+
+def _spawn_tracked_task(coro):
+    """Schedule a coroutine and retain a strong reference until it finishes."""
+    task = asyncio.create_task(coro)
+    _BACKGROUND_TASKS.add(task)
+    task.add_done_callback(_BACKGROUND_TASKS.discard)
+    return task
+
+
+async def _start_streaming_analysis(case_id: str, user_country: str, user_region: str, user_language: str) -> dict:
+    """Atomically claim a case for streaming analysis and spawn the background pipeline.
+    Returns a dict describing the outcome ({"status": "started"|"in_progress"|"already_complete"|"error", ...}).
+    Callers can ignore the result — the pipeline runs to completion regardless."""
+    case_doc = await db.cases.find_one({"case_id": case_id}, {"_id": 0})
+    if not case_doc:
+        return {"status": "error", "message": "Case not found"}
     if case_doc.get("status") == "active" and case_doc.get("risk_score", 0) > 0:
         return {"status": "already_complete", "case_id": case_id}
-
-    # Already running
     if case_doc.get("stream_active"):
         return {"status": "in_progress", "case_id": case_id}
 
-    # Prevent duplicates
     updated = await db.cases.update_one(
         {"case_id": case_id, "status": "analyzing", "stream_active": {"$ne": True}},
         {"$set": {"stream_active": True}}
@@ -1416,13 +1420,15 @@ async def analyze_trigger_endpoint(
 
     doc = await db.documents.find_one({"case_id": case_id}, {"_id": 0})
     if not doc or not doc.get("extracted_text"):
+        await db.cases.update_one(
+            {"case_id": case_id},
+            {"$set": {"status": "error", "risk_score": 1, "ai_summary": "No document text could be extracted.", "updated_at": datetime.now(timezone.utc).isoformat()},
+             "$unset": {"stream_active": ""}}
+        )
         return {"status": "error", "message": "No document text found"}
 
     extracted_text = doc.get("extracted_text", "")
     filename = doc.get("file_name", "document")
-    user_country = current_user.jurisdiction or "US"
-    user_region = current_user.region or ""
-    user_language = current_user.language or "en"
 
     async def run_background():
         full_result = None
@@ -1436,22 +1442,45 @@ async def analyze_trigger_endpoint(
                 if event.get("stage") == "complete":
                     full_result = event.get("full_result", {})
         except Exception as e:
-            logger.error(f"Trigger analysis error: {e}")
+            logger.error(f"Streaming analysis error for case {case_id}: {e}", exc_info=True)
         finally:
             if full_result:
                 try:
                     await _save_stream_result_to_case(case_id, full_result, filename)
                 except Exception as se:
-                    logger.error(f"Save error: {se}")
+                    logger.error(f"Save error for case {case_id}: {se}", exc_info=True)
+                    await db.cases.update_one(
+                        {"case_id": case_id},
+                        {"$set": {"status": "error", "risk_score": 1, "ai_summary": "Analysis succeeded but persistence failed. Please retry.", "updated_at": datetime.now(timezone.utc).isoformat()}}
+                    )
             else:
+                # Pipeline did not reach 'complete' — surface as error so frontend can react.
                 await db.cases.update_one(
                     {"case_id": case_id},
-                    {"$set": {"status": "active", "updated_at": datetime.now(timezone.utc).isoformat()}}
+                    {"$set": {"status": "error", "risk_score": 1, "ai_summary": "Analysis failed. Please retry.", "updated_at": datetime.now(timezone.utc).isoformat()}}
                 )
             await db.cases.update_one({"case_id": case_id}, {"$unset": {"stream_active": ""}})
 
-    asyncio.create_task(run_background())
+    _spawn_tracked_task(run_background())
     return {"status": "started", "case_id": case_id}
+
+
+@api_router.post("/analyze/trigger")
+async def analyze_trigger_endpoint(
+    case_id: str = Query(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Fire-and-forget endpoint: starts analysis in background, returns immediately.
+    Frontend polls /api/cases/:id for progress.
+    Idempotent — safe to call even if the upload endpoint already kicked off the analysis."""
+    case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    user_country = current_user.jurisdiction or "US"
+    user_region = current_user.region or ""
+    user_language = current_user.language or "en"
+    return await _start_streaming_analysis(case_id, user_country, user_region, user_language)
 
 
 
@@ -3522,21 +3551,27 @@ async def upload_document(
             
             logger.info(f"Background analysis complete for case {case_id}")
         except Exception as e:
-            logger.error(f"Background analysis failed for case {case_id}: {e}")
-            # Mark case as active even on failure so it shows up
+            logger.error(f"Background analysis failed for case {case_id}: {e}", exc_info=True)
+            # Surface failure as status='error' with risk_score=1 so the frontend
+            # cinematic doesn't hang on scene 0 waiting for risk_score>0.
             await db.cases.update_one(
                 {"case_id": case_id},
-                {"$set": {"status": "active", "ai_summary": "Analysis failed. Click re-analyze to retry.", "updated_at": datetime.now(timezone.utc).isoformat()}}
+                {"$set": {"status": "error", "risk_score": 1, "ai_summary": "Analysis failed. Click re-analyze to retry.", "updated_at": datetime.now(timezone.utc).isoformat()}}
             )
             await db.documents.update_one(
                 {"document_id": document_id},
                 {"$set": {"status": "error"}}
             )
     
-    # Fire background analysis (skip when streaming — SSE endpoint handles it)
+    # Fire background analysis. For streaming mode, kick off the streaming pipeline
+    # directly here — don't wait for the frontend to call /analyze/trigger (that call
+    # is fragile because the browser may abort the in-flight request after navigation).
+    # The trigger endpoint remains as an idempotent safety net.
     use_streaming = streaming == "true"
-    if not use_streaming:
-        asyncio.create_task(run_background_analysis())
+    if use_streaming:
+        await _start_streaming_analysis(case_id, user_country, user_region, user_language)
+    else:
+        _spawn_tracked_task(run_background_analysis())
     
     # ── Return IMMEDIATELY with case_id ──
     return {
