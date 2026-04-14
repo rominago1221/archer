@@ -15,6 +15,9 @@ import FindingsSection from '../components/Dashboard/Sprint2/FindingsSection';
 import DocumentsSection from '../components/Dashboard/Sprint2/DocumentsSection';
 import ScoreHistoryGraph from '../components/Dashboard/Sprint2/ScoreHistoryGraph';
 import ArcherQuestionsSection from '../components/Dashboard/Sprint2/ArcherQuestionsSection';
+import LegalNewsSection from '../components/Dashboard/Sprint3/LegalNewsSection';
+import SimilarCasesSection from '../components/Dashboard/Sprint3/SimilarCasesSection';
+import AskArcherCompact from '../components/Dashboard/Sprint3/AskArcherCompact';
 import { deriveProgressStep } from '../utils/dashboard/progressStep';
 import { deriveStrategy } from '../utils/dashboard/strategyFallback';
 import { deriveBattle } from '../utils/dashboard/battle';
@@ -24,6 +27,8 @@ import { deriveArcherQuestions } from '../utils/dashboard/archerQuestions';
 import { deriveFreemiumExhausted } from '../utils/dashboard/documents';
 import { mapBackendCaseType } from '../utils/dashboard/caseType';
 import { getOpponentLabel } from '../utils/dashboard/opponent';
+import { deriveLegalNews } from '../utils/dashboard/legalNews';
+import { deriveSimilarCases } from '../utils/dashboard/similarCases';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -118,6 +123,17 @@ export default function CaseDetailV7() {
   const archerQuestions = deriveArcherQuestions(caseDoc, caseTypeV7, language);
   const freemiumExhausted = deriveFreemiumExhausted(user, documents);
 
+  // Sprint 3 derivations
+  const legalNews = deriveLegalNews(caseDoc, caseTypeV7, language);
+  const similarCases = deriveSimilarCases(caseTypeV7);
+
+  const handleAskArcher = (question) => {
+    // TODO(sprint-plumbing): post to chat endpoint. For now, jump to the chat
+    // page with the question prefilled via query param.
+    const q = encodeURIComponent(question);
+    navigate(`/chat?q=${q}&case_id=${caseId}`);
+  };
+
   const handleAnswerQuestion = (payload) => {
     // TODO(sprint-plumbing): POST /api/cases/{caseId}/archer-answer with payload
     console.log('[stub] archer question answered', payload);
@@ -202,6 +218,17 @@ export default function CaseDetailV7() {
           onAnswer={handleAnswerQuestion}
           language={language}
         />
+
+        {/* ── Sprint 3 sections ──────────────────────────────────────── */}
+        <LegalNewsSection news={legalNews} language={language} />
+
+        <SimilarCasesSection
+          stats={similarCases}
+          country={country}
+          language={language}
+        />
+
+        <AskArcherCompact onSubmit={handleAskArcher} language={language} />
       </div>
     </div>
   );

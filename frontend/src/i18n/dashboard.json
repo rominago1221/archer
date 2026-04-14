@@ -143,6 +143,44 @@
       "title_one": "Archer a {count} question sur ton dossier",
       "title_many": "Archer a {count} questions sur ton dossier",
       "subtitle": "Tes réponses vont affiner ton score et améliorer la stratégie"
+    },
+    "legal_news": {
+      "title": "📰 Actualités juridiques liées à ton cas",
+      "live_badge": "LIVE",
+      "tag_jurisprudence": "JURISPRUDENCE",
+      "tag_new_law": "NOUVELLE LOI",
+      "impact_prefix": "→"
+    },
+    "similar_cases": {
+      "title": "Cas similaires gagnés par d'autres clients Archer",
+      "subtitle_template": "Sur {count} cas comparables analysés ce mois-ci en {country}",
+      "stat_reduction": "RÉDUCTION OBTENUE",
+      "stat_cancel": "ANNULATION TOTALE",
+      "stat_delay": "DÉLAI MOYEN DE RÉPONSE",
+      "delay_unit": "j"
+    },
+    "ask_archer": {
+      "title": "Une autre question sur ton dossier ?",
+      "subtitle": "Archer répond en moins de 30 secondes",
+      "placeholder": "Pose ta question à Archer…",
+      "send_btn": "Envoyer"
+    },
+    "sidebar": {
+      "live_status_label": "ARCHER · LIVE",
+      "stat_sources_main": "847 521 sources juridiques",
+      "stat_sources_main_bold": "847 521",
+      "stat_sources_main_suffix": "sources juridiques",
+      "stat_sources_sub": "connectées en temps réel",
+      "stat_experience_main_bold": "20 ans",
+      "stat_experience_main_suffix": "d'expérience",
+      "stat_experience_sub": "niveau d'analyse Archer",
+      "stat_rank_main_bold": "#1",
+      "stat_rank_main_suffix": "IA légale BE & US",
+      "stat_rank_sub": "par volume traité",
+      "trust_label": "CONFORMITÉ & SÉCURITÉ",
+      "trust_gdpr": "Conforme RGPD",
+      "trust_encryption": "Données chiffrées AES-256",
+      "trust_attorneys": "Avocats agréés BE & US"
     }
   },
   "en": {
@@ -289,6 +327,43 @@
       "title_one": "Archer has {count} question about your case",
       "title_many": "Archer has {count} questions about your case",
       "subtitle": "Your answers will refine your score and improve the strategy"
+    },
+    "legal_news": {
+      "title": "📰 Legal news related to your case",
+      "live_badge": "LIVE",
+      "tag_jurisprudence": "CASE LAW",
+      "tag_new_law": "NEW LAW",
+      "impact_prefix": "→"
+    },
+    "similar_cases": {
+      "title": "Similar cases won by other Archer clients",
+      "subtitle_template": "Out of {count} comparable cases analyzed this month in {country}",
+      "stat_reduction": "REDUCTION OBTAINED",
+      "stat_cancel": "FULL CANCELLATION",
+      "stat_delay": "AVERAGE RESPONSE TIME",
+      "delay_unit": "d"
+    },
+    "ask_archer": {
+      "title": "Another question about your case?",
+      "subtitle": "Archer responds in under 30 seconds",
+      "placeholder": "Ask Archer your question…",
+      "send_btn": "Send"
+    },
+    "sidebar": {
+      "live_status_label": "ARCHER · LIVE",
+      "stat_sources_main_bold": "847,521",
+      "stat_sources_main_suffix": "legal sources",
+      "stat_sources_sub": "connected in real time",
+      "stat_experience_main_bold": "20 years",
+      "stat_experience_main_suffix": "of experience",
+      "stat_experience_sub": "Archer's analysis level",
+      "stat_rank_main_bold": "#1",
+      "stat_rank_main_suffix": "Legal AI in BE & US",
+      "stat_rank_sub": "by volume processed",
+      "trust_label": "COMPLIANCE & SECURITY",
+      "trust_gdpr": "GDPR compliant",
+      "trust_encryption": "AES-256 encrypted",
+      "trust_attorneys": "Certified BE & US attorneys"
     }
   }
 }
