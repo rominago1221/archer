@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useCinematicT } from '../hooks/useCinematicT';
 
 const Chk = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 2, flexShrink: 0 }}>
@@ -44,15 +45,15 @@ function FactItem({ text, delay, isLast }) {
 }
 
 export default function Scene01_Reading({ data, language }) {
+  const t = useCinematicT(language);
   const facts = data?.facts_extracted?.facts;
-  const isFr = language?.startsWith('fr');
 
   // Build displayable fact lines from the extracted facts
   const factLines = [];
   if (facts) {
     const docType = facts.type_document || facts.document_type || '';
     const region = facts.region_applicable || '';
-    if (docType) factLines.push(`${isFr ? 'Type détecté' : 'Type detected'} · ${docType}${region ? ` · ${region}` : ''}`);
+    if (docType) factLines.push(`${t('scene01.type_detected')} · ${docType}${region ? ` · ${region}` : ''}`);
     
     const dates = facts.key_dates || facts.dates_cles || [];
     dates.forEach((d) => {
@@ -71,7 +72,7 @@ export default function Scene01_Reading({ data, language }) {
   }
 
   const displayFacts = factLines.slice(0, 6);
-  const readingText = isFr ? 'Lecture en cours…' : 'Reading in progress…';
+  const readingText = t('scene01.reading_in_progress');
 
   return (
     <div data-testid="scene-01" style={{
@@ -136,7 +137,7 @@ export default function Scene01_Reading({ data, language }) {
               fontSize: 12, fontWeight: 800, color: '#15803d', letterSpacing: '0.8px',
               fontFamily: '"SF Mono", Monaco, monospace',
             }}>
-              {isFr ? 'FAITS IDENTIFIÉS' : 'FACTS IDENTIFIED'} · {displayFacts.length}
+              {t('scene01.facts_label', { count: displayFacts.length })}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

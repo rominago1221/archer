@@ -17,6 +17,7 @@ export default function CinematicAnalysis() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const language = user?.language || (user?.jurisdiction === 'BE' ? 'fr' : 'en');
+  const jurisdiction = user?.jurisdiction || 'US';
   const { currentScene, data, isComplete, error } = useAnalysisStream(caseId);
 
   // If already analyzed, redirect to case detail via useEffect (not during render)
@@ -48,14 +49,14 @@ export default function CinematicAnalysis() {
   }
 
   const scenes = [
-    <Scene00_Opening key={0} data={data} />,
+    <Scene00_Opening key={0} data={data} language={language} jurisdiction={jurisdiction} />,
     <Scene01_Reading key={1} data={data} language={language} />,
-    <Scene02_Verification key={2} data={data} language={language} />,
+    <Scene02_Verification key={2} data={data} language={language} jurisdiction={jurisdiction} />,
     <Scene03_Verdict key={3} data={data} language={language} />,
     <Scene04_Findings key={4} data={data} language={language} />,
     <Scene05_Battle key={5} data={data} language={language} />,
-    <Scene06_Strategy key={6} data={data} language={language} />,
-    <Scene07_Landing key={7} data={data} language={language} caseId={caseId} />,
+    <Scene06_Strategy key={6} data={data} language={language} jurisdiction={jurisdiction} />,
+    <Scene07_Landing key={7} data={data} language={language} jurisdiction={jurisdiction} caseId={caseId} />,
   ];
 
   return (

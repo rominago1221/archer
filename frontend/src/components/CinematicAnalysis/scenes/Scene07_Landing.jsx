@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCinematicT } from '../hooks/useCinematicT';
+import { PRICING } from '../../../config/pricing';
 
-export default function Scene07_Landing({ data, language, caseId }) {
+const AUTO_REDIRECT_MS = 5000;
+
+export default function Scene07_Landing({ data, language, jurisdiction = 'BE', caseId }) {
   const navigate = useNavigate();
-  const isFr = language?.startsWith('fr');
+  const t = useCinematicT(language);
   const [phase, setPhase] = useState(0);
 
   const scoreData = data?.score_ready?.score || {};
@@ -14,7 +18,8 @@ export default function Scene07_Landing({ data, language, caseId }) {
 
   const total = scoreData.total || 0;
   const scoreColor = total > 70 ? '#b91c1c' : total > 40 ? '#b45309' : '#15803d';
-  const level = total > 85 ? (isFr ? 'CRITIQUE' : 'CRITICAL') : total > 70 ? (isFr ? 'RISQUE ÉLEVÉ' : 'HIGH RISK') : total > 40 ? (isFr ? 'RISQUE MODÉRÉ' : 'MODERATE RISK') : (isFr ? 'RISQUE FAIBLE' : 'LOW RISK');
+  const levelKey = total > 85 ? 'scene03.risk_critical' : total > 70 ? 'scene03.risk_high' : total > 40 ? 'scene03.risk_moderate' : 'scene03.risk_low';
+  const level = t(levelKey);
 
   const userArgs = battle.user_side?.strongest_arguments || battle.user_side?.strong_arguments || [];
   const oppArgs = battle.opposing_side?.opposing_arguments || [];
@@ -26,11 +31,16 @@ export default function Scene07_Landing({ data, language, caseId }) {
   const critFindings = findings.filter(f => f.type === 'risk' || f.type === 'deadline');
   const goodFindings = findings.filter(f => f.type === 'opportunity' || f.type === 'neutral');
 
+  const attorneyPriceDisplay = PRICING[jurisdiction]?.attorney_letter?.display || PRICING.US.attorney_letter.display;
+
   useEffect(() => {
     const t1 = setTimeout(() => setPhase(1), 500);
     const t2 = setTimeout(() => setPhase(2), 1200);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
+    // Auto-redirect to case detail after AUTO_REDIRECT_MS so the cinematic ends gracefully
+    // even when the user does not click a CTA. User can still click any CTA earlier.
+    const t3 = setTimeout(() => navigate(`/cases/${caseId}`, { replace: true }), AUTO_REDIRECT_MS);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [caseId, navigate]);
 
   const stepColors = ['#b91c1c', '#b45309', '#15803d'];
 
@@ -49,17 +59,17 @@ export default function Scene07_Landing({ data, language, caseId }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16, borderBottom: '0.5px solid #e2e0db' }}>
           <div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', background: '#fef3c7', borderRadius: 6, marginBottom: 8 }}>
-              <span style={{ fontSize: 9, fontWeight: 800, color: '#b45309', letterSpacing: '0.5px' }}>{isFr ? 'DOSSIER' : 'CASE'}</span>
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#b45309', letterSpacing: '0.5px' }}>{t('scene07.dashboard_type')}</span>
             </div>
             <div style={{ fontSize: 18, fontWeight: 800, color: '#0a0a0f', letterSpacing: -0.5 }}>
-              {data?.complete?.full_result?.suggested_case_title || data?.score_ready?.tagline || (isFr ? 'Votre dossier' : 'Your case')}
+              {data?.complete?.full_result?.suggested_case_title || data?.score_ready?.tagline || t('scene07.case_default_title')}
             </div>
             <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
-              {isFr ? 'Mis à jour par Archer à l\'instant' : 'Updated by Archer just now'}
+              {t('scene07.updated_just_now')}
             </div>
           </div>
           <div style={{ textAlign: 'center', padding: '12px 20px', background: `${scoreColor}15`, borderRadius: 12 }}>
-            <div style={{ fontSize: 9, color: scoreColor, fontWeight: 800, letterSpacing: '0.5px', marginBottom: 2 }}>{isFr ? 'SCORE ARCHER' : 'ARCHER SCORE'}</div>
+            <div style={{ fontSize: 9, color: scoreColor, fontWeight: 800, letterSpacing: '0.5px', marginBottom: 2 }}>{t('scene07.score_label')}</div>
             <div style={{ fontSize: 32, fontWeight: 900, color: scoreColor, letterSpacing: -1, lineHeight: 1 }}>{total}</div>
             <div style={{ fontSize: 9, color: scoreColor, fontWeight: 700 }}>{level}</div>
           </div>
@@ -69,7 +79,7 @@ export default function Scene07_Landing({ data, language, caseId }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
           {/* Findings */}
           <div>
-            <div style={{ fontSize: 9, color: '#9ca3af', fontWeight: 800, letterSpacing: '0.8px', marginBottom: 10 }}>FINDINGS · {findings.length}</div>
+            <div style={{ fontSize: 9, color: '#9ca3af', fontWeight: 800, letterSpacing: '0.8px', marginBottom: 10 }}>{t('scene07.findings_header', { count: findings.length })}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[...critFindings, ...goodFindings].slice(0, 4).map((f, i) => (
                 <div key={i} style={{
@@ -85,7 +95,7 @@ export default function Scene07_Landing({ data, language, caseId }) {
           {/* Battle */}
           <div>
             <div style={{ fontSize: 9, color: '#9ca3af', fontWeight: 800, letterSpacing: '0.8px', marginBottom: 10 }}>
-              {isFr ? 'JOUTE' : 'BATTLE'} · {userScore} vs {oppScore}
+              {t('scene07.battle_header', { user: userScore, opp: oppScore })}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
               {userArgs.slice(0, 3).map((a, i) => (
@@ -100,14 +110,14 @@ export default function Scene07_Landing({ data, language, caseId }) {
               ))}
             </div>
             <div style={{ marginTop: 10, padding: '8px 10px', background: '#eff6ff', borderRadius: 6, textAlign: 'center', fontSize: 10, fontWeight: 800, color: '#1a56db' }}>
-              {isFr ? `Avantage : Toi (${userScore} vs ${oppScore})` : `Advantage: You (${userScore} vs ${oppScore})`}
+              {t('scene07.advantage', { user: userScore, opp: oppScore })}
             </div>
           </div>
 
           {/* Plan */}
           <div>
             <div style={{ fontSize: 9, color: '#9ca3af', fontWeight: 800, letterSpacing: '0.8px', marginBottom: 10 }}>
-              PLAN · {steps.length} {isFr ? 'ÉTAPES' : 'STEPS'}
+              {t('scene07.plan_header', { count: steps.length })}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {steps.slice(0, 3).map((s, i) => (
@@ -119,7 +129,7 @@ export default function Scene07_Landing({ data, language, caseId }) {
             </div>
             <div style={{ marginTop: 12, padding: '10px 12px', background: 'linear-gradient(135deg, #eff6ff, #dcfce7)', borderRadius: 8, textAlign: 'center' }}>
               <div style={{ fontSize: 8, color: '#1a56db', fontWeight: 800, letterSpacing: '0.3px' }}>
-                {isFr ? 'CHANCES DE SUCCÈS' : 'SUCCESS CHANCES'}
+                {t('scene07.chances_header')}
               </div>
               <div style={{ fontSize: 22, fontWeight: 900, color: '#1a56db', letterSpacing: -0.8 }}>{favorable}%</div>
             </div>
@@ -137,21 +147,21 @@ export default function Scene07_Landing({ data, language, caseId }) {
             onClick={() => navigate(`/cases/${caseId}`)}
             style={{ flex: 2, padding: 12, border: 'none', borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: 'pointer', background: '#1a56db', color: '#fff' }}
           >
-            {isFr ? '\u2605 Lettre signée par avocat — 49,99€ (recommandé)' : '\u2605 Attorney-signed letter — $49.99 (recommended)'}
+            {t('scene07.attorney_letter_cta', { price: attorneyPriceDisplay })}
           </button>
           <button
             data-testid="diy-letter-cta"
             onClick={() => navigate(`/cases/${caseId}`)}
             style={{ flex: 1, padding: 12, borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: 'pointer', background: '#fff', color: '#0a0a0f', border: '0.5px solid #e2e0db' }}
           >
-            {isFr ? 'Lettre DIY (gratuite)' : 'DIY letter (free)'}
+            {t('scene07.diy_letter_cta')}
           </button>
           <button
             data-testid="ask-archer-cta"
             onClick={() => navigate(`/cases/${caseId}`)}
             style={{ flex: 1, padding: 12, borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: 'pointer', background: '#fff', color: '#0a0a0f', border: '0.5px solid #e2e0db' }}
           >
-            {isFr ? 'Demander à Archer' : 'Ask Archer'}
+            {t('scene07.ask_archer_cta')}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useCinematicT } from '../hooks/useCinematicT';
 
 function AnimatedCounter({ target, duration = 1500, fontSize = 200, color = '#ef4444' }) {
   const [value, setValue] = useState(0);
@@ -58,8 +59,8 @@ function SubScoreCard({ label, value, desc, delay }) {
 }
 
 export default function Scene03_Verdict({ data, language }) {
+  const t = useCinematicT(language);
   const scoreData = data?.score_ready;
-  const isFr = language?.startsWith('fr');
 
   const score = scoreData?.score || {};
   const total = score.total || 0;
@@ -86,11 +87,11 @@ export default function Scene03_Verdict({ data, language }) {
   }, []);
 
   const riskLabel = {
-    low: isFr ? 'RISQUE FAIBLE' : 'LOW RISK',
-    moderate: isFr ? 'RISQUE MODÉRÉ' : 'MODERATE RISK',
-    high: isFr ? 'RISQUE ÉLEVÉ' : 'HIGH RISK',
-    critical: isFr ? 'CRITIQUE' : 'CRITICAL',
-  }[level] || (isFr ? 'RISQUE MODÉRÉ' : 'MODERATE RISK');
+    low: t('scene03.risk_low'),
+    moderate: t('scene03.risk_moderate'),
+    high: t('scene03.risk_high'),
+    critical: t('scene03.risk_critical'),
+  }[level] || t('scene03.risk_moderate');
 
   const scoreColor = total > 70 ? '#ef4444' : total > 40 ? '#f59e0b' : '#16a34a';
   const pillBg = total > 70 ? '#b91c1c' : total > 40 ? '#b45309' : '#15803d';
@@ -126,7 +127,7 @@ export default function Scene03_Verdict({ data, language }) {
             animation: 'livepulse 1.8s ease-in-out infinite', display: 'inline-block',
           }} />
           <span style={{ fontSize: 10, fontWeight: 800, color: '#b91c1c', letterSpacing: '1.4px', fontFamily: '"SF Mono", Monaco, monospace' }}>
-            {isFr ? 'SCORE DE RISQUE ARCHER' : 'ARCHER RISK SCORE'}
+            {t('scene03.score_badge')}
           </span>
         </div>
 
@@ -135,10 +136,10 @@ export default function Scene03_Verdict({ data, language }) {
           display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12,
           maxWidth: 640, margin: '0 auto 32px',
         }}>
-          <SubScoreCard label={isFr ? 'FINANCIER' : 'FINANCIAL'} value={financial} delay={1000} />
-          <SubScoreCard label={isFr ? 'URGENCE' : 'URGENCY'} value={urgency} delay={2000} />
-          <SubScoreCard label={isFr ? 'JURIDIQUE' : 'LEGAL'} value={legalStrength} delay={3000} />
-          <SubScoreCard label={isFr ? 'COMPLEXITÉ' : 'COMPLEXITY'} value={complexity} delay={4000} />
+          <SubScoreCard label={t('scene03.subscore_financial')} value={financial} delay={1000} />
+          <SubScoreCard label={t('scene03.subscore_urgency')} value={urgency} delay={2000} />
+          <SubScoreCard label={t('scene03.subscore_legal')} value={legalStrength} delay={3000} />
+          <SubScoreCard label={t('scene03.subscore_complexity')} value={complexity} delay={4000} />
         </div>
 
         {/* BIG score number */}
@@ -188,9 +189,7 @@ export default function Scene03_Verdict({ data, language }) {
           fontSize: 14, color: '#555', maxWidth: 540, margin: '0 auto', lineHeight: 1.6,
           opacity: phase >= 7 ? 1 : 0, transition: 'opacity 0.5s ease',
         }}>
-          {isFr
-            ? 'Archer a identifié des points exploitables dans votre dossier.'
-            : 'Archer identified exploitable points in your case.'}
+          {t('scene03.subtext_default')}
         </div>
       </div>
     </div>

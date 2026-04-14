@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useCinematicT } from '../hooks/useCinematicT';
 
 function AnimBar({ target, color, delay, duration = 600 }) {
   const [width, setWidth] = useState(0);
@@ -32,11 +33,20 @@ function BigPercent({ target, delay }) {
   return <span style={{ color: '#1a56db', fontSize: 36, fontWeight: 900 }}>{val}%</span>;
 }
 
-export default function Scene06_Strategy({ data, language }) {
+export default function Scene06_Strategy({ data, language, jurisdiction = 'BE' }) {
+  const t = useCinematicT(language);
   const strat = data?.strategy_ready;
-  const isFr = language?.startsWith('fr');
   const steps = strat?.next_steps || [];
   const sp = strat?.success_probability || {};
+  const jurisdictionLabel = t(`jurisdiction.${jurisdiction}`);
+  const similarCasesCount = data?.jurisprudence_loaded?.count || 2475;
+  const yearRange = '2022–2026';
+
+  // Pull deadline from extracted facts if available
+  const keyDates = data?.facts_extracted?.facts?.key_dates
+    || data?.facts_extracted?.facts?.dates_cles
+    || [];
+  const deadlineDate = keyDates.find(d => d?.date)?.date;
 
   const favorable = sp.full_resolution_in_favor || sp.resolution_favorable || 10;
   const negotiated = sp.negotiated_settlement || sp.compromis_negocie || 35;
@@ -55,15 +65,16 @@ export default function Scene06_Strategy({ data, language }) {
   }, []);
 
   const stepColors = ['#b91c1c', '#b45309', '#15803d'];
-  const stepLabels = isFr
-    ? ['DANS LES 24H', 'DANS LES 7 JOURS', 'AVANT LA DEADLINE']
-    : ['WITHIN 24H', 'WITHIN 7 DAYS', 'BEFORE DEADLINE'];
+  const beforeDeadlineLabel = deadlineDate
+    ? t('scene06.before_deadline', { date: deadlineDate })
+    : t('scene06.before_deadline_generic');
+  const stepLabels = [t('scene06.within_24h'), t('scene06.within_7d'), beforeDeadlineLabel];
 
   const bars = [
-    { label: isFr ? 'Résolution favorable (annulation totale)' : 'Favorable resolution (full annulment)', pct: favorable, color: '#16a34a', textColor: '#15803d' },
-    { label: isFr ? 'Accord négocié (réduction substantielle)' : 'Negotiated agreement (substantial reduction)', pct: negotiated, color: '#1a56db', textColor: '#1a56db' },
-    { label: isFr ? 'Résolution partielle (réduction modérée)' : 'Partial resolution (moderate reduction)', pct: partial, color: '#f59e0b', textColor: '#b45309' },
-    { label: isFr ? 'Issue défavorable (paiement intégral)' : 'Unfavorable outcome (full payment)', pct: unfavorable, color: '#ef4444', textColor: '#b91c1c' },
+    { label: t('scene06.outcome_favorable'), pct: favorable, color: '#16a34a', textColor: '#15803d' },
+    { label: t('scene06.outcome_negotiated'), pct: negotiated, color: '#1a56db', textColor: '#1a56db' },
+    { label: t('scene06.outcome_partial'), pct: partial, color: '#f59e0b', textColor: '#b45309' },
+    { label: t('scene06.outcome_unfavorable'), pct: unfavorable, color: '#ef4444', textColor: '#b91c1c' },
   ];
 
   return (
@@ -78,7 +89,7 @@ export default function Scene06_Strategy({ data, language }) {
             fontSize: 9, fontWeight: 800, color: '#1a56db', letterSpacing: '1.2px', marginBottom: 16,
             opacity: phase >= 1 ? 1 : 0, transition: 'opacity 0.3s',
           }}>
-            {isFr ? '— TON PLAN D\'ACTION —' : '— YOUR ACTION PLAN —'}
+            {t('scene06.action_plan')}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
             {steps.slice(0, 3).map((step, i) => (
@@ -116,18 +127,18 @@ export default function Scene06_Strategy({ data, language }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16, borderBottom: '0.5px solid #e2e0db' }}>
             <div>
               <div style={{ fontSize: 9, fontWeight: 800, color: '#1a56db', letterSpacing: '1.2px', marginBottom: 4 }}>
-                {isFr ? 'PRÉDICTION D\'ISSUE' : 'OUTCOME PREDICTION'}
+                {t('scene06.prediction_label')}
               </div>
               <div style={{ fontSize: 18, fontWeight: 800, color: '#0a0a0f', letterSpacing: -0.5 }}>
-                {isFr ? 'Si tu suis la stratégie recommandée' : 'If you follow the recommended strategy'}
+                {t('scene06.prediction_subtitle')}
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 9, color: '#9ca3af', fontWeight: 800, letterSpacing: '0.5px' }}>
-                {isFr ? 'CALCUL BASÉ SUR' : 'CALCULATED BASED ON'}
+                {t('scene06.based_on_title')}
               </div>
               <div style={{ fontSize: 11, color: '#555' }}>
-                {isFr ? '2 475 cas similaires (Belgique 2022–2026)' : '2,475 similar cases (2022-2026)'}
+                {t('scene06.based_on', { count: similarCasesCount.toLocaleString(language?.startsWith('fr') ? 'fr-FR' : 'en-US'), jurisdiction: jurisdictionLabel, year_range: yearRange })}
               </div>
             </div>
           </div>
@@ -153,12 +164,10 @@ export default function Scene06_Strategy({ data, language }) {
           transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
         }}>
           <div style={{ fontSize: 9, fontWeight: 800, color: '#1a56db', letterSpacing: '1.2px', marginBottom: 10 }}>
-            {isFr ? '— LA PHRASE D\'ARCHER —' : '— THE ARCHER PHRASE —'}
+            {t('scene06.archer_phrase_label')}
           </div>
           <div style={{ fontSize: 26, fontWeight: 800, color: '#0a0a0f', letterSpacing: -0.8, lineHeight: 1.2 }}>
-            {isFr
-              ? <>Avec la stratégie recommandée, tes chances<br />de réduire ou annuler sont de {phase >= 3 && <BigPercent target={successPercent} delay={500} />}.</>
-              : <>With the recommended strategy, your chances<br />of reducing or canceling are {phase >= 3 && <BigPercent target={successPercent} delay={500} />}.</>}
+            {t('scene06.success_phrase_part1')}<br />{t('scene06.success_phrase_part2')} {phase >= 3 && <BigPercent target={successPercent} delay={500} />}.
           </div>
         </div>
       </div>

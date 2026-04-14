@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useCinematicT } from '../hooks/useCinematicT';
 
 const Chk = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -81,11 +82,13 @@ function VerificationItem({ law, desc, verified, delay }) {
   );
 }
 
-export default function Scene02_Verification({ data, language }) {
+export default function Scene02_Verification({ data, language, jurisdiction = 'BE' }) {
+  const t = useCinematicT(language);
   const jurData = data?.jurisprudence_loaded;
   const isFr = language?.startsWith('fr');
   const count = jurData?.count || 2475;
   const verifiedRefs = jurData?.verified_refs || [];
+  const jurisdictionLabel = t(`jurisdiction.${jurisdiction}`);
 
   // Build verification items from verified_refs
   const verifs = verifiedRefs.map((ref) => ({
@@ -127,11 +130,11 @@ export default function Scene02_Verification({ data, language }) {
               animation: 'livepulse 1.8s ease-in-out infinite', display: 'inline-block',
             }} />
             <span style={{ fontSize: 10, fontWeight: 800, color: '#15803d', letterSpacing: '0.8px' }}>
-              {isFr ? 'JURISPRUDENCE LIVE · 847K SOURCES' : 'LIVE JURISPRUDENCE · 847K SOURCES'}
+              {t('scene02.live_badge')}
             </span>
           </div>
           <span style={{ fontFamily: '"SF Mono", Monaco, monospace', fontSize: 11, color: '#9ca3af' }}>
-            CourtListener API + DB {isFr ? 'Belgique' : 'US'}
+            {t('scene02.api_source', { jurisdiction: jurisdictionLabel })}
           </span>
         </div>
 
@@ -141,11 +144,11 @@ export default function Scene02_Verification({ data, language }) {
           border: '0.5px solid #e2e0db', borderRadius: 16,
         }}>
           <div style={{ fontSize: 9, color: '#9ca3af', fontWeight: 800, letterSpacing: '1.2px', marginBottom: 8 }}>
-            {isFr ? 'ARRÊTS CONSULTÉS EN TEMPS RÉEL' : 'CASES CONSULTED IN REAL TIME'}
+            {t('scene02.counter_title')}
           </div>
           <AnimatedCounter target={count} duration={4000} />
           <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 6 }}>
-            {isFr ? `sur 847 234 disponibles dans la base belge` : `out of 847,234 available in the database`}
+            {t('scene02.counter_sub', { jurisdiction: jurisdictionLabel })}
           </div>
         </div>
 
@@ -154,7 +157,7 @@ export default function Scene02_Verification({ data, language }) {
           background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 16, padding: '20px 24px',
         }}>
           <div style={{ fontSize: 9, color: '#9ca3af', fontWeight: 800, letterSpacing: '1.2px', marginBottom: 14 }}>
-            {isFr ? 'VÉRIFICATIONS EN COURS' : 'VERIFICATIONS IN PROGRESS'}
+            {t('scene02.verifications_title')}
           </div>
           {displayVerifs.map((v, i) => (
             <VerificationItem

@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useCinematicT } from '../hooks/useCinematicT';
 
-function ArgCard({ num, text, strength, isUser, delay }) {
+function ArgCard({ num, text, strength, isUser, delay, t }) {
   const [show, setShow] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setShow(true), delay);
-    return () => clearTimeout(t);
+    const tm = setTimeout(() => setShow(true), delay);
+    return () => clearTimeout(tm);
   }, [delay]);
   if (!show) return null;
 
@@ -12,7 +13,11 @@ function ArgCard({ num, text, strength, isUser, delay }) {
   const bgBadge = isUser ? '#eff6ff' : '#fee2e2';
   const isWeak = strength === 'weak' || strength === 'faible';
   const forceColor = strength === 'strong' || strength === 'fort' ? '#15803d' : isWeak ? '#b91c1c' : '#b45309';
-  const forceLabel = strength === 'strong' || strength === 'fort' ? 'Strong' : isWeak ? 'Weak' : 'Medium';
+  const forceLabel = strength === 'strong' || strength === 'fort'
+    ? t('scene05.force_strong')
+    : isWeak
+      ? t('scene05.force_weak')
+      : t('scene05.force_medium');
 
   return (
     <div style={{
@@ -57,10 +62,19 @@ function AnimScore({ target, color, delay }) {
 }
 
 export default function Scene05_Battle({ data, language }) {
+  const t = useCinematicT(language);
   const battleData = data?.battle_ready;
-  const isFr = language?.startsWith('fr');
   const userArgs = battleData?.user_side?.strongest_arguments || battleData?.user_side?.strong_arguments || [];
   const oppArgs = battleData?.opposing_side?.opposing_arguments || [];
+
+  // Contextual opponent label based on case type (PARQUET / BAILLEUR / EMPLOYEUR / ...).
+  const KNOWN_CASE_TYPES = ['traffic', 'court', 'housing', 'consumer', 'debt', 'demand', 'employment', 'immigration'];
+  const caseType = (data?.facts_extracted?.facts?.type_document
+    || data?.facts_extracted?.inferred_case_type
+    || '').toLowerCase();
+  const opponentLabel = KNOWN_CASE_TYPES.includes(caseType)
+    ? t(`scene05.opponent.${caseType}`)
+    : t('scene05.opponent.default');
 
   // Calculate scores
   const calcScore = (args) => args.reduce((s, a) => {
@@ -90,11 +104,11 @@ export default function Scene05_Battle({ data, language }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24, marginBottom: 28, animation: 'fadeIn 0.4s ease' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #1a56db, #1e40af)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 14, fontWeight: 800 }}>A</div>
-            <div><div style={{ fontSize: 13, fontWeight: 800, color: '#0a0a0f' }}>ARCHER</div><div style={{ fontSize: 9, color: '#9ca3af' }}>{isFr ? 'Pour toi' : 'For you'}</div></div>
+            <div><div style={{ fontSize: 13, fontWeight: 800, color: '#0a0a0f' }}>{t('scene05.battle_title_left')}</div><div style={{ fontSize: 9, color: '#9ca3af' }}>{t('scene05.your_side')}</div></div>
           </div>
           <div style={{ background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 16, padding: '12px 24px', textAlign: 'center' }}>
             <div style={{ fontSize: 9, color: '#9ca3af', fontWeight: 800, letterSpacing: '0.8px', marginBottom: 4 }}>
-              {isFr ? 'ARGUMENTS SOLIDES' : 'SOLID ARGUMENTS'}
+              {t('scene05.solid_arguments')}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <AnimScore target={userScore} color="#1a56db" delay={userArgs.length * 500 + 500} />
@@ -103,7 +117,7 @@ export default function Scene05_Battle({ data, language }) {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ textAlign: 'right' }}><div style={{ fontSize: 13, fontWeight: 800, color: '#0a0a0f' }}>{isFr ? 'PARQUET' : 'OPPONENT'}</div><div style={{ fontSize: 9, color: '#9ca3af' }}>{isFr ? 'Contre toi' : 'Against you'}</div></div>
+            <div style={{ textAlign: 'right' }}><div style={{ fontSize: 13, fontWeight: 800, color: '#0a0a0f' }}>{opponentLabel}</div><div style={{ fontSize: 9, color: '#9ca3af' }}>{t('scene05.their_side')}</div></div>
             <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #b91c1c, #7f1d1d)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 14, fontWeight: 800 }}>P</div>
           </div>
         </div>
@@ -112,21 +126,21 @@ export default function Scene05_Battle({ data, language }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div>
             <div style={{ fontSize: 9, fontWeight: 800, color: '#1a56db', letterSpacing: '1px', marginBottom: 10, paddingLeft: 14 }}>
-              {isFr ? 'VOS ARGUMENTS' : 'YOUR ARGUMENTS'}
+              {t('scene05.your_arguments')}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {userArgs.map((a, i) => (
-                <ArgCard key={i} num={i + 1} text={a.argument} strength={a.strength || a.force} isUser delay={500 + i * 500} />
+                <ArgCard key={i} num={i + 1} text={a.argument} strength={a.strength || a.force} isUser delay={500 + i * 500} t={t} />
               ))}
             </div>
           </div>
           <div>
             <div style={{ fontSize: 9, fontWeight: 800, color: '#b91c1c', letterSpacing: '1px', marginBottom: 10, paddingLeft: 14 }}>
-              {isFr ? 'LEURS ARGUMENTS' : 'THEIR ARGUMENTS'}
+              {t('scene05.their_arguments')}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {oppArgs.map((a, i) => (
-                <ArgCard key={i} num={i + 1} text={a.argument} strength={a.strength || a.force} isUser={false} delay={750 + i * 500} />
+                <ArgCard key={i} num={i + 1} text={a.argument} strength={a.strength || a.force} isUser={false} delay={750 + i * 500} t={t} />
               ))}
             </div>
           </div>
@@ -140,12 +154,10 @@ export default function Scene05_Battle({ data, language }) {
             animation: 'fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
           }}>
             <div style={{ fontSize: 9, color: '#1a56db', fontWeight: 800, letterSpacing: '1px', marginBottom: 6 }}>
-              {isFr ? 'VERDICT ARCHER' : 'ARCHER VERDICT'}
+              {t('scene05.verdict_archer')}
             </div>
             <div style={{ fontSize: 16, fontWeight: 800, color: '#0a0a0f', letterSpacing: -0.4 }}>
-              {isFr
-                ? <>Tes arguments sont plus solides sur <span style={{ color: '#1a56db' }}>{userScore} points sur {totalCount}</span>. Tu as l&apos;avantage tactique.</>
-                : <>Your arguments are stronger on <span style={{ color: '#1a56db' }}>{userScore} of {totalCount}</span> points. You have the tactical advantage.</>}
+              {t('scene05.verdict_text_part1')} <span style={{ color: '#1a56db' }}>{userScore} {t('scene05.verdict_text_part2', { total: totalCount })}</span>
             </div>
           </div>
         )}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useCinematicT } from '../hooks/useCinematicT';
 
-function FindingCard({ finding, isCritical, delay, isFr }) {
+function FindingCard({ finding, isCritical, delay, t }) {
   const [show, setShow] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setShow(true), delay);
@@ -13,12 +14,12 @@ function FindingCard({ finding, isCritical, delay, isFr }) {
   const badgeColor = isCritical ? '#b91c1c' : '#15803d';
   const blockBg = isCritical ? '#fafaf8' : '#f0fdf4';
   const badgeText = isCritical
-    ? (finding.type === 'deadline' ? (isFr ? 'DEADLINE' : 'DEADLINE') : (isFr ? 'VIOLATION' : 'VIOLATION'))
-    : (isFr ? 'OPPORTUNITÉ' : 'OPPORTUNITY');
+    ? (finding.type === 'deadline' ? t('scene04.deadline_label') : t('scene04.violation_label'))
+    : t('scene04.opportunity_label');
 
   const blockTitle = isCritical
-    ? (isFr ? 'CONSÉQUENCE SI TU NE FAIS RIEN' : 'CONSEQUENCE IF YOU DO NOTHING')
-    : (isFr ? 'COMMENT TU L\'UTILISES' : 'HOW TO USE IT');
+    ? t('scene04.consequence_label')
+    : t('scene04.how_to_use_label');
   const blockText = isCritical ? finding.risk_if_ignored : (finding.do_now || finding.impact_description);
 
   return (
@@ -63,8 +64,8 @@ function FindingCard({ finding, isCritical, delay, isFr }) {
 }
 
 export default function Scene04_Findings({ data, language }) {
+  const t = useCinematicT(language);
   const findingsData = data?.findings_ready?.findings || [];
-  const isFr = language?.startsWith('fr');
 
   const critical = findingsData.filter(f => f.type === 'risk' || f.type === 'deadline');
   const strong = findingsData.filter(f => f.type === 'opportunity' || f.type === 'neutral');
@@ -92,7 +93,7 @@ export default function Scene04_Findings({ data, language }) {
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" strokeWidth="3"><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/><path d="m10.29 3.86-8.47 14a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
               </div>
               <span style={{ fontSize: 11, fontWeight: 800, color: '#b91c1c', letterSpacing: '1.2px' }}>
-                {isFr ? `POINTS CRITIQUES · ${critical.length}` : `CRITICAL POINTS · ${critical.length}`}
+                {t('scene04.critical_points', { count: critical.length })}
               </span>
             </div>
           </div>
@@ -100,7 +101,7 @@ export default function Scene04_Findings({ data, language }) {
 
         {/* Critical findings — 2s between each */}
         {critical.map((f, i) => (
-          <FindingCard key={`c-${i}`} finding={f} isCritical delay={1000 + i * 2000} isFr={isFr} />
+          <FindingCard key={`c-${i}`} finding={f} isCritical delay={1000 + i * 2000} t={t} />
         ))}
 
         {/* Strong header */}
@@ -111,7 +112,7 @@ export default function Scene04_Findings({ data, language }) {
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
               <span style={{ fontSize: 11, fontWeight: 800, color: '#15803d', letterSpacing: '1.2px' }}>
-                {isFr ? `POINTS FORTS · ${strong.length} — TES ARMES` : `STRONG POINTS · ${strong.length} — YOUR WEAPONS`}
+                {t('scene04.strong_points', { count: strong.length })}
               </span>
             </div>
           </div>
@@ -119,7 +120,7 @@ export default function Scene04_Findings({ data, language }) {
 
         {/* Strong findings — 2s between each */}
         {strong.map((f, i) => (
-          <FindingCard key={`s-${i}`} finding={f} isCritical={false} delay={500 + (critical.length * 2000) + 2000 + i * 2000} isFr={isFr} />
+          <FindingCard key={`s-${i}`} finding={f} isCritical={false} delay={500 + (critical.length * 2000) + 2000 + i * 2000} t={t} />
         ))}
       </div>
     </div>

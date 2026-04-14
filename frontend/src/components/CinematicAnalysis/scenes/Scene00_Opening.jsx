@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { useCinematicT } from '../hooks/useCinematicT';
 
-export default function Scene00_Opening({ data }) {
+export default function Scene00_Opening({ data, language, jurisdiction = 'BE' }) {
+  const t = useCinematicT(language);
   const [show, setShow] = useState(false);
   useEffect(() => { setShow(true); }, []);
-  const msg = data?.started?.message || 'Archer ouvre votre dossier…';
+
+  const jurisdictionLabel = t(`jurisdiction.${jurisdiction}`);
+  const title = data?.started?.message || t('scene00.opening_title');
+  const subtitle = t('scene00.opening_subtitle', { jurisdiction: jurisdictionLabel });
 
   return (
     <div data-testid="scene-00" style={{
@@ -16,7 +21,7 @@ export default function Scene00_Opening({ data }) {
       }}>
         {/* Document + dashed line + Archer avatar — LARGE */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 48 }}>
-          {/* Document mockup — 40% bigger */}
+          {/* Document mockup */}
           <div style={{
             width: 140, height: 180, background: '#fff', border: '0.5px solid #e2e0db',
             borderRadius: 12, padding: '20px 16px', boxShadow: '0 20px 48px rgba(10,10,15,0.1)',
@@ -35,14 +40,14 @@ export default function Scene00_Opening({ data }) {
             <div style={{ height: 4, width: '60%', background: '#fef3c7', borderRadius: 2 }} />
           </div>
 
-          {/* Dashed line — longer */}
+          {/* Dashed line */}
           <div style={{ width: 90, borderTop: '2.5px dashed #d1d5db', position: 'relative' }}>
             <svg width="12" height="12" viewBox="0 0 10 10" style={{ position: 'absolute', right: -7, top: -6 }}>
               <polygon points="0,0 10,5 0,10" fill="#d1d5db" />
             </svg>
           </div>
 
-          {/* Archer avatar — 40% bigger */}
+          {/* Archer avatar */}
           <div style={{
             position: 'relative', width: 120, height: 120, borderRadius: '50%',
             background: 'linear-gradient(135deg, #1a56db, #1e40af)',
@@ -69,28 +74,28 @@ export default function Scene00_Opening({ data }) {
             width: 10, height: 10, borderRadius: '50%', background: '#16a34a',
             animation: 'livepulse 1.8s ease-in-out infinite', display: 'inline-block',
           }} />
-          <span style={{ fontSize: 12, fontWeight: 800, color: '#15803d', letterSpacing: '1px', fontFamily: '"SF Mono", Monaco, monospace' }}>EN LIGNE</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: '#15803d', letterSpacing: '1px', fontFamily: '"SF Mono", Monaco, monospace' }}>
+            {t('scene00.online_badge')}
+          </span>
         </div>
 
-        {/* Main text — bigger */}
+        {/* Main text */}
         <div style={{ textAlign: 'center' }}>
           <div style={{
             fontSize: 32, fontWeight: 800, color: '#0a0a0f', letterSpacing: -1,
             marginBottom: 10, animation: show ? 'fadeUp 0.5s 0.5s ease forwards' : 'none', opacity: 0,
           }}>
-            {msg}
+            {title}
           </div>
           <div style={{
             fontSize: 16, color: '#9ca3af', lineHeight: 1.5,
             animation: show ? 'fadeUp 0.5s 0.7s ease forwards' : 'none', opacity: 0,
           }}>
-            {data?.started?.message?.includes('ouvre')
-              ? 'Conseiller juridique senior · 20 ans d\'expérience · Belgique'
-              : 'Senior legal advisor · 20 years of experience'}
+            {subtitle}
           </div>
         </div>
 
-        {/* Loader dots — bigger */}
+        {/* Loader dots */}
         <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
           {[0, 1, 2].map((i) => (
             <div key={i} style={{
