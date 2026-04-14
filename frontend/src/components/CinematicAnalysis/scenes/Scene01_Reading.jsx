@@ -47,14 +47,17 @@ function FactItem({ text, delay, isLast }) {
 export default function Scene01_Reading({ data, language }) {
   const t = useCinematicT(language);
   const facts = data?.facts_extracted?.facts;
+  const isFr = language?.startsWith('fr');
 
-  // Build displayable fact lines from the extracted facts
+  // Build displayable fact lines from the real extracted facts.
   const factLines = [];
   if (facts) {
     const docType = facts.type_document || facts.document_type || '';
     const region = facts.region_applicable || '';
-    if (docType) factLines.push(`${t('scene01.type_detected')} · ${docType}${region ? ` · ${region}` : ''}`);
-    
+    if (docType && docType !== 'other') {
+      factLines.push(`${t('scene01.type_detected')} · ${docType}${region ? ` · ${region}` : ''}`);
+    }
+
     const dates = facts.key_dates || facts.dates_cles || [];
     dates.forEach((d) => {
       if (d.date || d.description) factLines.push(d.description || d.date);
@@ -71,7 +74,37 @@ export default function Scene01_Reading({ data, language }) {
     });
   }
 
-  const displayFacts = factLines.slice(0, 6);
+  // Continuous placeholder activity while real facts have not yet landed.
+  // We reveal the placeholder items one-by-one every 1.4s so the scene keeps
+  // progressing even while Pass1-4 are still running on the backend.
+  const placeholderLines = isFr ? [
+    'Lecture du document en cours\u2026',
+    'Identification des parties\u2026',
+    'Extraction des dates clés\u2026',
+    'Analyse des montants mentionnés\u2026',
+    'Recherche des références légales\u2026',
+    'Vérification des délais\u2026',
+  ] : [
+    'Reading the document\u2026',
+    'Identifying the parties\u2026',
+    'Extracting key dates\u2026',
+    'Analyzing monetary figures\u2026',
+    'Searching legal references\u2026',
+    'Checking deadlines\u2026',
+  ];
+
+  const [placeholderShown, setPlaceholderShown] = useState(0);
+  useEffect(() => {
+    if (factLines.length > 0) return; // real data landed, stop placeholder reveal
+    const tm = setInterval(() => {
+      setPlaceholderShown((n) => (n < placeholderLines.length ? n + 1 : n));
+    }, 1400);
+    return () => clearInterval(tm);
+  }, [factLines.length, placeholderLines.length]);
+
+  const displayFacts = factLines.length > 0
+    ? factLines.slice(0, 6)
+    : placeholderLines.slice(0, placeholderShown);
   const readingText = t('scene01.reading_in_progress');
 
   return (

@@ -18,6 +18,7 @@ const Spinner = () => (
 function AnimatedCounter({ target, duration = 4000 }) {
   const [value, setValue] = useState(0);
   const ref = useRef();
+  const tickRef = useRef();
 
   useEffect(() => {
     if (!target) return;
@@ -25,7 +26,6 @@ function AnimatedCounter({ target, duration = 4000 }) {
     const animate = (now) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       setValue(Math.round(eased * target));
       if (progress < 1) ref.current = requestAnimationFrame(animate);
@@ -33,6 +33,20 @@ function AnimatedCounter({ target, duration = 4000 }) {
     ref.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(ref.current);
   }, [target, duration]);
+
+  // Once the initial count animation completes, keep nudging the number
+  // upward in small increments so the user perceives live activity while
+  // the backend finishes the analysis.
+  useEffect(() => {
+    if (!target) return;
+    tickRef.current = setInterval(() => {
+      setValue((v) => {
+        if (v < target) return v; // initial animation not done yet
+        return v + Math.floor(1 + Math.random() * 3); // +1 to +3 cases/sec
+      });
+    }, 1000);
+    return () => clearInterval(tickRef.current);
+  }, [target]);
 
   return (
     <span style={{
