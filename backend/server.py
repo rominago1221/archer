@@ -330,41 +330,9 @@ Return ONLY this JSON — no other text:
   "archer_question": {{
     "text": "A SPECIFIC clarifying question referencing a fact from the document (e.g. 'The notice mentions a $150 fee — did you agree to this fee in your lease?' or 'Avez-vous une preuve écrite de votre signalement de harcèlement ?')",
     "options": ["Answer option 1", "Answer option 2", "Answer option 3"]
-  }},
-  "strategy_narrative": {{
-    "intro_text": "2-3 sentence narrative of the strategy Archer recommends. Name the strongest angle. Written in the same language as the rest of the output.",
-    "arguments": [
-      {{
-        "number": 1,
-        "title": "Short name of the argument (e.g. 'Challenge the 6% technical margin')",
-        "angle": "How the argument is deployed in plain language",
-        "impact": "Expected outcome if this argument is accepted"
-      }}
-    ],
-    "objectives": {{
-      "primary": "Best realistic outcome if the strategy fully works",
-      "fallback": "Acceptable outcome if the primary path fails",
-      "avoided": "Worst-case scenario this strategy prevents"
-    }}
-  }},
-  "amounts": {{
-    "at_stake": 800,
-    "max_risk": 1200,
-    "potential_savings": -520
-  }},
-  "analysis_depth": {{
-    "articles_consulted": 0,
-    "jurisprudences_verified": 0,
-    "archer_confidence": 0
   }}
 }}
-MANDATORY: archer_question MUST be present with 2-4 options. success_probability values MUST sum to 100 with no value below 2 or above 95. next_steps MUST have exactly 3 items with specific legal references.
-
-strategy_narrative MUST contain 3-5 arguments (prefer 4). Each argument MUST have a title, angle, and impact field — never leave blanks. objectives MUST have primary + fallback + avoided filled out.
-
-amounts: at_stake is the current amount the user could lose (positive number), max_risk is the worst-case amount (positive, higher than at_stake), potential_savings is the amount saved by following the strategy (negative number, e.g. -520). If no monetary stake applies, set all three to null.
-
-analysis_depth.articles_consulted = total legal articles referenced across your analysis; jurisprudences_verified = number of case-law citations; archer_confidence = integer 0-100 reflecting Archer's own confidence in the recommended strategy given data quality."""
+MANDATORY: archer_question MUST be present with 2-4 options. success_probability values MUST sum to 100 with no value below 2 or above 95. next_steps MUST have exactly 3 items with specific legal references."""
 
 PASS4A_SYSTEM = """You are a senior attorney representing the user. Your job is to make the STRONGEST possible case for your client. Find every argument, every procedural defect, every legal protection that benefits your client. Be aggressive and thorough. You MUST produce exactly 4-5 strong arguments — NEVER leave arguments empty."""
 
@@ -1786,41 +1754,9 @@ Retourne UNIQUEMENT ce JSON:
   "lawyer_recommendation": {{"necessaire": true, "urgence": "immediatement|dans_3_jours|dans_la_semaine|optionnel", "raison": "Raison", "type_avocat": "droit_du_travail|droit_du_bail|droit_penal|consommateur"}},
   "success_probability": {{"resolution_favorable": 35, "compromis_negocie": 48, "perte_partielle": 12, "perte_totale": 5}},
   "key_insight": "La phrase la plus importante",
-  "archer_question": {{"text": "Question SPECIFIQUE", "options": ["Option 1", "Option 2", "Option 3"]}},
-  "strategy_narrative": {{
-    "intro_text": "Narratif de 2-3 phrases sur la strategie recommandee. Nomme l'angle le plus solide. En francais, ton direct.",
-    "arguments": [
-      {{
-        "number": 1,
-        "title": "Nom court de l'argument (ex: 'Contestation de la marge technique de 6%')",
-        "angle": "Comment l'argument est deploye en langage clair",
-        "impact": "Resultat attendu si l'argument est accepte"
-      }}
-    ],
-    "objectives": {{
-      "primary": "Meilleur resultat realiste si la strategie fonctionne pleinement",
-      "fallback": "Resultat acceptable si l'objectif principal echoue",
-      "avoided": "Pire scenario que cette strategie evite"
-    }}
-  }},
-  "amounts": {{
-    "at_stake": 800,
-    "max_risk": 1200,
-    "potential_savings": -520
-  }},
-  "analysis_depth": {{
-    "articles_consulted": 0,
-    "jurisprudences_verified": 0,
-    "archer_confidence": 0
-  }}
+  "archer_question": {{"text": "Question SPECIFIQUE", "options": ["Option 1", "Option 2", "Option 3"]}}
 }}
-OBLIGATOIRE: archer_question DOIT etre present. case_stage DOIT etre detecte correctement.
-
-strategy_narrative DOIT contenir 3-5 arguments (prefere 4). Chaque argument DOIT avoir title, angle, impact — jamais vide. objectives DOIT contenir primary + fallback + avoided.
-
-amounts: at_stake = montant actuel que l'utilisateur pourrait perdre (nombre positif), max_risk = pire cas (positif, plus eleve qu'at_stake), potential_savings = economie si la strategie reussit (nombre NEGATIF, ex: -520). Si aucun enjeu monetaire, met les trois a null.
-
-analysis_depth.articles_consulted = nombre total d'articles legaux cites dans ton analyse; jurisprudences_verified = nombre de jurisprudences citees; archer_confidence = entier 0-100 reflechissant la confiance d'Archer dans la strategie."""
+OBLIGATOIRE: archer_question DOIT etre present. case_stage DOIT etre detecte correctement."""
 
 BE_PASS4A_SYSTEM = """Tu es un avocat senior en Belgique representant l'utilisateur. Ton travail est de construire le dossier LE PLUS SOLIDE possible pour ton client. Trouve chaque argument, chaque vice de procedure, chaque protection legale qui beneficie a ton client. Sois agressif et exhaustif.
 

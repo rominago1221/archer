@@ -27,7 +27,7 @@ export function useAnalysisStream(caseId) {
     emittedRef.current = new Set();
     sceneStartRef.current = Date.now();
     const startedAt = Date.now();
-    const HARD_TIMEOUT_MS = 120000;
+    const HARD_TIMEOUT_MS = 180000;
 
     const API = process.env.REACT_APP_BACKEND_URL || '';
 

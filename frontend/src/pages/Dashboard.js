@@ -468,7 +468,7 @@ const Dashboard = () => {
               const cTypeName = t.caseType[c.type] || t.caseType.other;
               return (
                 <div key={c.case_id} data-testid={`case-item-${c.case_id}`}
-                  onClick={() => setSelectedId(c.case_id)}
+                  onClick={() => navigate(`/cases/${c.case_id}`)}
                   style={{
                     margin: '2px 7px', padding: 9, borderRadius: 9, cursor: 'pointer',
                     border: isActive ? '0.5px solid #bfdbfe' : '0.5px solid transparent',
