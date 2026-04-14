@@ -136,6 +136,10 @@ class Case(BaseModel):
     cumulative_financial_exposure: Optional[str] = None
     master_deadlines: List[dict] = []
     multi_doc_summary: Optional[str] = None
+    # Dashboard V7 structured payloads (Sprint 1).
+    strategy_narrative: Optional[dict] = None
+    amounts: Optional[dict] = None
+    analysis_depth: Optional[dict] = None
 
     @field_validator('deadline', mode='before')
     @classmethod

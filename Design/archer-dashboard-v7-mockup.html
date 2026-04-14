@@ -1,0 +1,2295 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archer — Dashboard V7 Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+    background: #f4f4f1;
+    color: #0a0a0f;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+    font-size: 14px;
+  }
+  .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+
+  /* ============ SIDEBAR ============ */
+  .sidebar {
+    background: #ffffff;
+    border-right: 0.5px solid #e2e0db;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  /* LOGO BLOCK */
+  .logo-block { padding: 0 8px; margin-bottom: 18px; }
+  .logo { font-size: 26px; font-weight: 800; color: #1a56db; letter-spacing: -0.8px; line-height: 1; margin-bottom: 4px; }
+  .logo-tagline { font-size: 10px; color: #9ca3af; }
+
+  /* LIVE STATUS BLOCK SOUS LE LOGO */
+  .live-status {
+    margin: 0 8px 22px;
+    padding: 14px 14px;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    border: 0.5px solid #16a34a;
+    border-radius: 12px;
+  }
+  .live-status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .live-status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #16a34a;
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
+    animation: livePulse 2s ease-in-out infinite;
+  }
+  @keyframes livePulse {
+    0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+  }
+  .live-status-label {
+    font-size: 9px;
+    font-weight: 800;
+    color: #15803d;
+    letter-spacing: 0.8px;
+  }
+
+  .live-stats { display: flex; flex-direction: column; gap: 8px; }
+  .live-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+  }
+  .live-stat-icon {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 0.5px solid #c0e8d0;
+    display: flex; align-items: center; justify-content: center;
+    color: #15803d;
+    flex-shrink: 0;
+  }
+  .live-stat-icon svg { width: 11px; height: 11px; }
+  .live-stat-text {
+    color: #0a0a0f;
+    line-height: 1.3;
+    flex: 1;
+  }
+  .live-stat-text strong {
+    color: #15803d;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .live-stat-text-sub {
+    font-size: 9px; color: #6b7280;
+    display: block; margin-top: 1px;
+  }
+
+  /* NAV */
+  .nav { display: flex; flex-direction: column; gap: 2px; margin-bottom: 24px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 8px;
+    font-size: 13px; color: #555; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .nav-item:hover { background: #fafaf8; }
+  .nav-item.active { background: #eff6ff; color: #1a56db; font-weight: 700; }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .nav-section-label {
+    font-size: 9px; font-weight: 800; color: #9ca3af;
+    letter-spacing: 1.2px; padding: 0 12px; margin-bottom: 8px; margin-top: 8px;
+  }
+  .case-card {
+    background: #fafaf8; border: 0.5px solid #e2e0db;
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+    cursor: pointer; border-left: 3px solid #ef4444;
+  }
+  .case-card-title { font-size: 12px; font-weight: 700; color: #0a0a0f; line-height: 1.35; margin-bottom: 6px; }
+  .case-card-meta { display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #9ca3af; }
+  .case-card-score { font-weight: 800; color: #ef4444; font-family: "SF Mono", Monaco, monospace; }
+  .new-case-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; background: transparent;
+    border: 0.5px dashed #e2e0db; border-radius: 8px;
+    font-size: 12px; color: #555; cursor: pointer;
+    width: 100%; justify-content: center; margin-bottom: 16px;
+  }
+  .new-case-btn:hover { background: #eff6ff; border-color: #1a56db; color: #1a56db; border-style: solid; }
+
+  /* TRUST BADGES IN SIDEBAR */
+  .trust-badges {
+    margin: 0 4px 16px;
+    padding: 12px 12px;
+    background: #fafaf8;
+    border-radius: 10px;
+    border: 0.5px solid #e2e0db;
+  }
+  .trust-badges-label {
+    font-size: 8px; font-weight: 800; color: #9ca3af;
+    letter-spacing: 0.8px; margin-bottom: 8px;
+  }
+  .trust-badges-list {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .trust-badge-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 10px; color: #555;
+  }
+  .trust-badge-item svg {
+    width: 12px; height: 12px;
+    color: #1a56db;
+    flex-shrink: 0;
+  }
+
+  .sidebar-footer {
+    margin-top: auto; padding-top: 16px;
+    border-top: 0.5px solid #e2e0db;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: #f3e8ff; color: #7c3aed;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+  }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 12px; font-weight: 700; color: #0a0a0f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-email { font-size: 10px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ============ MAIN CONTENT ============ */
+  .main { padding: 32px 40px; max-width: 1200px; width: 100%; }
+
+  /* TOP BAR */
+  .top-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .breadcrumb { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #9ca3af; }
+  .breadcrumb a { color: #1a56db; text-decoration: none; font-weight: 600; }
+  .breadcrumb-sep { color: #d1d5db; }
+  .top-actions { display: flex; align-items: center; gap: 12px; }
+  .top-action-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 12px; background: #ffffff;
+    border: 0.5px solid #e2e0db; border-radius: 8px;
+    font-size: 12px; color: #555; cursor: pointer;
+  }
+  .top-action-btn:hover { background: #fafaf8; border-color: #d1d5db; }
+  .top-action-btn svg { width: 13px; height: 13px; }
+  .country-switch {
+    display: flex; align-items: center; gap: 0;
+    background: #ffffff; border: 0.5px solid #e2e0db;
+    border-radius: 8px; overflow: hidden; font-size: 12px;
+  }
+  .country-switch button { border: none; background: transparent; padding: 7px 12px; cursor: pointer; color: #9ca3af; }
+  .country-switch button.active { background: #1a56db; color: #ffffff; font-weight: 700; }
+
+  /* CASE HEADER */
+  .case-header { margin-bottom: 24px; }
+  .case-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; background: #fef3c7; border-radius: 6px;
+    font-size: 9px; font-weight: 800; color: #b45309;
+    letter-spacing: 0.8px; margin-bottom: 12px;
+  }
+  .case-title { font-size: 28px; font-weight: 800; color: #0a0a0f; letter-spacing: -1px; line-height: 1.15; margin-bottom: 8px; }
+  .case-meta { font-size: 12px; color: #9ca3af; }
+
+  /* TIMELINE PARCOURS */
+  .progress-timeline {
+    background: #ffffff;
+    border: 0.5px solid #e2e0db;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+  .progress-label {
+    font-size: 9px; font-weight: 800; color: #9ca3af;
+    letter-spacing: 1.2px; margin-bottom: 14px;
+  }
+  .progress-steps { display: flex; align-items: center; gap: 4px; position: relative; }
+  .progress-step { flex: 1; text-align: center; position: relative; }
+  .progress-step-circle {
+    width: 24px; height: 24px; border-radius: 50%;
+    margin: 0 auto 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800;
+    background: #e2e0db; color: #9ca3af;
+    border: 2px solid #ffffff;
+    position: relative; z-index: 2;
+  }
+  .progress-step.done .progress-step-circle { background: #16a34a; color: #ffffff; }
+  .progress-step.current .progress-step-circle {
+    background: #1a56db; color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(26,86,219,0.15);
+  }
+  .progress-step-label { font-size: 10px; color: #9ca3af; line-height: 1.2; }
+  .progress-step.done .progress-step-label { color: #16a34a; font-weight: 700; }
+  .progress-step.current .progress-step-label { color: #1a56db; font-weight: 700; }
+  .progress-line {
+    position: absolute; top: 11px;
+    left: calc(50% + 12px); right: calc(-50% + 12px);
+    height: 2px; background: #e2e0db; z-index: 1;
+  }
+  .progress-step.done .progress-line { background: #16a34a; }
+
+  /* ============ ZONE HERO RETRAVAILLÉE ============ */
+  .hero-row {
+    display: grid; grid-template-columns: 1.4fr 1fr;
+    gap: 16px; margin-bottom: 20px;
+  }
+
+  /* SCORE HERO (left) */
+  .score-hero {
+    background: #ffffff; border: 0.5px solid #e2e0db;
+    border-radius: 16px; padding: 22px 26px;
+    box-shadow: 0 8px 32px rgba(10,10,15,0.04);
+  }
+  .score-label {
+    font-size: 9px; font-weight: 800; color: #9ca3af;
+    letter-spacing: 1.2px; margin-bottom: 4px;
+  }
+  .score-value-row {
+    display: flex; align-items: baseline; gap: 14px; margin-bottom: 10px;
+  }
+  .score-number {
+    font-size: 76px; font-weight: 900; letter-spacing: -3px; line-height: 0.85;
+    font-variant-numeric: tabular-nums; color: #f59e0b;
+  }
+  .score-out-of { font-size: 24px; font-weight: 700; color: #fde68a; }
+  .score-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; background: #f59e0b; color: #ffffff;
+    border-radius: 30px; font-size: 9px; font-weight: 800; letter-spacing: 0.8px;
+    margin-bottom: 10px;
+  }
+  .score-pill svg { width: 10px; height: 10px; }
+  .score-tagline {
+    font-size: 16px; font-weight: 800; color: #0a0a0f;
+    font-style: italic; letter-spacing: -0.3px; line-height: 1.2;
+    padding-top: 12px; padding-bottom: 12px;
+    border-top: 0.5px solid #e2e0db;
+  }
+  .score-tagline .accent { color: #1a56db; }
+
+  /* SOUS-SCORES INTÉGRÉS DANS LE SCORE HERO */
+  .subscores-inline {
+    padding-top: 12px;
+    border-top: 0.5px solid #e2e0db;
+  }
+  .subscores-inline-label {
+    font-size: 9px; font-weight: 800; color: #9ca3af;
+    letter-spacing: 1.2px; margin-bottom: 10px;
+  }
+  .subscores-inline-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px 16px;
+  }
+  .subscore-inline-item {}
+  .subscore-inline-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 3px;
+  }
+  .subscore-inline-name {
+    font-size: 11px; font-weight: 700; color: #0a0a0f;
+  }
+  .subscore-inline-value {
+    font-size: 13px; font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.3px;
+  }
+  .subscore-inline-bar {
+    height: 4px; background: #f4f4f1; border-radius: 3px;
+    overflow: hidden;
+  }
+  .subscore-inline-bar-fill { height: 100%; border-radius: 3px; }
+  .sub-red { color: #ef4444; }
+  .sub-amber { color: #f59e0b; }
+  .sub-green { color: #16a34a; }
+  .bar-red { background: #ef4444; }
+  .bar-amber { background: #f59e0b; }
+  .bar-green { background: #16a34a; }
+
+  /* RIGHT CARD - DENSIFIED & COMPACT */
+  .info-card {
+    background: #ffffff; border: 0.5px solid #e2e0db;
+    border-radius: 16px; padding: 18px 20px;
+    box-shadow: 0 8px 32px rgba(10,10,15,0.04);
+    display: flex; flex-direction: column;
+  }
+
+  /* DEADLINE PILL ON TOP - COMPACT */
+  .deadline-pill {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px;
+    background: linear-gradient(135deg, #fef2f2 0%, #fef2f2 100%);
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+  .deadline-pill-left { display: flex; align-items: center; gap: 10px; }
+  .deadline-pill-icon {
+    width: 32px; height: 32px;
+    background: #b91c1c;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #ffffff; font-size: 14px;
+  }
+  .deadline-pill-text {
+    font-size: 9px; font-weight: 800;
+    color: #b91c1c; letter-spacing: 0.5px;
+  }
+  .deadline-pill-text .big {
+    font-size: 19px; font-weight: 900; line-height: 1;
+    display: block; margin-bottom: 3px; letter-spacing: -0.6px;
+  }
+  .deadline-pill-date {
+    font-size: 9px; color: #b91c1c;
+    text-align: right;
+  }
+  .deadline-pill-date strong { font-weight: 800; display: block; font-size: 10px; }
+
+  /* INFO SECTIONS - COMPACT */
+  .info-section {
+    margin-bottom: 16px;
+  }
+  .info-section:last-child { margin-bottom: 0; }
+  .info-section-label {
+    font-size: 9px; font-weight: 800; color: #9ca3af;
+    letter-spacing: 1.2px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .info-section-label svg {
+    width: 11px; height: 11px;
+    color: #9ca3af;
+  }
+
+  /* FINANCIAL — 3 CELLULES SUR 1 LIGNE */
+  .financial-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.2fr;
+    gap: 8px;
+  }
+  .financial-cell {
+    background: #fafaf8;
+    border-radius: 8px;
+    padding: 10px 11px;
+  }
+  .financial-cell.savings {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    border: 0.5px solid #16a34a;
+  }
+  .financial-cell-label { font-size: 8px; font-weight: 800; color: #9ca3af; letter-spacing: 0.4px; margin-bottom: 3px; }
+  .financial-cell.savings .financial-cell-label { color: #15803d; }
+  .financial-cell-value {
+    font-size: 16px; font-weight: 900;
+    color: #0a0a0f; letter-spacing: -0.4px;
+    line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .financial-cell-value.danger { color: #b91c1c; }
+  .financial-cell-value.success { color: #15803d; font-size: 17px; }
+
+  /* PROFONDEUR — COMPACT */
+  .analysis-depth {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .analysis-depth-row {
+    display: flex; align-items: center; gap: 9px;
+    padding: 7px 11px;
+    background: #fafaf8;
+    border-radius: 8px;
+  }
+  .analysis-depth-icon {
+    width: 22px; height: 22px;
+    background: #eff6ff;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: #1a56db;
+    flex-shrink: 0;
+  }
+  .analysis-depth-icon svg { width: 11px; height: 11px; }
+  .analysis-depth-text {
+    flex: 1;
+    font-size: 11px;
+    color: #0a0a0f;
+  }
+  .analysis-depth-text strong {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .analysis-depth-confidence {
+    font-size: 11px; font-weight: 900;
+    color: #15803d;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ============ ZONE STRATÉGIE D'ARCHER ============ */
+  .strategy-section {
+    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 60%);
+    border: 1px solid #1a56db;
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    box-shadow: 0 12px 32px rgba(26,86,219,0.08);
+  }
+  .strategy-header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 18px;
+  }
+  .strategy-header-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a56db, #1e40af);
+    display: flex; align-items: center; justify-content: center;
+    color: #ffffff; font-size: 18px; font-weight: 800;
+    box-shadow: 0 4px 12px rgba(26,86,219,0.3);
+  }
+  .strategy-header-text { flex: 1; }
+  .strategy-header-label {
+    font-size: 9px; font-weight: 800; color: #1a56db;
+    letter-spacing: 1.2px; margin-bottom: 4px;
+  }
+  .strategy-header-title {
+    font-size: 20px; font-weight: 800; color: #0a0a0f;
+    letter-spacing: -0.5px; line-height: 1.2;
+  }
+  .strategy-intro {
+    font-size: 14px; color: #1e40af;
+    line-height: 1.6;
+    padding: 16px 20px;
+    background: #ffffff;
+    border-radius: 12px;
+    border-left: 3px solid #1a56db;
+    margin-bottom: 22px;
+  }
+  .strategy-intro strong { color: #0a0a0f; font-weight: 800; }
+  .strategy-arguments-label {
+    font-size: 10px; font-weight: 800; color: #1a56db;
+    letter-spacing: 1px; margin-bottom: 12px;
+  }
+  .strategy-arguments-list {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-bottom: 22px;
+  }
+  .strategy-argument {
+    background: #ffffff;
+    border: 0.5px solid #c7d2fe;
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex; gap: 16px;
+    align-items: flex-start;
+  }
+  .strategy-argument-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #1a56db;
+    color: #ffffff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 900;
+    flex-shrink: 0;
+  }
+  .strategy-argument-content { flex: 1; }
+  .strategy-argument-title {
+    font-size: 14px; font-weight: 800; color: #0a0a0f;
+    margin-bottom: 6px; line-height: 1.3;
+  }
+  .strategy-argument-angle {
+    font-size: 12px; color: #6b7280;
+    line-height: 1.5; margin-bottom: 8px;
+  }
+  .strategy-argument-impact {
+    font-size: 11px;
+    background: #f0fdf4;
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #15803d;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .strategy-argument-impact strong { font-weight: 800; }
+  .strategy-objectives {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 18px 22px;
+    border: 0.5px solid #c7d2fe;
+  }
+  .strategy-objectives-label {
+    font-size: 10px; font-weight: 800; color: #1a56db;
+    letter-spacing: 1px; margin-bottom: 12px;
+  }
+  .strategy-objective-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 8px 0;
+  }
+  .strategy-objective-item:not(:last-child) { border-bottom: 0.5px solid #f4f4f1; }
+  .strategy-objective-icon {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .strategy-objective-icon.primary { background: #dcfce7; color: #15803d; }
+  .strategy-objective-icon.fallback { background: #fef3c7; color: #b45309; }
+  .strategy-objective-icon.avoided { background: #fee2e2; color: #b91c1c; }
+  .strategy-objective-icon svg { width: 11px; height: 11px; }
+  .strategy-objective-text { flex: 1; }
+  .strategy-objective-title {
+    font-size: 11px; font-weight: 800;
+    letter-spacing: 0.4px; margin-bottom: 2px;
+  }
+  .strategy-objective-title.primary { color: #15803d; }
+  .strategy-objective-title.fallback { color: #b45309; }
+  .strategy-objective-title.avoided { color: #b91c1c; }
+  .strategy-objective-desc { font-size: 12px; color: #0a0a0f; line-height: 1.4; }
+
+  /* ============ BATTLE ============ */
+  .battle-section {
+    background: #ffffff;
+    border: 0.5px solid #e2e0db;
+    border-radius: 14px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+  }
+  .battle-header { text-align: center; margin-bottom: 24px; }
+  .battle-title-label {
+    font-size: 10px; font-weight: 800; color: #9ca3af;
+    letter-spacing: 1.2px; margin-bottom: 6px;
+  }
+  .battle-title {
+    font-size: 22px; font-weight: 800; color: #0a0a0f;
+    letter-spacing: -0.5px;
+  }
+  .battle-grid {
+    display: grid;
+    grid-template-columns: 1fr 120px 1fr;
+    gap: 16px;
+    align-items: stretch;
+  }
+  .battle-side { }
+  .battle-column-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid;
+  }
+  .battle-side.you .battle-column-header { border-bottom-color: #1a56db; }
+  .battle-side.them .battle-column-header { border-bottom-color: #b91c1c; }
+  .battle-column-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #ffffff; font-size: 14px; font-weight: 800;
+  }
+  .battle-column-avatar.you { background: linear-gradient(135deg, #1a56db, #1e40af); }
+  .battle-column-avatar.them { background: linear-gradient(135deg, #b91c1c, #7f1d1d); }
+  .battle-column-title-block { flex: 1; }
+  .battle-column-title { font-size: 12px; font-weight: 800; letter-spacing: 0.5px; }
+  .battle-column-title.you { color: #1a56db; }
+  .battle-column-title.them { color: #b91c1c; }
+  .battle-column-count { font-size: 9px; color: #9ca3af; }
+  .battle-arg-list { display: flex; flex-direction: column; gap: 10px; }
+  .battle-arg {
+    background: #fafaf8;
+    border-radius: 10px;
+    padding: 12px 14px;
+    border-left: 3px solid;
+  }
+  .battle-arg.you { border-left-color: #1a56db; }
+  .battle-arg.them { border-left-color: #b91c1c; }
+  .battle-arg-num {
+    font-family: "SF Mono", Monaco, monospace;
+    font-size: 9px; font-weight: 800;
+    padding: 2px 6px; border-radius: 3px;
+    margin-right: 8px;
+  }
+  .battle-arg.you .battle-arg-num { color: #1a56db; background: #eff6ff; }
+  .battle-arg.them .battle-arg-num { color: #b91c1c; background: #fee2e2; }
+  .battle-arg-text { font-size: 12px; font-weight: 600; color: #0a0a0f; line-height: 1.4; display: inline; }
+  .battle-arg-strength { font-size: 9px; color: #9ca3af; margin-top: 6px; }
+  .battle-arg-strength strong { font-weight: 800; }
+  .battle-arg-strength .strong { color: #15803d; }
+  .battle-arg-strength .medium { color: #b45309; }
+  .battle-center {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 14px; padding: 12px 0;
+  }
+  .battle-swords { width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; }
+  .battle-score-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #1a56db, #1e40af);
+    padding: 10px 18px;
+    border-radius: 30px;
+    box-shadow: 0 8px 20px rgba(26,86,219,0.25);
+    font-family: "SF Mono", Monaco, monospace;
+  }
+  .battle-score-you-num {
+    font-size: 22px; font-weight: 900; color: #ffffff;
+    letter-spacing: -1px;
+  }
+  .battle-score-vs-text {
+    font-size: 10px; color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 800;
+  }
+  .battle-score-them-num {
+    font-size: 22px; font-weight: 900; color: #fca5a5;
+    letter-spacing: -1px;
+  }
+  .battle-verdict {
+    margin-top: 24px;
+    padding: 16px 22px;
+    background: linear-gradient(135deg, #eff6ff, #f0fdf4);
+    border-radius: 12px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0a0a0f;
+    border: 0.5px solid #c7d2fe;
+  }
+  .battle-verdict-icon { font-size: 16px; margin-right: 8px; }
+  .battle-verdict strong { color: #1a56db; font-weight: 900; }
+
+  /* FINDINGS */
+  .findings-section { margin-bottom: 28px; }
+  .findings-section-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+  }
+  .findings-section-icon {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .findings-section-icon.critical { background: #fee2e2; }
+  .findings-section-icon.strong { background: #dcfce7; }
+  .findings-section-icon svg { width: 12px; height: 12px; }
+  .findings-section-title { font-size: 11px; font-weight: 800; letter-spacing: 1.2px; }
+  .findings-section-title.critical { color: #b91c1c; }
+  .findings-section-title.strong { color: #15803d; }
+  .findings-grid { display: flex; flex-direction: column; gap: 10px; }
+  .finding-card {
+    background: #ffffff;
+    border: 0.5px solid #e2e0db;
+    border-radius: 12px;
+    padding: 18px 22px;
+    transition: all 0.15s; cursor: pointer;
+  }
+  .finding-card:hover { border-color: #d1d5db; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(10,10,15,0.04); }
+  .finding-card.critical { border-left: 3px solid #b91c1c; }
+  .finding-card.strong { border-left: 3px solid #15803d; }
+  .finding-content { display: flex; align-items: flex-start; gap: 14px; }
+  .finding-badge {
+    font-size: 9px; font-weight: 800;
+    padding: 4px 10px; border-radius: 6px;
+    letter-spacing: 0.4px; flex-shrink: 0; margin-top: 2px;
+  }
+  .finding-badge.critical { background: #fee2e2; color: #b91c1c; }
+  .finding-badge.strong { background: #dcfce7; color: #15803d; }
+  .finding-body { flex: 1; }
+  .finding-title { font-size: 14px; font-weight: 800; color: #0a0a0f; margin-bottom: 6px; line-height: 1.4; }
+  .finding-refs {
+    font-size: 11px; color: #9ca3af; margin-bottom: 12px;
+    font-family: "SF Mono", Monaco, monospace;
+  }
+  .finding-ref-link {
+    color: #1a56db; text-decoration: none;
+    border-bottom: 1px dotted #1a56db; cursor: pointer;
+  }
+  .finding-ref-link:hover { background: #eff6ff; }
+  .finding-pedagogy { background: #fafaf8; border-radius: 8px; padding: 10px 14px; }
+  .finding-pedagogy.strong { background: #f0fdf4; }
+  .finding-pedagogy-label { font-size: 9px; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .finding-pedagogy-label.critical { color: #b91c1c; }
+  .finding-pedagogy-label.strong { color: #15803d; }
+  .finding-pedagogy-text { font-size: 12px; color: #555; line-height: 1.5; }
+
+  /* DOCUMENTS */
+  .documents-section {
+    background: #ffffff; border: 0.5px solid #e2e0db;
+    border-radius: 14px; padding: 20px 24px; margin-bottom: 20px;
+  }
+  .documents-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .documents-title { font-size: 14px; font-weight: 800; color: #0a0a0f; }
+  .documents-counter { font-size: 11px; color: #9ca3af; }
+  .documents-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .document-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; background: #fafaf8; border-radius: 10px;
+  }
+  .document-icon {
+    width: 32px; height: 32px; background: #eff6ff; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #1a56db; flex-shrink: 0;
+  }
+  .document-icon svg { width: 16px; height: 16px; }
+  .document-info { flex: 1; min-width: 0; }
+  .document-name { font-size: 12px; font-weight: 700; color: #0a0a0f; margin-bottom: 2px; }
+  .document-meta { font-size: 10px; color: #9ca3af; }
+  .document-status {
+    font-size: 9px; font-weight: 800; padding: 3px 8px; border-radius: 4px;
+    background: #dcfce7; color: #15803d; letter-spacing: 0.4px;
+  }
+  .add-document-paywall {
+    background: linear-gradient(135deg, #eff6ff 0%, #fef3c7 100%);
+    border: 0.5px solid #1a56db; border-radius: 10px;
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .add-document-paywall-icon {
+    width: 36px; height: 36px; background: #1a56db;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #ffffff; flex-shrink: 0;
+  }
+  .add-document-paywall-icon svg { width: 18px; height: 18px; }
+  .add-document-paywall-text { flex: 1; }
+  .add-document-paywall-title { font-size: 12px; font-weight: 800; color: #0a0a0f; margin-bottom: 2px; }
+  .add-document-paywall-sub { font-size: 11px; color: #555; }
+  .add-document-paywall-btn {
+    padding: 8px 16px; background: #1a56db; color: #ffffff;
+    border: none; border-radius: 8px;
+    font-size: 11px; font-weight: 800; cursor: pointer; white-space: nowrap;
+  }
+
+  /* SCORE HISTORY */
+  .score-history {
+    background: #ffffff; border: 0.5px solid #e2e0db;
+    border-radius: 14px; padding: 20px 24px; margin-bottom: 20px;
+  }
+  .score-history-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .score-history-title { font-size: 14px; font-weight: 800; color: #0a0a0f; }
+  .score-history-trend {
+    font-size: 11px; font-weight: 700;
+    padding: 4px 10px; border-radius: 30px;
+    background: #dcfce7; color: #15803d;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .score-history-trend svg { width: 11px; height: 11px; }
+  .score-history-graph { height: 140px; position: relative; }
+  .score-history-graph svg { width: 100%; height: 100%; }
+  .score-history-events {
+    display: flex; justify-content: space-between;
+    margin-top: 8px; font-size: 9px; color: #9ca3af;
+    padding: 0 4px;
+  }
+  .score-history-event { text-align: center; flex: 1; }
+  .score-history-event-date { font-weight: 700; color: #0a0a0f; }
+  .score-history-event-action { color: #9ca3af; }
+
+  /* ARCHER QUESTIONS */
+  .archer-questions {
+    background: linear-gradient(135deg, #eff6ff 0%, #fafaf8 100%);
+    border: 0.5px solid #1a56db;
+    border-radius: 14px; padding: 22px 26px; margin-bottom: 20px;
+  }
+  .archer-questions-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+  }
+  .archer-questions-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a56db, #1e40af);
+    color: #ffffff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800;
+  }
+  .archer-questions-title-block { flex: 1; }
+  .archer-questions-title { font-size: 13px; font-weight: 800; color: #0a0a0f; }
+  .archer-questions-subtitle { font-size: 10px; color: #6b7280; }
+  .archer-questions-counter {
+    font-size: 9px; font-weight: 800; color: #1a56db;
+    background: #ffffff; padding: 4px 10px; border-radius: 30px;
+    border: 0.5px solid #1a56db;
+  }
+  .archer-question-item { margin-bottom: 16px; }
+  .archer-question-item:last-child { margin-bottom: 0; }
+  .archer-question-text {
+    font-size: 13px; color: #0a0a0f; font-weight: 600;
+    margin-bottom: 10px; line-height: 1.4;
+  }
+  .archer-question-choices { display: flex; gap: 8px; flex-wrap: wrap; }
+  .archer-question-choice {
+    padding: 7px 14px; background: #ffffff;
+    border: 0.5px solid #e2e0db; border-radius: 30px;
+    font-size: 11px; color: #0a0a0f; cursor: pointer;
+  }
+  .archer-question-choice:hover { background: #1a56db; color: #ffffff; border-color: #1a56db; }
+  .archer-question-open-chat {
+    margin-top: 12px;
+    font-size: 11px; color: #1a56db;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding-top: 12px; border-top: 0.5px solid #c7d2fe;
+  }
+
+  /* LEGAL NEWS */
+  .legal-news {
+    background: #ffffff; border: 0.5px solid #e2e0db;
+    border-radius: 14px; padding: 20px 24px; margin-bottom: 28px;
+  }
+  .legal-news-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .legal-news-title-block { display: flex; align-items: center; gap: 8px; }
+  .legal-news-title { font-size: 14px; font-weight: 800; color: #0a0a0f; }
+  .legal-news-live-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px; background: #dcfce7;
+    border-radius: 30px;
+    font-size: 9px; font-weight: 800; color: #15803d; letter-spacing: 0.4px;
+  }
+  .legal-news-live-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #16a34a;
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+  .legal-news-list { display: flex; flex-direction: column; gap: 12px; }
+  .legal-news-item {
+    display: flex; gap: 12px; padding: 12px 14px;
+    background: #fafaf8; border-radius: 10px; cursor: pointer;
+  }
+  .legal-news-item:hover { background: #f4f4f1; }
+  .legal-news-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .legal-news-icon.update { background: #fef3c7; color: #b45309; }
+  .legal-news-icon.new { background: #dcfce7; color: #15803d; }
+  .legal-news-icon svg { width: 14px; height: 14px; }
+  .legal-news-content { flex: 1; }
+  .legal-news-meta {
+    display: flex; gap: 10px; align-items: center; margin-bottom: 4px;
+  }
+  .legal-news-tag {
+    font-size: 9px; font-weight: 800;
+    padding: 2px 8px; border-radius: 4px; letter-spacing: 0.4px;
+  }
+  .legal-news-tag.update { background: #fef3c7; color: #b45309; }
+  .legal-news-tag.new { background: #dcfce7; color: #15803d; }
+  .legal-news-date { font-size: 10px; color: #9ca3af; }
+  .legal-news-text { font-size: 12px; color: #0a0a0f; line-height: 1.4; font-weight: 600; }
+  .legal-news-impact { font-size: 11px; color: #6b7280; margin-top: 4px; font-style: italic; }
+
+  /* SCENARIOS */
+  .scenarios-section { margin-bottom: 28px; }
+  .scenarios-intro { text-align: center; margin-bottom: 24px; padding: 0 40px; }
+  .scenarios-label {
+    font-size: 10px; font-weight: 800; color: #1a56db;
+    letter-spacing: 1.5px; margin-bottom: 8px;
+  }
+  .scenarios-title {
+    font-size: 26px; font-weight: 800; color: #0a0a0f;
+    letter-spacing: -0.6px; line-height: 1.2; margin-bottom: 8px;
+  }
+  .scenarios-subtitle { font-size: 13px; color: #6b7280; line-height: 1.5; }
+
+  .scenarios-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .scenario-card {
+    background: #ffffff;
+    border: 0.5px solid #e2e0db;
+    border-radius: 14px;
+    padding: 20px 18px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    display: flex; flex-direction: column;
+  }
+  .scenario-card:hover { border-color: #d1d5db; transform: translateY(-2px); box-shadow: 0 12px 24px rgba(10,10,15,0.06); }
+  .scenario-card.recommended {
+    border: 2px solid #1a56db;
+    box-shadow: 0 16px 40px rgba(26,86,219,0.12);
+  }
+  .scenario-recommended-badge {
+    position: absolute; top: -10px; left: 50%;
+    transform: translateX(-50%);
+    background: #1a56db; color: #ffffff;
+    font-size: 9px; font-weight: 800;
+    padding: 4px 14px; border-radius: 30px;
+    letter-spacing: 0.5px; white-space: nowrap;
+  }
+  .scenario-name {
+    font-size: 12px; font-weight: 800; color: #0a0a0f;
+    margin-bottom: 14px; line-height: 1.3; min-height: 32px;
+  }
+  .scenario-prob-row { display: flex; align-items: baseline; gap: 4px; margin-bottom: 4px; }
+  .scenario-prob-number {
+    font-size: 38px; font-weight: 900; letter-spacing: -1.5px;
+    line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .scenario-prob-percent { font-size: 16px; font-weight: 700; color: #9ca3af; }
+  .scenario-prob-label {
+    font-size: 9px; color: #9ca3af; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 12px;
+  }
+  .scenario-divider { height: 0.5px; background: #e2e0db; margin: 0 -18px 12px; }
+  .scenario-price-row {
+    display: flex; align-items: baseline;
+    justify-content: space-between; margin-bottom: 10px;
+  }
+  .scenario-price {
+    font-size: 22px; font-weight: 900; color: #0a0a0f;
+    letter-spacing: -0.5px; font-variant-numeric: tabular-nums;
+  }
+  .scenario-price.free { color: #16a34a; }
+  .scenario-price-label { font-size: 9px; color: #9ca3af; }
+  .scenario-justification {
+    font-size: 11px; color: #555; line-height: 1.5;
+    margin-bottom: 14px; flex: 1;
+  }
+  .scenario-net-gain {
+    background: #f0fdf4; border-radius: 8px;
+    padding: 8px 10px; text-align: center; margin-bottom: 12px;
+  }
+  .scenario-net-gain-label { font-size: 8px; font-weight: 800; color: #15803d; letter-spacing: 0.4px; margin-bottom: 2px; }
+  .scenario-net-gain-value { font-size: 14px; font-weight: 800; color: #15803d; font-variant-numeric: tabular-nums; }
+  .scenario-attorney {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; background: #fafaf8; border-radius: 8px;
+    margin-bottom: 12px;
+  }
+  .scenario-attorney-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, #1e40af, #312e81);
+    color: #ffffff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 800;
+  }
+  .scenario-attorney-info { flex: 1; min-width: 0; }
+  .scenario-attorney-name { font-size: 10px; font-weight: 700; color: #0a0a0f; }
+  .scenario-attorney-meta { font-size: 9px; color: #9ca3af; }
+  .scenario-cta {
+    width: 100%; padding: 11px;
+    background: #f4f4f1; color: #0a0a0f;
+    border: none; border-radius: 8px;
+    font-size: 12px; font-weight: 800; cursor: pointer;
+  }
+  .scenario-cta:hover { background: #e2e0db; }
+  .scenario-card.recommended .scenario-cta { background: #1a56db; color: #ffffff; }
+  .scenario-card.recommended .scenario-cta:hover { background: #1e40af; }
+
+  /* SIMILAR CASES */
+  .similar-cases {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    border: 0.5px solid #15803d;
+    border-radius: 14px; padding: 22px 26px; margin-bottom: 20px;
+  }
+  .similar-cases-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+  }
+  .similar-cases-icon {
+    width: 36px; height: 36px; background: #15803d;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #ffffff;
+  }
+  .similar-cases-icon svg { width: 18px; height: 18px; }
+  .similar-cases-title-block { flex: 1; }
+  .similar-cases-title { font-size: 13px; font-weight: 800; color: #0a0a0f; }
+  .similar-cases-subtitle { font-size: 10px; color: #6b7280; }
+  .similar-cases-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .similar-stat { text-align: center; padding: 14px 12px; background: #ffffff; border-radius: 10px; }
+  .similar-stat-number {
+    font-size: 28px; font-weight: 900;
+    letter-spacing: -1px; line-height: 1;
+    font-variant-numeric: tabular-nums; margin-bottom: 4px;
+  }
+  .similar-stat-label { font-size: 9px; font-weight: 800; color: #6b7280; letter-spacing: 0.4px; }
+  .stat-green { color: #15803d; }
+  .stat-blue { color: #1a56db; }
+  .stat-amber { color: #b45309; }
+
+  /* ASK ARCHER */
+  .ask-archer {
+    background: #ffffff; border: 0.5px solid #e2e0db;
+    border-radius: 12px; padding: 20px 24px; margin-bottom: 32px;
+  }
+  .ask-archer-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .ask-archer-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a56db, #1e40af);
+    color: #ffffff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800;
+  }
+  .ask-archer-title { font-size: 12px; font-weight: 700; color: #0a0a0f; }
+  .ask-archer-subtitle { font-size: 10px; color: #9ca3af; }
+  .ask-archer-input {
+    display: flex; align-items: center; gap: 10px;
+    background: #fafaf8; border: 0.5px solid #e2e0db;
+    border-radius: 10px; padding: 12px 16px;
+  }
+  .ask-archer-input input {
+    flex: 1; border: none; background: transparent;
+    font-size: 13px; color: #0a0a0f; outline: none; font-family: inherit;
+  }
+  .ask-archer-input input::placeholder { color: #9ca3af; }
+  .ask-archer-input-btn {
+    padding: 6px 12px; background: #1a56db;
+    color: #ffffff; border: none; border-radius: 6px;
+    font-size: 11px; font-weight: 700; cursor: pointer;
+  }
+
+  /* ============ CTA GÉNÉRER LETTRE ============ */
+  .generate-letter-cta-section {
+    margin: 28px 0;
+    text-align: center;
+  }
+  .generate-letter-cta-label {
+    font-size: 10px; font-weight: 800; color: #1a56db;
+    letter-spacing: 1.5px; margin-bottom: 14px;
+  }
+  .generate-letter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding: 22px 40px;
+    background: linear-gradient(135deg, #1a56db 0%, #1e40af 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 16px;
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 16px 40px rgba(26,86,219,0.3);
+    transition: all 0.2s;
+    letter-spacing: -0.3px;
+    font-family: inherit;
+  }
+  .generate-letter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 50px rgba(26,86,219,0.4);
+    background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+  }
+  .generate-letter-btn-icon {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .generate-letter-btn-text { text-align: left; }
+  .generate-letter-btn-title { line-height: 1.1; }
+  .generate-letter-btn-sub {
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.85;
+    margin-top: 4px;
+    letter-spacing: 0;
+  }
+  .generate-letter-btn-arrow { font-size: 20px; opacity: 0.7; }
+
+  /* ============ POPUP CHOIX SIGNATURE ============ */
+  .popup-overlay {
+    margin: 28px 0;
+    background: rgba(10,10,15,0.45);
+    border-radius: 16px;
+    padding: 40px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 600px;
+  }
+  .popup-modal {
+    background: #ffffff;
+    border-radius: 18px;
+    max-width: 720px;
+    width: 100%;
+    padding: 32px 36px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+    position: relative;
+  }
+  .popup-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    width: 32px; height: 32px;
+    background: #f4f4f1;
+    border: none; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #6b7280;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  .popup-close:hover { background: #e2e0db; }
+  .popup-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .popup-label {
+    font-size: 9px; font-weight: 800; color: #1a56db;
+    letter-spacing: 1.5px; margin-bottom: 8px;
+  }
+  .popup-title {
+    font-size: 22px; font-weight: 800; color: #0a0a0f;
+    letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 6px;
+  }
+  .popup-subtitle {
+    font-size: 13px; color: #6b7280;
+    line-height: 1.5;
+  }
+  .popup-options {
+    display: flex; flex-direction: column; gap: 12px;
+    margin-bottom: 22px;
+  }
+  .popup-option {
+    border: 0.5px solid #e2e0db;
+    border-radius: 14px;
+    padding: 18px 22px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: #ffffff;
+    position: relative;
+  }
+  .popup-option:hover {
+    border-color: #1a56db;
+    background: #fafbff;
+    transform: translateY(-1px);
+  }
+  .popup-option.recommended {
+    border: 2px solid #1a56db;
+    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+    box-shadow: 0 8px 24px rgba(26,86,219,0.1);
+  }
+  .popup-option-recommended-badge {
+    position: absolute;
+    top: -10px; left: 22px;
+    background: #1a56db;
+    color: #ffffff;
+    font-size: 9px; font-weight: 800;
+    padding: 4px 12px;
+    border-radius: 30px;
+    letter-spacing: 0.5px;
+  }
+  .popup-option-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 22px;
+  }
+  .popup-option-icon.basic { background: #fafaf8; color: #6b7280; }
+  .popup-option-icon.signed { background: #eff6ff; color: #1a56db; }
+  .popup-option-icon.combo { background: #f0fdf4; color: #15803d; }
+  .popup-option-content { flex: 1; }
+  .popup-option-name {
+    font-size: 14px; font-weight: 800; color: #0a0a0f;
+    margin-bottom: 4px; line-height: 1.3;
+  }
+  .popup-option-desc {
+    font-size: 12px; color: #6b7280;
+    line-height: 1.4;
+  }
+  .popup-option-meta {
+    display: flex; gap: 12px;
+    margin-top: 8px;
+  }
+  .popup-option-stat {
+    font-size: 11px;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .popup-option-stat strong { font-weight: 800; }
+  .popup-option-stat.success strong { color: #15803d; }
+  .popup-option-stat.info strong { color: #1a56db; }
+  .popup-option-right {
+    display: flex; flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .popup-option-price {
+    font-size: 22px; font-weight: 900;
+    color: #0a0a0f;
+    letter-spacing: -0.5px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .popup-option-price.free { color: #16a34a; }
+  .popup-option-price-label {
+    font-size: 9px; color: #9ca3af;
+  }
+  .popup-footer-note {
+    text-align: center;
+    font-size: 11px;
+    color: #9ca3af;
+    padding-top: 18px;
+    border-top: 0.5px solid #f4f4f1;
+    line-height: 1.5;
+  }
+  .popup-footer-note a {
+    color: #1a56db;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  /* MOCKUP BANNER */
+  .mockup-banner {
+    position: fixed; top: 16px; right: 16px;
+    background: #0a0a0f; color: #ffffff;
+    padding: 10px 18px; border-radius: 30px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    z-index: 100;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .mockup-banner-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #16a34a;
+    animation: pulse 2s ease-in-out infinite;
+  }
+</style>
+</head>
+<body>
+
+<div class="mockup-banner">
+  <span class="mockup-banner-dot"></span>
+  MOCKUP DASHBOARD V7 · ARCHER
+</div>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- LOGO -->
+    <div class="logo-block">
+      <div class="logo">Archer</div>
+      <div class="logo-tagline">Law firm in your pocket.</div>
+    </div>
+
+    <!-- LIVE STATUS BLOCK SOUS LE LOGO -->
+    <div class="live-status">
+      <div class="live-status-row">
+        <div class="live-status-dot"></div>
+        <div class="live-status-label">ARCHER · LIVE</div>
+      </div>
+      <div class="live-stats">
+        <div class="live-stat-item">
+          <div class="live-stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div class="live-stat-text">
+            <strong>847 521</strong> sources juridiques
+            <span class="live-stat-text-sub">connectées en temps réel</span>
+          </div>
+        </div>
+        <div class="live-stat-item">
+          <div class="live-stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 L19 9 L12 22 L5 9 Z"/></svg>
+          </div>
+          <div class="live-stat-text">
+            <strong>20 ans</strong> d'expérience
+            <span class="live-stat-text-sub">niveau d'analyse Archer</span>
+          </div>
+        </div>
+        <div class="live-stat-item">
+          <div class="live-stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div class="live-stat-text">
+            <strong>#1</strong> IA légale BE & US
+            <span class="live-stat-text-sub">par volume traité</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NAV -->
+    <div class="nav">
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Mes dossiers
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Chat juridique
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        Appels avocat
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/></svg>
+        Paramètres
+      </div>
+    </div>
+
+    <div class="nav-section-label">DOSSIERS ACTIFS</div>
+
+    <div class="case-card">
+      <div class="case-card-title">PV excès vitesse 71 km/h</div>
+      <div class="case-card-meta">
+        <span>Pénal · 22j</span>
+        <span class="case-card-score">65</span>
+      </div>
+    </div>
+
+    <button class="new-case-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nouveau dossier
+    </button>
+
+    <!-- TRUST BADGES -->
+    <div class="trust-badges">
+      <div class="trust-badges-label">CONFORMITÉ & SÉCURITÉ</div>
+      <div class="trust-badges-list">
+        <div class="trust-badge-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Conforme RGPD
+        </div>
+        <div class="trust-badge-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Données chiffrées AES-256
+        </div>
+        <div class="trust-badge-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7L9 18l-5-5"/></svg>
+          Avocats agréés BE & US
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-avatar">RD</div>
+      <div class="user-info">
+        <div class="user-name">Romain Debecq</div>
+        <div class="user-email">romain@archer.legal</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <div class="top-bar">
+      <div class="breadcrumb">
+        <a href="#">Mes dossiers</a>
+        <span class="breadcrumb-sep">›</span>
+        <span>PV excès vitesse 71 km/h</span>
+      </div>
+      <div class="top-actions">
+        <div class="country-switch">
+          <button>🇺🇸 US</button>
+          <button class="active">🇧🇪 BE</button>
+        </div>
+        <button class="top-action-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Télécharger
+        </button>
+        <button class="top-action-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="case-header">
+      <div class="case-tag">⚖️ DOSSIER PÉNAL · BELGIQUE</div>
+      <h1 class="case-title">PV excès vitesse 71 km/h Bruxelles</h1>
+      <div class="case-meta">Ouvert le 14 avril 2026 · 1 document · Mis à jour par Archer à l'instant</div>
+    </div>
+
+    <div class="progress-timeline">
+      <div class="progress-label">— OÙ EN ES-TU DANS TON PARCOURS —</div>
+      <div class="progress-steps">
+        <div class="progress-step done">
+          <div class="progress-line"></div>
+          <div class="progress-step-circle">✓</div>
+          <div class="progress-step-label">Document<br>analysé</div>
+        </div>
+        <div class="progress-step current">
+          <div class="progress-line"></div>
+          <div class="progress-step-circle">2</div>
+          <div class="progress-step-label">Choix de<br>l'action</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-line"></div>
+          <div class="progress-step-circle">3</div>
+          <div class="progress-step-label">Lettre<br>rédigée</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-line"></div>
+          <div class="progress-step-circle">4</div>
+          <div class="progress-step-label">Signature<br>avocat</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-line"></div>
+          <div class="progress-step-circle">5</div>
+          <div class="progress-step-label">Envoi<br>recommandé</div>
+        </div>
+        <div class="progress-step">
+          <div class="progress-step-circle">6</div>
+          <div class="progress-step-label">Suivi de<br>la réponse</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ZONE HERO -->
+    <div class="hero-row">
+
+      <!-- SCORE HERO LEFT -->
+      <div class="score-hero">
+        <div class="score-label">SCORE DE RISQUE ARCHER</div>
+        <div class="score-value-row">
+          <div class="score-number">65</div>
+          <div class="score-out-of">/100</div>
+        </div>
+        <div class="score-pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/><path d="m10.29 3.86-8.47 14a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+          RISQUE MODÉRÉ
+        </div>
+        <div class="score-tagline">Sérieux, mais <span class="accent">contestable.</span></div>
+
+        <!-- SUBSCORES INTÉGRÉS -->
+        <div class="subscores-inline">
+          <div class="subscores-inline-label">DÉTAIL DU SCORE — 4 FACTEURS</div>
+          <div class="subscores-inline-grid">
+            <div class="subscore-inline-item">
+              <div class="subscore-inline-row">
+                <span class="subscore-inline-name">Urgence</span>
+                <span class="subscore-inline-value sub-red">85</span>
+              </div>
+              <div class="subscore-inline-bar"><div class="subscore-inline-bar-fill bar-red" style="width: 85%;"></div></div>
+            </div>
+            <div class="subscore-inline-item">
+              <div class="subscore-inline-row">
+                <span class="subscore-inline-name">Financier</span>
+                <span class="subscore-inline-value sub-amber">70</span>
+              </div>
+              <div class="subscore-inline-bar"><div class="subscore-inline-bar-fill bar-amber" style="width: 70%;"></div></div>
+            </div>
+            <div class="subscore-inline-item">
+              <div class="subscore-inline-row">
+                <span class="subscore-inline-name">Complexité</span>
+                <span class="subscore-inline-value sub-amber">60</span>
+              </div>
+              <div class="subscore-inline-bar"><div class="subscore-inline-bar-fill bar-amber" style="width: 60%;"></div></div>
+            </div>
+            <div class="subscore-inline-item">
+              <div class="subscore-inline-row">
+                <span class="subscore-inline-name">Juridique</span>
+                <span class="subscore-inline-value sub-green">45</span>
+              </div>
+              <div class="subscore-inline-bar"><div class="subscore-inline-bar-fill bar-green" style="width: 45%;"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INFO CARD RIGHT (DENSIFIED) -->
+      <div class="info-card">
+        <div class="deadline-pill">
+          <div class="deadline-pill-left">
+            <div class="deadline-pill-icon">⏰</div>
+            <div class="deadline-pill-text">
+              <span class="big">22 jours</span>
+              ÉCHÉANCE CRITIQUE
+            </div>
+          </div>
+          <div class="deadline-pill-date">
+            <strong>5 mai 2026</strong>
+            avant majoration
+          </div>
+        </div>
+
+        <!-- ENJEU FINANCIER -->
+        <div class="info-section">
+          <div class="info-section-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            ENJEU FINANCIER
+          </div>
+          <div class="financial-row">
+            <div class="financial-cell">
+              <div class="financial-cell-label">MONTANT</div>
+              <div class="financial-cell-value">800€</div>
+            </div>
+            <div class="financial-cell">
+              <div class="financial-cell-label">RISQUE MAX</div>
+              <div class="financial-cell-value danger">1 200€</div>
+            </div>
+            <div class="financial-cell savings">
+              <div class="financial-cell-label">ÉCONOMIE</div>
+              <div class="financial-cell-value success">−520€</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROFONDEUR D'ANALYSE -->
+        <div class="info-section">
+          <div class="info-section-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            PROFONDEUR DE L'ANALYSE
+          </div>
+          <div class="analysis-depth">
+            <div class="analysis-depth-row">
+              <div class="analysis-depth-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+              </div>
+              <div class="analysis-depth-text">
+                <strong>47</strong> articles de loi consultés
+              </div>
+            </div>
+            <div class="analysis-depth-row">
+              <div class="analysis-depth-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3zM3 9h18M9 3v18"/></svg>
+              </div>
+              <div class="analysis-depth-text">
+                <strong>12</strong> jurisprudences vérifiées
+              </div>
+            </div>
+            <div class="analysis-depth-row">
+              <div class="analysis-depth-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="analysis-depth-text">
+                Confiance d'Archer
+              </div>
+              <div class="analysis-depth-confidence">94%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STRATEGY -->
+    <div class="strategy-section">
+      <div class="strategy-header">
+        <div class="strategy-header-avatar">A</div>
+        <div class="strategy-header-text">
+          <div class="strategy-header-label">— LE PLAN D'ARCHER POUR CE DOSSIER —</div>
+          <div class="strategy-header-title">Voici la stratégie que je recommande</div>
+        </div>
+      </div>
+
+      <div class="strategy-intro">
+        Archer va contester ce PV en s'appuyant sur <strong>4 angles d'attaque complémentaires</strong>. Le plus solide est la <strong>marge technique de 6%</strong>, qui pourrait à elle seule annuler la qualification de "très grave". L'objectif est d'obtenir l'annulation totale du PV ou, à défaut, une réduction substantielle de l'amende.
+      </div>
+
+      <div class="strategy-arguments-label">CE QUE LA LETTRE VA CONTENIR</div>
+
+      <div class="strategy-arguments-list">
+        <div class="strategy-argument">
+          <div class="strategy-argument-num">1</div>
+          <div class="strategy-argument-content">
+            <div class="strategy-argument-title">Contestation de la marge technique de 6%</div>
+            <div class="strategy-argument-angle">Demander au Parquet le PV technique complet et invoquer l'AR du 12 octobre 2010 imposant la déduction systématique de la marge d'erreur des radars.</div>
+            <div class="strategy-argument-impact">→ <strong>Si accepté</strong> : réduction automatique à 66,7 km/h, sortie de la qualification "très grave"</div>
+          </div>
+        </div>
+
+        <div class="strategy-argument">
+          <div class="strategy-argument-num">2</div>
+          <div class="strategy-argument-content">
+            <div class="strategy-argument-title">Défaut de motivation suffisante du PV</div>
+            <div class="strategy-argument-angle">Vérifier la mention de la calibration du radar, de l'agent verbalisateur et de l'heure exacte de l'infraction. Tout défaut ouvre une cause de nullité.</div>
+            <div class="strategy-argument-impact">→ <strong>Si vice trouvé</strong> : nullité du PV pour vice de forme</div>
+          </div>
+        </div>
+
+        <div class="strategy-argument">
+          <div class="strategy-argument-num">3</div>
+          <div class="strategy-argument-content">
+            <div class="strategy-argument-title">Application disproportionnée de l'amende</div>
+            <div class="strategy-argument-angle">Invoquer le principe de proportionnalité issu de la CEDH et la jurisprudence Cass. 2e ch. 22 nov 2023 sur le caractère disproportionné des amendes routières lourdes pour des primo-contrevenants.</div>
+            <div class="strategy-argument-impact">→ <strong>Si accepté</strong> : réduction du montant de 30 à 50%</div>
+          </div>
+        </div>
+
+        <div class="strategy-argument">
+          <div class="strategy-argument-num">4</div>
+          <div class="strategy-argument-content">
+            <div class="strategy-argument-title">Vice de forme dans la signification du PV</div>
+            <div class="strategy-argument-angle">Vérifier que la signification a été faite dans les délais légaux et que tous les éléments d'identification du conducteur sont présents et exacts.</div>
+            <div class="strategy-argument-impact">→ <strong>Si vice trouvé</strong> : nullité de la procédure</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="strategy-objectives">
+        <div class="strategy-objectives-label">— LES 3 ISSUES POSSIBLES DE CETTE STRATÉGIE —</div>
+
+        <div class="strategy-objective-item">
+          <div class="strategy-objective-icon primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="strategy-objective-text">
+            <div class="strategy-objective-title primary">OBJECTIF PRINCIPAL</div>
+            <div class="strategy-objective-desc">Annulation totale du PV — tu ne payes rien et l'infraction disparaît de ton dossier.</div>
+          </div>
+        </div>
+
+        <div class="strategy-objective-item">
+          <div class="strategy-objective-icon fallback">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="3 12 8 12 11 5 13 19 16 12 21 12"/></svg>
+          </div>
+          <div class="strategy-objective-text">
+            <div class="strategy-objective-title fallback">OBJECTIF DE REPLI</div>
+            <div class="strategy-objective-desc">Réduction à 66,7 km/h après application de la marge — l'amende passe à environ 280€ au lieu de 800€.</div>
+          </div>
+        </div>
+
+        <div class="strategy-objective-item">
+          <div class="strategy-objective-icon avoided">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </div>
+          <div class="strategy-objective-text">
+            <div class="strategy-objective-title avoided">PIRE SCÉNARIO ÉVITÉ</div>
+            <div class="strategy-objective-desc">Sans cette stratégie : majoration automatique à 1200€ + risque de comparution devant le tribunal de police.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA GÉNÉRER LETTRE -->
+    <div class="generate-letter-cta-section">
+      <div class="generate-letter-cta-label">— PRÊT À PASSER À L'ACTION ? —</div>
+      <button class="generate-letter-btn">
+        <div class="generate-letter-btn-icon">✉️</div>
+        <div class="generate-letter-btn-text">
+          <div class="generate-letter-btn-title">Générer la lettre de réponse</div>
+          <div class="generate-letter-btn-sub">Archer rédige ta lettre en moins de 2 minutes</div>
+        </div>
+        <div class="generate-letter-btn-arrow">→</div>
+      </button>
+    </div>
+
+    <!-- POPUP — APPARAÎT AU CLIC SUR LE CTA -->
+    <div class="popup-overlay">
+      <div class="popup-modal">
+        <button class="popup-close">✕</button>
+
+        <div class="popup-header">
+          <div class="popup-label">— CHOISIS TON NIVEAU DE PROTECTION —</div>
+          <div class="popup-title">Comment veux-tu envoyer ta lettre ?</div>
+          <div class="popup-subtitle">Archer va rédiger ta lettre avec les 4 arguments stratégiques. Choisis le niveau de signature et de garantie qui te convient.</div>
+        </div>
+
+        <div class="popup-options">
+
+          <!-- Option 1 — Lettre simple gratuite -->
+          <div class="popup-option">
+            <div class="popup-option-icon basic">📄</div>
+            <div class="popup-option-content">
+              <div class="popup-option-name">Lettre simple à envoyer toi-même</div>
+              <div class="popup-option-desc">Archer rédige la lettre avec tes 4 arguments. Tu l'imprimes et tu l'envoies en recommandé toi-même.</div>
+              <div class="popup-option-meta">
+                <div class="popup-option-stat success"><strong>35%</strong> de chances</div>
+                <div class="popup-option-stat info">Délai : <strong>2 min</strong></div>
+              </div>
+            </div>
+            <div class="popup-option-right">
+              <div class="popup-option-price free">Gratuit</div>
+              <div class="popup-option-price-label">0€</div>
+            </div>
+          </div>
+
+          <!-- Option 2 — Lettre signée par avocat ★ RECOMMANDÉE -->
+          <div class="popup-option recommended">
+            <div class="popup-option-recommended-badge">★ RECOMMANDÉ PAR ARCHER</div>
+            <div class="popup-option-icon signed">⚖️</div>
+            <div class="popup-option-content">
+              <div class="popup-option-name">Lettre signée par un avocat partenaire</div>
+              <div class="popup-option-desc">Un avocat partenaire (Me Vincent Lambert, Barreau de Bruxelles) signe et dépose ta lettre en son nom. 1.8x plus de chances d'aboutir.</div>
+              <div class="popup-option-meta">
+                <div class="popup-option-stat success"><strong>62%</strong> de chances</div>
+                <div class="popup-option-stat info">Délai : <strong>48h</strong></div>
+              </div>
+            </div>
+            <div class="popup-option-right">
+              <div class="popup-option-price">49,99€</div>
+              <div class="popup-option-price-label">paiement unique</div>
+            </div>
+          </div>
+
+          <!-- Option 3 — Lettre signée + Live Counsel -->
+          <div class="popup-option">
+            <div class="popup-option-icon combo">🎯</div>
+            <div class="popup-option-content">
+              <div class="popup-option-name">Lettre signée + Consultation Live (30 min)</div>
+              <div class="popup-option-desc">La lettre signée par avocat plus une visio de 30 min avec ton avocat pour préparer ta défense et anticiper les questions du Parquet.</div>
+              <div class="popup-option-meta">
+                <div class="popup-option-stat success"><strong>78%</strong> de chances</div>
+                <div class="popup-option-stat info">Délai : <strong>48h + visio</strong></div>
+              </div>
+            </div>
+            <div class="popup-option-right">
+              <div class="popup-option-price">198,99€</div>
+              <div class="popup-option-price-label">tout inclus</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="popup-footer-note">
+          🔒 Paiement sécurisé · Garantie de remboursement si insatisfait · <a href="#">En savoir plus sur Archer Protect</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- BATTLE -->
+    <div class="battle-section">
+      <div class="battle-header">
+        <div class="battle-title-label">— RAPPORT DE FORCE TACTIQUE —</div>
+        <div class="battle-title">⚔️ Tes arguments vs ceux du Parquet</div>
+      </div>
+
+      <div class="battle-grid">
+        <div class="battle-side you">
+          <div class="battle-column-header">
+            <div class="battle-column-avatar you">A</div>
+            <div class="battle-column-title-block">
+              <div class="battle-column-title">VOS ARGUMENTS</div>
+              <div class="battle-column-count">4 angles d'attaque</div>
+            </div>
+          </div>
+          <div class="battle-arg-list">
+            <div class="battle-arg you">
+              <span class="battle-arg-num">#1</span>
+              <span class="battle-arg-text">Marge technique de 6% non déduite</span>
+              <div class="battle-arg-strength">Force : <strong class="strong">Strong</strong></div>
+            </div>
+            <div class="battle-arg you">
+              <span class="battle-arg-num">#2</span>
+              <span class="battle-arg-text">Défaut de motivation suffisante du PV</span>
+              <div class="battle-arg-strength">Force : <strong class="strong">Strong</strong></div>
+            </div>
+            <div class="battle-arg you">
+              <span class="battle-arg-num">#3</span>
+              <span class="battle-arg-text">Application disproportionnée de l'amende</span>
+              <div class="battle-arg-strength">Force : <strong class="medium">Medium</strong></div>
+            </div>
+            <div class="battle-arg you">
+              <span class="battle-arg-num">#4</span>
+              <span class="battle-arg-text">Vice de forme dans la signification</span>
+              <div class="battle-arg-strength">Force : <strong class="strong">Strong</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="battle-center">
+          <div class="battle-swords">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <g transform="rotate(45 50 50)">
+                <path d="M50 8 L46 60 L50 64 L54 60 Z" fill="#3b82f6" stroke="#1e40af" stroke-width="1"/>
+                <rect x="40" y="60" width="20" height="3" fill="#1e40af"/>
+                <rect x="48" y="63" width="4" height="14" fill="#92400e"/>
+                <circle cx="50" cy="80" r="3" fill="#fbbf24"/>
+              </g>
+              <g transform="rotate(-45 50 50)">
+                <path d="M50 8 L46 60 L50 64 L54 60 Z" fill="#ef4444" stroke="#7f1d1d" stroke-width="1"/>
+                <rect x="40" y="60" width="20" height="3" fill="#7f1d1d"/>
+                <rect x="48" y="63" width="4" height="14" fill="#92400e"/>
+                <circle cx="50" cy="80" r="3" fill="#fbbf24"/>
+              </g>
+              <circle cx="50" cy="50" r="4" fill="#fbbf24" opacity="0.8"/>
+              <circle cx="50" cy="50" r="2" fill="#ffffff"/>
+            </svg>
+          </div>
+
+          <div class="battle-score-pill">
+            <span class="battle-score-you-num">4</span>
+            <span class="battle-score-vs-text">vs</span>
+            <span class="battle-score-them-num">2</span>
+          </div>
+        </div>
+
+        <div class="battle-side them">
+          <div class="battle-column-header">
+            <div class="battle-column-avatar them">P</div>
+            <div class="battle-column-title-block">
+              <div class="battle-column-title">PARQUET</div>
+              <div class="battle-column-count">2 angles d'attaque</div>
+            </div>
+          </div>
+          <div class="battle-arg-list">
+            <div class="battle-arg them">
+              <span class="battle-arg-num">#1</span>
+              <span class="battle-arg-text">Infraction objectivement établie par radar homologué</span>
+              <div class="battle-arg-strength">Force : <strong class="strong">Strong</strong></div>
+            </div>
+            <div class="battle-arg them">
+              <span class="battle-arg-num">#2</span>
+              <span class="battle-arg-text">71 km/h = excès qualifié de 4e degré, sanctions légitimes</span>
+              <div class="battle-arg-strength">Force : <strong class="medium">Medium</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="battle-verdict">
+        <span class="battle-verdict-icon">⚖️</span>
+        Verdict d'Archer : tes arguments sont plus solides sur <strong>4 points sur 6</strong>. Tu as l'avantage tactique.
+      </div>
+    </div>
+
+    <!-- FINDINGS CRITIQUES -->
+    <div class="findings-section">
+      <div class="findings-section-header">
+        <div class="findings-section-icon critical">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#b91c1c" stroke-width="3"><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/><path d="m10.29 3.86-8.47 14a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        </div>
+        <h3 class="findings-section-title critical">POINTS CRITIQUES · 2</h3>
+      </div>
+
+      <div class="findings-grid">
+        <div class="finding-card critical">
+          <div class="finding-content">
+            <div class="finding-badge critical">VIOLATION</div>
+            <div class="finding-body">
+              <div class="finding-title">Délai de contestation expire dans 30 jours · risque majoration 50%</div>
+              <div class="finding-refs">
+                <a class="finding-ref-link">Art. 65 Code pénal social</a> · Loi du 16 mars 1968 · <a class="finding-ref-link">Cass. 2e ch. 15 sept 2023</a>
+              </div>
+              <div class="finding-pedagogy">
+                <div class="finding-pedagogy-label critical">⚠️ CONSÉQUENCE SI TU NE FAIS RIEN</div>
+                <div class="finding-pedagogy-text">Si tu ne payes pas ou ne contestes pas avant le <strong>5 mai 2026</strong>, l'amende passe automatiquement à 1200 EUR et devient définitive.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="finding-card critical">
+          <div class="finding-content">
+            <div class="finding-badge critical">VIOLATION</div>
+            <div class="finding-body">
+              <div class="finding-title">Excès de vitesse qualifié de très grave · sanctions pénales possibles</div>
+              <div class="finding-refs">
+                <a class="finding-ref-link">Art. 29 AR 1er décembre 1975</a> · Code de la route · <a class="finding-ref-link">Pol. Bruxelles 12 janv 2024</a>
+              </div>
+              <div class="finding-pedagogy">
+                <div class="finding-pedagogy-label critical">⚠️ RISQUE</div>
+                <div class="finding-pedagogy-text">À 71 km/h, tu risques non seulement l'amende mais aussi une comparution devant le tribunal et une déchéance du droit de conduire.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FINDINGS FORTS -->
+    <div class="findings-section">
+      <div class="findings-section-header">
+        <div class="findings-section-icon strong">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h3 class="findings-section-title strong">TES ARMES · 2 POINTS FORTS</h3>
+      </div>
+
+      <div class="findings-grid">
+        <div class="finding-card strong">
+          <div class="finding-content">
+            <div class="finding-badge strong">OPPORTUNITÉ</div>
+            <div class="finding-body">
+              <div class="finding-title">Marge technique de 6% légalement déductible · vitesse contestable</div>
+              <div class="finding-refs">
+                <a class="finding-ref-link">AR du 12 octobre 2010 · Art. 3</a> sur la marge d'erreur des radars
+              </div>
+              <div class="finding-pedagogy strong">
+                <div class="finding-pedagogy-label strong">✓ COMMENT TU L'UTILISES</div>
+                <div class="finding-pedagogy-text">71 km/h - 6% = <strong>66,7 km/h</strong>. Si la vitesse retenue de 71 ne déduit pas la marge, c'est une irrégularité substantielle.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="finding-card strong">
+          <div class="finding-content">
+            <div class="finding-badge strong">OPPORTUNITÉ</div>
+            <div class="finding-body">
+              <div class="finding-title">Perception immédiate sans citation · procédure simplifiée</div>
+              <div class="finding-refs">
+                <a class="finding-ref-link">Art. 65 Code pénal social</a> · <a class="finding-ref-link">Cass. 22 nov 2023</a>
+              </div>
+              <div class="finding-pedagogy strong">
+                <div class="finding-pedagogy-label strong">✓ TON CHOIX RESTE OUVERT</div>
+                <div class="finding-pedagogy-text">La police a choisi la perception immédiate au lieu de te citer directement. Tu gardes le choix : payer ou contester.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOCUMENTS -->
+    <div class="documents-section">
+      <div class="documents-header">
+        <div class="documents-title">📄 Documents du dossier</div>
+        <div class="documents-counter">1 document analysé</div>
+      </div>
+
+      <div class="documents-list">
+        <div class="document-item">
+          <div class="document-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div class="document-info">
+            <div class="document-name">PV-71kmh-bruxelles.pdf</div>
+            <div class="document-meta">Uploadé le 14 avril 2026 · 2.1 MB · 3 pages</div>
+          </div>
+          <div class="document-status">ANALYSÉ</div>
+        </div>
+      </div>
+
+      <div class="add-document-paywall">
+        <div class="add-document-paywall-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        </div>
+        <div class="add-document-paywall-text">
+          <div class="add-document-paywall-title">Ajouter un autre document à ce dossier</div>
+          <div class="add-document-paywall-sub">Tu as utilisé ton analyse gratuite. Passe en Protect pour ajouter des documents illimités.</div>
+        </div>
+        <button class="add-document-paywall-btn">Voir Protect →</button>
+      </div>
+    </div>
+
+    <!-- SCORE HISTORY -->
+    <div class="score-history">
+      <div class="score-history-header">
+        <div class="score-history-title">📈 Évolution du score</div>
+        <div class="score-history-trend">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Score amélioré de 12 points
+        </div>
+      </div>
+
+      <div class="score-history-graph">
+        <svg viewBox="0 0 600 140" preserveAspectRatio="none">
+          <line x1="0" y1="35" x2="600" y2="35" stroke="#f4f4f1" stroke-width="1"/>
+          <line x1="0" y1="70" x2="600" y2="70" stroke="#f4f4f1" stroke-width="1"/>
+          <line x1="0" y1="105" x2="600" y2="105" stroke="#f4f4f1" stroke-width="1"/>
+          <text x="0" y="40" font-size="9" fill="#9ca3af">100</text>
+          <text x="0" y="75" font-size="9" fill="#9ca3af">75</text>
+          <text x="0" y="110" font-size="9" fill="#9ca3af">50</text>
+          <text x="0" y="138" font-size="9" fill="#9ca3af">0</text>
+          <defs>
+            <linearGradient id="scoreArea" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#1a56db" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#1a56db" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="M30,30 L150,40 L290,55 L430,65 L570,90 L570,140 L30,140 Z" fill="url(#scoreArea)"/>
+          <polyline points="30,30 150,40 290,55 430,65 570,90"
+                    fill="none" stroke="#1a56db" stroke-width="3"
+                    stroke-linejoin="round" stroke-linecap="round"/>
+          <circle cx="30" cy="30" r="6" fill="#ffffff" stroke="#1a56db" stroke-width="3"/>
+          <circle cx="150" cy="40" r="6" fill="#ffffff" stroke="#1a56db" stroke-width="3"/>
+          <circle cx="290" cy="55" r="6" fill="#ffffff" stroke="#1a56db" stroke-width="3"/>
+          <circle cx="430" cy="65" r="6" fill="#ffffff" stroke="#1a56db" stroke-width="3"/>
+          <circle cx="570" cy="90" r="6" fill="#1a56db" stroke="#1a56db" stroke-width="3"/>
+          <text x="30" y="20" font-size="11" fill="#1a56db" font-weight="800" text-anchor="middle">77</text>
+          <text x="150" y="30" font-size="11" fill="#1a56db" font-weight="800" text-anchor="middle">75</text>
+          <text x="290" y="45" font-size="11" fill="#1a56db" font-weight="800" text-anchor="middle">72</text>
+          <text x="430" y="55" font-size="11" fill="#1a56db" font-weight="800" text-anchor="middle">70</text>
+          <text x="570" y="80" font-size="11" fill="#1a56db" font-weight="800" text-anchor="middle">65</text>
+        </svg>
+      </div>
+
+      <div class="score-history-events">
+        <div class="score-history-event">
+          <div class="score-history-event-date">14 avril</div>
+          <div class="score-history-event-action">Upload PV</div>
+        </div>
+        <div class="score-history-event">
+          <div class="score-history-event-date">15 avril</div>
+          <div class="score-history-event-action">+ Photos radar</div>
+        </div>
+        <div class="score-history-event">
+          <div class="score-history-event-date">16 avril</div>
+          <div class="score-history-event-action">+ Justificatifs</div>
+        </div>
+        <div class="score-history-event">
+          <div class="score-history-event-date">17 avril</div>
+          <div class="score-history-event-action">+ Témoignage</div>
+        </div>
+        <div class="score-history-event">
+          <div class="score-history-event-date">Aujourd'hui</div>
+          <div class="score-history-event-action">Score actuel</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARCHER QUESTIONS -->
+    <div class="archer-questions">
+      <div class="archer-questions-header">
+        <div class="archer-questions-avatar">A</div>
+        <div class="archer-questions-title-block">
+          <div class="archer-questions-title">Archer a 3 questions sur ton dossier</div>
+          <div class="archer-questions-subtitle">Tes réponses vont affiner ton score et améliorer la stratégie</div>
+        </div>
+        <div class="archer-questions-counter">3</div>
+      </div>
+
+      <div class="archer-question-item">
+        <div class="archer-question-text">Concernant ton excès de vitesse de 71 km/h en zone 50, y avait-il des circonstances particulières ce jour-là ?</div>
+        <div class="archer-question-choices">
+          <button class="archer-question-choice">Urgence médicale ou familiale</button>
+          <button class="archer-question-choice">Conditions météo difficiles</button>
+          <button class="archer-question-choice">Circulation très fluide</button>
+          <button class="archer-question-choice">Aucune circonstance particulière</button>
+        </div>
+      </div>
+
+      <div class="archer-question-item">
+        <div class="archer-question-text">As-tu déjà reçu d'autres PV pour excès de vitesse dans les 12 derniers mois ?</div>
+        <div class="archer-question-choices">
+          <button class="archer-question-choice">Aucun</button>
+          <button class="archer-question-choice">1 PV</button>
+          <button class="archer-question-choice">2 ou plus</button>
+        </div>
+      </div>
+
+      <div class="archer-question-item">
+        <div class="archer-question-text">Le PV mentionne-t-il explicitement la marque et le numéro d'homologation du radar utilisé ?</div>
+        <div class="archer-question-choices">
+          <button class="archer-question-choice">Oui, tout est mentionné</button>
+          <button class="archer-question-choice">Partiellement</button>
+          <button class="archer-question-choice">Non, manque d'informations</button>
+          <button class="archer-question-choice">Je ne sais pas</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- LEGAL NEWS -->
+    <div class="legal-news">
+      <div class="legal-news-header">
+        <div class="legal-news-title-block">
+          <div class="legal-news-title">📰 Actualités juridiques liées à ton cas</div>
+          <div class="legal-news-live-badge">
+            <div class="legal-news-live-dot"></div>
+            LIVE
+          </div>
+        </div>
+      </div>
+
+      <div class="legal-news-list">
+        <div class="legal-news-item">
+          <div class="legal-news-icon update">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="legal-news-content">
+            <div class="legal-news-meta">
+              <div class="legal-news-tag update">JURISPRUDENCE</div>
+              <div class="legal-news-date">Il y a 3 jours</div>
+            </div>
+            <div class="legal-news-text">Cass. 2e ch. 11 avril 2026 : confirmation que la marge technique de 6% doit être systématiquement déduite des relevés radar</div>
+            <div class="legal-news-impact">→ Renforce ton argument #1 sur la marge technique</div>
+          </div>
+        </div>
+
+        <div class="legal-news-item">
+          <div class="legal-news-icon new">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <div class="legal-news-content">
+            <div class="legal-news-meta">
+              <div class="legal-news-tag new">NOUVELLE LOI</div>
+              <div class="legal-news-date">Il y a 2 semaines</div>
+            </div>
+            <div class="legal-news-text">Décret du 1er avril 2026 : extension du délai de contestation de 30 à 45 jours dans certains cas spécifiques</div>
+            <div class="legal-news-impact">→ Vérifions si ton cas est éligible à l'extension</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENARIOS -->
+    <div class="scenarios-section">
+      <div class="scenarios-intro">
+        <div class="scenarios-label">— PRÊT À METTRE LE PLAN EN ACTION ? —</div>
+        <div class="scenarios-title">Comment veux-tu mettre cette stratégie en œuvre ?</div>
+        <div class="scenarios-subtitle">Tu as 4 façons de procéder selon ton niveau d'engagement et ton budget. Archer recommande l'option qui maximise tes chances tout en respectant ton budget.</div>
+      </div>
+
+      <div class="scenarios-grid">
+        <div class="scenario-card">
+          <div class="scenario-name">Lettre DIY gratuite</div>
+          <div class="scenario-prob-row">
+            <span class="scenario-prob-number" style="color: #b45309;">35</span>
+            <span class="scenario-prob-percent">%</span>
+          </div>
+          <div class="scenario-prob-label">de chances de gagner</div>
+          <div class="scenario-divider"></div>
+          <div class="scenario-price-row">
+            <span class="scenario-price free">Gratuit</span>
+            <span class="scenario-price-label">0€</span>
+          </div>
+          <div class="scenario-justification">
+            Tu rédiges la lettre toi-même avec le template Archer qui inclut les 4 arguments. Sans signature avocat, le Parquet pourrait traiter tes arguments avec moins d'attention.
+          </div>
+          <div class="scenario-net-gain">
+            <div class="scenario-net-gain-label">GAIN NET ESPÉRÉ</div>
+            <div class="scenario-net-gain-value">+ 280€</div>
+          </div>
+          <button class="scenario-cta">Choisir DIY</button>
+        </div>
+
+        <div class="scenario-card recommended">
+          <div class="scenario-recommended-badge">★ RECOMMANDÉ PAR ARCHER</div>
+          <div class="scenario-name">Lettre signée par avocat partenaire</div>
+          <div class="scenario-prob-row">
+            <span class="scenario-prob-number" style="color: #1a56db;">62</span>
+            <span class="scenario-prob-percent">%</span>
+          </div>
+          <div class="scenario-prob-label">de chances de gagner</div>
+          <div class="scenario-divider"></div>
+          <div class="scenario-price-row">
+            <span class="scenario-price">49,99€</span>
+            <span class="scenario-price-label">paiement unique</span>
+          </div>
+          <div class="scenario-justification">
+            Un avocat partenaire signe et dépose la lettre. Statistiquement 1.8x plus de chances d'aboutir. Tes 4 arguments seront exploités au maximum.
+          </div>
+          <div class="scenario-net-gain">
+            <div class="scenario-net-gain-label">GAIN NET ESPÉRÉ</div>
+            <div class="scenario-net-gain-value">+ 446€</div>
+          </div>
+          <div class="scenario-attorney">
+            <div class="scenario-attorney-avatar">VL</div>
+            <div class="scenario-attorney-info">
+              <div class="scenario-attorney-name">Me Vincent Lambert</div>
+              <div class="scenario-attorney-meta">Barreau de Bruxelles · Pénal routier</div>
+            </div>
+          </div>
+          <button class="scenario-cta">Choisir cette option →</button>
+        </div>
+
+        <div class="scenario-card">
+          <div class="scenario-name">Consultation Live (30 min)</div>
+          <div class="scenario-prob-row">
+            <span class="scenario-prob-number" style="color: #b45309;">50</span>
+            <span class="scenario-prob-percent">%</span>
+          </div>
+          <div class="scenario-prob-label">de chances de gagner</div>
+          <div class="scenario-divider"></div>
+          <div class="scenario-price-row">
+            <span class="scenario-price">149€</span>
+            <span class="scenario-price-label">30 min visio</span>
+          </div>
+          <div class="scenario-justification">
+            Une visio de 30 min avec un avocat pour comprendre tes options et préparer ta défense. Utile si tu veux d'abord un avis avant de décider.
+          </div>
+          <div class="scenario-net-gain">
+            <div class="scenario-net-gain-label">GAIN NET ESPÉRÉ</div>
+            <div class="scenario-net-gain-value">+ 251€</div>
+          </div>
+          <div class="scenario-attorney">
+            <div class="scenario-attorney-avatar">VL</div>
+            <div class="scenario-attorney-info">
+              <div class="scenario-attorney-name">Me Vincent Lambert</div>
+              <div class="scenario-attorney-meta">Barreau de Bruxelles · Pénal routier</div>
+            </div>
+          </div>
+          <button class="scenario-cta">Réserver un appel</button>
+        </div>
+
+        <div class="scenario-card">
+          <div class="scenario-name">Lettre signée + Consultation Live</div>
+          <div class="scenario-prob-row">
+            <span class="scenario-prob-number" style="color: #15803d;">78</span>
+            <span class="scenario-prob-percent">%</span>
+          </div>
+          <div class="scenario-prob-label">de chances de gagner</div>
+          <div class="scenario-divider"></div>
+          <div class="scenario-price-row">
+            <span class="scenario-price">198,99€</span>
+            <span class="scenario-price-label">tout inclus</span>
+          </div>
+          <div class="scenario-justification">
+            Le combo gagnant : la lettre signée par avocat plus une visio de 30 min pour préparer ta défense. Maximum de chances.
+          </div>
+          <div class="scenario-net-gain">
+            <div class="scenario-net-gain-label">GAIN NET ESPÉRÉ</div>
+            <div class="scenario-net-gain-value">+ 425€</div>
+          </div>
+          <div class="scenario-attorney">
+            <div class="scenario-attorney-avatar">VL</div>
+            <div class="scenario-attorney-info">
+              <div class="scenario-attorney-name">Me Vincent Lambert</div>
+              <div class="scenario-attorney-meta">Barreau de Bruxelles · Pénal routier</div>
+            </div>
+          </div>
+          <button class="scenario-cta">Choisir le combo</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIMILAR CASES -->
+    <div class="similar-cases">
+      <div class="similar-cases-header">
+        <div class="similar-cases-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+        </div>
+        <div class="similar-cases-title-block">
+          <div class="similar-cases-title">Cas similaires gagnés par d'autres clients Archer</div>
+          <div class="similar-cases-subtitle">Sur 247 cas comparables analysés ce mois-ci en Belgique</div>
+        </div>
+      </div>
+
+      <div class="similar-cases-stats">
+        <div class="similar-stat">
+          <div class="similar-stat-number stat-green">78%</div>
+          <div class="similar-stat-label">RÉDUCTION OBTENUE</div>
+        </div>
+        <div class="similar-stat">
+          <div class="similar-stat-number stat-blue">23%</div>
+          <div class="similar-stat-label">ANNULATION TOTALE</div>
+        </div>
+        <div class="similar-stat">
+          <div class="similar-stat-number stat-amber">14j</div>
+          <div class="similar-stat-label">DÉLAI MOYEN DE RÉPONSE</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ASK ARCHER -->
+    <div class="ask-archer">
+      <div class="ask-archer-header">
+        <div class="ask-archer-avatar">A</div>
+        <div>
+          <div class="ask-archer-title">Une autre question sur ton dossier ?</div>
+          <div class="ask-archer-subtitle">Archer répond en moins de 30 secondes</div>
+        </div>
+      </div>
+      <div class="ask-archer-input">
+        <input type="text" placeholder="Pose ta question à Archer…">
+        <button class="ask-archer-input-btn">Envoyer</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

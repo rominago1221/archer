@@ -1,0 +1,194 @@
+{
+  "fr": {
+    "common": {
+      "back_to_cases": "Retour aux dossiers",
+      "updated_just_now": "Mis à jour par Archer à l'instant",
+      "opened_on": "Ouvert le {date}",
+      "document_count_one": "{count} document",
+      "document_count_many": "{count} documents",
+      "loading": "Chargement du dossier…",
+      "error_title": "Erreur de chargement",
+      "error_back": "Retour"
+    },
+    "timeline": {
+      "label": "— OÙ EN ES-TU DANS TON PARCOURS —",
+      "step1": "Document<br>analysé",
+      "step2": "Choix de<br>l'action",
+      "step3": "Lettre<br>rédigée",
+      "step4": "Signature<br>avocat",
+      "step5": "Envoi<br>recommandé",
+      "step6": "Suivi de<br>la réponse"
+    },
+    "hero": {
+      "score_label": "SCORE DE RISQUE ARCHER",
+      "score_out_of": "/100",
+      "subscores_label": "DÉTAIL DU SCORE — 4 FACTEURS",
+      "subscores": {
+        "urgency": "Urgence",
+        "financial": "Financier",
+        "complexity": "Complexité",
+        "legal": "Juridique"
+      },
+      "risk_low": "RISQUE FAIBLE",
+      "risk_moderate": "RISQUE MODÉRÉ",
+      "risk_high": "RISQUE ÉLEVÉ",
+      "risk_critical": "RISQUE CRITIQUE",
+      "deadline_label": "ÉCHÉANCE CRITIQUE",
+      "deadline_days_unit": "jours",
+      "deadline_before_label": "avant majoration",
+      "deadline_expired": "Échéance dépassée",
+      "financial_label": "ENJEU FINANCIER",
+      "financial_amount": "MONTANT",
+      "financial_max_risk": "RISQUE MAX",
+      "financial_savings": "ÉCONOMIE",
+      "depth_label": "PROFONDEUR DE L'ANALYSE",
+      "depth_articles": "{count} articles de loi consultés",
+      "depth_jurisprudences": "{count} jurisprudences vérifiées",
+      "depth_confidence": "Confiance d'Archer"
+    },
+    "strategy": {
+      "label": "— LE PLAN D'ARCHER POUR CE DOSSIER —",
+      "title": "Voici la stratégie que je recommande",
+      "arguments_label": "CE QUE LA LETTRE VA CONTENIR",
+      "objectives_label": "— LES 3 ISSUES POSSIBLES DE CETTE STRATÉGIE —",
+      "objective_primary": "OBJECTIF PRINCIPAL",
+      "objective_fallback": "OBJECTIF DE REPLI",
+      "objective_avoided": "PIRE SCÉNARIO ÉVITÉ",
+      "fallback": {
+        "intro_default": "Archer a identifié les angles exploitables dans ton dossier. Voici la stratégie recommandée.",
+        "primary_default": "Obtenir une résolution favorable en mobilisant les arguments identifiés.",
+        "fallback_negotiated": "À défaut, négocier une réduction substantielle des enjeux financiers.",
+        "fallback_partial": "À défaut, obtenir une réduction partielle via les arguments les plus solides.",
+        "avoided_total_loss": "Sans cette stratégie, exposition maximale aux sanctions prévues par le document.",
+        "avoided_default": "Sans cette stratégie, absence de levier de négociation."
+      }
+    },
+    "generate_letter": {
+      "cta_label": "— PRÊT À PASSER À L'ACTION ? —",
+      "cta_title": "Générer la lettre de réponse",
+      "cta_subtitle": "Archer rédige ta lettre en moins de 2 minutes",
+      "popup_label": "— CHOISIS TON NIVEAU DE PROTECTION —",
+      "popup_title": "Comment veux-tu envoyer ta lettre ?",
+      "popup_subtitle": "Archer va rédiger ta lettre avec les arguments stratégiques. Choisis le niveau de signature et de garantie qui te convient.",
+      "option_basic_name": "Lettre simple à envoyer toi-même",
+      "option_basic_desc": "Archer rédige la lettre avec tes arguments. Tu l'imprimes et tu l'envoies en recommandé toi-même.",
+      "option_basic_price": "Gratuit",
+      "option_basic_price_label": "0€",
+      "option_signed_name": "Lettre signée par un avocat partenaire",
+      "option_signed_desc": "Un avocat partenaire signe et dépose ta lettre en son nom. 1.8x plus de chances d'aboutir.",
+      "option_signed_badge": "★ RECOMMANDÉ PAR ARCHER",
+      "option_signed_price_label": "paiement unique",
+      "option_combo_name": "Lettre signée + Consultation Live (30 min)",
+      "option_combo_desc": "La lettre signée par avocat plus une visio de 30 min avec ton avocat pour préparer ta défense.",
+      "option_combo_price_label": "tout inclus",
+      "popup_footer": "🔒 Paiement sécurisé · Garantie de remboursement si insatisfait",
+      "stat_chances": "de chances",
+      "stat_delay": "Délai",
+      "delay_basic": "2 min",
+      "delay_signed": "48h",
+      "delay_combo": "48h + visio"
+    },
+    "legal_ref": {
+      "explanation_title": "Explication d'Archer",
+      "view_source": "Voir le texte officiel",
+      "loading_explanation": "Archer prépare l'explication…",
+      "no_explanation": "Archer peut t'en dire plus en chat sur cette référence."
+    }
+  },
+  "en": {
+    "common": {
+      "back_to_cases": "Back to cases",
+      "updated_just_now": "Updated by Archer just now",
+      "opened_on": "Opened {date}",
+      "document_count_one": "{count} document",
+      "document_count_many": "{count} documents",
+      "loading": "Loading your case…",
+      "error_title": "Loading error",
+      "error_back": "Back"
+    },
+    "timeline": {
+      "label": "— WHERE YOU ARE IN YOUR JOURNEY —",
+      "step1": "Document<br>analyzed",
+      "step2": "Action<br>choice",
+      "step3": "Letter<br>drafted",
+      "step4": "Attorney<br>signature",
+      "step5": "Certified<br>mailing",
+      "step6": "Response<br>tracking"
+    },
+    "hero": {
+      "score_label": "ARCHER RISK SCORE",
+      "score_out_of": "/100",
+      "subscores_label": "SCORE BREAKDOWN — 4 FACTORS",
+      "subscores": {
+        "urgency": "Urgency",
+        "financial": "Financial",
+        "complexity": "Complexity",
+        "legal": "Legal"
+      },
+      "risk_low": "LOW RISK",
+      "risk_moderate": "MODERATE RISK",
+      "risk_high": "HIGH RISK",
+      "risk_critical": "CRITICAL RISK",
+      "deadline_label": "CRITICAL DEADLINE",
+      "deadline_days_unit": "days",
+      "deadline_before_label": "before increase",
+      "deadline_expired": "Deadline passed",
+      "financial_label": "FINANCIAL STAKES",
+      "financial_amount": "AMOUNT",
+      "financial_max_risk": "MAX RISK",
+      "financial_savings": "SAVINGS",
+      "depth_label": "ANALYSIS DEPTH",
+      "depth_articles": "{count} legal articles reviewed",
+      "depth_jurisprudences": "{count} cases verified",
+      "depth_confidence": "Archer confidence"
+    },
+    "strategy": {
+      "label": "— ARCHER'S PLAN FOR THIS CASE —",
+      "title": "Here's the strategy I recommend",
+      "arguments_label": "WHAT THE LETTER WILL CONTAIN",
+      "objectives_label": "— 3 POSSIBLE OUTCOMES OF THIS STRATEGY —",
+      "objective_primary": "PRIMARY OBJECTIVE",
+      "objective_fallback": "FALLBACK OBJECTIVE",
+      "objective_avoided": "WORST-CASE AVOIDED",
+      "fallback": {
+        "intro_default": "Archer has identified the exploitable angles in your case. Here is the recommended strategy.",
+        "primary_default": "Achieve a favorable resolution by leveraging the identified arguments.",
+        "fallback_negotiated": "Failing that, negotiate a substantial reduction of the financial stakes.",
+        "fallback_partial": "Failing that, obtain a partial reduction using the strongest arguments.",
+        "avoided_total_loss": "Without this strategy, maximum exposure to the sanctions set out in the document.",
+        "avoided_default": "Without this strategy, no leverage for negotiation."
+      }
+    },
+    "generate_letter": {
+      "cta_label": "— READY TO TAKE ACTION? —",
+      "cta_title": "Generate response letter",
+      "cta_subtitle": "Archer drafts your letter in under 2 minutes",
+      "popup_label": "— CHOOSE YOUR PROTECTION LEVEL —",
+      "popup_title": "How do you want to send your letter?",
+      "popup_subtitle": "Archer will draft your letter with the strategic arguments. Choose the level of signature and guarantee that suits you.",
+      "option_basic_name": "Simple letter to send yourself",
+      "option_basic_desc": "Archer drafts the letter with your arguments. You print and send it via certified mail yourself.",
+      "option_basic_price": "Free",
+      "option_basic_price_label": "$0",
+      "option_signed_name": "Letter signed by partner attorney",
+      "option_signed_desc": "A partner attorney signs and files your letter on your behalf. 1.8x more likely to succeed.",
+      "option_signed_badge": "★ RECOMMENDED BY ARCHER",
+      "option_signed_price_label": "one-time payment",
+      "option_combo_name": "Signed letter + Live Counsel (30 min)",
+      "option_combo_desc": "The attorney-signed letter plus a 30-min video call with your attorney to prepare your defense.",
+      "option_combo_price_label": "all-inclusive",
+      "popup_footer": "🔒 Secure payment · Money-back guarantee if unsatisfied",
+      "stat_chances": "win rate",
+      "stat_delay": "Delay",
+      "delay_basic": "2 min",
+      "delay_signed": "48h",
+      "delay_combo": "48h + call"
+    },
+    "legal_ref": {
+      "explanation_title": "Archer's explanation",
+      "view_source": "View official text",
+      "loading_explanation": "Archer is preparing the explanation…",
+      "no_explanation": "Archer can tell you more about this reference in chat."
+    }
+  }
+}
