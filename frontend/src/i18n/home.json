@@ -1,0 +1,152 @@
+{
+  "fr": {
+    "section_label": "LE CABINET D'AVOCATS COMPLET",
+    "section_title_part1": "Ton dossier juridique entier.",
+    "section_title_part2": "Pris en charge de A à Z.",
+    "section_subtitle": "L'IA juridique la plus avancée du marché, associée à des avocats à prix fixes. Du document à la résolution. En 4 étapes.",
+    "steps": {
+      "step1": {
+        "label": "01",
+        "title": "Tu glisses.",
+        "desc_main": "N'importe quel dossier juridique.",
+        "desc_highlight": "Lu en 10 secondes.",
+        "feature1": "Tous formats supportés",
+        "feature2": "Toutes langues"
+      },
+      "step2": {
+        "label": "02",
+        "title": "L'IA combat.",
+        "desc_main": "Ton dossier disséqué contre",
+        "desc_highlight": "847k+ sources.",
+        "feature1": "Base juridique en direct",
+        "feature2": "94% de précision"
+      },
+      "step3": {
+        "label": "03",
+        "title": "La stratégie émerge.",
+        "desc_highlight": "4 arguments gagnants.",
+        "desc_after": "Construits pour toi.",
+        "feature1": "Vraies lois, vrais cas",
+        "feature2": "3 scénarios d'issue"
+      },
+      "step4": {
+        "label": "04",
+        "title": "Réponse prête.",
+        "desc_main": "Ta réponse, rédigée.",
+        "desc_highlight": "Envoie-la gratuitement, ou fais-la signer par un avocat.",
+        "feature1": "Option DIY gratuite",
+        "feature2_template": "Signature d'avocat dès {price}"
+      }
+    },
+    "live_lawyer": {
+      "text_main": "Besoin de parler à un avocat ?",
+      "text_highlight": "Premier appel de 30 min offert.",
+      "text_sub": "Avec notre abonnement.",
+      "cta": "Réserver un appel"
+    },
+    "pillars": {
+      "pillar1": {
+        "number": "#1",
+        "label": "IA Juridique",
+        "sub": "L'intelligence juridique la plus avancée du marché"
+      },
+      "pillar2": {
+        "number": "94",
+        "suffix": "%",
+        "label": "Taux de succès",
+        "sub": "Taux de réussite sur cas similaires analysés"
+      },
+      "pillar3": {
+        "label": "Lettre d'avocat",
+        "sub": "Prix fixe, signée par avocat, envoi recommandé"
+      },
+      "pillar4": {
+        "number": "847",
+        "suffix": "k+",
+        "label": "Sources en direct",
+        "sub": "Sources juridiques consultées en temps réel"
+      }
+    },
+    "cta_strip": {
+      "title_bold": "Essaie Archer gratuitement.",
+      "subtitle": "Ta première analyse de dossier est offerte.",
+      "subnote": "Aucune carte requise · Tu ne paies que si tu décides d'agir",
+      "btn": "Démarrer ton dossier"
+    }
+  },
+  "en": {
+    "section_label": "THE COMPLETE LAW FIRM",
+    "section_title_part1": "Your entire legal case.",
+    "section_title_part2": "Handled from A to Z.",
+    "section_subtitle": "The most advanced legal AI on the market, paired with attorneys at fixed prices. From document to resolution. In 4 steps.",
+    "steps": {
+      "step1": {
+        "label": "01",
+        "title": "You drop.",
+        "desc_main": "Any legal case.",
+        "desc_highlight": "Read in 10 seconds.",
+        "feature1": "All formats supported",
+        "feature2": "Any language"
+      },
+      "step2": {
+        "label": "02",
+        "title": "AI fights.",
+        "desc_main": "Your case dissected against",
+        "desc_highlight": "847k+ sources.",
+        "feature1": "Live legal database",
+        "feature2": "94% match accuracy"
+      },
+      "step3": {
+        "label": "03",
+        "title": "Strategy emerges.",
+        "desc_highlight": "4 winning arguments.",
+        "desc_after": "Built for you.",
+        "feature1": "Real laws, real cases",
+        "feature2": "3 outcome scenarios"
+      },
+      "step4": {
+        "label": "04",
+        "title": "Response ready.",
+        "desc_main": "Your response, drafted.",
+        "desc_highlight": "Send it free, or have it signed by a lawyer.",
+        "feature1": "Free DIY option",
+        "feature2_template": "Attorney signed from {price}"
+      }
+    },
+    "live_lawyer": {
+      "text_main": "Need to speak to a lawyer?",
+      "text_highlight": "First 30-min call on us.",
+      "text_sub": "With our subscription plan.",
+      "cta": "Book a call"
+    },
+    "pillars": {
+      "pillar1": {
+        "number": "#1",
+        "label": "Legal AI",
+        "sub": "Most advanced legal intelligence on the market"
+      },
+      "pillar2": {
+        "number": "94",
+        "suffix": "%",
+        "label": "Win rate",
+        "sub": "Success rate on similar cases analyzed"
+      },
+      "pillar3": {
+        "label": "Attorney letter",
+        "sub": "Fixed price, attorney-signed, certified mailing"
+      },
+      "pillar4": {
+        "number": "847",
+        "suffix": "k+",
+        "label": "Live sources",
+        "sub": "Legal sources consulted in real time"
+      }
+    },
+    "cta_strip": {
+      "title_bold": "Try Archer free.",
+      "subtitle": "Your first case analysis is on us.",
+      "subnote": "No credit card required · Pay only when you choose to take action",
+      "btn": "Start your case"
+    }
+  }
+}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import JurisdictionPills from '../components/JurisdictionPills';
+import HomeJourneySection from '../components/Home/HomeJourneySection';
 import { useAuth } from '../contexts/AuthContext';
 import translations, { getStoredLocale, setStoredLocale, getLocaleFromPrefs } from '../data/landingTranslations';
 
@@ -504,48 +505,13 @@ const Landing = () => {
         </div>
       </div>
 
-      {/* ── 2. PILLARS ── */}
-      <div className="sw gray" id="pillars">
-        <div className="si" style={{ textAlign: 'center' }}>
-          <div className="supra">{c.pillarsSupra}</div>
-          <h2 className="stitle">{c.pillarsTitle[0]}<br /><span className="ac">{c.pillarsTitle[1]}</span></h2>
-          <p className="sdesc">{c.pillarsDesc}</p>
-          <div className="pillars-grid">
-            {c.pillars.map((p, i) => (
-              <React.Fragment key={i}>
-                {i > 0 && (
-                  <div className="pillar-arrow">
-                    <svg width="72" height="28" viewBox="0 0 72 28" fill="none" stroke="#1a56db" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path className={i === 1 ? 'flow-l1' : 'flow-l2'} d="M4 14h58" />
-                      <path className={i === 1 ? 'flow-a1' : 'flow-a2'} d="m54 6 10 8-10 8" />
-                    </svg>
-                  </div>
-                )}
-                <div className="pillar">
-                  <div className="pillar-num">{p.num}</div>
-                  <div className={`pillar-icon${p.green ? ' green' : ''}`}>
-                    {p.num === '01' && <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a56db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
-                    {p.num === '02' && <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a56db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/></svg>}
-                    {p.num === '03' && <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>}
-                  </div>
-                  <h3 style={{ fontSize: 32 }}>{p.title}</h3>
-                  <p>{p.desc}</p>
-                  {p.output === 'formats' && (
-                    <div className="pillar-out"><div className="fmt-chips"><div className="fmt-chip">PDF</div><div className="fmt-chip">DOCX</div><div className="fmt-chip">IMG</div><div className="fmt-time">10 sec</div></div></div>
-                  )}
-                  {p.output === 'stats' && (
-                    <div className="pillar-out"><div className="pstat-row"><div><div className="pstat-num" style={{ color: '#1a56db' }}>60s</div><div className="pstat-label">ANALYSIS</div></div><div><div className="pstat-num" style={{ color: '#15803d' }}>94%</div><div className="pstat-label">WIN RATE</div></div><div><div className="pstat-num" style={{ color: '#0a0a0f' }}>2.4M</div><div className="pstat-label">CASES</div></div></div></div>
-                  )}
-                  {p.output === 'actions' && (
-                    <div className="pillar-out"><div className="pact-row"><div className="pact-chip"><div className="pact-label">Download</div><div className="pact-price" style={{ color: '#16a34a' }}>FREE</div></div><div className="pact-chip"><div className="pact-label">Mail</div><div className="pact-price" style={{ color: '#b45309' }}>{language === 'fr' ? '15 \u20AC' : '$14'}</div></div><div className="pact-chip blue"><div className="pact-label">Attorney</div><div className="pact-price" style={{ color: '#1a56db' }}>{language === 'fr' ? '49,99 \u20AC' : '$49.99'}</div></div><div className="pact-chip purple"><div className="pact-label">Live call</div><div className="pact-price" style={{ color: '#7c3aed' }}>{language === 'fr' ? '149 \u20AC' : '$149'}</div></div></div></div>
-                  )}
-                </div>
-              </React.Fragment>
-            ))}
-          </div>
-          <div className="pillars-foot"><div className="pillars-badge"><ChkSvg /><span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0f' }}>{c.pillarsFooter[0]}<span style={{ color: '#1a56db' }}>{c.pillarsFooter[1]}</span></span></div></div>
-        </div>
-      </div>
+      {/* ── 2. HOME JOURNEY SECTION (V10 glassmorphism) ── */}
+      <HomeJourneySection
+        language={language}
+        country={jurisdiction}
+        onStart={() => navigate('/upload')}
+        onBookCall={() => navigate('/lawyers/book')}
+      />
 
       {/* ── 3. INTELLIGENCE ── */}
       <div className="sw white">
