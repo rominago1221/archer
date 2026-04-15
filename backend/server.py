@@ -2962,7 +2962,19 @@ async def get_case(case_id: str, current_user: User = Depends(get_current_user))
     # Update document count
     doc_count = await db.documents.count_documents({"case_id": case_id})
     case_doc["document_count"] = doc_count
-    
+
+    # Sprint E — live_counsel_active: true iff there's a live_counsel
+    # case_assignment not yet completed/declined/expired. The frontend uses
+    # this to switch between the CTA and the booking flow.
+    case_doc["live_counsel_active"] = bool(await db.case_assignments.find_one(
+        {
+            "case_id": case_id,
+            "service_type": "live_counsel",
+            "status": {"$in": ["awaiting_calendly_booking", "accepted"]},
+        },
+        {"_id": 1},
+    ))
+
     return Case(**case_doc)
 
 @api_router.put("/cases/{case_id}")
@@ -5946,6 +5958,63 @@ async def health_check():
 from routes.attorney_routes import router as attorney_router
 api_router.include_router(attorney_router)
 
+# Sprint A — Attorney Portal (parallel auth stack, /api/attorneys/*)
+from routes.attorney_portal_routes import router as attorney_portal_router
+from utils.attorney_auth import ensure_indexes as ensure_attorney_portal_indexes
+api_router.include_router(attorney_portal_router)
+
+# Sprint B — Attorney portal case endpoints + admin manual-assign
+from routes.attorney_portal_cases import router as attorney_portal_cases_router
+from routes.admin_portal_routes import router as admin_portal_router
+api_router.include_router(attorney_portal_cases_router)
+api_router.include_router(admin_portal_router)
+
+# Sprint C — auto-matching: admin dashboard + client trigger
+from routes.admin_matching_routes import router as admin_matching_router
+from routes.client_attorney_request_routes import router as client_attorney_request_router
+api_router.include_router(admin_matching_router)
+api_router.include_router(client_attorney_request_router)
+
+# Sprint D — Stripe Connect + webhooks + earnings + client checkout
+from routes.stripe_connect_routes import router as stripe_connect_router
+from routes.stripe_webhooks import router as stripe_webhooks_router
+from routes.attorney_earnings_routes import router as attorney_earnings_router
+from routes.client_checkout_routes import router as client_checkout_router
+api_router.include_router(stripe_connect_router)
+api_router.include_router(stripe_webhooks_router)
+api_router.include_router(attorney_earnings_router)
+api_router.include_router(client_checkout_router)
+
+# Sprint E — Calendly + Daily.co + Live Counsel
+from routes.calendly_routes import router as calendly_router
+from routes.calendly_webhook import router as calendly_webhook_router
+from routes.live_counsel_routes import router as live_counsel_router, attorney_router as live_counsel_attorney_router
+api_router.include_router(calendly_router)
+api_router.include_router(calendly_webhook_router)
+api_router.include_router(live_counsel_router)
+api_router.include_router(live_counsel_attorney_router)
+
+# Sprint F — Attorney profile management
+from routes.attorney_profile_routes import router as attorney_profile_router
+api_router.include_router(attorney_profile_router)
+
+# Phase 1 fixes — multi-document upload with binary tier gating
+from routes.multi_upload_routes import router as multi_upload_router
+api_router.include_router(multi_upload_router)
+
+# Phase 2 — client notifications (letter_ready, etc.)
+from routes.client_notifications_routes import (
+    router as client_notifications_router,
+    ensure_indexes as ensure_client_notifications_indexes,
+)
+api_router.include_router(client_notifications_router)
+
+from utils.attorney_auth import (
+    migrate_sprint_c_fields, migrate_sprint_d_fields,
+    migrate_sprint_e_fields, migrate_sprint_f_fields,
+)
+from jobs.scheduler import start_scheduler, stop_scheduler
+
 # Include the router in the main app
 app.include_router(api_router)
 
@@ -5965,6 +6034,41 @@ async def startup_event():
         logger.info("Storage initialized")
     except Exception as e:
         logger.error(f"Storage init failed: {e}")
+
+    try:
+        await ensure_attorney_portal_indexes()
+    except Exception as e:
+        logger.error(f"Attorney portal index init failed: {e}")
+
+    try:
+        await migrate_sprint_c_fields()
+    except Exception as e:
+        logger.error(f"Sprint C migration failed: {e}")
+
+    try:
+        await migrate_sprint_d_fields()
+    except Exception as e:
+        logger.error(f"Sprint D migration failed: {e}")
+
+    try:
+        await migrate_sprint_e_fields()
+    except Exception as e:
+        logger.error(f"Sprint E migration failed: {e}")
+
+    try:
+        await migrate_sprint_f_fields()
+    except Exception as e:
+        logger.error(f"Sprint F migration failed: {e}")
+
+    try:
+        await ensure_client_notifications_indexes()
+    except Exception as e:
+        logger.error(f"client_notifications index init failed: {e}")
+
+    try:
+        start_scheduler()
+    except Exception as e:
+        logger.error(f"Scheduler start failed: {e}")
     
     # Seed lawyers — re-seed if missing Belgian lawyers
     be_count = await db.lawyers.count_documents({"country": "BE"})
@@ -6027,6 +6131,14 @@ async def startup_event():
                 "notif_lawyers": False, "notif_promo": False, "data_sharing": True, "improve_ai": True,
             })
             logger.info(f"Pro test account seeded: {acct['email']}")
+
+@app.on_event("shutdown")
+async def shutdown_scheduler():
+    try:
+        stop_scheduler()
+    except Exception:
+        pass
+
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

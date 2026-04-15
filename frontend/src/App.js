@@ -32,12 +32,28 @@ import AttorneyEarnings from './pages/AttorneyEarnings';
 import AttorneySettings from './pages/AttorneySettings';
 import PublicAttorneyProfile from './pages/PublicAttorneyProfile';
 import AdminAttorneys from './pages/AdminAttorneys';
+import AdminMatchingDashboard from './pages/Admin/MatchingDashboard';
 import DocumentViewer from './pages/DocumentViewer';
 import VideoCall from './pages/VideoCall';
 import Pricing from './pages/Pricing';
 import WinningCases from './pages/WinningCases';
 import HowItWorks from './pages/HowItWorks';
 import CinematicAnalysis from './components/CinematicAnalysis/CinematicAnalysis';
+// Sprint A — Attorney Portal (parallel to legacy /attorney/*)
+import AttorneyPortalJoin from './pages/Attorneys/AttorneyJoin';
+import AttorneyPortalLogin from './pages/Attorneys/AttorneyLogin';
+import AttorneyPortalMagicVerify from './pages/Attorneys/AttorneyMagicVerify';
+import AttorneyPortalDashboard from './pages/Attorneys/AttorneyDashboard';
+import AttorneyPortalInbox from './pages/Attorneys/Inbox';
+import AttorneyPortalMyCases from './pages/Attorneys/MyCases';
+import AttorneyPortalCompleted from './pages/Attorneys/Completed';
+import AttorneyPortalCaseDetail from './pages/Attorneys/CaseDetail';
+import AttorneyPortalEarnings from './pages/Attorneys/Earnings';
+import AttorneyPortalStripeOnboarding from './pages/Attorneys/StripeOnboarding';
+import AttorneyPortalStripeComplete from './pages/Attorneys/StripeOnboardingComplete';
+import AttorneyPortalLiveCounsel from './pages/Attorneys/LiveCounsel';
+import AttorneyPortalProfile from './pages/Attorneys/Profile';
+import RequireAttorneyAuth from './components/Attorneys/RequireAttorneyAuth';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -77,6 +93,23 @@ const AppRouter = () => {
       <Route path="/signup" element={<Signup />} />
       <Route path="/shared/:token" element={<SharedCase />} />
       <Route path="/attorney/apply" element={<AttorneyApply />} />
+
+      {/* Sprint A — Attorney Portal (must be declared BEFORE /attorneys/:slug) */}
+      <Route path="/attorneys/join" element={<AttorneyPortalJoin />} />
+      <Route path="/attorneys/login" element={<AttorneyPortalLogin />} />
+      <Route path="/attorneys/login/verify" element={<AttorneyPortalMagicVerify />} />
+      <Route path="/attorneys/dashboard" element={<RequireAttorneyAuth><AttorneyPortalDashboard /></RequireAttorneyAuth>} />
+      <Route path="/attorneys/inbox" element={<RequireAttorneyAuth><AttorneyPortalInbox /></RequireAttorneyAuth>} />
+      <Route path="/attorneys/my-cases" element={<RequireAttorneyAuth><AttorneyPortalMyCases /></RequireAttorneyAuth>} />
+      <Route path="/attorneys/completed" element={<RequireAttorneyAuth><AttorneyPortalCompleted /></RequireAttorneyAuth>} />
+      <Route path="/attorneys/cases/:assignmentId" element={<RequireAttorneyAuth><AttorneyPortalCaseDetail /></RequireAttorneyAuth>} />
+      <Route path="/attorneys/earnings" element={<RequireAttorneyAuth><AttorneyPortalEarnings /></RequireAttorneyAuth>} />
+      <Route path="/attorneys/live-counsel" element={<RequireAttorneyAuth><AttorneyPortalLiveCounsel /></RequireAttorneyAuth>} />
+      <Route path="/attorneys/profile" element={<RequireAttorneyAuth><AttorneyPortalProfile /></RequireAttorneyAuth>} />
+      <Route path="/attorneys/onboarding/stripe" element={<RequireAttorneyAuth><AttorneyPortalStripeOnboarding /></RequireAttorneyAuth>} />
+      <Route path="/attorneys/onboarding/stripe/complete" element={<RequireAttorneyAuth><AttorneyPortalStripeComplete /></RequireAttorneyAuth>} />
+      <Route path="/attorneys/onboarding/stripe/refresh" element={<RequireAttorneyAuth><AttorneyPortalStripeOnboarding /></RequireAttorneyAuth>} />
+
       <Route path="/attorneys/:slug" element={<PublicAttorneyProfile />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/:lang/pricing" element={<Pricing />} />
@@ -84,6 +117,7 @@ const AppRouter = () => {
       <Route path="/how-it-works" element={<HowItWorks />} />
       <Route path="/:lang/how-it-works" element={<HowItWorks />} />
       <Route path="/admin/attorneys" element={<ProtectedRoute><AdminAttorneys /></ProtectedRoute>} />
+      <Route path="/admin/matching" element={<ProtectedRoute><AdminMatchingDashboard /></ProtectedRoute>} />
       <Route path="/documents/:documentId" element={<ProtectedRoute><DocumentViewer /></ProtectedRoute>} />
       <Route path="/analyze/:caseId" element={<ProtectedRoute><CinematicAnalysis /></ProtectedRoute>} />
       

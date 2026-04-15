@@ -8,16 +8,19 @@ const STAGE_TO_SCENE = {
 // Minimum duration each scene stays visible. Applies when we transition OUT of
 // that scene. Scenes 0-2 are time-based (independent of backend). Scenes 3+
 // fire sequentially once the backend has produced real data.
+// Bug 3 — Scene 0 (intro "Analyzing your document...") now holds 10s so users
+// can actually read it. Scene 1 (document highlight scan) needs ~12s to play
+// the per-line highlight animation through.
 const MIN_SCENE_DURATION = {
-  0: 3000, 1: 5000, 2: 6000, 3: 10000,
+  0: 10000, 1: 12000, 2: 6000, 3: 10000,
   4: 10000, 5: 7000, 6: 5000, 7: 2000,
 };
 
-// Auto-advance timers for the first 3 scenes. Scene 1 fires at 3s, scene 2
-// at 8s. This guarantees continuous visual progression even if the backend
-// is slow (Pass1+2+3+4 can take 30-60s).
-const SCENE1_AT_MS = 3000;
-const SCENE2_AT_MS = 8000;
+// Auto-advance timers for the first 3 scenes.
+// Bug 3 — push Scene 1 entry to 10s so the intro has time to land.
+// Scene 2 fires at 22s = 10s intro + 12s scan animation.
+const SCENE1_AT_MS = 10000;
+const SCENE2_AT_MS = 22000;
 
 // Post-real-data cadence for scenes 3-7 (offsets from the moment we detect
 // completion). Tuned so the full reveal takes ~35-40s and feels cinematic.

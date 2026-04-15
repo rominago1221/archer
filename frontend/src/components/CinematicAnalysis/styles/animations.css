@@ -1,5 +1,17 @@
 /* Cinematic Analysis Animations */
 
+/* Bug 5 — Scenes scaled +20% on >=768px viewports.
+   transform-origin: top center pushes content downward instead of clipping
+   under the top progress bar. The extra margin-bottom absorbs the vertical
+   growth so the scaled content doesn't overflow the page. */
+@media (min-width: 768px) {
+  .cinematic-scene-wrap {
+    transform: scale(1.2);
+    transform-origin: top center;
+    margin-bottom: 20vh;
+  }
+}
+
 @keyframes livepulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(1.4); }

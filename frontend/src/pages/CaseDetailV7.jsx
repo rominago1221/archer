@@ -13,6 +13,9 @@ import GenerateLetterPopup from '../components/Dashboard/Sprint1/GenerateLetterP
 import BattleSection from '../components/Dashboard/Sprint2/BattleSection';
 import FindingsSection from '../components/Dashboard/Sprint2/FindingsSection';
 import DocumentsSection from '../components/Dashboard/Sprint2/DocumentsSection';
+import AttorneyStatusBanner from '../components/AttorneyStatusBanner';
+import LiveCounselCTA from '../components/LiveCounselCTA';
+import LiveCounselBookingFlow from '../components/LiveCounselBookingFlow';
 import ScoreHistoryGraph from '../components/Dashboard/Sprint2/ScoreHistoryGraph';
 import ArcherQuestionsSection from '../components/Dashboard/Sprint2/ArcherQuestionsSection';
 import LegalNewsSection from '../components/Dashboard/Sprint3/LegalNewsSection';
@@ -162,6 +165,19 @@ export default function CaseDetailV7() {
           language={language}
           documentCount={documentCount}
         />
+
+        <AttorneyStatusBanner status={caseDoc?.attorney_status} language={language} />
+
+        {/* Sprint E — Live Counsel: booking flow if paid, else CTA */}
+        {caseDoc?.payment_status === 'paid' && caseDoc?.live_counsel_active ? (
+          <LiveCounselBookingFlow caseId={caseId} language={language} />
+        ) : (
+          <LiveCounselCTA
+            caseId={caseId}
+            hasExistingLiveCounsel={!!caseDoc?.live_counsel_active}
+            language={language}
+          />
+        )}
 
         <ProgressTimeline currentStep={progressStep} language={language} />
 

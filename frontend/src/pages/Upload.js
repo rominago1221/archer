@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import { Upload as UploadIcon, FileText, AlertCircle, Loader2, Camera, Smartphone, ArrowRight, Scale, ExternalLink, BookOpen, Shield, ShieldAlert, AlertTriangle, CheckCircle, XCircle, Mail, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
+import MultiDocumentUploader from '../components/MultiDocumentUploader';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -24,6 +25,51 @@ const Upload = () => {
   const [scanning, setScanning] = useState(false);
   const [userContext, setUserContext] = useState('');
   const [analysisMode, setAnalysisMode] = useState('standard');
+  // Bug 2 — multi-document upload state. `uploadMode` toggles between the
+  // legacy single-file flow and the new multi-file path (binary tier-gated).
+  const [uploadMode, setUploadMode] = useState('single'); // 'single' | 'multi'
+  const [multiFiles, setMultiFiles] = useState([]);
+  const [multiSubmitting, setMultiSubmitting] = useState(false);
+  const tier = (user?.plan && user.plan !== 'free') ? 'paid' : 'free';
+  const tierLimits = tier === 'free'
+    ? { maxFiles: 1, maxBytesPerFile: 10 * 1024 * 1024, allowedFormats: new Set(['pdf']) }
+    : { maxFiles: 10, maxBytesPerFile: 50 * 1024 * 1024,
+        allowedFormats: new Set(['pdf', 'docx', 'jpg', 'jpeg', 'png', 'webp', 'heic', 'heif']) };
+  const isFr = (user?.language || (user?.jurisdiction === 'BE' ? 'fr' : 'en')) === 'fr';
+
+  const submitMulti = async () => {
+    if (!multiFiles.length) return;
+    setMultiSubmitting(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      multiFiles.forEach((f) => fd.append('files', f));
+      if (userContext.trim()) fd.append('user_context', userContext.trim());
+      const resp = await axios.post(`${API}/cases/upload-multiple`, fd, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const caseId = resp.data?.case_id;
+      if (caseId) {
+        // Same fire-and-forget trigger as the single-doc flow
+        axios.post(`${API}/analyze/trigger?case_id=${caseId}`, null, { withCredentials: true }).catch(() => {});
+        navigate(`/analyze/${caseId}`);
+        return;
+      }
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      const status = err.response?.status;
+      if (status === 402 && typeof detail === 'object') {
+        setError(detail.message || (isFr
+          ? 'Upload multiple réservé aux abonnés Protect.'
+          : 'Multi-upload reserved for Protect subscribers.'));
+      } else {
+        setError(typeof detail === 'string' ? detail : (isFr ? 'Upload échoué.' : 'Upload failed.'));
+      }
+    } finally {
+      setMultiSubmitting(false);
+    }
+  };
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [expandedSections, setExpandedSections] = useState({});
 
@@ -210,60 +256,100 @@ const Upload = () => {
           </div>
         )}
 
-        {/* ========== LOADING STATE ========== */}
+        {/* ========== STREAMING TRANSITION (Bug 1 fix) ==========
+            Old multi-stage progress UI replaced by a minimal cinematic-style
+            transition. The real progress UI is the cinematic itself, mounted
+            once /analyze/:caseId loads. Showing the old stage UI here for
+            1-3s of axios upload caused a visible "flash" before the cinematic.
+        */}
         {showLoading && (
-          <div className={`card p-8 text-center ${isContractGuard ? 'border-[#f59e0b]/30' : ''}`} data-testid="analysis-progress">
-            <Loader2 size={36} className={`mx-auto mb-5 animate-spin ${isContractGuard ? 'text-[#d97706]' : 'text-[#1a56db]'}`} />
-            <div className="text-base font-medium text-[#111827] mb-2">
-              {isContractGuard ? 'Analyzing contract for negotiation' : isImageFile ? 'Scanning document with image recognition' : 'Analyzing your document'}
-            </div>
-            {isImageFile && (
-              <div className="mb-4 px-4 py-2 bg-[#eff6ff] rounded-lg text-xs text-[#1d4ed8]" data-testid="vision-mode-indicator">
-                This appears to be a scanned document. Archer is using advanced image recognition to analyze it...
-              </div>
-            )}
-            <div className="max-w-xs mx-auto space-y-3">
-              {[
-                { key: 'reading', label: isContractGuard ? 'Reading contract clauses...' : isImageFile ? 'Reading document image...' : 'Reading document...' },
-                { key: 'analyzing', label: isContractGuard ? 'Identifying negotiation points...' : isImageFile ? 'OCR + AI image analysis...' : 'Analyzing with AI...' },
-                { key: 'scoring', label: isContractGuard ? 'Scoring contract fairness...' : 'Generating Risk Score...' }
-              ].map((step) => {
-                const stages = ['reading', 'analyzing', 'scoring', 'done'];
-                const ci = stages.indexOf(uploadStage);
-                const si = stages.indexOf(step.key);
-                const done = ci > si;
-                const current = ci === si;
-                const accentColor = isContractGuard ? '#d97706' : '#1a56db';
-                const accentBg = isContractGuard ? '#fffbeb' : '#eff6ff';
-                return (
-                  <div key={step.key} className={`flex items-center gap-3 py-2 px-4 rounded-xl transition-all`} style={current ? { backgroundColor: accentBg } : {}}>
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0`} style={{
-                      backgroundColor: done ? '#16a34a' : current ? accentColor : '#f0f0f0',
-                      color: done || current ? 'white' : '#bbb'
-                    }}>
-                      {done ? '\u2713' : si + 1}
-                    </div>
-                    <span className={`text-sm ${done ? 'text-[#16a34a]' : current ? 'font-medium' : 'text-[#ccc]'}`} style={current ? { color: accentColor } : {}}>
-                      {step.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="mt-5 h-1.5 bg-[#f0f0f0] rounded-full overflow-hidden max-w-xs mx-auto">
-              <div className="h-full rounded-full transition-all duration-1000" style={{
-                width: `${((['reading','analyzing','scoring','done'].indexOf(uploadStage)) + 1) * 33}%`,
-                backgroundColor: isContractGuard ? '#d97706' : '#1a56db'
-              }}></div>
-            </div>
-            <div className="text-xs text-[#9ca3af] mt-3">
-              {isContractGuard ? 'Contract negotiation expert reviewing every clause...' : 'Senior attorney-level analysis in progress...'}
+          <div
+            data-testid="analysis-progress"
+            style={{
+              minHeight: '50vh',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 16,
+              background: '#fafaf8',
+              borderRadius: 16,
+              padding: 48,
+            }}
+          >
+            <Loader2 size={28} className="animate-spin" style={{ color: '#1a56db' }} />
+            <div style={{ fontSize: 14, color: '#6b7280', letterSpacing: '0.3px' }}>
+              {isBelgian ? 'Préparation de l\'analyse…' : 'Preparing your analysis…'}
             </div>
           </div>
         )}
 
-        {/* ========== UPLOAD FORM ========== */}
+        {/* ========== UPLOAD MODE TOGGLE (single vs multi) ========== */}
         {showUploadForm && (
+          <div className="flex items-center gap-2 mb-3 text-xs">
+            <button
+              type="button"
+              onClick={() => setUploadMode('single')}
+              className={`px-3 py-1.5 rounded-full border ${
+                uploadMode === 'single'
+                  ? 'bg-neutral-900 text-white border-neutral-900'
+                  : 'bg-white text-neutral-700 border-neutral-300 hover:border-neutral-500'
+              }`}
+            >
+              {isFr ? '1 document' : 'Single document'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setUploadMode('multi')}
+              className={`px-3 py-1.5 rounded-full border ${
+                uploadMode === 'multi'
+                  ? 'bg-neutral-900 text-white border-neutral-900'
+                  : 'bg-white text-neutral-700 border-neutral-300 hover:border-neutral-500'
+              }`}
+            >
+              📎 {isFr ? 'Plusieurs documents' : 'Multiple documents'}
+              {tier === 'free' && (
+                <span className="ml-1.5 text-[10px] uppercase opacity-70">(Protect)</span>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* ========== MULTI-DOC UPLOAD UI ========== */}
+        {showUploadForm && uploadMode === 'multi' && (
+          <div className="card p-6 mb-4">
+            <MultiDocumentUploader
+              tier={tier}
+              maxFiles={tierLimits.maxFiles}
+              maxBytesPerFile={tierLimits.maxBytesPerFile}
+              allowedFormats={tierLimits.allowedFormats}
+              language={isFr ? 'fr' : 'en'}
+              onFilesSelected={setMultiFiles}
+            />
+            {multiFiles.length > 0 && (
+              <button
+                type="button"
+                onClick={submitMulti}
+                disabled={multiSubmitting}
+                className="w-full mt-4 bg-[#1a56db] text-white font-medium py-3 rounded-xl hover:opacity-90 disabled:opacity-50"
+              >
+                {multiSubmitting
+                  ? (isFr ? 'Envoi…' : 'Uploading…')
+                  : (isFr
+                      ? `Analyser ${multiFiles.length} document${multiFiles.length > 1 ? 's' : ''} →`
+                      : `Analyze ${multiFiles.length} document${multiFiles.length > 1 ? 's' : ''} →`)}
+              </button>
+            )}
+            {error && (
+              <div className="mt-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm p-3">
+                {error}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ========== UPLOAD FORM (single doc, legacy path) ========== */}
+        {showUploadForm && uploadMode === 'single' && (
           <>
             {/* Mode toggle */}
             <div className="grid grid-cols-2 gap-2 mb-4" data-testid="mode-toggle">

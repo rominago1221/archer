@@ -140,6 +140,10 @@ class Case(BaseModel):
     strategy_narrative: Optional[dict] = None
     amounts: Optional[dict] = None
     analysis_depth: Optional[dict] = None
+    # Sprints C/D/E — attorney portal integration
+    attorney_status: Optional[str] = None      # Sprint C: waiting_assignment | assigned | unassigned_no_match
+    payment_status: Optional[str] = None       # Sprint D: paid
+    live_counsel_active: bool = False          # Sprint E: computed in GET /cases/:id
 
     @field_validator('deadline', mode='before')
     @classmethod

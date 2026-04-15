@@ -8,6 +8,8 @@ import AddDocumentModal from '../components/AddDocumentModal';
 import CaseChatDrawer from '../components/CaseChatDrawer';
 import NextActionsPanel from '../components/NextActionsPanel';
 import LetterFormModal from '../components/LetterFormModal';
+import NotificationBell from '../components/NotificationBell';
+import LetterReadyBanner from '../components/LetterReadyBanner';
 import AttorneyLetterModal from '../components/AttorneyLetterModal';
 import JurisdictionPills from '../components/JurisdictionPills';
 import JurisdictionOnboarding, { hasSeenOnboarding } from '../components/JurisdictionOnboarding';
@@ -558,11 +560,17 @@ const Dashboard = () => {
               <div style={{ padding: '4px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#eff6ff', color: '#1d4ed8', border: '0.5px solid #bfdbfe' }}>{t.credSources}</div>
               <div style={{ padding: '4px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#f0fdf4', color: '#15803d', border: '0.5px solid #86efac' }}>{t.credLive}</div>
               {sc && score >= 70 && <div style={{ padding: '4px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#fff5f5', color: '#dc2626', border: '0.5px solid #fca5a5' }}>⚡ {t.credUrgent}</div>}
+              {/* Phase 2 — Notifications bell */}
+              <div style={{ marginLeft: 4, color: '#374151' }}>
+                <NotificationBell language={lang} />
+              </div>
             </div>
           </div>
 
           {/* Case View */}
           <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+            {/* Phase 2 — Letter ready banner (auto-hides when no unread letter_ready) */}
+            <LetterReadyBanner language={lang} />
             {!sc ? (
               <div style={{ textAlign: 'center', padding: '80px 20px' }}>
                 <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>

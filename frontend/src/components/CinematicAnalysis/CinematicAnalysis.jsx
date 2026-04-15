@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAnalysisStream } from './hooks/useAnalysisStream';
@@ -10,7 +10,14 @@ import Scene04_Findings from './scenes/Scene04_Findings';
 import Scene05_Battle from './scenes/Scene05_Battle';
 import Scene06_Strategy from './scenes/Scene06_Strategy';
 import Scene07_Landing from './scenes/Scene07_Landing';
+import SceneNavigationControls from './SceneNavigationControls';
 import './styles/animations.css';
+
+// Bug 6 — scenes 0-2 auto-advance via the streaming hook. Scenes 3-7 require
+// manual navigation: user clicks Prev/Next or uses arrow keys. The hand-off
+// happens the first time the stream lands on FIRST_MANUAL_SCENE.
+const FIRST_MANUAL_SCENE = 3;
+const TOTAL_SCENES = 8;
 
 export default function CinematicAnalysis() {
   const { caseId } = useParams();
@@ -18,7 +25,51 @@ export default function CinematicAnalysis() {
   const { user } = useAuth();
   const language = user?.language || (user?.jurisdiction === 'BE' ? 'fr' : 'en');
   const jurisdiction = user?.jurisdiction || 'US';
-  const { currentScene, data, isComplete, error } = useAnalysisStream(caseId);
+  const { currentScene: streamScene, data, isComplete, error } = useAnalysisStream(caseId);
+
+  // Bug 6 — once the stream crosses into manual-nav territory, freeze the
+  // scene index locally and let the user drive Prev/Next.
+  const [manualScene, setManualScene] = useState(null);
+  const inManualMode = manualScene !== null;
+  const currentScene = inManualMode ? manualScene : streamScene;
+
+  useEffect(() => {
+    if (!inManualMode && streamScene >= FIRST_MANUAL_SCENE) {
+      setManualScene(streamScene);
+    }
+  }, [streamScene, inManualMode]);
+
+  const goPrev = useCallback(() => {
+    setManualScene((s) => Math.max(FIRST_MANUAL_SCENE, (s ?? streamScene) - 1));
+  }, [streamScene]);
+
+  const goNext = useCallback(() => {
+    setManualScene((s) => Math.min(TOTAL_SCENES - 1, (s ?? streamScene) + 1));
+  }, [streamScene]);
+
+  // Keyboard nav (arrow keys) — only active in manual mode
+  useEffect(() => {
+    if (!inManualMode) return;
+    const onKey = (e) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [inManualMode, goPrev, goNext]);
+
+  // Bug 2 — multi-document counter. Fetch the case once at mount to read
+  // `document_count`. Displayed as a small badge so multi-upload users see
+  // "Analysing N documents…" instead of nothing.
+  const [documentCount, setDocumentCount] = useState(1);
+  useEffect(() => {
+    if (!caseId) return;
+    const API = process.env.REACT_APP_BACKEND_URL || '';
+    fetch(`${API}/api/cases/${caseId}`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((c) => { if (c?.document_count) setDocumentCount(c.document_count); })
+      .catch(() => {});
+  }, [caseId]);
 
   // If already analyzed, redirect to case detail via useEffect (not during render)
   useEffect(() => {
@@ -81,10 +132,40 @@ export default function CinematicAnalysis() {
         {String(currentScene).padStart(2, '0')} / 07
       </div>
 
-      {/* Current scene */}
-      <div key={currentScene} style={{ animation: 'fadeIn 0.4s ease' }}>
+      {/* Bug 2 — multi-document counter (visible only when >1 doc) */}
+      {documentCount > 1 && (
+        <div style={{
+          position: 'fixed', top: 12, left: 16, zIndex: 100,
+          padding: '5px 12px', background: 'rgba(26,86,219,0.95)',
+          borderRadius: 20, border: '0.5px solid #1a56db',
+          fontSize: 11, fontWeight: 700, color: '#fff', letterSpacing: '0.3px',
+          fontFamily: '"SF Mono", Monaco, monospace',
+        }}>
+          📎 {language?.startsWith('fr')
+            ? `Analyse de ${documentCount} documents…`
+            : `Analysing ${documentCount} documents…`}
+        </div>
+      )}
+
+      {/* Bug 5 — Scenes are scaled +20% via the .cinematic-scene-wrap class
+          which applies transform: scale(1.2) on viewports >= 768px. On mobile
+          the natural responsive layout wins (no scale). */}
+      <div key={currentScene} style={{ animation: 'fadeIn 0.4s ease' }} className="cinematic-scene-wrap">
         {scenes[Math.min(currentScene, scenes.length - 1)]}
       </div>
+
+      {/* Bug 6 — Manual nav controls, visible only on scenes 3+ */}
+      {inManualMode && (
+        <SceneNavigationControls
+          currentIndex={currentScene}
+          totalScenes={TOTAL_SCENES}
+          firstManualScene={FIRST_MANUAL_SCENE}
+          onPrev={goPrev}
+          onNext={goNext}
+          onFinish={() => navigate(`/cases/${caseId}`)}
+          language={language}
+        />
+      )}
     </div>
   );
 }
