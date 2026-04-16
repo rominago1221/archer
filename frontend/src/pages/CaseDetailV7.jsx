@@ -52,6 +52,8 @@ export default function CaseDetailV7() {
   const [popupOpen, setPopupOpen] = useState(false);
   const [letterGenerating, setLetterGenerating] = useState(false);
   const [generatedLetter, setGeneratedLetter] = useState(null);
+  const [answerFeedback, setAnswerFeedback] = useState(null);
+  const [answerLoading, setAnswerLoading] = useState(false);
 
   const fetchCase = useCallback(async () => {
     if (!caseId) return;
@@ -171,9 +173,6 @@ export default function CaseDetailV7() {
     const q = encodeURIComponent(question);
     navigate(`/chat?q=${q}&case_id=${caseId}`);
   };
-
-  const [answerFeedback, setAnswerFeedback] = useState(null);
-  const [answerLoading, setAnswerLoading] = useState(false);
 
   const handleAnswerQuestion = async (payload) => {
     setAnswerLoading(true);
