@@ -38,8 +38,12 @@ from models import (
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# API keys
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+# API keys — use a getter to ensure .env is loaded regardless of import order.
+# On Emergent, the key may be EMERGENT_LLM_KEY instead of ANTHROPIC_API_KEY.
+def get_anthropic_key():
+    return os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("EMERGENT_LLM_KEY") or ""
+
+ANTHROPIC_API_KEY = None  # set at startup
 STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY")
 
 # Create the main app
@@ -427,7 +431,7 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 2
                 resp = await client.post(
                     "https://api.anthropic.com/v1/messages",
                     headers={
-                        "x-api-key": ANTHROPIC_API_KEY,
+                        "x-api-key": get_anthropic_key(),
                         "anthropic-version": "2023-06-01",
                         "anthropic-beta": "prompt-caching-2024-07-31",
                         "content-type": "application/json",
@@ -474,7 +478,7 @@ async def call_claude_fast(system_prompt: str, user_message: str, max_tokens: in
                 resp = await client.post(
                     "https://api.anthropic.com/v1/messages",
                     headers={
-                        "x-api-key": ANTHROPIC_API_KEY,
+                        "x-api-key": get_anthropic_key(),
                         "anthropic-version": "2023-06-01",
                         "content-type": "application/json",
                     },
@@ -2474,7 +2478,7 @@ async def generate_letter_with_claude(letter_data: dict, belgian: bool = False, 
                 "https://api.anthropic.com/v1/messages",
                 headers={
                     "Content-Type": "application/json",
-                    "x-api-key": ANTHROPIC_API_KEY,
+                    "x-api-key": get_anthropic_key(),
                     "anthropic-version": "2023-06-01"
                 },
                 json={
@@ -2899,7 +2903,7 @@ async def analyze_document_vision(image_b64_list: list, system_prompt: str = Non
                     "https://api.anthropic.com/v1/messages",
                     headers={
                         "Content-Type": "application/json",
-                        "x-api-key": ANTHROPIC_API_KEY,
+                        "x-api-key": get_anthropic_key(),
                         "anthropic-version": "2023-06-01"
                     },
                     json={
@@ -4319,7 +4323,7 @@ async def predict_outcome(case_id: str, current_user: User = Depends(get_current
                 "https://api.anthropic.com/v1/messages",
                 headers={
                     "Content-Type": "application/json",
-                    "x-api-key": ANTHROPIC_API_KEY,
+                    "x-api-key": get_anthropic_key(),
                     "anthropic-version": "2023-06-01"
                 },
                 json={
@@ -4383,7 +4387,7 @@ async def scan_document(
                 "https://api.anthropic.com/v1/messages",
                 headers={
                     "Content-Type": "application/json",
-                    "x-api-key": ANTHROPIC_API_KEY,
+                    "x-api-key": get_anthropic_key(),
                     "anthropic-version": "2023-06-01"
                 },
                 json={
@@ -4866,7 +4870,7 @@ async def chat_send_stream(data: ChatSendInput, current_user: User = Depends(get
                     "POST",
                     "https://api.anthropic.com/v1/messages",
                     headers={
-                        "x-api-key": ANTHROPIC_API_KEY,
+                        "x-api-key": get_anthropic_key(),
                         "anthropic-version": "2023-06-01",
                         "anthropic-beta": "prompt-caching-2024-07-31",
                         "content-type": "application/json",
@@ -5061,7 +5065,7 @@ async def send_chat_message(
             resp = await client.post(
                 "https://api.anthropic.com/v1/messages",
                 headers={
-                    "x-api-key": ANTHROPIC_API_KEY,
+                    "x-api-key": get_anthropic_key(),
                     "anthropic-version": "2023-06-01",
                     "anthropic-beta": "prompt-caching-2024-07-31",
                     "content-type": "application/json",
@@ -5826,7 +5830,7 @@ Titre du dossier : {case_doc.get('title', '')}"""
             resp = await client.post(
                 "https://api.anthropic.com/v1/messages",
                 headers={
-                    "x-api-key": ANTHROPIC_API_KEY,
+                    "x-api-key": get_anthropic_key(),
                     "anthropic-version": "2023-06-01",
                     "content-type": "application/json",
                 },
@@ -6621,7 +6625,7 @@ Return the complete document text formatted with clear sections and headings. Us
                 "https://api.anthropic.com/v1/messages",
                 headers={
                     "Content-Type": "application/json",
-                    "x-api-key": ANTHROPIC_API_KEY,
+                    "x-api-key": get_anthropic_key(),
                     "anthropic-version": "2023-06-01"
                 },
                 json={
@@ -6819,7 +6823,7 @@ async def archer_doc_send(data: ArcherDocMessage, current_user: User = Depends(g
                 "https://api.anthropic.com/v1/messages",
                 headers={
                     "Content-Type": "application/json",
-                    "x-api-key": ANTHROPIC_API_KEY,
+                    "x-api-key": get_anthropic_key(),
                     "anthropic-version": "2023-06-01"
                 },
                 json={

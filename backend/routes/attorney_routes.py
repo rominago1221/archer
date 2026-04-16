@@ -18,7 +18,8 @@ from storage import EMERGENT_KEY
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+def get_anthropic_key():
+    return os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("EMERGENT_LLM_KEY") or ""
 
 # ================== ATTORNEY PORTAL — Backend ==================
 
@@ -531,7 +532,7 @@ async def generate_case_brief(call_id: str, current_user: User = Depends(get_cur
     try:
         async with httpx.AsyncClient() as http_client:
             resp = await http_client.post("https://api.anthropic.com/v1/messages", headers={
-                "Content-Type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01"
+                "Content-Type": "application/json", "x-api-key": get_anthropic_key(), "anthropic-version": "2023-06-01"
             }, json={
                 "model": "claude-opus-4-6", "max_tokens": 3000,
                 "system": CASE_BRIEF_SYSTEM,
@@ -646,7 +647,7 @@ async def attorney_research_send(data: dict, current_user: User = Depends(get_cu
     try:
         async with httpx.AsyncClient() as http_client:
             resp = await http_client.post("https://api.anthropic.com/v1/messages", headers={
-                "Content-Type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01"
+                "Content-Type": "application/json", "x-api-key": get_anthropic_key(), "anthropic-version": "2023-06-01"
             }, json={"model": "claude-sonnet-4-6", "max_tokens": 4096, "system": system, "messages": messages_list}, timeout=120.0)
             resp.raise_for_status()
             ai_text = "".join(b["text"] for b in resp.json().get("content", []) if b.get("type") == "text") or "Research assistant temporarily unavailable."
