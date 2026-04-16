@@ -424,10 +424,12 @@ def load_jurisprudence(case_type: str, document_type: str) -> str:
 
 async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4000, use_web_search: bool = False) -> dict:
     """Direct Anthropic API — Opus 4.6 for analysis pipeline.
-    System prompt is cached (ephemeral) for cross-pass efficiency."""
+    System prompt is cached (ephemeral) for cross-pass efficiency.
+    Auto-retries with doubled max_tokens on truncation (stop_reason=max_tokens)."""
+    current_max = max_tokens
     for attempt in range(3):
         try:
-            async with httpx.AsyncClient(timeout=120) as client:
+            async with httpx.AsyncClient(timeout=180) as client:
                 resp = await client.post(
                     "https://api.anthropic.com/v1/messages",
                     headers={
@@ -438,7 +440,7 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4
                     },
                     json={
                         "model": "claude-opus-4-6",
-                        "max_tokens": max_tokens,
+                        "max_tokens": current_max,
                         "system": [
                             {"type": "text", "text": system_prompt, "cache_control": {"type": "ephemeral"}},
                         ],
@@ -452,12 +454,24 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4
                     logger.error(f"Anthropic API error {resp.status_code}: {body[:500]}")
                     raise Exception(f"Anthropic API {resp.status_code}: {body[:200]}")
                 data = resp.json()
+                stop_reason = data.get("stop_reason", "end_turn")
                 text = data["content"][0]["text"]
+
+                # Truncated response — double max_tokens and retry
+                if stop_reason == "max_tokens":
+                    next_max = current_max * 2
+                    if next_max > 32000:
+                        logger.error(f"Response truncated at {current_max} tokens and cap reached — parsing partial JSON")
+                    else:
+                        logger.warning(f"Response truncated (stop_reason=max_tokens at {current_max}), retrying with {next_max}")
+                        current_max = next_max
+                        continue
+
                 text = text.replace("```json", "").replace("```", "").strip()
                 return json.loads(text)
         except json.JSONDecodeError:
             if attempt < 2:
-                logger.warning(f"JSON parse error from Claude, retrying (attempt {attempt+1}/3)")
+                logger.warning(f"JSON parse error from Claude (attempt {attempt+1}/3, max_tokens={current_max}), retrying")
                 await asyncio.sleep(1)
                 continue
             raise
