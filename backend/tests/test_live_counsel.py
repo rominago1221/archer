@@ -541,3 +541,169 @@ def test_checkout_returns_error_when_no_calendly_attorney(factory, db):
     )
     assert r.status_code == 409
     assert "NO_ATTORNEY_AVAILABLE_FOR_LIVE_COUNSEL" in r.text
+
+
+# =========================================================================
+# No-show detection cron
+# =========================================================================
+
+def test_no_show_marks_unjoined_calls_after_45min(factory, db, monkeypatch):
+    from jobs.portal_maintenance import mark_no_show_live_counsels
+    emails_sent = []
+
+    async def fake_send(to, subject, html):
+        emails_sent.append((to, subject))
+
+    monkeypatch.setattr("routes.attorney_routes.send_email", fake_send, raising=False)
+
+    a = factory.atty()
+    client = factory.client()
+    case_id = factory.case(client["user_id"])
+
+    # No-show: scheduled 2h ago, call_started_at=None
+    noshow_id = factory.ass(
+        a, case_id, client["user_id"],
+        status="accepted",
+        scheduled_at=(datetime.now(timezone.utc) - timedelta(hours=2)).isoformat(),
+        call_started_at=None,
+    )
+    # Started call: should NOT be touched by no-show cron
+    started_id = factory.ass(
+        a, case_id, client["user_id"],
+        status="accepted",
+        scheduled_at=(datetime.now(timezone.utc) - timedelta(hours=2)).isoformat(),
+        call_started_at=(datetime.now(timezone.utc) - timedelta(hours=1, minutes=50)).isoformat(),
+    )
+    # Future call: should NOT be touched
+    future_id = factory.ass(
+        a, case_id, client["user_id"],
+        status="accepted",
+        scheduled_at=(datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
+        call_started_at=None,
+    )
+
+    n = _run(mark_no_show_live_counsels())
+    assert n == 1
+    assert db.case_assignments.find_one({"id": noshow_id})["status"] == "no_show"
+    assert db.case_assignments.find_one({"id": started_id})["status"] == "accepted"
+    assert db.case_assignments.find_one({"id": future_id})["status"] == "accepted"
+    # Both client + attorney get notified
+    assert len(emails_sent) == 2
+
+
+def test_no_show_idempotent(factory, db, monkeypatch):
+    from jobs.portal_maintenance import mark_no_show_live_counsels
+
+    async def _noop(*a, **kw): return None
+    monkeypatch.setattr("routes.attorney_routes.send_email", _noop, raising=False)
+
+    a = factory.atty()
+    client = factory.client()
+    case_id = factory.case(client["user_id"])
+    factory.ass(
+        a, case_id, client["user_id"],
+        status="accepted",
+        scheduled_at=(datetime.now(timezone.utc) - timedelta(hours=2)).isoformat(),
+        call_started_at=None,
+    )
+    n1 = _run(mark_no_show_live_counsels())
+    assert n1 == 1
+    # Second run: already marked no_show, should find 0
+    n2 = _run(mark_no_show_live_counsels())
+    assert n2 == 0
+
+
+# =========================================================================
+# 7-day unbooked refund cron
+# =========================================================================
+
+def test_refund_unbooked_after_7_days(factory, db, monkeypatch):
+    from jobs.portal_maintenance import refund_expired_unboooked_live_counsels
+    emails_sent = []
+    refunds_created = []
+
+    async def fake_send(to, subject, html):
+        emails_sent.append((to, subject))
+
+    monkeypatch.setattr("routes.attorney_routes.send_email", fake_send, raising=False)
+
+    def fake_refund_create(**kwargs):
+        refunds_created.append(kwargs)
+        return {"id": "re_fake"}
+
+    import stripe as _stripe
+    monkeypatch.setattr(_stripe.Refund, "create", staticmethod(fake_refund_create))
+
+    a = factory.atty()
+    client = factory.client()
+    case_id = factory.case(client["user_id"])
+
+    # Add payment_intent_id to case
+    db.cases.update_one(
+        {"case_id": case_id},
+        {"$set": {"payment_status": "paid", "payment_intent_id": "pi_test_123"}},
+    )
+
+    # Unbooked assignment created 8 days ago
+    old_date = (datetime.now(timezone.utc) - timedelta(days=8)).isoformat()
+    unbooked_id = factory.ass(
+        a, case_id, client["user_id"],
+        status="awaiting_calendly_booking",
+        scheduled_at=None,
+        created_at=old_date,
+    )
+
+    n = _run(refund_expired_unboooked_live_counsels())
+    assert n == 1
+    assert db.case_assignments.find_one({"id": unbooked_id})["status"] == "cancelled_refunded"
+    assert db.cases.find_one({"case_id": case_id})["payment_status"] == "refunded"
+    assert len(refunds_created) == 1
+    assert refunds_created[0]["payment_intent"] == "pi_test_123"
+    assert len(emails_sent) == 1
+    assert "Remboursement" in emails_sent[0][1]
+
+
+def test_refund_skips_recently_created(factory, db, monkeypatch):
+    from jobs.portal_maintenance import refund_expired_unboooked_live_counsels
+
+    async def _noop(*a, **kw): return None
+    monkeypatch.setattr("routes.attorney_routes.send_email", _noop, raising=False)
+
+    a = factory.atty()
+    client = factory.client()
+    case_id = factory.case(client["user_id"])
+
+    # Created 2 days ago — should NOT be refunded (< 7 days)
+    recent_id = factory.ass(
+        a, case_id, client["user_id"],
+        status="awaiting_calendly_booking",
+        scheduled_at=None,
+        created_at=(datetime.now(timezone.utc) - timedelta(days=2)).isoformat(),
+    )
+
+    n = _run(refund_expired_unboooked_live_counsels())
+    assert n == 0
+    assert db.case_assignments.find_one({"id": recent_id})["status"] == "awaiting_calendly_booking"
+
+
+def test_refund_skips_booked_assignments(factory, db, monkeypatch):
+    from jobs.portal_maintenance import refund_expired_unboooked_live_counsels
+
+    async def _noop(*a, **kw): return None
+    monkeypatch.setattr("routes.attorney_routes.send_email", _noop, raising=False)
+
+    a = factory.atty()
+    client = factory.client()
+    case_id = factory.case(client["user_id"])
+
+    # Created 8 days ago BUT has scheduled_at (booked) — should NOT be refunded
+    booked_id = factory.ass(
+        a, case_id, client["user_id"],
+        status="awaiting_calendly_booking",
+        scheduled_at=(datetime.now(timezone.utc) + timedelta(hours=2)).isoformat(),
+        created_at=(datetime.now(timezone.utc) - timedelta(days=8)).isoformat(),
+    )
+
+    n = _run(refund_expired_unboooked_live_counsels())
+    assert n == 0
+    assert db.case_assignments.find_one({"id": booked_id})["status"] == "awaiting_calendly_booking"

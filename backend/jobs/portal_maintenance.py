@@ -285,6 +285,152 @@ async def mark_completed_live_counsels() -> int:
     return len(rows)
 
 
+async def mark_no_show_live_counsels() -> int:
+    """Mark Live Counsel assignments as no_show when scheduled_at + 45min is past
+    and neither party joined (call_started_at IS NULL).
+    Notifies both client and attorney.
+    """
+    from routes.attorney_routes import send_email
+    now = _now()
+    threshold = (now - timedelta(minutes=45)).isoformat()
+    rows = await db.case_assignments.find(
+        {"service_type": "live_counsel", "status": "accepted",
+         "scheduled_at": {"$lt": threshold},
+         "call_started_at": None},
+        {"_id": 0},
+    ).to_list(200)
+
+    for a in rows:
+        await db.case_assignments.update_one(
+            {"id": a["id"]},
+            {"$set": {
+                "status": "no_show",
+                "completed_at": now.isoformat(),
+                "updated_at": now.isoformat(),
+            }},
+        )
+        if a.get("attorney_id"):
+            await increment_active_cases(a["attorney_id"], -1)
+            await log_matching_event(
+                a["case_id"], a["attorney_id"], "no_show",
+                metadata={"assignment_id": a["id"], "service_type": "live_counsel"},
+            )
+        if a.get("daily_co_room_name"):
+            try:
+                from services.daily_co import delete_room
+                await asyncio.to_thread(delete_room, a["daily_co_room_name"])
+            except Exception:
+                pass
+
+        case = await db.cases.find_one({"case_id": a["case_id"]}, {"_id": 0}) or {}
+        client = await db.users.find_one({"user_id": case.get("user_id")}, {"_id": 0}) or {}
+        attorney = await db.attorneys.find_one({"id": a.get("attorney_id")}, {"_id": 0}) or {}
+
+        if client.get("email"):
+            try:
+                await send_email(
+                    client["email"],
+                    "Consultation manquée — Archer",
+                    "<p>Votre consultation Live Counsel n'a pas eu lieu (aucune des "
+                    "deux parties ne s'est connectée).</p>"
+                    "<p>Contactez-nous pour planifier un nouveau créneau ou obtenir "
+                    "un remboursement.</p>",
+                )
+            except Exception:
+                logger.exception(f"no_show client email failed for {a['id']}")
+        if attorney.get("email"):
+            try:
+                await send_email(
+                    attorney["email"],
+                    "No-show consultation — Archer",
+                    f"<p>La consultation Live Counsel pour le dossier #{a['case_id'][-4:]} "
+                    f"n'a pas eu lieu. L'assignation a été marquée comme no-show.</p>",
+                )
+            except Exception:
+                logger.exception(f"no_show attorney email failed for {a['id']}")
+
+    return len(rows)
+
+
+async def refund_expired_unboooked_live_counsels() -> int:
+    """Auto-refund Live Counsel payments when client paid but never booked
+    within 7 days (status still awaiting_calendly_booking, scheduled_at IS NULL,
+    paid_at > 7 days ago).
+    Refunds via Stripe, notifies client, releases attorney.
+    """
+    from routes.attorney_routes import send_email
+    import stripe as _stripe
+    _stripe.api_key = os.environ.get("STRIPE_API_KEY")
+    now = _now()
+    cutoff = (now - timedelta(days=7)).isoformat()
+
+    rows = await db.case_assignments.find(
+        {"service_type": "live_counsel",
+         "status": "awaiting_calendly_booking",
+         "scheduled_at": None,
+         "created_at": {"$lt": cutoff}},
+        {"_id": 0},
+    ).to_list(200)
+
+    refunded = 0
+    for a in rows:
+        case = await db.cases.find_one({"case_id": a["case_id"]}, {"_id": 0}) or {}
+        pi_id = case.get("payment_intent_id")
+
+        # Attempt Stripe refund
+        if pi_id:
+            try:
+                await asyncio.to_thread(_stripe.Refund.create, payment_intent=pi_id)
+                await db.cases.update_one(
+                    {"case_id": a["case_id"]},
+                    {"$set": {
+                        "payment_status": "refunded",
+                        "refunded_at": now.isoformat(),
+                        "updated_at": now.isoformat(),
+                    }},
+                )
+            except Exception:
+                logger.exception(f"stripe refund failed for case {a['case_id']} pi={pi_id}")
+                continue
+
+        # Mark assignment cancelled + release attorney
+        await db.case_assignments.update_one(
+            {"id": a["id"]},
+            {"$set": {
+                "status": "cancelled_refunded",
+                "completed_at": now.isoformat(),
+                "updated_at": now.isoformat(),
+            }},
+        )
+        if a.get("attorney_id"):
+            await increment_active_cases(a["attorney_id"], -1)
+            await log_matching_event(
+                a["case_id"], a["attorney_id"], "cancelled_refunded",
+                metadata={"assignment_id": a["id"], "reason": "7d_no_booking"},
+            )
+
+        # Notify client
+        client = await db.users.find_one({"user_id": case.get("user_id")}, {"_id": 0}) or {}
+        if client.get("email"):
+            try:
+                await send_email(
+                    client["email"],
+                    "Remboursement Live Counsel — Archer",
+                    "<p>Vous n'avez pas réservé de créneau pour votre consultation Live "
+                    "Counsel dans les 7 jours suivant votre paiement.</p>"
+                    "<p>Votre paiement de 149 € a été remboursé automatiquement. "
+                    "Le remboursement apparaîtra sous 5 à 10 jours ouvrés.</p>"
+                    "<p>Vous pouvez à tout moment relancer une consultation depuis "
+                    "votre espace client.</p>",
+                )
+            except Exception:
+                logger.exception(f"refund email failed for case {a['case_id']}")
+
+        refunded += 1
+
+    return refunded
+
+
 async def run_tick() -> None:
     """Invoked every minute by APScheduler. Catches everything."""
     try:
@@ -292,10 +438,13 @@ async def run_tick() -> None:
         sent = await send_expiring_warnings()
         reminders = await send_live_counsel_reminders()
         completed = await mark_completed_live_counsels()
-        if processed or sent or reminders or completed:
+        no_shows = await mark_no_show_live_counsels()
+        refunds = await refund_expired_unboooked_live_counsels()
+        if processed or sent or reminders or completed or no_shows or refunds:
             logger.info(
                 f"portal_maintenance tick: expired={processed} warnings={sent} "
-                f"lc_reminders={reminders} lc_completed={completed}"
+                f"lc_reminders={reminders} lc_completed={completed} "
+                f"lc_no_shows={no_shows} lc_refunds={refunds}"
             )
     except Exception:
         logger.exception("portal_maintenance tick failed")

@@ -7,8 +7,6 @@ import SpecialtyPicker from './SpecialtyPicker';
 const ALL_LANGUAGES = [
   { value: 'fr', label: 'Français' },
   { value: 'en', label: 'English' },
-  { value: 'nl', label: 'Nederlands' },
-  { value: 'de', label: 'Deutsch' },
 ];
 
 const CALENDLY_PATTERN = /^https:\/\/calendly\.com\/[\w\-]+\/[\w\-]+\/?$/;
