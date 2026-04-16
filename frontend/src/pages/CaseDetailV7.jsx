@@ -401,6 +401,7 @@ export default function CaseDetailV7() {
         <LegalNewsSection news={legalNews} language={language} />
 
         <SimilarCasesSection
+          caseId={caseId}
           stats={similarCases}
           country={country}
           language={language}

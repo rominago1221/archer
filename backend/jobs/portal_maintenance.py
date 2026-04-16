@@ -431,6 +431,55 @@ async def refund_expired_unboooked_live_counsels() -> int:
     return refunded
 
 
+_LAST_SIMILAR_STATS_AT: datetime | None = None
+
+
+async def recompute_similar_cases_stats() -> int:
+    """Daily cron: precompute similar cases stats per case_type + jurisdiction.
+    Stored in similar_cases_stats collection for fast reads.
+    Runs at most once per 23 hours."""
+    global _LAST_SIMILAR_STATS_AT
+    now = _now()
+    if _LAST_SIMILAR_STATS_AT and (now - _LAST_SIMILAR_STATS_AT) < timedelta(hours=23):
+        return 0
+
+    pipeline = [
+        {"$match": {"case_outcome": {"$in": ["won", "lost", "settled"]},
+                     "is_publicly_anonymizable": {"$ne": False}}},
+        {"$group": {
+            "_id": {"case_type": "$type", "jurisdiction": "$country"},
+            "total_similar": {"$sum": 1},
+            "won_count": {"$sum": {"$cond": [{"$eq": ["$case_outcome", "won"]}, 1, 0]}},
+            "settled_count": {"$sum": {"$cond": [{"$eq": ["$case_outcome", "settled"]}, 1, 0]}},
+        }},
+    ]
+    results = await db.cases.aggregate(pipeline).to_list(200)
+    updated = 0
+    for r in results:
+        total = r["total_similar"]
+        won = r["won_count"]
+        win_rate = round((won / total) * 100, 1) if total > 0 else 0
+        await db.similar_cases_stats.update_one(
+            {"case_type": r["_id"]["case_type"], "jurisdiction": r["_id"]["jurisdiction"]},
+            {"$set": {
+                "case_type": r["_id"]["case_type"],
+                "jurisdiction": r["_id"]["jurisdiction"],
+                "total_similar": total,
+                "won_count": won,
+                "settled_count": r["settled_count"],
+                "win_rate_percent": win_rate,
+                "computed_at": now.isoformat(),
+            }},
+            upsert=True,
+        )
+        updated += 1
+
+    _LAST_SIMILAR_STATS_AT = now
+    if updated:
+        logger.info(f"similar_cases_stats: recomputed {updated} type/jurisdiction combos")
+    return updated
+
+
 async def run_tick() -> None:
     """Invoked every minute by APScheduler. Catches everything."""
     try:
@@ -452,3 +501,7 @@ async def run_tick() -> None:
         await maybe_send_health_alert()
     except Exception:
         logger.exception("health alert check failed")
+    try:
+        await recompute_similar_cases_stats()
+    except Exception:
+        logger.exception("similar cases stats recompute failed")

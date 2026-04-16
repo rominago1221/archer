@@ -224,9 +224,12 @@ Return ONLY this JSON — no other text:
   "findings": [
     {{"text": "Finding title: short, specific, actionable — NEVER vague or generic", "impact": "high|medium|low", "type": "risk|opportunity|deadline|neutral", "legal_ref": "Exact statute, article, or case law citation (e.g. Fla. Stat. § 83.56(3) — Florida 3rd DCA 2023)", "jurisprudence": "Relevant case law if any", "impact_description": "What this means for the user RIGHT NOW in plain language — no legal jargon, written as if explaining to a friend", "do_now": "Exact next step the user MUST take — specific and actionable, never generic like 'consult an attorney'", "risk_if_ignored": "What happens if user does NOTHING — create urgency, explain real consequences of inaction", "confidence_score": 0.92, "jurisprudence_count": 47, "similar_cases_won": 44, "similar_cases_total": 47, "reasoning": "1-2 sentences explaining WHY this confidence score. Reference the jurisprudence consistency and how clear the law is."}}
   ],
+  "key_violation_types": ["short_notice_period", "missing_formal_notice", "vague_eviction_motive"],
   "recommend_lawyer": true,
   "disclaimer": "This analysis provides legal information only, not legal advice."
 }}
+KEY_VIOLATION_TYPES: Generate 2-5 short snake_case tags describing the key violations found (e.g. "short_notice_period", "no_written_contract", "unpaid_wages", "illegal_clause", "missing_mise_en_demeure"). These tags are used to match similar cases.
+
 Produce 3-6 findings. EVERY finding MUST have ALL 12 fields: text (title), impact, type, legal_ref (exact statute), jurisprudence, impact_description (plain language), do_now (specific action), risk_if_ignored (consequence of inaction), confidence_score (0.0-1.0), jurisprudence_count (int), similar_cases_won (int), similar_cases_total (int), reasoning (1-2 sentences).
 
 CONFIDENCE SCORE RULES:
@@ -1722,9 +1725,12 @@ Retourne UNIQUEMENT ce JSON:
   "financial_exposure_detailed": {{"meilleur_cas": "EUR 0", "cas_probable": "EUR 800-1200", "pire_cas": "EUR 2500 + frais"}},
   "applicable_laws": [{{"loi": "CCT n109", "pertinence": "Protection licenciement abusif", "favorable": "utilisateur|partie_adverse|neutre"}}],
   "organismes_recommandes": [{{"organisme": "Syndicat CSC/FGTB/CGSLB", "raison": "Aide juridique gratuite", "contact": "www.csc.be"}}],
+  "key_violation_types": ["preavis_insuffisant", "absence_mise_en_demeure", "motif_vague"],
   "recommend_lawyer": true,
   "key_insight": "La phrase la plus importante"
 }}
+KEY_VIOLATION_TYPES: Genere 2-5 tags snake_case decrivant les violations cles (ex: "preavis_insuffisant", "absence_contrat_ecrit", "salaire_impaye", "clause_abusive", "absence_mise_en_demeure"). Ces tags servent a trouver des cas similaires.
+
 Produis 3-6 constatations. CHAQUE constatation DOIT avoir les 12 champs: text (titre), impact, type, legal_ref (loi exacte + jurisprudence), jurisprudence, impact_description (langage simple), do_now (action precise), risk_if_ignored (consequence de l'inaction), confidence_score (0.0-1.0), jurisprudence_count (int), similar_cases_won (int), similar_cases_total (int), reasoning (1-2 phrases).
 
 REGLES SCORE DE CONFIANCE:
@@ -3242,6 +3248,7 @@ def _build_case_update(analysis, case_before, filename, ts):
         "ai_summary": a.get("summary"),
         "ai_findings": a.get("findings", []),
         "ai_next_steps": a.get("next_steps", []),
+        "key_violation_types": a.get("key_violation_types", []),
         "recommend_lawyer": a.get("recommend_lawyer", False),
         "battle_preview": a.get("battle_preview"),
         "success_probability": a.get("success_probability"),
@@ -3704,6 +3711,7 @@ async def reanalyze_case(case_id: str, current_user: User = Depends(get_current_
             "financial_exposure": normalize_financial_exposure(analysis.get("financial_exposure")),
             "ai_summary": analysis.get("summary"),
             "ai_findings": analysis.get("findings", []),
+                "key_violation_types": analysis.get("key_violation_types", []),
             "ai_next_steps": analysis.get("next_steps", []),
             "recommend_lawyer": analysis.get("recommend_lawyer", False),
             "battle_preview": analysis.get("battle_preview"),
@@ -4463,6 +4471,7 @@ async def scan_document(
                         "financial_exposure": normalize_financial_exposure(analysis.get("financial_exposure")),
                         "ai_summary": analysis.get("summary"),
                         "ai_findings": analysis.get("findings", []),
+                "key_violation_types": analysis.get("key_violation_types", []),
                         "ai_next_steps": analysis.get("next_steps", []),
                         "recommend_lawyer": analysis.get("recommend_lawyer", False),
                         "updated_at": now
@@ -4503,6 +4512,7 @@ async def scan_document(
             "financial_exposure": normalize_financial_exposure(analysis.get("financial_exposure")),
             "ai_summary": analysis.get("summary"),
             "ai_findings": analysis.get("findings", []),
+                "key_violation_types": analysis.get("key_violation_types", []),
             "ai_next_steps": analysis.get("next_steps", []),
             "recommend_lawyer": analysis.get("recommend_lawyer", False),
             "document_count": 1,
@@ -5097,6 +5107,111 @@ async def get_question_count(current_user: User = Depends(get_current_user)):
         return {"count": 0, "limit": 3 if current_user.plan == "free" else None}
     count = await db.chat_messages.count_documents({"conversation_id": {"$in": conv_ids}, "role": "user"})
     return {"count": count, "limit": 3 if current_user.plan == "free" else None}
+
+# ================== Similar Cases ==================
+
+@api_router.get("/cases/{case_id}/similar")
+async def get_similar_cases(case_id: str, current_user: User = Depends(get_current_user)):
+    """Find similar cases by type + jurisdiction + shared violation types.
+    Falls back to precomputed daily stats if not enough real data."""
+    case_doc = await db.cases.find_one(
+        {"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    case_violations = set(case_doc.get("key_violation_types") or [])
+    case_type = case_doc.get("type", "other")
+    jurisdiction = case_doc.get("country") or getattr(current_user, "jurisdiction", "BE")
+
+    # Try precomputed daily stats first (fast path)
+    stats_doc = await db.similar_cases_stats.find_one(
+        {"case_type": case_type, "jurisdiction": jurisdiction}, {"_id": 0})
+
+    if stats_doc and stats_doc.get("total_similar", 0) >= 5:
+        # Fetch top 3 closest cases by violation overlap
+        pipeline = [
+            {"$match": {
+                "case_id": {"$ne": case_id},
+                "type": case_type,
+                "country": jurisdiction,
+                "is_publicly_anonymizable": {"$ne": False},
+                "case_outcome": {"$in": ["won", "lost", "settled"]},
+            }},
+            {"$limit": 100},
+        ]
+        candidates = await db.cases.aggregate(pipeline).to_list(100)
+
+        scored = []
+        for c in candidates:
+            c_violations = set(c.get("key_violation_types") or [])
+            overlap = len(case_violations & c_violations) if case_violations else 0
+            scored.append((overlap, c))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        top_3 = [c for _, c in scored[:3]]
+
+        return {
+            "source": "live",
+            "total_similar": stats_doc["total_similar"],
+            "won_count": stats_doc["won_count"],
+            "win_rate_percent": stats_doc["win_rate_percent"],
+            "top_3_similar_cases": [
+                {
+                    "id": c["case_id"],
+                    "anonymized_title": _anonymize_case_title(c),
+                    "outcome": c.get("case_outcome", "unknown"),
+                    "outcome_summary": c.get("outcome_summary", ""),
+                    "key_violations": c.get("key_violation_types", []),
+                    "completed_at": c.get("updated_at"),
+                }
+                for c in top_3
+            ],
+        }
+
+    # Fallback: not enough real data — return static estimates
+    from utils.dashboard_static_stats import SIMILAR_CASES_FALLBACK
+    fallback = SIMILAR_CASES_FALLBACK.get(case_type, SIMILAR_CASES_FALLBACK.get("other", {}))
+    return {
+        "source": "estimated",
+        "total_similar": fallback.get("total_count", 0),
+        "won_count": fallback.get("won_count", 0),
+        "win_rate_percent": fallback.get("win_rate_percent", 0),
+        "reduction_pct": fallback.get("reduction_pct", 0),
+        "avg_delay_days": fallback.get("avg_delay_days", 0),
+        "top_3_similar_cases": [],
+    }
+
+
+@api_router.get("/cases/similar/{similar_case_id}")
+async def get_similar_case_detail(similar_case_id: str, current_user: User = Depends(get_current_user)):
+    """Get anonymized detail of a similar case."""
+    case_doc = await db.cases.find_one(
+        {"case_id": similar_case_id, "is_publicly_anonymizable": {"$ne": False}},
+        {"_id": 0})
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found or not anonymizable")
+    if case_doc.get("case_outcome") not in ("won", "lost", "settled"):
+        raise HTTPException(status_code=404, detail="Case outcome not yet known")
+
+    return {
+        "id": case_doc["case_id"],
+        "anonymized_title": _anonymize_case_title(case_doc),
+        "case_type": case_doc.get("type"),
+        "jurisdiction": case_doc.get("country"),
+        "outcome": case_doc.get("case_outcome"),
+        "outcome_summary": case_doc.get("outcome_summary", ""),
+        "key_violations": case_doc.get("key_violation_types", []),
+        "risk_score": case_doc.get("risk_score"),
+        "submitted_at": case_doc.get("created_at"),
+        # NO PII: no name, email, phone, address
+    }
+
+
+def _anonymize_case_title(case_doc):
+    case_type = (case_doc.get("type") or "other").replace("_", " ").title()
+    jurisdiction = case_doc.get("country", "")
+    outcome = case_doc.get("case_outcome", "unknown")
+    return f"{case_type} in {jurisdiction} ({outcome})"
+
 
 # ================== Legal References ==================
 
