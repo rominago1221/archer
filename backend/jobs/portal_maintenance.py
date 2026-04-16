@@ -480,6 +480,76 @@ async def recompute_similar_cases_stats() -> int:
     return updated
 
 
+_LAST_DAILY_DIGEST_AT: datetime | None = None
+
+
+async def send_admin_daily_digest() -> int:
+    """Daily digest email to all active admins (runs at most once per 22h)."""
+    global _LAST_DAILY_DIGEST_AT
+    now = _now()
+    if _LAST_DAILY_DIGEST_AT and (now - _LAST_DAILY_DIGEST_AT) < timedelta(hours=22):
+        return 0
+
+    # Only send between 4:00-5:00 UTC (8:00 Dubai)
+    if now.hour != 4:
+        return 0
+
+    from routes.attorney_routes import send_email
+
+    yesterday_start = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0).isoformat()
+    today_start = now.replace(hour=0, minute=0, second=0).isoformat()
+
+    new_customers = await db.users.count_documents({
+        "created_at": {"$gte": yesterday_start, "$lt": today_start},
+        "account_type": {"$ne": "attorney"},
+    })
+    new_cases = await db.cases.count_documents({"created_at": {"$gte": yesterday_start, "$lt": today_start}})
+    paid_cases = await db.cases.find(
+        {"paid_at": {"$gte": yesterday_start, "$lt": today_start}},
+        {"amount_paid_cents": 1, "_id": 0},
+    ).to_list(500)
+    revenue = sum(c.get("amount_paid_cents", 0) for c in paid_cases)
+    attorneys_pending = await db.attorneys.count_documents({"application_status": "pending"})
+
+    admins = await db.admins.find({"is_active": True}, {"email": 1, "id": 1, "_id": 0}).to_list(10)
+    sent = 0
+    for admin in admins:
+        settings = await db.admin_notification_settings.find_one({"admin_id": admin["id"]})
+        if settings and not settings.get("notify_daily_digest", True):
+            continue
+        try:
+            await send_email(
+                admin["email"],
+                f"Archer Daily Digest — {now.strftime('%d %b %Y')}",
+                f"<h2>Daily Digest</h2>"
+                f"<table style='font-size:14px;border-collapse:collapse;'>"
+                f"<tr><td style='padding:6px 16px 6px 0;color:#6b7280;'>New customers</td>"
+                f"<td style='font-weight:700;'>{new_customers}</td></tr>"
+                f"<tr><td style='padding:6px 16px 6px 0;color:#6b7280;'>New cases</td>"
+                f"<td style='font-weight:700;'>{new_cases}</td></tr>"
+                f"<tr><td style='padding:6px 16px 6px 0;color:#6b7280;'>Revenue</td>"
+                f"<td style='font-weight:700;color:#16a34a;'>"
+                f"{'%.2f' % (revenue / 100)} EUR</td></tr>"
+                f"<tr><td style='padding:6px 16px 6px 0;color:#6b7280;'>Attorneys pending</td>"
+                f"<td style='font-weight:700;color:{'#b91c1c' if attorneys_pending else '#16a34a'};'>"
+                f"{attorneys_pending}</td></tr>"
+                f"</table>"
+                f"<p style='margin-top:20px;'>"
+                f"<a href='https://archer.law/internal/dashboard-x9k7' "
+                f"style='display:inline-block;background:#0a0a0f;color:#fff;"
+                f"padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;'>"
+                f"Open Dashboard</a></p>",
+            )
+            sent += 1
+        except Exception:
+            logger.exception(f"daily digest failed for {admin['email']}")
+
+    _LAST_DAILY_DIGEST_AT = now
+    if sent:
+        logger.info(f"admin daily digest sent to {sent} admins")
+    return sent
+
+
 async def run_tick() -> None:
     """Invoked every minute by APScheduler. Catches everything."""
     try:
@@ -505,3 +575,7 @@ async def run_tick() -> None:
         await recompute_similar_cases_stats()
     except Exception:
         logger.exception("similar cases stats recompute failed")
+    try:
+        await send_admin_daily_digest()
+    except Exception:
+        logger.exception("admin daily digest failed")

@@ -5468,19 +5468,215 @@ async def admin_ai_usage(period: str = "30d", admin: dict = Depends(admin_requir
     }
 
 
+# ================== Admin Moderation ==================
+
+@api_router.get("/admin/moderation/feedbacks")
+async def admin_feedbacks(page: int = 1, per_page: int = 50, admin: dict = Depends(admin_required)):
+    if "feedbacks" not in await db.list_collection_names():
+        return {"feedbacks": [], "total": 0}
+    total = await db.feedbacks.count_documents({})
+    items = await db.feedbacks.find({}, {"_id": 0}).sort("created_at", -1).skip((page - 1) * per_page).limit(per_page).to_list(per_page)
+    for f in items:
+        user = await db.users.find_one({"user_id": f.get("user_id")}, {"email": 1, "_id": 0})
+        f["customer_email"] = user.get("email") if user else None
+    return {"feedbacks": items, "total": total}
+
+
+@api_router.get("/admin/moderation/unverified-refs")
+async def admin_unverified_refs(admin: dict = Depends(admin_required)):
+    """Legal references cited by AI but not yet in verified DB."""
+    # Scan recent cases for [ARTICLE:] or legal_ref strings not in legal_references
+    recent = await db.cases.find(
+        {"ai_findings": {"$exists": True, "$ne": []}},
+        {"ai_findings": 1, "case_id": 1, "_id": 0},
+    ).sort("updated_at", -1).limit(100).to_list(100)
+
+    unverified = []
+    seen = set()
+    for case in recent:
+        for f in (case.get("ai_findings") or []):
+            ref = f.get("legal_ref", "")
+            if ref and ref not in seen:
+                exists = await db.legal_references.find_one({"$or": [
+                    {"article_number": {"$regex": ref[:10], "$options": "i"}},
+                ]})
+                if not exists:
+                    seen.add(ref)
+                    unverified.append({"legal_ref": ref, "case_id": case["case_id"], "finding_text": f.get("text", "")})
+    return {"unverified": unverified[:50]}
+
+
+class FlagCaseInput(BaseModel):
+    reason: str
+
+@api_router.post("/admin/moderation/cases/{case_id}/flag")
+async def admin_flag_case(case_id: str, body: FlagCaseInput, admin: dict = Depends(admin_required)):
+    now = datetime.now(timezone.utc).isoformat()
+    await db.cases.update_one({"case_id": case_id}, {"$set": {"flagged": True, "flag_reason": body.reason, "flagged_at": now, "flagged_by": admin["id"]}})
+    await log_admin_action(admin, "flag_case", entity_type="case", entity_id=case_id, metadata={"reason": body.reason})
+    return {"status": "flagged"}
+
+
+# ================== Admin Analytics ==================
+
+@api_router.get("/admin/analytics/funnel")
+async def admin_conversion_funnel(admin: dict = Depends(admin_required)):
+    total_signups = await db.users.count_documents({"account_type": {"$ne": "attorney"}})
+    uploaded_doc = await db.cases.count_documents({})
+    completed_analysis = await db.cases.count_documents({"status": {"$ne": "analyzing"}, "ai_summary": {"$ne": None}})
+    paid_letter = await db.cases.count_documents({"payment_status": "paid"})
+    live_counsel = await db.case_assignments.count_documents({"service_type": "live_counsel"})
+    return {
+        "steps": [
+            {"label": "Sign up", "count": total_signups},
+            {"label": "Uploaded document", "count": uploaded_doc},
+            {"label": "Completed analysis", "count": completed_analysis},
+            {"label": "Paid Attorney Letter", "count": paid_letter},
+            {"label": "Live Counsel", "count": live_counsel},
+        ],
+    }
+
+
+@api_router.get("/admin/analytics/geography")
+async def admin_geography(admin: dict = Depends(admin_required)):
+    pipeline = [
+        {"$match": {"account_type": {"$ne": "attorney"}}},
+        {"$group": {"_id": {"$ifNull": ["$country", "$jurisdiction"]}, "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+    ]
+    results = await db.users.aggregate(pipeline).to_list(50)
+    return {"countries": [{"country": r["_id"] or "Unknown", "count": r["count"]} for r in results]}
+
+
+@api_router.get("/admin/analytics/attorney-leaderboard")
+async def admin_attorney_leaderboard(admin: dict = Depends(admin_required)):
+    attorneys = await db.attorneys.find(
+        {"status": "active"}, {"_id": 0, "id": 1, "first_name": 1, "last_name": 1, "email": 1, "active_cases_count": 1, "rating_avg": 1, "avg_response_seconds": 1}
+    ).to_list(100)
+    for a in attorneys:
+        completed = await db.case_assignments.count_documents({"attorney_id": a["id"], "status": "completed"})
+        a["cases_completed"] = completed
+    attorneys.sort(key=lambda a: a.get("cases_completed", 0), reverse=True)
+    return {"attorneys": attorneys[:20]}
+
+
+@api_router.get("/admin/analytics/case-types")
+async def admin_case_types_distribution(admin: dict = Depends(admin_required)):
+    pipeline = [
+        {"$group": {"_id": "$type", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+    ]
+    results = await db.cases.aggregate(pipeline).to_list(20)
+    return {"types": [{"type": r["_id"] or "other", "count": r["count"]} for r in results]}
+
+
+# ================== Admin Exports ==================
+
+@api_router.get("/admin/exports/customers.csv")
+async def admin_export_customers_csv(admin: dict = Depends(admin_required)):
+    import csv
+    import io
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["user_id", "name", "email", "plan", "country", "language", "created_at"])
+    users = await db.users.find(
+        {"account_type": {"$ne": "attorney"}},
+        {"_id": 0, "user_id": 1, "name": 1, "email": 1, "plan": 1, "country": 1, "language": 1, "created_at": 1},
+    ).to_list(50000)
+    for u in users:
+        writer.writerow([u.get("user_id"), u.get("name"), u.get("email"), u.get("plan", "free"), u.get("country"), u.get("language"), u.get("created_at")])
+    await log_admin_action(admin, "export_customers_csv")
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode("utf-8")),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=customers_export.csv"},
+    )
+
+
+@api_router.get("/admin/exports/cases.csv")
+async def admin_export_cases_csv(admin: dict = Depends(admin_required)):
+    import csv
+    import io
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["case_id", "user_id", "title", "type", "status", "risk_score", "payment_status", "country", "created_at"])
+    cases = await db.cases.find(
+        {}, {"_id": 0, "case_id": 1, "user_id": 1, "title": 1, "type": 1, "status": 1, "risk_score": 1, "payment_status": 1, "country": 1, "created_at": 1},
+    ).to_list(50000)
+    for c in cases:
+        writer.writerow([c.get("case_id"), c.get("user_id"), c.get("title"), c.get("type"), c.get("status"), c.get("risk_score"), c.get("payment_status"), c.get("country"), c.get("created_at")])
+    await log_admin_action(admin, "export_cases_csv")
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode("utf-8")),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=cases_export.csv"},
+    )
+
+
+# ================== Admin Settings ==================
+
+@api_router.get("/admin/settings/flags")
+async def admin_get_flags(admin: dict = Depends(admin_required)):
+    """Read current system flag values."""
+    return {
+        "REQUIRE_STRIPE_ONBOARDING": os.environ.get("REQUIRE_STRIPE_ONBOARDING", "false"),
+        "SCHEDULER_ENABLED": os.environ.get("SCHEDULER_ENABLED", "true"),
+        "WEEKLY_PAYOUTS_ENABLED": os.environ.get("WEEKLY_PAYOUTS_ENABLED", "true"),
+    }
+
+
+@api_router.get("/admin/audit-log")
+async def admin_audit_log(page: int = 1, per_page: int = 50, admin: dict = Depends(admin_required)):
+    total = await db.admin_audit_log.count_documents({})
+    logs = await db.admin_audit_log.find({}, {"_id": 0}).sort("created_at", -1).skip((page - 1) * per_page).limit(per_page).to_list(per_page)
+    return {"logs": logs, "total": total, "page": page, "total_pages": max(1, (total + per_page - 1) // per_page)}
+
+
+# ================== Admin Notification Settings ==================
+
+class NotificationSettingsInput(BaseModel):
+    notify_daily_digest: bool = True
+    notify_new_customer: bool = True
+    notify_large_payment: bool = True
+    large_payment_threshold_cents: int = 10000
+    notify_new_attorney: bool = True
+    notify_system_error: bool = True
+    notify_failed_payout: bool = True
+    notify_weekly_summary: bool = True
+
+
+@api_router.get("/admin/settings/notifications")
+async def admin_get_notification_settings(admin: dict = Depends(admin_required)):
+    settings = await db.admin_notification_settings.find_one({"admin_id": admin["id"]}, {"_id": 0})
+    if not settings:
+        settings = NotificationSettingsInput().dict()
+        settings["admin_id"] = admin["id"]
+    return settings
+
+
+@api_router.put("/admin/settings/notifications")
+async def admin_update_notification_settings(body: NotificationSettingsInput, admin: dict = Depends(admin_required)):
+    doc = body.dict()
+    doc["admin_id"] = admin["id"]
+    doc["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.admin_notification_settings.update_one({"admin_id": admin["id"]}, {"$set": doc}, upsert=True)
+    return {"status": "saved"}
+
+
 # ================== Admin Notifications Count ==================
 
 @api_router.get("/admin/notifications/unread")
 async def admin_unread_notifications(admin: dict = Depends(admin_required)):
     """Quick counts for sidebar badges."""
     attorneys_pending = await db.attorneys.count_documents({"application_status": "pending"})
-    # TODO: implement feedbacks and system errors collections
+    feedbacks_flagged = await db.feedbacks.count_documents({"status": "new"}) if "feedbacks" in await db.list_collection_names() else 0
+    failed_payouts = await db.payouts.count_documents({"status": "failed"}) if "payouts" in await db.list_collection_names() else 0
     return {
         "attorneys_pending": attorneys_pending,
-        "feedbacks_flagged": 0,
+        "feedbacks_flagged": feedbacks_flagged,
         "system_errors": 0,
-        "failed_payouts": 0,
-        "total_action_required": attorneys_pending,
+        "failed_payouts": failed_payouts,
+        "total_action_required": attorneys_pending + feedbacks_flagged + failed_payouts,
     }
 
 
