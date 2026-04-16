@@ -50,7 +50,7 @@ export function deriveStrategy(caseDoc, t, language = 'fr') {
   }
 
   // ── intro ────────────────────────────────────────────────────────────────
-  const intro = (caseDoc.key_insight || '').trim() || (backend && typeof backend === 'string' ? backend : '');
+  const intro = (caseDoc.key_insight || '').trim() || (caseDoc.ai_summary || '');
 
   // ── arguments (from user_side of battle_preview) ─────────────────────────
   const userArgs = caseDoc.battle_preview?.user_side?.strongest_arguments

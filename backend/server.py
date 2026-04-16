@@ -428,6 +428,7 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 2
                     headers={
                         "x-api-key": ANTHROPIC_API_KEY,
                         "anthropic-version": "2023-06-01",
+                        "anthropic-beta": "prompt-caching-2024-07-31",
                         "content-type": "application/json",
                     },
                     json={
@@ -441,7 +442,10 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 2
                         ],
                     },
                 )
-                resp.raise_for_status()
+                if resp.status_code != 200:
+                    body = resp.text
+                    logger.error(f"Anthropic API error {resp.status_code}: {body[:500]}")
+                    raise Exception(f"Anthropic API {resp.status_code}: {body[:200]}")
                 data = resp.json()
                 text = data["content"][0]["text"]
                 text = text.replace("```json", "").replace("```", "").strip()
@@ -4863,6 +4867,7 @@ async def chat_send_stream(data: ChatSendInput, current_user: User = Depends(get
                     headers={
                         "x-api-key": ANTHROPIC_API_KEY,
                         "anthropic-version": "2023-06-01",
+                        "anthropic-beta": "prompt-caching-2024-07-31",
                         "content-type": "application/json",
                     },
                     json={
@@ -5057,6 +5062,7 @@ async def send_chat_message(
                 headers={
                     "x-api-key": ANTHROPIC_API_KEY,
                     "anthropic-version": "2023-06-01",
+                    "anthropic-beta": "prompt-caching-2024-07-31",
                     "content-type": "application/json",
                 },
                 json={
