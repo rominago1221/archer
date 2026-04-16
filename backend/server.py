@@ -408,18 +408,34 @@ def load_jurisprudence(case_type: str, document_type: str) -> str:
 
 
 async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 2000, use_web_search: bool = False) -> dict:
-    """Make a Claude API call via Emergent integration — Sonnet for complex analysis"""
+    """Direct Anthropic API — Opus 4.6 for analysis pipeline.
+    System prompt is cached (ephemeral) for cross-pass efficiency."""
     for attempt in range(3):
         try:
-            chat = LlmChat(
-                api_key=EMERGENT_KEY,
-                session_id=f"analysis_{uuid.uuid4().hex[:8]}",
-                system_message=system_prompt
-            ).with_model("anthropic", "claude-4-sonnet-20250514")
-            msg = UserMessage(text=user_message + "\n\nRespond with valid JSON only. No markdown, no code blocks, just raw JSON.")
-            response = await chat.send_message(msg)
-            text = response.replace("```json", "").replace("```", "").strip()
-            return json.loads(text)
+            async with httpx.AsyncClient(timeout=120) as client:
+                resp = await client.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "x-api-key": ANTHROPIC_API_KEY,
+                        "anthropic-version": "2023-06-01",
+                        "content-type": "application/json",
+                    },
+                    json={
+                        "model": "claude-opus-4-6",
+                        "max_tokens": max_tokens,
+                        "system": [
+                            {"type": "text", "text": system_prompt, "cache_control": {"type": "ephemeral"}},
+                        ],
+                        "messages": [
+                            {"role": "user", "content": user_message + "\n\nRespond with valid JSON only. No markdown, no code blocks, just raw JSON."},
+                        ],
+                    },
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                text = data["content"][0]["text"]
+                text = text.replace("```json", "").replace("```", "").strip()
+                return json.loads(text)
         except json.JSONDecodeError:
             if attempt < 2:
                 logger.warning(f"JSON parse error from Claude, retrying (attempt {attempt+1}/3)")
@@ -436,18 +452,31 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 2
 
 
 async def call_claude_fast(system_prompt: str, user_message: str, max_tokens: int = 800) -> dict:
-    """Fast Claude call with lower token limit — for simpler tasks (chat, Q&A, letter drafts)"""
+    """Direct Anthropic API — Opus 4.6 for analysis tasks (Q&A impact, letter drafts)."""
     for attempt in range(2):
         try:
-            chat = LlmChat(
-                api_key=EMERGENT_KEY,
-                session_id=f"fast_{uuid.uuid4().hex[:8]}",
-                system_message=system_prompt
-            ).with_model("anthropic", "claude-4-sonnet-20250514")
-            msg = UserMessage(text=user_message + "\n\nRespond with valid JSON only. No markdown, no code blocks, just raw JSON.")
-            response = await chat.send_message(msg)
-            text = response.replace("```json", "").replace("```", "").strip()
-            return json.loads(text)
+            async with httpx.AsyncClient(timeout=90) as client:
+                resp = await client.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "x-api-key": ANTHROPIC_API_KEY,
+                        "anthropic-version": "2023-06-01",
+                        "content-type": "application/json",
+                    },
+                    json={
+                        "model": "claude-opus-4-6",
+                        "max_tokens": max_tokens,
+                        "system": system_prompt,
+                        "messages": [
+                            {"role": "user", "content": user_message + "\n\nRespond with valid JSON only. No markdown, no code blocks, just raw JSON."},
+                        ],
+                    },
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                text = data["content"][0]["text"]
+                text = text.replace("```json", "").replace("```", "").strip()
+                return json.loads(text)
         except json.JSONDecodeError:
             if attempt < 1:
                 logger.warning(f"Fast call JSON parse error, retrying")
@@ -2424,7 +2453,7 @@ async def generate_letter_with_claude(letter_data: dict, belgian: bool = False, 
                     "anthropic-version": "2023-06-01"
                 },
                 json={
-                    "model": "claude-sonnet-4-20250514",
+                    "model": "claude-opus-4-6",
                     "max_tokens": 3000,
                     "system": system_prompt,
                     "messages": [{
@@ -2849,7 +2878,7 @@ async def analyze_document_vision(image_b64_list: list, system_prompt: str = Non
                         "anthropic-version": "2023-06-01"
                     },
                     json={
-                        "model": "claude-sonnet-4-20250514",
+                        "model": "claude-opus-4-6",
                         "max_tokens": 4000,
                         "system": system_prompt,
                         "messages": [{"role": "user", "content": content_blocks}]
@@ -4267,7 +4296,7 @@ async def predict_outcome(case_id: str, current_user: User = Depends(get_current
                     "anthropic-version": "2023-06-01"
                 },
                 json={
-                    "model": "claude-sonnet-4-20250514",
+                    "model": "claude-opus-4-6",
                     "max_tokens": 2000,
                     "system": (BELGIAN_OUTCOME_SYSTEM if current_user.jurisdiction == "BE" else OUTCOME_SYSTEM_PROMPT) + get_language_instruction(getattr(current_user, 'language', 'en') or 'en'),
                     "messages": [{
@@ -4331,7 +4360,7 @@ async def scan_document(
                     "anthropic-version": "2023-06-01"
                 },
                 json={
-                    "model": "claude-sonnet-4-20250514",
+                    "model": "claude-sonnet-4-6",
                     "max_tokens": 3000,
                     "system": "First, extract all text from this document image (OCR). Then analyze the extracted text as a legal document.\n\n" + CLAUDE_SYSTEM_PROMPT,
                     "messages": [{
@@ -4813,7 +4842,7 @@ async def chat_send_stream(data: ChatSendInput, current_user: User = Depends(get
                         "content-type": "application/json",
                     },
                     json={
-                        "model": "claude-sonnet-4-20250514",
+                        "model": "claude-sonnet-4-6",
                         "max_tokens": 2048,
                         "stream": True,
                         "system": system_content,
@@ -4996,25 +5025,28 @@ async def send_chat_message(
             steps_text = "; ".join([s.get('title', '') if isinstance(s, dict) else str(s) for s in case_steps])
             system_prompt += f"\n\nCONTEXT: The user has an active case: '{case_doc.get('title', '')}'. Type: {case_doc.get('type', '')}. Risk Score: {case_doc.get('risk_score', 0)}/100. Summary: {case_doc.get('ai_summary', 'N/A')}. Key findings: {findings_text}. Next steps: {steps_text}. They may ask questions related to this case. Continue the conversation naturally as Archer, their legal advisor."
 
-    # Call Claude via Emergent integration — fast with lower token budget
+    # Call Claude direct — Sonnet 4.6 for chat (latency-optimized)
     try:
-        chat = LlmChat(
-            api_key=EMERGENT_KEY,
-            session_id=f"chat_{conversation_id}",
-            system_message=system_prompt
-        ).with_model("anthropic", "claude-4-sonnet-20250514")
-        
-        # Send conversation history as context + latest message
-        history_text = ""
-        for m in claude_messages[:-1]:
-            role_label = "User" if m["role"] == "user" else "Archer"
-            history_text += f"{role_label}: {m['content']}\n\n"
-        
-        latest = claude_messages[-1]["content"] if claude_messages else data.content
-        full_msg = history_text + f"User: {latest}" if history_text else latest
-        
-        msg = UserMessage(text=full_msg)
-        ai_text = await chat.send_message(msg)
+        async with httpx.AsyncClient(timeout=60) as client:
+            resp = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": "claude-sonnet-4-6",
+                    "max_tokens": 2048,
+                    "system": [
+                        {"type": "text", "text": system_prompt, "cache_control": {"type": "ephemeral"}},
+                    ],
+                    "messages": claude_messages,
+                },
+            )
+            resp.raise_for_status()
+            ai_data = resp.json()
+            ai_text = ai_data["content"][0]["text"]
         if not ai_text:
             ai_text = "Archer is temporarily unavailable — please try again in a moment."
     except Exception as e:
@@ -5730,7 +5762,7 @@ Return the complete document text formatted with clear sections and headings. Us
                     "anthropic-version": "2023-06-01"
                 },
                 json={
-                    "model": "claude-sonnet-4-20250514",
+                    "model": "claude-sonnet-4-6",
                     "max_tokens": 4000,
                     "system": "You are a senior attorney drafting legal documents. Generate complete, jurisdiction-specific, professionally formatted legal documents. Never include disclaimers or notes — just the document itself.",
                     "messages": [{"role": "user", "content": prompt}]
@@ -5928,7 +5960,7 @@ async def archer_doc_send(data: ArcherDocMessage, current_user: User = Depends(g
                     "anthropic-version": "2023-06-01"
                 },
                 json={
-                    "model": "claude-sonnet-4-20250514",
+                    "model": "claude-sonnet-4-6",
                     "max_tokens": 4096,
                     "system": system,
                     "messages": claude_messages

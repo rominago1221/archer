@@ -531,7 +531,7 @@ async def generate_case_brief(call_id: str, current_user: User = Depends(get_cur
             resp = await http_client.post("https://api.anthropic.com/v1/messages", headers={
                 "Content-Type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01"
             }, json={
-                "model": "claude-sonnet-4-20250514", "max_tokens": 3000,
+                "model": "claude-opus-4-6", "max_tokens": 3000,
                 "system": CASE_BRIEF_SYSTEM,
                 "messages": [{"role": "user", "content": f"Generate a pre-call brief for this case:\n\n{brief_content}"}]
             }, timeout=60.0)
@@ -645,7 +645,7 @@ async def attorney_research_send(data: dict, current_user: User = Depends(get_cu
         async with httpx.AsyncClient() as http_client:
             resp = await http_client.post("https://api.anthropic.com/v1/messages", headers={
                 "Content-Type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01"
-            }, json={"model": "claude-sonnet-4-20250514", "max_tokens": 4096, "system": system, "messages": messages_list}, timeout=120.0)
+            }, json={"model": "claude-sonnet-4-6", "max_tokens": 4096, "system": system, "messages": messages_list}, timeout=120.0)
             resp.raise_for_status()
             ai_text = "".join(b["text"] for b in resp.json().get("content", []) if b.get("type") == "text") or "Research assistant temporarily unavailable."
     except Exception as e:
