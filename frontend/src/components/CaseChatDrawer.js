@@ -83,16 +83,61 @@ const CaseChatDrawer = ({ caseId, caseTitle, lang, onClose, initialMessage, arch
     setInput('');
     setMessages(prev => [...prev, { role: 'user', content: text, ts: Date.now() }]);
     setSending(true);
+
+    // Add streaming placeholder
+    const placeholderTs = Date.now() + 1;
+    setMessages(prev => [...prev, { role: 'assistant', content: '', ts: placeholderTs, streaming: true }]);
+
     try {
-      const res = await axios.post(`${API}/chat/send`, {
-        message: text,
-        conversation_id: convId,
-        case_id: caseId,
-      }, { withCredentials: true });
-      if (!convId) setConvId(res.data.conversation_id);
-      setMessages(prev => [...prev, { role: 'assistant', content: res.data.response, ts: Date.now() }]);
+      const res = await fetch(`${API}/chat/send-stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ message: text, conversation_id: convId, case_id: caseId }),
+      });
+      if (!res.ok) throw new Error(res.statusText);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const event = JSON.parse(line.slice(6));
+            if (event.type === 'meta' && event.conversation_id && !convId) {
+              setConvId(event.conversation_id);
+            } else if (event.type === 'token') {
+              fullText += event.text;
+              setMessages(prev => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last?.streaming) updated[updated.length - 1] = { ...last, content: fullText };
+                return updated;
+              });
+            } else if (event.type === 'done') {
+              setMessages(prev => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last?.streaming) updated[updated.length - 1] = { ...last, streaming: false };
+                return updated;
+              });
+            }
+          } catch { /* skip */ }
+        }
+      }
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: lang === 'fr' ? 'Archer est temporairement indisponible.' : 'Archer is temporarily unavailable.', ts: Date.now() }]);
+      setMessages(prev => {
+        const updated = prev.filter(m => !m.streaming);
+        return [...updated, { role: 'assistant', content: lang === 'fr' ? 'Archer est temporairement indisponible.' : 'Archer is temporarily unavailable.', ts: Date.now() }];
+      });
     }
     setSending(false);
   };

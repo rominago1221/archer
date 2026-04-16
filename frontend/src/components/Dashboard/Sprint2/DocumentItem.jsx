@@ -17,7 +17,7 @@ function formatDate(dateStr, language) {
 // Props:
 //   doc: document object ({ document_id, file_name, file_type, status, uploaded_at, is_key_document })
 //   language: 'fr' | 'en'
-export default function DocumentItem({ doc, language = 'fr' }) {
+export default function DocumentItem({ doc, language = 'fr', onClick }) {
   const t = useDashboardT(language);
   if (!doc) return null;
 
@@ -39,10 +39,15 @@ export default function DocumentItem({ doc, language = 'fr' }) {
   return (
     <div
       data-testid={`document-item-${doc.document_id}`}
+      onClick={() => onClick?.(doc)}
       style={{
         display: 'flex', alignItems: 'center', gap: 12,
         padding: '10px 14px', background: '#fafaf8', borderRadius: 10,
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'background 0.15s',
       }}
+      onMouseEnter={e => { if (onClick) e.currentTarget.style.background = '#f0ede8'; }}
+      onMouseLeave={e => { e.currentTarget.style.background = '#fafaf8'; }}
     >
       <div style={{
         width: 32, height: 32, background: icon.bg, borderRadius: 8,

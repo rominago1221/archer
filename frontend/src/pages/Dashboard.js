@@ -270,7 +270,7 @@ const Dashboard = () => {
       const res = await axios.get(`${API}/cases`, { withCredentials: true });
       const sorted = (res.data || []).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
       setCases(sorted);
-      setSelectedId(prev => (sorted.length > 0 && !prev) ? sorted[0].case_id : prev);
+      // V7: no auto-selection — case detail lives at /cases/:caseId
     } catch (e) { console.error('Fetch cases error:', e); }
     setLoading(false);
   }, []);
@@ -567,11 +567,10 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Case View */}
+          {/* Case View — V7: card grid overview, detail lives at /cases/:caseId */}
           <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-            {/* Phase 2 — Letter ready banner (auto-hides when no unread letter_ready) */}
             <LetterReadyBanner language={lang} />
-            {!sc ? (
+            {cases.length === 0 && !loading ? (
               <div style={{ textAlign: 'center', padding: '80px 20px' }}>
                 <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>
                   <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, color: '#fff' }}>A</div>
@@ -589,299 +588,89 @@ const Dashboard = () => {
                   display: 'inline-flex', alignItems: 'center', gap: 8,
                 }}><Plus size={16} />{t.newCase}</button>
               </div>
-            ) : isAnalyzing && score === 0 ? (
-              <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-                <div style={{ fontSize: 40, marginBottom: 12, animation: 'pulse 1.5s infinite' }}>⚖️</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>
-                  {lang === 'fr' ? 'Archer analyse votre document...' : lang === 'nl' ? 'Archer analyseert uw document...' : 'Archer is analyzing your document...'}
-                </div>
-                <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
-                  {lang === 'fr' ? 'Cela prend environ 60 secondes. Les résultats apparaîtront automatiquement.' : lang === 'nl' ? 'Dit duurt ongeveer 60 seconden. Resultaten verschijnen automatisch.' : 'This takes about 60 seconds. Results will appear automatically.'}
-                </div>
-                <div style={{ marginTop: 16, display: 'flex', gap: 4, justifyContent: 'center' }}>
-                  {[0,1,2,3,4].map(i => (
-                    <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#1a56db', animation: `pulse 1.5s infinite ${i*0.3}s` }} />
-                  ))}
-                </div>
-              </div>
             ) : (
               <>
-                {/* Re-analyzing banner */}
-                {isAnalyzing && score > 0 && (
-                  <div data-testid="reanalyzing-banner" style={{
-                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', marginBottom: 10,
-                    background: '#eff6ff', borderRadius: 10, border: '0.5px solid #bfdbfe',
-                  }}>
-                    <Loader2 size={14} className="animate-spin" style={{ color: '#1a56db' }} />
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1e40af' }}>
-                      {lang === 'fr' ? 'Archer ré-analyse votre dossier complet...' : lang === 'nl' ? 'Archer heranalyseert uw volledig dossier...' : 'Archer is re-analyzing your complete case...'}
-                    </div>
-                    <div style={{ marginLeft: 'auto', display: 'flex', gap: 3 }}>{[0,1,2].map(i => <div key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: '#1a56db', animation: `pulse 1.5s infinite ${i*0.3}s` }} />)}</div>
-                  </div>
-                )}
-                {/* Case type badge + title */}
-                <div style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#fffbeb', border: '0.5px solid #fde68a', color: '#92400e', marginBottom: 8 }}>
-                  {(t.caseEmoji[cType] || '📋')} {lang === 'fr' ? 'Dossier' : lang === 'nl' ? 'Dossier' : 'Case'} {t.caseType[cType] || cType}
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1a2e', marginBottom: 4 }}>
+                  {t.activeCases}
                 </div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e', marginBottom: 4 }}>{sc.title}</div>
-                <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>{t.openedOn} {formatDate(sc.created_at, lang)}</span>
-                  <span style={{ color: '#d1d5db' }}>·</span>
-                  <span>{sc.document_count || 0} {t.docCount}</span>
-                  <span style={{ color: '#d1d5db' }}>·</span>
-                  <span>{t.updatedBy}</span>
-                  <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                    <button onClick={() => setShowAddDoc(true)} style={{ fontSize: 9, padding: '4px 10px', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#374151' }} data-testid="add-doc-btn">{t.addDoc}</button>
-                    <button onClick={() => navigate('/lawyers')} style={{ fontSize: 9, padding: '4px 10px', background: '#1a56db', border: 'none', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#fff' }} data-testid="talk-lawyer-btn">{t.talkLawyer}</button>
-                    {score <= 0 && <button onClick={handleReanalyze} disabled={reanalyzing} style={{ fontSize: 9, padding: '4px 10px', background: reanalyzing ? '#9ca3af' : '#16a34a', border: 'none', borderRadius: 7, cursor: 'pointer', fontWeight: 500, color: '#fff' }} data-testid="reanalyze-btn">{reanalyzing ? '...' : (lang === 'fr' ? 'Ré-analyser' : lang === 'nl' ? 'Heranalyse' : 'Re-analyze')}</button>}
-                  </span>
+                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 16 }}>
+                  {lang === 'fr' ? 'Cliquez sur un dossier pour voir l\'analyse complète.' : lang === 'nl' ? 'Klik op een dossier voor de volledige analyse.' : 'Click a case to view the full analysis.'}
                 </div>
-
-                {/* Risk Score Row */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 14, alignItems: 'center', background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
-                  <div>
-                    <div style={{ fontSize: 9, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 5 }}>{t.riskLabel}</div>
-                    <div data-testid="risk-score-big" style={{ fontSize: 52, fontWeight: 800, letterSpacing: -2, lineHeight: 1, color: scoreColor }}>{score || '—'}</div>
-                    <div style={{ fontSize: 9, color: scoreColor, fontWeight: 600, marginTop: 2 }}>{riskText}</div>
-                  </div>
-                  <div>
-                    <div style={{ height: 5, background: '#f3f4f6', borderRadius: 3, overflow: 'hidden', marginBottom: 9 }}>
-                      <div style={{ height: '100%', borderRadius: 3, background: scoreColor, width: `${score}%`, transition: 'width 0.5s' }} />
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
-                      {[
-                        [sc.risk_financial, t.dimFin],
-                        [sc.risk_urgency, t.dimUrg],
-                        [sc.risk_legal_strength, t.dimLeg],
-                        [sc.risk_complexity, t.dimCom],
-                      ].map(([v, label]) => (
-                        <div key={label} style={{ background: '#f8f7f4', borderRadius: 7, padding: 6, textAlign: 'center' }}>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: riskColor(v || 0) }}>{v || '—'}</div>
-                          <div style={{ fontSize: 8, color: '#9ca3af', marginTop: 1 }}>{label}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Archer Analysis */}
-                <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                    <div style={{ position: 'relative', width: 32, height: 32, borderRadius: '50%', background: '#1a56db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-                      J
-                      <div style={{ position: 'absolute', bottom: -1, right: -1, width: 8, height: 8, borderRadius: '50%', background: '#22c55e', border: '2px solid #fff', animation: 'pulse 1.5s infinite' }} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: '#0a0a0f' }}>{t.analysisTitle}</div>
-                      <div style={{ fontSize: 11, color: '#9ca3af' }}>{sc?.title} · {sc?.type}</div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#16a34a' }}>
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', animation: 'pulse 1.5s infinite' }} />
-                      {t.live}
-                    </div>
-                  </div>
-                  {/* Optimistic loading banner */}
-                  {answerLoading && (
-                    <div data-testid="analysis-updating" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: '#eff6ff', borderRadius: 8, marginBottom: 10, border: '0.5px solid #bfdbfe' }}>
-                      <div style={{ width: 14, height: 14, border: '2px solid #1a56db', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                      <span style={{ fontSize: 10, fontWeight: 500, color: '#1a56db' }}>{t.updatingAnalysis}</span>
-                    </div>
-                  )}
-                  {findings.length === 0 && <div style={{ fontSize: 11, color: '#9ca3af', padding: '10px 0' }}>{t.questionFallback}</div>}
-                  <AnalysisFindings findings={findings} lang={lang} isCompact={true} />
-                </div>
-
-                {/* Archer Question Card — max 1 question */}
-                {(jq || jqImpact) && (
-                  <div data-testid="archer-question" style={{ background: '#fffbeb', borderRadius: 12, padding: '12px 14px', border: '0.5px solid #fde68a', marginBottom: 10 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#1a1a2e', marginBottom: 5 }}>💬 {t.archerQ}</div>
-                    {/* Previous answer impact — shown after answer */}
-                    {jqAnswered && jqImpact && (
-                      <>
-                        <div data-testid="archer-impact" style={{ fontSize: 10, color: '#1a56db', lineHeight: 1.5, marginBottom: 8, padding: '6px 10px', background: '#eff6ff', borderRadius: 8, border: '0.5px solid #bfdbfe' }}>
-                          <span style={{ fontWeight: 600 }}>Archer:</span> {jqImpact}
-                        </div>
-                        <button data-testid="ask-archer-directly"
-                          onClick={() => setChatDrawer({
-                            initial: `${lang === 'fr' ? 'Mon dossier' : 'My case'}: "${sc?.title}". ${jqSelectedAnswer || ''}`,
-                            archerQuestion: jq?.text || '',
-                            lastAnswer: jqSelectedAnswer,
-                          })}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: '#1a56db', fontWeight: 500, padding: 0, marginBottom: jq ? 10 : 0 }}>
-                          {t.moreQuestions} →
-                        </button>
-                        {jq && <div style={{ borderTop: '0.5px solid #fde68a', marginTop: 4, paddingTop: 8 }} />}
-                      </>
-                    )}
-                    {/* Current question */}
-                    {jq && (
-                      <>
-                        <div style={{ fontSize: 11, color: '#78350f', lineHeight: 1.6, marginBottom: 8 }}>{jq.text}</div>
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                          {(jq.options || []).slice(0, 4).map((opt, optIdx) => (
-                            <button key={`jq-opt-${optIdx}-${opt.slice(0, 15)}`} data-testid={`archer-answer-${optIdx}`}
-                              onClick={() => handleArcherAnswer(opt)}
-                              disabled={answerLoading}
-                              style={{
-                                padding: '6px 14px',
-                                background: answerLoading ? '#f3f4f6' : '#fff',
-                                color: answerLoading ? '#9ca3af' : '#1a1a2e',
-                                border: '0.5px solid #e2e0db',
-                                borderRadius: 8, fontSize: 10, fontWeight: 500,
-                                cursor: answerLoading ? 'default' : 'pointer',
-                              }}>
-                              {opt}
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-                {/* Fallback: key_insight */}
-                {!jq && sc.key_insight && (
-                  <div style={{ background: '#fffbeb', borderRadius: 12, padding: '12px 14px', border: '0.5px solid #fde68a', marginBottom: 10 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#1a1a2e', marginBottom: 5 }}>💬 {t.questionTitle}</div>
-                    <div style={{ fontSize: 10, color: '#78350f', lineHeight: 1.6 }}>{sc.key_insight}</div>
-                  </div>
-                )}
-
-                {/* Score History */}
-                {history.length > 0 && (
-                  <ScoreHistoryChart history={history} title={t.scoreHistory} />
-                )}
-
-                {/* Battle Preview — Horizontal */}
-                {bp && (
-                  <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 10 }}>{t.battleTitle}</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                      <div style={{ background: '#f0fdf4', border: '0.5px solid #86efac', borderRadius: 9, padding: 10 }}>
-                        <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#16a34a', marginBottom: 6 }}>{t.yourArgs}</div>
-                        {(bp.user_side?.strongest_arguments || bp.user_side?.strong_arguments || bp.user_arguments || []).slice(0, 5).map((a, aIdx) => (
-                          <div key={`ua-${aIdx}-${(typeof a === 'string' ? a : a.argument || '').slice(0, 15)}`} style={{ fontSize: 10, color: '#374151', padding: '4px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.5, display: 'flex', gap: 6 }}>
-                            <span style={{ color: '#16a34a', fontWeight: 600 }}>•</span>
-                            <span>{typeof a === 'string' ? a : a.argument || a.text || ''}</span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+                  {cases.map(c => {
+                    const cScore = c.risk_score || 0;
+                    const cColor = riskColor(cScore);
+                    const cDl = daysUntil(c.deadline);
+                    const cTypeName = t.caseType[c.type] || t.caseType.other;
+                    const isAnalyzingCase = c.status === 'analyzing';
+                    return (
+                      <div
+                        key={c.case_id}
+                        data-testid={`case-card-${c.case_id}`}
+                        onClick={() => navigate(`/cases/${c.case_id}`)}
+                        style={{
+                          background: '#fff', borderRadius: 12, padding: 16, cursor: 'pointer',
+                          border: '0.5px solid #e2e0db', transition: 'box-shadow 0.15s, border-color 0.15s',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a56db'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(26,86,219,0.12)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e0db'; e.currentTarget.style.boxShadow = 'none'; }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <div style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 12, fontSize: 9, fontWeight: 600, background: '#fffbeb', border: '0.5px solid #fde68a', color: '#92400e' }}>
+                            {(t.caseEmoji[c.type] || '📋')} {cTypeName}
                           </div>
-                        ))}
-                      </div>
-                      <div style={{ background: '#fff5f5', border: '0.5px solid #fca5a5', borderRadius: 9, padding: 10 }}>
-                        <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: '#dc2626', marginBottom: 6 }}>{t.theirArgs}</div>
-                        {(bp.opposing_side?.strongest_arguments || bp.opposing_side?.opposing_arguments || bp.opposing_arguments || []).slice(0, 5).map((a, aIdx) => (
-                          <div key={`oa-${aIdx}-${(typeof a === 'string' ? a : a.argument || '').slice(0, 15)}`} style={{ fontSize: 10, color: '#374151', padding: '4px 0', borderBottom: '0.5px solid rgba(0,0,0,0.05)', lineHeight: 1.5, display: 'flex', gap: 6 }}>
-                            <span style={{ color: '#dc2626', fontWeight: 600 }}>•</span>
-                            <span>{typeof a === 'string' ? a : a.argument || a.text || ''}</span>
+                          {isAnalyzingCase ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#f59e0b', fontWeight: 600 }}>
+                              <Loader2 size={12} className="animate-spin" /> {lang === 'fr' ? 'Analyse...' : 'Analyzing...'}
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: 28, fontWeight: 800, color: cColor, lineHeight: 1 }}>{cScore || '—'}</div>
+                          )}
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', marginBottom: 4, lineHeight: 1.3 }}>{c.title || 'Untitled'}</div>
+                        <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 6 }}>
+                          {formatDate(c.created_at, lang)} · {c.document_count || 0} {t.docCount}
+                        </div>
+                        {cDl !== null && (
+                          <div style={{ fontSize: 10, fontWeight: 600, color: cDl <= 3 ? '#dc2626' : cDl <= 14 ? '#f59e0b' : '#6b7280' }}>
+                            {cDl <= 0 ? `${t.expired}` : `${cDl} ${t.days} ${t.before ? t.before.toLowerCase() : ''}`}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Recent Jurisprudence */}
-                {caseLaw.length > 0 && (
-                  <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 8 }}>{t.jurisTitle}</div>
-                    {caseLaw.map((cl, clIdx) => (
-                      <div key={cl.case_name || cl.court} style={{ padding: '8px 0', borderBottom: clIdx < caseLaw.length - 1 ? '0.5px solid #f3f4f6' : 'none' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', flex: 1 }}>{cl.case_name}</div>
-                          {cl.url && <a href={cl.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={11} color="#1a56db" /></a>}
+                        )}
+                        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#1a56db', fontWeight: 500 }}>
+                          {lang === 'fr' ? 'Voir l\'analyse' : lang === 'nl' ? 'Bekijk analyse' : 'View analysis'} →
                         </div>
-                        <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2 }}>{cl.court} · {cl.date_filed}</div>
-                        {cl.snippet && <div style={{ fontSize: 9, color: '#6b7280', marginTop: 3, lineHeight: 1.4 }}>{cl.snippet.substring(0, 150)}...</div>}
                       </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Outcome Predictor */}
-                {prob && (
-                  <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 8 }}>{t.outcomePred}</div>
-                    {[
-                      { label: lang === 'fr' ? 'Résolution favorable' : lang === 'nl' ? 'Gunstige uitkomst' : 'Full resolution in your favor', pct: prob.full_resolution_in_favor || prob.resolution_favorable || prob.favorable || 0, color: '#16a34a' },
-                      { label: lang === 'fr' ? 'Accord négocié' : lang === 'nl' ? 'Onderhandelde schikking' : 'Negotiated settlement', pct: prob.negotiated_settlement || prob.compromis_negocie || prob.settlement || 0, color: '#1a56db' },
-                      { label: lang === 'fr' ? 'Résolution partielle' : lang === 'nl' ? 'Gedeeltelijk verlies' : 'Partial loss', pct: prob.partial_loss || prob.perte_partielle || prob.partial || 0, color: '#f59e0b' },
-                      { label: lang === 'fr' ? 'Issue défavorable' : lang === 'nl' ? 'Volledig verlies' : 'Full loss', pct: prob.full_loss || prob.perte_totale || prob.unfavorable || 0, color: '#dc2626' },
-                    ].map((o) => (
-                      <div key={o.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                        <div style={{ fontSize: 10, color: '#374151', width: 160, flexShrink: 0 }}>{o.label}</div>
-                        <div style={{ flex: 1, height: 8, background: '#f3f4f6', borderRadius: 4, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', borderRadius: 4, background: o.color, width: `${o.pct}%`, transition: 'width 0.5s' }} />
-                        </div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: o.color, width: 32, textAlign: 'right' }}>{o.pct}%</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Risk Monitor */}
-                <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', marginBottom: 10, border: '0.5px solid #e2e0db' }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', marginBottom: 3 }}>{t.riskMonitor}</div>
-                  <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 10 }}>{t.riskMonitorSub}</div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button style={{ flex: 1, padding: '8px 0', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 8, fontSize: 10, fontWeight: 500, color: '#374151', cursor: 'pointer' }}>📧 {t.connectGmail}</button>
-                    <button style={{ flex: 1, padding: '8px 0', background: '#fff', border: '0.5px solid #e2e0db', borderRadius: 8, fontSize: 10, fontWeight: 500, color: '#374151', cursor: 'pointer' }}>📨 {t.connectOutlook}</button>
-                  </div>
+                    );
+                  })}
                 </div>
               </>
             )}
           </div>
         </div>
 
-        {/* ═══ RIGHT PANEL ═══ */}
+        {/* ═══ RIGHT PANEL — Quick stats ═══ */}
         <div data-testid="right-panel" style={{
           background: '#fff', borderLeft: '0.5px solid #e2e0db',
           display: 'flex', flexDirection: 'column', overflowY: 'auto',
         }}>
           <div style={{ padding: '14px 14px 8px', fontSize: 10, fontWeight: 700, color: '#1a1a2e', letterSpacing: '0.3px' }}>{t.overview}</div>
-
-          {/* Deadline */}
-          {sc && sc.deadline && (
+          <div style={{ margin: '0 8px 8px', padding: 11, background: '#eff6ff', borderRadius: 9, border: '0.5px solid #bfdbfe' }}>
+            <div style={{ fontSize: 28, fontWeight: 800, color: '#1a56db', lineHeight: 1 }}>{cases.length}</div>
+            <div style={{ fontSize: 9, color: '#6b7280', marginTop: 4 }}>{t.activeCases}</div>
+          </div>
+          {cases.filter(c => daysUntil(c.deadline) !== null && daysUntil(c.deadline) <= 7 && daysUntil(c.deadline) > 0).length > 0 && (
             <div style={{ margin: '0 8px 8px', padding: 11, background: '#fff5f5', borderRadius: 9, border: '0.5px solid #fca5a5' }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.3px' }}>⚡ {t.critDeadline}</div>
-              <div style={{ fontSize: 30, fontWeight: 800, color: '#dc2626', margin: '4px 0 2px' }}>
-                {dl !== null ? (dl <= 0 ? t.expired : `${dl} ${t.days}`) : '—'}
+              <div style={{ fontSize: 9, fontWeight: 700, color: '#dc2626', textTransform: 'uppercase' }}>{t.critDeadline}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#dc2626', margin: '4px 0' }}>
+                {cases.filter(c => daysUntil(c.deadline) !== null && daysUntil(c.deadline) <= 7 && daysUntil(c.deadline) > 0).length} {lang === 'fr' ? 'dossiers' : 'cases'}
               </div>
-              <div style={{ fontSize: 9, color: '#991b1b' }}>{t.before} {formatDate(sc.deadline, lang)}</div>
             </div>
           )}
-
-          {/* Next Actions */}
-          <NextActionsPanel
-            steps={steps}
-            findings={findings}
-            lang={lang}
-            opposingPartyName={sc?.opposing_party_name}
-            onLetterClick={(s) => setAttorneyModalStep(s)}
-            onCallClick={() => navigate('/lawyers')}
-          />
-
-          {/* Documents */}
-          <div style={{ padding: '8px 14px 4px', fontSize: 9, fontWeight: 700, color: '#1a1a2e', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.documents}</div>
-          {sc ? (
-            <div style={{ margin: '0 8px' }}>
-              {(sc.document_count || 0) > 0 ? (
-                <div onClick={() => navigate(`/cases/${sc.case_id}`)} style={{
-                  padding: '6px 8px', borderRadius: 7, border: '0.5px solid #e2e0db',
-                  display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', marginBottom: 4,
-                }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f8f7f4'}
-                  onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
-                  <div style={{ width: 22, height: 22, borderRadius: 4, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <FileText size={11} color="#1a56db" />
-                  </div>
-                  <div style={{ fontSize: 10, color: '#374151', fontWeight: 500, flex: 1 }}>{sc.document_count || 0} {t.docCount}</div>
-                  <div style={{ fontSize: 9, color: '#1d4ed8', fontWeight: 600 }}>{t.keyDoc}</div>
-                </div>
-              ) : (
-                <div style={{ padding: 8, fontSize: 9, color: '#9ca3af', textAlign: 'center' }}>—</div>
-              )}
-            </div>
-          ) : (
-            <div style={{ padding: 8, margin: '0 8px', fontSize: 9, color: '#9ca3af', textAlign: 'center' }}>—</div>
-          )}
+          <div style={{ padding: '8px 14px' }}>
+            <button onClick={() => navigate('/upload')} style={{ width: '100%', padding: '10px 0', background: '#1a56db', color: '#fff', border: 'none', borderRadius: 9, fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <Upload size={13} />{lang === 'fr' ? 'Nouveau document' : 'New document'}
+            </button>
+          </div>
         </div>
 
         {/* ═══ CHAT DRAWER ═══ */}

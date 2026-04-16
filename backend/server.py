@@ -4670,6 +4670,16 @@ CRITICAL RULES:
   * 'Here is what most people in your situation do:' (if straightforward)
 
 JURISDICTION: Apply US Federal + State law for US users. Apply Belgian federal + regional law for Belgian users. Always specify which law applies.
+
+LEGAL CITATIONS FORMAT (CRITICAL):
+When citing a legal article, use EXACTLY this format:
+[ARTICLE: code=code_civil_be, article=1382, paragraph=null]
+Available codes: code_civil_be, code_route_be, code_travail_be, code_conso_be, code_penal_be, code_judiciaire_be, loi_bail_be, code_civil_fr, code_travail_fr
+When citing jurisprudence, use EXACTLY this format:
+[JURIS: court=cass_be, date=2024-03-14, number=P.23.1234.F]
+Available courts: cass_be, cc_be, ca_bruxelles, ca_liege, trav_bruxelles, cjue, cass_fr
+NEVER generate URLs yourself. Use ONLY the [ARTICLE:] and [JURIS:] formats above.
+
 LANGUAGE: Respond in the exact language the user writes in — English, French, Dutch, German, or Spanish."""
 
 class ChatMessageInput(BaseModel):
@@ -4708,6 +4718,152 @@ async def chat_send(data: ChatSendInput, current_user: User = Depends(get_curren
         "ai_message": result["ai_message"],
     }
 
+
+
+@api_router.post("/chat/send-stream")
+async def chat_send_stream(data: ChatSendInput, current_user: User = Depends(get_current_user)):
+    """Streaming chat endpoint — returns SSE with token-by-token output.
+    Uses direct Anthropic API with prompt caching for fast TTFB."""
+    conv_id = data.conversation_id
+    now = datetime.now(timezone.utc).isoformat()
+
+    if not conv_id:
+        conv_id = f"conv_{uuid.uuid4().hex[:12]}"
+        conv_doc = {
+            "conversation_id": conv_id,
+            "user_id": current_user.user_id,
+            "case_id": data.case_id,
+            "title": data.message[:60] + ("..." if len(data.message) > 60 else ""),
+            "created_at": now, "updated_at": now,
+        }
+        await db.chat_conversations.insert_one(conv_doc)
+
+    conv = await db.chat_conversations.find_one(
+        {"conversation_id": conv_id, "user_id": current_user.user_id}, {"_id": 0})
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    # Free plan limit
+    if current_user.plan == "free":
+        conv_ids = [c["conversation_id"] for c in await db.chat_conversations.find(
+            {"user_id": current_user.user_id}, {"conversation_id": 1, "_id": 0}).to_list(100)]
+        total_user_msgs = await db.chat_messages.count_documents(
+            {"conversation_id": {"$in": conv_ids}, "role": "user"})
+        if total_user_msgs >= 3:
+            raise HTTPException(status_code=403, detail="Free plan limited to 3 questions.")
+
+    # Save user message
+    user_msg = {
+        "message_id": f"msg_{uuid.uuid4().hex[:12]}",
+        "conversation_id": conv_id, "role": "user",
+        "content": data.message, "created_at": now,
+    }
+    await db.chat_messages.insert_one(user_msg)
+
+    # Update title from first message
+    msg_count = await db.chat_messages.count_documents({"conversation_id": conv_id, "role": "user"})
+    if msg_count == 1:
+        await db.chat_conversations.update_one(
+            {"conversation_id": conv_id},
+            {"$set": {"title": data.message[:60], "updated_at": now}})
+
+    # Build messages array (proper format for Anthropic API)
+    history = await db.chat_messages.find(
+        {"conversation_id": conv_id}, {"_id": 0, "role": 1, "content": 1}
+    ).sort("created_at", 1).to_list(50)  # limit to last 50 messages
+    claude_messages = [{"role": m["role"], "content": m["content"]} for m in history]
+
+    # Build system prompt with prompt caching
+    user_language = getattr(current_user, 'language', 'en') or 'en'
+    user_jurisdiction = getattr(current_user, 'jurisdiction', 'US') or 'US'
+    jurisdiction_ctx = (
+        "\n\nThis user is under BELGIAN jurisdiction. Apply Belgian federal + regional law."
+        if user_jurisdiction == 'BE' else
+        "\n\nThis user is under US jurisdiction. Apply US Federal + applicable state law."
+    )
+    static_system = ARCHER_SYSTEM_PROMPT + get_language_instruction(user_language) + jurisdiction_ctx
+
+    # Case context (dynamic part — not cached)
+    dynamic_system = ""
+    case_id = data.case_id or conv.get("case_id")
+    if case_id:
+        case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
+        if case_doc:
+            findings_text = "; ".join([f.get('text', '') for f in (case_doc.get('ai_findings') or [])[:5] if f.get('text')])
+            steps_text = "; ".join([s.get('title', '') if isinstance(s, dict) else str(s) for s in (case_doc.get('ai_next_steps') or [])[:3]])
+            dynamic_system = f"\n\nCONTEXT: Active case '{case_doc.get('title', '')}'. Type: {case_doc.get('type', '')}. Risk: {case_doc.get('risk_score', 0)}/100. Findings: {findings_text}. Next steps: {steps_text}."
+
+    # System with prompt caching: static part cached, dynamic appended
+    system_content = [
+        {"type": "text", "text": static_system, "cache_control": {"type": "ephemeral"}},
+    ]
+    if dynamic_system:
+        system_content.append({"type": "text", "text": dynamic_system})
+
+    async def stream_tokens():
+        ai_text = ""
+        try:
+            async with httpx.AsyncClient(timeout=90) as client:
+                async with client.stream(
+                    "POST",
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "x-api-key": ANTHROPIC_API_KEY,
+                        "anthropic-version": "2023-06-01",
+                        "content-type": "application/json",
+                    },
+                    json={
+                        "model": "claude-sonnet-4-20250514",
+                        "max_tokens": 2048,
+                        "stream": True,
+                        "system": system_content,
+                        "messages": claude_messages,
+                    },
+                ) as resp:
+                    # Send conversation_id immediately
+                    yield f"data: {json.dumps({'type': 'meta', 'conversation_id': conv_id})}\n\n"
+                    async for line in resp.aiter_lines():
+                        if not line.startswith("data: "):
+                            continue
+                        payload = line[6:]
+                        if payload == "[DONE]":
+                            break
+                        try:
+                            event = json.loads(payload)
+                        except json.JSONDecodeError:
+                            continue
+                        if event.get("type") == "content_block_delta":
+                            delta = event.get("delta", {})
+                            text = delta.get("text", "")
+                            if text:
+                                ai_text += text
+                                yield f"data: {json.dumps({'type': 'token', 'text': text})}\n\n"
+                        elif event.get("type") == "message_stop":
+                            break
+        except Exception as e:
+            logger.error(f"Streaming chat error: {e}")
+            if not ai_text:
+                ai_text = "Archer is temporarily unavailable — please try again."
+                yield f"data: {json.dumps({'type': 'token', 'text': ai_text})}\n\n"
+
+        # Save AI response to DB
+        ai_msg = {
+            "message_id": f"msg_{uuid.uuid4().hex[:12]}",
+            "conversation_id": conv_id, "role": "assistant",
+            "content": ai_text,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.chat_messages.insert_one(ai_msg)
+        await db.chat_conversations.update_one(
+            {"conversation_id": conv_id},
+            {"$set": {"updated_at": datetime.now(timezone.utc).isoformat()}})
+        yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+    return StreamingResponse(
+        stream_tokens(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 class CreateConversationInput(BaseModel):
@@ -4865,6 +5021,12 @@ async def send_chat_message(
         logger.error(f"Chat Claude error: {e}")
         ai_text = "Archer is temporarily unavailable — please try again in a moment."
 
+    # Enrich legal references with verified URLs
+    try:
+        ai_text = await enrich_legal_references(ai_text)
+    except Exception:
+        pass  # enrichment is best-effort
+
     # Save AI response
     ai_msg = {
         "message_id": f"msg_{uuid.uuid4().hex[:12]}",
@@ -4889,6 +5051,134 @@ async def get_question_count(current_user: User = Depends(get_current_user)):
         return {"count": 0, "limit": 3 if current_user.plan == "free" else None}
     count = await db.chat_messages.count_documents({"conversation_id": {"$in": conv_ids}, "role": "user"})
     return {"count": count, "limit": 3 if current_user.plan == "free" else None}
+
+# ================== Legal References ==================
+
+import re as _re
+
+async def enrich_legal_references(text: str) -> str:
+    """Post-process AI response: replace [ARTICLE: ...] and [JURIS: ...] tags
+    with verified URLs from the database. Unmatched refs become plain text spans."""
+    article_pattern = r"\[ARTICLE:\s*code=(\w+),\s*article=([\w§.]+?)(?:,\s*paragraph=([\w§]+|null))?\]"
+    juris_pattern = r"\[JURIS:\s*court=(\w+),\s*date=([\d-]+),\s*number=([\w.\-/]+)\]"
+
+    async def _replace_article(match):
+        code, article, paragraph = match.group(1), match.group(2), match.group(3)
+        query = {"code": code, "article_number": article}
+        if paragraph and paragraph != "null":
+            query["paragraph"] = paragraph
+        ref = await db.legal_references.find_one(query, {"_id": 0})
+        if ref and ref.get("verified_url"):
+            label = f"Article {article}"
+            if paragraph and paragraph != "null":
+                label += f" {paragraph}"
+            label += f" {ref.get('code_full_name', code)}"
+            return f'<a href="{ref["verified_url"]}" target="_blank" rel="noopener" class="legal-link">{label}</a>'
+        return f'Article {article} {code}'
+
+    async def _replace_juris(match):
+        court, date, number = match.group(1), match.group(2), match.group(3)
+        ref = await db.jurisprudence_references.find_one(
+            {"court": court, "case_number": number}, {"_id": 0})
+        if ref and ref.get("verified_url"):
+            label = f"{ref.get('court_full_name', court)}, {date}, n° {number}"
+            return f'<a href="{ref["verified_url"]}" target="_blank" rel="noopener" class="legal-link">{label}</a>'
+        return f'{court}, {date}, n° {number}'
+
+    # Process articles
+    for match in reversed(list(_re.finditer(article_pattern, text))):
+        replacement = await _replace_article(match)
+        text = text[:match.start()] + replacement + text[match.end():]
+
+    # Process jurisprudence
+    for match in reversed(list(_re.finditer(juris_pattern, text))):
+        replacement = await _replace_juris(match)
+        text = text[:match.start()] + replacement + text[match.end():]
+
+    return text
+
+
+class LegalReferenceInput(BaseModel):
+    code: str
+    code_full_name: str
+    article_number: str
+    paragraph: Optional[str] = None
+    title: str
+    verified_url: str
+    summary: str = ""
+    jurisdiction: str = "BE"
+    language: str = "fr"
+
+
+class JurisprudenceInput(BaseModel):
+    court: str
+    court_full_name: str
+    date: str
+    case_number: str
+    title: str
+    verified_url: str
+    summary: str = ""
+    key_principles: list = []
+    jurisdiction: str = "BE"
+
+
+@api_router.post("/admin/legal-references")
+async def add_legal_reference(data: LegalReferenceInput, current_user: User = Depends(get_current_user)):
+    """Admin endpoint to add/update a verified legal reference."""
+    if getattr(current_user, 'account_type', '') != 'admin' and getattr(current_user, 'email', '') not in [
+        os.environ.get("ADMIN_EMAIL", ""), os.environ.get("ADMIN_NOTIFY_EMAIL", ""),
+        "romain@archer.legal", "ROMAIN@nestorconfidential.com",
+    ]:
+        raise HTTPException(status_code=403, detail="Admin only")
+    now = datetime.now(timezone.utc).isoformat()
+    doc = data.dict()
+    doc["id"] = f"lref_{uuid.uuid4().hex[:12]}"
+    doc["last_verified_at"] = now
+    doc["verified_by"] = current_user.email or "admin"
+    await db.legal_references.update_one(
+        {"code": data.code, "article_number": data.article_number, "paragraph": data.paragraph},
+        {"$set": doc}, upsert=True,
+    )
+    return {"status": "ok", "id": doc["id"]}
+
+
+@api_router.post("/admin/jurisprudence-references")
+async def add_jurisprudence_reference(data: JurisprudenceInput, current_user: User = Depends(get_current_user)):
+    """Admin endpoint to add/update a verified jurisprudence reference."""
+    if getattr(current_user, 'account_type', '') != 'admin' and getattr(current_user, 'email', '') not in [
+        os.environ.get("ADMIN_EMAIL", ""), os.environ.get("ADMIN_NOTIFY_EMAIL", ""),
+        "romain@archer.legal", "ROMAIN@nestorconfidential.com",
+    ]:
+        raise HTTPException(status_code=403, detail="Admin only")
+    now = datetime.now(timezone.utc).isoformat()
+    doc = data.dict()
+    doc["id"] = f"jref_{uuid.uuid4().hex[:12]}"
+    doc["last_verified_at"] = now
+    doc["verified_by"] = current_user.email or "admin"
+    await db.jurisprudence_references.update_one(
+        {"court": data.court, "case_number": data.case_number},
+        {"$set": doc}, upsert=True,
+    )
+    return {"status": "ok", "id": doc["id"]}
+
+
+@api_router.get("/legal-references")
+async def list_legal_references(jurisdiction: str = "BE"):
+    """Public endpoint: list all verified legal references for a jurisdiction."""
+    refs = await db.legal_references.find(
+        {"jurisdiction": jurisdiction}, {"_id": 0}
+    ).to_list(500)
+    return refs
+
+
+@api_router.get("/jurisprudence-references")
+async def list_jurisprudence_references(jurisdiction: str = "BE"):
+    """Public endpoint: list all verified jurisprudence references."""
+    refs = await db.jurisprudence_references.find(
+        {"jurisdiction": jurisdiction}, {"_id": 0}
+    ).to_list(500)
+    return refs
+
 
 # ================== Case Sharing ==================
 

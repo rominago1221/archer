@@ -49,6 +49,8 @@ export default function CaseDetailV7() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [popupOpen, setPopupOpen] = useState(false);
+  const [letterGenerating, setLetterGenerating] = useState(false);
+  const [generatedLetter, setGeneratedLetter] = useState(null);
 
   const fetchCase = useCallback(async () => {
     if (!caseId) return;
@@ -73,17 +75,49 @@ export default function CaseDetailV7() {
 
   useEffect(() => { fetchCase(); }, [fetchCase]);
 
-  const handleChoiceSelect = (choice) => {
+  const handleChoiceSelect = async (choice) => {
     setPopupOpen(false);
     if (choice === 'basic') {
-      // TODO(sprint-paiement): generate letter client-side or via /letters/generate
-      console.log('[stub] generate basic letter for case', caseId);
+      // DIY letter: generate via AI and show inline
+      setLetterGenerating(true);
+      try {
+        const step = caseDoc?.ai_next_steps?.[0] || {};
+        const res = await axios.post(`${API}/cases/${caseId}/generate-action-letter`, {
+          action_title: step.title || caseDoc?.title || '',
+          action_description: step.description || '',
+          tone: 'citizen',
+        }, { withCredentials: true });
+        setGeneratedLetter(res.data);
+      } catch (err) {
+        console.error('Letter generation error:', err);
+        setGeneratedLetter({ error: err?.response?.data?.detail || 'Letter generation failed' });
+      } finally {
+        setLetterGenerating(false);
+      }
     } else if (choice === 'signed') {
-      // TODO(sprint-paiement): Stripe checkout 49,99€ → signed letter workflow
-      console.log('[stub] stripe checkout signed letter for case', caseId);
+      // Attorney-signed letter: Stripe checkout
+      try {
+        const res = await axios.post(`${API}/cases/${caseId}/checkout/attorney-letter`, {}, { withCredentials: true });
+        if (res.data?.checkout_url) {
+          window.location.href = res.data.checkout_url;
+        }
+      } catch (err) {
+        console.error('Checkout error:', err);
+        alert(err?.response?.data?.detail || 'Checkout failed');
+      }
     } else if (choice === 'combo') {
-      // TODO(sprint-paiement): Stripe checkout 198,99€ → signed + live counsel
-      console.log('[stub] stripe checkout combo for case', caseId);
+      // Combo: Live Counsel checkout
+      try {
+        const res = await axios.post(`${API}/cases/${caseId}/checkout/live-counsel`, {
+          service_type: 'live_counsel',
+        }, { withCredentials: true });
+        if (res.data?.checkout_url) {
+          window.location.href = res.data.checkout_url;
+        }
+      } catch (err) {
+        console.error('Combo checkout error:', err);
+        alert(err?.response?.data?.detail || 'Checkout failed');
+      }
     }
   };
 
@@ -137,9 +171,31 @@ export default function CaseDetailV7() {
     navigate(`/chat?q=${q}&case_id=${caseId}`);
   };
 
-  const handleAnswerQuestion = (payload) => {
-    // TODO(sprint-plumbing): POST /api/cases/{caseId}/archer-answer with payload
-    console.log('[stub] archer question answered', payload);
+  const [answerFeedback, setAnswerFeedback] = useState(null);
+  const [answerLoading, setAnswerLoading] = useState(false);
+
+  const handleAnswerQuestion = async (payload) => {
+    setAnswerLoading(true);
+    setAnswerFeedback(null);
+    try {
+      const res = await axios.post(`${API}/cases/${caseId}/archer-answer`, {
+        question: payload.question_text,
+        answer: payload.choice_selected,
+      }, { withCredentials: true });
+      setAnswerFeedback({
+        impact: res.data.impact_summary,
+        oldScore: res.data.old_risk_score,
+        newScore: res.data.new_risk_score,
+        hasMore: !!res.data.next_question,
+      });
+      // Refresh case data to get new questions/score
+      setTimeout(() => fetchCase(), 1000);
+    } catch (err) {
+      console.error('Archer answer error:', err);
+      setAnswerFeedback({ error: true });
+    } finally {
+      setAnswerLoading(false);
+    }
   };
   const handleAddDocument = () => {
     navigate('/upload');
@@ -195,6 +251,73 @@ export default function CaseDetailV7() {
           language={language}
         />
 
+        {/* Generated letter display */}
+        {letterGenerating && (
+          <div data-testid="letter-generating" style={{
+            background: '#eff6ff', borderRadius: 14, padding: 24, marginBottom: 20,
+            border: '1px solid #bfdbfe', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#1e40af', marginBottom: 8 }}>
+              {language === 'fr' ? 'Archer rédige votre lettre...' : 'Archer is drafting your letter...'}
+            </div>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>
+              {language === 'fr' ? 'Cela prend 15-30 secondes.' : 'This takes 15-30 seconds.'}
+            </div>
+          </div>
+        )}
+        {generatedLetter && !letterGenerating && (
+          <div data-testid="generated-letter" style={{
+            background: '#ffffff', borderRadius: 14, padding: 24, marginBottom: 20,
+            border: '1px solid #e2e0db', position: 'relative',
+          }}>
+            <button
+              onClick={() => setGeneratedLetter(null)}
+              style={{ position: 'absolute', top: 12, right: 12, background: '#f4f4f1', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280', fontSize: 14 }}
+            >
+              ✕
+            </button>
+            {generatedLetter.error ? (
+              <div style={{ color: '#dc2626', fontSize: 13 }}>{generatedLetter.error}</div>
+            ) : (
+              <>
+                <div style={{ fontSize: 9, fontWeight: 800, color: '#1a56db', letterSpacing: 1, marginBottom: 8 }}>
+                  {language === 'fr' ? 'LETTRE GÉNÉRÉE' : 'GENERATED LETTER'}
+                </div>
+                {generatedLetter.subject && (
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#0a0a0f', marginBottom: 12 }}>{generatedLetter.subject}</div>
+                )}
+                <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.7, whiteSpace: 'pre-wrap', marginBottom: 16 }}>
+                  {generatedLetter.body}
+                </div>
+                {generatedLetter.legal_citations?.length > 0 && (
+                  <div style={{ fontSize: 11, color: '#6b7280', borderTop: '1px solid #f3f4f6', paddingTop: 12 }}>
+                    <strong>{language === 'fr' ? 'Références :' : 'References:'}</strong> {generatedLetter.legal_citations.join(' · ')}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                  <button
+                    onClick={() => {
+                      const blob = new Blob([generatedLetter.body], { type: 'text/plain' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a'); a.href = url; a.download = 'lettre-archer.txt'; a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    style={{ padding: '8px 16px', background: '#1a56db', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    {language === 'fr' ? 'Télécharger' : 'Download'}
+                  </button>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(generatedLetter.body); }}
+                    style={{ padding: '8px 16px', background: '#fff', color: '#374151', border: '1px solid #e2e0db', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    {language === 'fr' ? 'Copier' : 'Copy'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* ── Sprint 2 sections ──────────────────────────────────────── */}
         <BattleSection
           battle={battle}
@@ -228,6 +351,45 @@ export default function CaseDetailV7() {
           scoreHistory={scoreHistory}
           language={language}
         />
+
+        {/* Answer feedback toast */}
+        {answerFeedback && !answerFeedback.error && (
+          <div data-testid="answer-feedback" style={{
+            background: 'linear-gradient(135deg, #f0fdf4, #eff6ff)',
+            border: '1px solid #86efac', borderRadius: 12,
+            padding: '16px 20px', marginBottom: 16,
+            animation: 'battleFadeIn 0.3s ease-out',
+          }}>
+            <style>{`@keyframes battleFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d', marginBottom: 6 }}>
+              {language === 'fr' ? 'Analyse mise à jour' : 'Analysis updated'}
+            </div>
+            <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.5, marginBottom: 8 }}>
+              {answerFeedback.impact}
+            </div>
+            {answerFeedback.oldScore !== answerFeedback.newScore && (
+              <div style={{ fontSize: 11, color: '#6b7280' }}>
+                Risk score: {answerFeedback.oldScore} → <strong style={{ color: answerFeedback.newScore > answerFeedback.oldScore ? '#dc2626' : '#16a34a' }}>{answerFeedback.newScore}</strong>
+              </div>
+            )}
+            {answerFeedback.hasMore && (
+              <div style={{ fontSize: 11, color: '#1a56db', fontWeight: 600, marginTop: 8 }}>
+                {language === 'fr' ? 'Nouvelles questions ci-dessous...' : 'New questions below...'}
+              </div>
+            )}
+          </div>
+        )}
+
+        {answerLoading && (
+          <div style={{
+            background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 12,
+            padding: '16px 20px', marginBottom: 16, textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 12, color: '#1e40af', fontWeight: 600 }}>
+              {language === 'fr' ? 'Archer affine l\'analyse...' : 'Archer is refining the analysis...'}
+            </div>
+          </div>
+        )}
 
         <ArcherQuestionsSection
           questions={archerQuestions}

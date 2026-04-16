@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import DocumentItem from './DocumentItem';
+import DocumentViewerModal from '../../DocumentViewerModal';
 import { useDashboardT } from '../../../hooks/useDashboardT';
 
 // Props:
@@ -17,8 +18,13 @@ export default function DocumentsSection({
 }) {
   const t = useDashboardT(language);
   const counterKey = documents.length === 1 ? 'documents.counter_one' : 'documents.counter_many';
+  const [viewingDoc, setViewingDoc] = useState(null);
 
   return (
+    <>
+    {viewingDoc && (
+      <DocumentViewerModal doc={viewingDoc} onClose={() => setViewingDoc(null)} />
+    )}
     <div
       data-testid="documents-section"
       style={{
@@ -40,7 +46,7 @@ export default function DocumentsSection({
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
         {documents.map((doc) => (
-          <DocumentItem key={doc.document_id || doc.file_name} doc={doc} language={language} />
+          <DocumentItem key={doc.document_id || doc.file_name} doc={doc} language={language} onClick={setViewingDoc} />
         ))}
       </div>
 
@@ -104,5 +110,6 @@ export default function DocumentsSection({
         </button>
       )}
     </div>
+    </>
   );
 }

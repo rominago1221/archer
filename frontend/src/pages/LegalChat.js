@@ -120,22 +120,85 @@ const LegalChat = () => {
     setInput('');
     setSending(true);
 
+    // Add a placeholder AI message that we'll stream into
+    const aiPlaceholder = { role: 'assistant', content: '', created_at: new Date().toISOString(), streaming: true };
+    setMessages(prev => [...prev, aiPlaceholder]);
+
     try {
-      const res = await axios.post(`${API}/chat/send`, {
-        message: text.trim(),
-        conversation_id: activeConvId,
-      }, { withCredentials: true });
+      const res = await fetch(`${API}/chat/send-stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          message: text.trim(),
+          conversation_id: activeConvId,
+        }),
+      });
 
-      const aiMsg = { role: 'assistant', content: res.data.response, created_at: new Date().toISOString() };
-      setMessages(prev => [...prev, aiMsg]);
-      setMessageCount(prev => prev + 1);
-
-      if (!activeConvId && res.data.conversation_id) {
-        setActiveConvId(res.data.conversation_id);
-        setConversations(prev => [{ conversation_id: res.data.conversation_id, title: text.trim().substring(0, 50), created_at: new Date().toISOString() }, ...prev]);
+      if (!res.ok) {
+        throw new Error(res.statusText);
       }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const event = JSON.parse(line.slice(6));
+            if (event.type === 'meta' && event.conversation_id) {
+              if (!activeConvId) {
+                setActiveConvId(event.conversation_id);
+                setConversations(prev => [
+                  { conversation_id: event.conversation_id, title: text.trim().substring(0, 50), created_at: new Date().toISOString() },
+                  ...prev,
+                ]);
+              }
+            } else if (event.type === 'token') {
+              fullText += event.text;
+              setMessages(prev => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last?.streaming) {
+                  updated[updated.length - 1] = { ...last, content: fullText };
+                }
+                return updated;
+              });
+            } else if (event.type === 'done') {
+              // Finalize the message
+              setMessages(prev => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last?.streaming) {
+                  updated[updated.length - 1] = { ...last, streaming: false };
+                }
+                return updated;
+              });
+            }
+          } catch { /* skip malformed lines */ }
+        }
+      }
+
+      setMessageCount(prev => prev + 1);
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: lang === 'fr' ? 'Archer est temporairement indisponible — veuillez reessayer dans un moment.' : 'Archer is temporarily unavailable — please try again in a moment.', created_at: new Date().toISOString() }]);
+      // Remove placeholder and show error
+      setMessages(prev => {
+        const updated = prev.filter(m => !m.streaming);
+        return [...updated, {
+          role: 'assistant',
+          content: lang === 'fr' ? 'Archer est temporairement indisponible — veuillez reessayer dans un moment.' : 'Archer is temporarily unavailable — please try again in a moment.',
+          created_at: new Date().toISOString(),
+        }];
+      });
     } finally {
       setSending(false);
     }

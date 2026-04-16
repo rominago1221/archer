@@ -10,7 +10,6 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Cases from './pages/Cases';
-import CaseDetail from './pages/CaseDetail'; // eslint-disable-line no-unused-vars -- kept as rollback target, see CaseDetailV7
 import CaseDetailV7 from './pages/CaseDetailV7';
 import Upload from './pages/Upload';
 import Lawyers from './pages/Lawyers';

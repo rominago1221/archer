@@ -173,40 +173,45 @@ const DocumentLibrary = () => {
   });
 
   return (
-    <div data-testid="document-library-page" style={{ position: 'fixed', inset: 0, display: 'grid', gridTemplateColumns: '220px 1fr', background: '#f4f4f1', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-      {/* ═══ LEFT SIDEBAR ═══ */}
-      <div style={{ background: '#fafaf8', borderRight: '1px solid #e2e0db', display: 'flex', flexDirection: 'column' }} data-testid="doc-sidebar">
-        <div style={{ padding: '16px 14px 12px', borderBottom: '1px solid #e2e0db' }}>
-          <div style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.5px', color: '#1a1a2e', marginBottom: 14, cursor: 'pointer' }} onClick={() => window.location.href = '/'}>Jas<span style={{ color: '#1a56db' }}>per</span></div>
-          <button onClick={() => { setMode('generate'); }} data-testid="mode-generate"
-            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', borderRadius: 8, fontSize: 12, border: mode === 'generate' ? '1px solid #e2e0db' : '1px solid transparent', background: mode === 'generate' ? '#fff' : 'transparent', color: mode === 'generate' ? '#1a56db' : '#6b7280', fontWeight: mode === 'generate' ? 500 : 400, cursor: 'pointer', marginBottom: 4 }}>
-            <Pen size={13} color={mode === 'generate' ? '#1a56db' : '#9ca3af'} />Generate any document
+    <div data-testid="document-library-page" style={{ display: 'flex', flexDirection: 'column', background: '#f4f4f1', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', minHeight: '100vh' }}>
+      {/* ═══ HEADER with unified tabs ═══ */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #e2e0db', padding: '20px 32px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: '#0a0a0f', letterSpacing: -0.5 }}>Documents</div>
+            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
+              {lang === 'fr' ? 'Générez ou parcourez des documents juridiques' : 'Generate or browse legal documents'}
+            </div>
+          </div>
+          {mode === 'generate' && messages.length > 0 && (
+            <button onClick={startNew} data-testid="new-conversation-btn" style={{ fontSize: 11, fontWeight: 600, color: '#1a56db', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}>+ New document</button>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 0 }}>
+          <button onClick={() => setMode('generate')} data-testid="mode-generate"
+            style={{
+              padding: '10px 20px', fontSize: 13, fontWeight: mode === 'generate' ? 700 : 500, cursor: 'pointer',
+              background: 'none', border: 'none', borderBottom: mode === 'generate' ? '2px solid #1a56db' : '2px solid transparent',
+              color: mode === 'generate' ? '#1a56db' : '#6b7280',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+            <Pen size={14} /> {lang === 'fr' ? 'Générer depuis votre dossier' : 'Generate from your case'}
           </button>
           <button onClick={() => setMode('browse')} data-testid="mode-browse"
-            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', borderRadius: 8, fontSize: 12, border: mode === 'browse' ? '1px solid #e2e0db' : '1px solid transparent', background: mode === 'browse' ? '#fff' : 'transparent', color: mode === 'browse' ? '#1a56db' : '#6b7280', fontWeight: mode === 'browse' ? 500 : 400, cursor: 'pointer', justifyContent: 'space-between' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 9 }}><Search size={13} color={mode === 'browse' ? '#1a56db' : '#9ca3af'} />Browse templates</span>
+            style={{
+              padding: '10px 20px', fontSize: 13, fontWeight: mode === 'browse' ? 700 : 500, cursor: 'pointer',
+              background: 'none', border: 'none', borderBottom: mode === 'browse' ? '2px solid #1a56db' : '2px solid transparent',
+              color: mode === 'browse' ? '#1a56db' : '#6b7280',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+            <Search size={14} /> {lang === 'fr' ? 'Modèles' : 'Templates'}
             <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 8, background: '#f3f4f6', color: '#9ca3af' }}>158</span>
           </button>
         </div>
-        <div style={{ padding: '12px 14px', flex: 1, overflowY: 'auto' }}>
-          <div style={{ fontSize: 9, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 8 }}>Recent documents</div>
-          {recentDocs.length === 0 && <div style={{ fontSize: 10, color: '#bbb', fontStyle: 'italic' }}>No documents yet</div>}
-          {recentDocs.slice(0, 3).map(doc => (
-            <div key={doc.doc_id} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 4px', cursor: 'pointer', borderRadius: 5 }} data-testid={`recent-doc-${doc.doc_id}`}>
-              <div style={{ width: 20, height: 20, borderRadius: 4, background: '#fff', border: '1px solid #e2e0db', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FileText size={9} color="#9ca3af" /></div>
-              <span style={{ fontSize: 11, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.document_title || 'Untitled'}</span>
-            </div>
-          ))}
-        </div>
-        {mode === 'generate' && messages.length > 0 && (
-          <div style={{ padding: '10px 14px', borderTop: '1px solid #e2e0db' }}>
-            <button onClick={startNew} data-testid="new-conversation-btn" style={{ width: '100%', fontSize: 10, fontWeight: 600, color: '#1a56db', background: 'none', border: 'none', cursor: 'pointer' }}>+ New document</button>
-          </div>
-        )}
       </div>
 
       {/* ═══ MAIN AREA ═══ */}
-      <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {mode === 'generate' ? (
           <>
             {/* Header */}
