@@ -32,6 +32,14 @@ function normaliseFinding(f, idx) {
     pedagogy_text: pedagogyText,
     is_critical: isCritical,
     is_deadline: type === 'deadline',
+    // Confidence score fields (Feature 1 — Brief E)
+    confidence_score: typeof f.confidence_score === 'number' ? f.confidence_score : null,
+    jurisprudence_count: f.jurisprudence_count || null,
+    similar_cases_won: f.similar_cases_won || null,
+    similar_cases_total: f.similar_cases_total || null,
+    reasoning: f.reasoning || null,
+    do_now: f.do_now || '',
+    impact_description: f.impact_description || '',
   };
 }
 

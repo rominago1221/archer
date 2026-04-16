@@ -222,12 +222,19 @@ Return ONLY this JSON — no other text:
     {{"law": "statute name", "relevance": "how it applies", "favors": "user|opposing|neutral"}}
   ],
   "findings": [
-    {{"text": "Finding title: short, specific, actionable — NEVER vague or generic", "impact": "high|medium|low", "type": "risk|opportunity|deadline|neutral", "legal_ref": "Exact statute, article, or case law citation (e.g. Fla. Stat. § 83.56(3) — Florida 3rd DCA 2023)", "jurisprudence": "Relevant case law if any", "impact_description": "What this means for the user RIGHT NOW in plain language — no legal jargon, written as if explaining to a friend", "do_now": "Exact next step the user MUST take — specific and actionable, never generic like 'consult an attorney'", "risk_if_ignored": "What happens if user does NOTHING — create urgency, explain real consequences of inaction"}}
+    {{"text": "Finding title: short, specific, actionable — NEVER vague or generic", "impact": "high|medium|low", "type": "risk|opportunity|deadline|neutral", "legal_ref": "Exact statute, article, or case law citation (e.g. Fla. Stat. § 83.56(3) — Florida 3rd DCA 2023)", "jurisprudence": "Relevant case law if any", "impact_description": "What this means for the user RIGHT NOW in plain language — no legal jargon, written as if explaining to a friend", "do_now": "Exact next step the user MUST take — specific and actionable, never generic like 'consult an attorney'", "risk_if_ignored": "What happens if user does NOTHING — create urgency, explain real consequences of inaction", "confidence_score": 0.92, "jurisprudence_count": 47, "similar_cases_won": 44, "similar_cases_total": 47, "reasoning": "1-2 sentences explaining WHY this confidence score. Reference the jurisprudence consistency and how clear the law is."}}
   ],
   "recommend_lawyer": true,
   "disclaimer": "This analysis provides legal information only, not legal advice."
 }}
-Produce 3-6 findings. EVERY finding MUST have ALL 7 fields: text (title), impact, type, legal_ref (exact statute), jurisprudence, impact_description (plain language), do_now (specific action), risk_if_ignored (consequence of inaction). NEVER omit any field. Impact_description must be plain language. Do_now must be specific. Risk_if_ignored must create urgency."""
+Produce 3-6 findings. EVERY finding MUST have ALL 12 fields: text (title), impact, type, legal_ref (exact statute), jurisprudence, impact_description (plain language), do_now (specific action), risk_if_ignored (consequence of inaction), confidence_score (0.0-1.0), jurisprudence_count (int), similar_cases_won (int), similar_cases_total (int), reasoning (1-2 sentences).
+
+CONFIDENCE SCORE RULES:
+- Law is clear AND jurisprudence consistent: confidence > 0.90
+- Law is clear but jurisprudence variable: 0.70-0.90
+- Interpretation possible: 0.50-0.70
+- Weak argument: < 0.50
+Base scores on known case law patterns. Jurisprudence_count = approximate number of relevant similar rulings."""
 
 PASS3_PROMPT = """TASK: STRATEGIC RECOMMENDATIONS
 Based on the facts and legal analysis below, provide concrete strategic recommendations. Think like a litigator preparing a client for the best outcome.
@@ -1707,7 +1714,7 @@ Retourne UNIQUEMENT ce JSON:
   "deadline_description": "Description du delai",
   "financial_exposure": "EUR montant ou fourchette",
   "findings": [
-    {{"text": "Titre court, specifique et actionnable — JAMAIS vague ou generique", "impact": "high|medium|low", "type": "risk|opportunity|neutral", "legal_ref": "Reference legale EXACTE: article de loi + jurisprudence recente (ex: Art. 65-70 Loi contrats travail — C. trav. Bruxelles 7 mai 2024)", "jurisprudence": "Jurisprudence applicable avec date et juridiction", "impact_description": "Ce que cela signifie CONCRETEMENT pour l'utilisateur — en langage simple, comme si on expliquait a un ami, JAMAIS de jargon juridique", "do_now": "Action PRECISE que l'utilisateur DOIT faire MAINTENANT — jamais generique comme 'consultez un avocat'", "risk_if_ignored": "Ce qui se passe si l'utilisateur ne fait RIEN — creer l'urgence, expliquer les consequences reelles de l'inaction"}}
+    {{"text": "Titre court, specifique et actionnable — JAMAIS vague ou generique", "impact": "high|medium|low", "type": "risk|opportunity|neutral", "legal_ref": "Reference legale EXACTE: article de loi + jurisprudence recente (ex: Art. 65-70 Loi contrats travail — C. trav. Bruxelles 7 mai 2024)", "jurisprudence": "Jurisprudence applicable avec date et juridiction", "impact_description": "Ce que cela signifie CONCRETEMENT pour l'utilisateur — en langage simple, comme si on expliquait a un ami, JAMAIS de jargon juridique", "do_now": "Action PRECISE que l'utilisateur DOIT faire MAINTENANT — jamais generique comme 'consultez un avocat'", "risk_if_ignored": "Ce qui se passe si l'utilisateur ne fait RIEN — creer l'urgence, expliquer les consequences reelles de l'inaction", "confidence_score": 0.92, "jurisprudence_count": 47, "similar_cases_won": 44, "similar_cases_total": 47, "reasoning": "1-2 phrases expliquant POURQUOI ce score de confiance. Referencez la consistance de la jurisprudence et la clarte de la loi."}}
   ],
   "procedural_defects": [{{"vice": "description", "gravite": "fatal|significatif|mineur", "loi_applicable": "reference", "benefice_utilisateur": "comment ca aide"}}],
   "user_rights": [{{"droit": "droit specifique", "reference_legale": "loi exacte", "force": "fort|moyen|faible"}}],
@@ -1718,7 +1725,14 @@ Retourne UNIQUEMENT ce JSON:
   "recommend_lawyer": true,
   "key_insight": "La phrase la plus importante"
 }}
-Produis 3-6 constatations. CHAQUE constatation DOIT avoir les 7 champs: text (titre), impact, type, legal_ref (loi exacte + jurisprudence), jurisprudence, impact_description (langage simple), do_now (action precise), risk_if_ignored (consequence de l'inaction). JAMAIS omettre un champ."""
+Produis 3-6 constatations. CHAQUE constatation DOIT avoir les 12 champs: text (titre), impact, type, legal_ref (loi exacte + jurisprudence), jurisprudence, impact_description (langage simple), do_now (action precise), risk_if_ignored (consequence de l'inaction), confidence_score (0.0-1.0), jurisprudence_count (int), similar_cases_won (int), similar_cases_total (int), reasoning (1-2 phrases).
+
+REGLES SCORE DE CONFIANCE:
+- Loi claire ET jurisprudence constante: confiance > 0.90
+- Loi claire mais jurisprudence variable: 0.70-0.90
+- Interpretation possible: 0.50-0.70
+- Argument faible: < 0.50
+Basez les scores sur les tendances jurisprudentielles connues. Jurisprudence_count = nombre approximatif de decisions similaires."""
 
 BE_PASS3_PROMPT = """TACHE: RECOMMANDATIONS STRATEGIQUES
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import FindingCard from './FindingCard';
+import ViolationCard from './ViolationCard';
 import { useDashboardT } from '../../../hooks/useDashboardT';
 
 // Props:
@@ -46,8 +46,15 @@ export default function FindingsSection({ type = 'critical', findings = [], coun
 
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {findings.map((f) => (
-          <FindingCard key={f.id} finding={f} country={country} language={language} />
+          <ViolationCard key={f.id} finding={f} country={country} language={language} />
         ))}
+      </div>
+
+      {/* Disclaimer */}
+      <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 8, fontStyle: 'italic' }}>
+        {language === 'fr'
+          ? 'Estimations bas\u00e9es sur la jurisprudence accessible \u00e0 Archer. Les chiffres exacts peuvent varier.'
+          : 'Estimates based on jurisprudence accessible to Archer. Actual figures may vary.'}
       </div>
     </div>
   );
