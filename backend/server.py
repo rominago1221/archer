@@ -422,7 +422,7 @@ def load_jurisprudence(case_type: str, document_type: str) -> str:
     return ""
 
 
-async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 2000, use_web_search: bool = False) -> dict:
+async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4000, use_web_search: bool = False) -> dict:
     """Direct Anthropic API — Opus 4.6 for analysis pipeline.
     System prompt is cached (ephemeral) for cross-pass efficiency."""
     for attempt in range(3):
@@ -954,7 +954,7 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
             persona,
             PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2), jurisprudence_section=jurisprudence_text + realtime_law_context)
             + "\n\nIMPORTANT: Use the provided recent court decisions and jurisprudence to inform your analysis. Cite any relevant rulings in your findings.",
-            max_tokens=2000
+            max_tokens=8000
         )
 
         facts_str = json.dumps(facts, indent=2)
@@ -963,9 +963,9 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
         # PASS 3 + 4A + 4B — RUN IN PARALLEL (60% faster)
         logger.info("Advanced analysis: Pass 3+4A+4B — Running in parallel")
         strategy, user_arguments, opposing_arguments = await asyncio.gather(
-            call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500),
-            call_claude(PASS4A_SYSTEM + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800),
-            call_claude(PASS4B_SYSTEM + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800),
+            call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=6000),
+            call_claude(PASS4A_SYSTEM + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
+            call_claude(PASS4B_SYSTEM + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
         )
 
         logger.info("Advanced analysis: All 5 passes complete")
@@ -1139,7 +1139,7 @@ async def analyze_document_stream(
             call_claude(persona_with_lang, p2_prompt.format(
                 facts_json=json.dumps(facts, indent=2, ensure_ascii=False),
                 jurisprudence_section=jurisprudence_text
-            ), max_tokens=2000)
+            ), max_tokens=8000)
         )
         # No CourtListener for Belgian cases
         cl_opinions = []
@@ -1157,7 +1157,7 @@ async def analyze_document_stream(
                     facts_json=json.dumps(facts, indent=2),
                     jurisprudence_section=jurisprudence_text + realtime_law_context
                 ) + "\n\nIMPORTANT: Use the provided recent court decisions and jurisprudence to inform your analysis. Cite any relevant rulings in your findings.",
-                max_tokens=2000
+                max_tokens=8000
             )
         )
 
@@ -1217,13 +1217,13 @@ async def analyze_document_stream(
     analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
 
     pass3_task = asyncio.create_task(
-        call_claude(persona_with_lang, p3_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500)
+        call_claude(persona_with_lang, p3_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=6000)
     )
     pass4a_task = asyncio.create_task(
-        call_claude(p4a_system + lang_instruction, p4a_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800)
+        call_claude(p4a_system + lang_instruction, p4a_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000)
     )
     pass4b_task = asyncio.create_task(
-        call_claude(p4b_system + lang_instruction, p4b_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800)
+        call_claude(p4b_system + lang_instruction, p4b_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000)
     )
 
     # Await 4A + 4B first (for the battle scene)
@@ -1941,7 +1941,7 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
 
         # PASS 2: Legal analysis
         logger.info("Belgian analysis: Passe 2 — Analyse juridique")
-        legal_analysis = await call_claude(persona_with_lang, BE_PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2, ensure_ascii=False), jurisprudence_section=jurisprudence_text), max_tokens=2000)
+        legal_analysis = await call_claude(persona_with_lang, BE_PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2, ensure_ascii=False), jurisprudence_section=jurisprudence_text), max_tokens=8000)
 
         facts_str = json.dumps(facts, indent=2, ensure_ascii=False)
         analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
@@ -1949,9 +1949,9 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
         # PASS 3 + 4A + 4B — RUN IN PARALLEL
         logger.info("Belgian analysis: Passe 3+4A+4B — En parallele")
         strategy, user_arguments, opposing_arguments = await asyncio.gather(
-            call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=1500),
-            call_claude(BE_PASS4A_SYSTEM + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800),
-            call_claude(BE_PASS4B_SYSTEM + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800),
+            call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=6000),
+            call_claude(BE_PASS4A_SYSTEM + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
+            call_claude(BE_PASS4B_SYSTEM + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
         )
 
         logger.info("Belgian analysis: 5 passes complete")
@@ -2779,9 +2779,9 @@ async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, us
     # PASS 3+4A+4B — PARALLEL
     logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 3+4A+4B — Parallel")
     strategy, user_arguments, opposing_arguments = await asyncio.gather(
-        call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement, max_tokens=1500),
-        call_claude(PASS4A_SYSTEM, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800),
-        call_claude(PASS4B_SYSTEM, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800),
+        call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement, max_tokens=6000),
+        call_claude(PASS4A_SYSTEM, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
+        call_claude(PASS4B_SYSTEM, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
     )
 
     logger.info(f"Multi-doc analysis ({doc_count} docs): All passes complete")
@@ -2843,9 +2843,9 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
     # PASS 3+4A+4B — PARALLEL
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 3+4A+4B — Parallel")
     strategy, user_arguments, opposing_arguments = await asyncio.gather(
-        call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement, max_tokens=1500),
-        call_claude(BE_PASS4A_SYSTEM + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800),
-        call_claude(BE_PASS4B_SYSTEM + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=800),
+        call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement, max_tokens=6000),
+        call_claude(BE_PASS4A_SYSTEM + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
+        call_claude(BE_PASS4B_SYSTEM + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
     )
 
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Complete")
