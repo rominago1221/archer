@@ -5687,6 +5687,73 @@ async def admin_unread_notifications(admin: dict = Depends(admin_required)):
     }
 
 
+# ================== Newsletter ==================
+
+class NewsletterSubscribeInput(BaseModel):
+    email: str
+    source: str = "unknown"
+
+@api_router.post("/newsletter/subscribe")
+async def newsletter_subscribe(body: NewsletterSubscribeInput):
+    """Subscribe to Archer newsletter. Double opt-in: creates unconfirmed subscriber."""
+    import re as _re
+    email = body.email.strip().lower()
+    if not _re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
+        raise HTTPException(status_code=400, detail="Invalid email")
+
+    existing = await db.newsletter_subscribers.find_one({"email": email})
+    if existing:
+        return {"success": True, "message": "Already subscribed"}
+
+    now = datetime.now(timezone.utc).isoformat()
+    token = uuid.uuid4().hex
+    doc = {
+        "id": f"nsub_{uuid.uuid4().hex[:12]}",
+        "email": email,
+        "source": body.source,
+        "subscribed_at": now,
+        "confirmed": False,
+        "confirmed_at": None,
+        "unsubscribed_at": None,
+        "confirm_token": token,
+        "tags": [],
+    }
+    await db.newsletter_subscribers.insert_one(doc)
+
+    # Send confirmation email (best-effort)
+    try:
+        from routes.attorney_routes import send_email
+        confirm_url = f"{os.environ.get('APP_URL', 'https://archer.law')}/newsletter/confirm?token={token}"
+        await send_email(
+            email,
+            "Confirm your Archer newsletter subscription",
+            f"<p>Thanks for subscribing to Archer's weekly legal tips.</p>"
+            f"<p><a href=\"{confirm_url}\" style=\"display:inline-block;background:#1a56db;"
+            f"color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;"
+            f"font-weight:600;\">Confirm my subscription</a></p>"
+            f"<p style=\"font-size:12px;color:#9ca3af;\">If you didn't request this, ignore this email.</p>",
+        )
+    except Exception:
+        pass
+
+    return {"success": True, "message": "Confirmation email sent"}
+
+
+@api_router.get("/newsletter/confirm")
+async def newsletter_confirm(token: str):
+    """Confirm newsletter subscription via token."""
+    sub = await db.newsletter_subscribers.find_one({"confirm_token": token})
+    if not sub:
+        raise HTTPException(status_code=404, detail="Invalid or expired token")
+    if sub.get("confirmed"):
+        return {"success": True, "message": "Already confirmed"}
+    await db.newsletter_subscribers.update_one(
+        {"confirm_token": token},
+        {"$set": {"confirmed": True, "confirmed_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    return {"success": True, "message": "Subscription confirmed"}
+
+
 # ================== Explain Simply ==================
 
 EXPLAIN_SIMPLY_PROMPT = """Tu es Archer. Reformule l'analyse juridique suivante en langage ULTRA SIMPLE comme si tu parlais a quelqu'un de 12 ans qui n'a jamais rien lu de juridique.

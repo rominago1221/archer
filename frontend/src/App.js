@@ -64,6 +64,10 @@ import InternalAdminOperations from './pages/Internal/AdminOperations';
 import InternalAdminModeration from './pages/Internal/AdminModeration';
 import InternalAdminAnalytics from './pages/Internal/AdminAnalytics';
 import InternalAdminSettings from './pages/Internal/AdminSettings';
+// SEO pages
+import Blog from './pages/Blog';
+import BlogArticle from './pages/BlogArticle';
+import PillarPage from './pages/PillarPage';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -103,6 +107,16 @@ const AppRouter = () => {
       <Route path="/signup" element={<Signup />} />
       <Route path="/shared/:token" element={<SharedCase />} />
       <Route path="/attorney/apply" element={<AttorneyApply />} />
+
+      {/* SEO: Blog + Pillar pages + State pages */}
+      <Route path="/blog" element={<Blog />} />
+      <Route path="/blog/:slug" element={<BlogArticle />} />
+      <Route path="/eviction-help" element={<PillarPage />} />
+      <Route path="/eviction-help/:state" element={<PillarPage />} />
+      <Route path="/wrongful-termination" element={<PillarPage />} />
+      <Route path="/wrongful-termination/:state" element={<PillarPage />} />
+      <Route path="/severance-negotiation" element={<PillarPage />} />
+      <Route path="/ai-legal-assistant" element={<PillarPage />} />
 
       {/* Sprint A — Attorney Portal (must be declared BEFORE /attorneys/:slug) */}
       <Route path="/attorneys/join" element={<AttorneyPortalJoin />} />
