@@ -236,16 +236,20 @@ export function useAnalysisStream(caseId) {
     };
   }, [caseId]);
 
-  // Deep analysis message after 120s
+  // Progressive deep analysis messages
   const [deepAnalysisMsg, setDeepAnalysisMsg] = useState(null);
   useEffect(() => {
     if (isComplete || error) return;
-    const timer = setTimeout(() => {
-      if (!isComplete && !error) {
-        setDeepAnalysisMsg('Deep analysis in progress \u2014 Opus is being thorough...');
-      }
-    }, 120000);
-    return () => clearTimeout(timer);
+    const messages = [
+      { delay: 30000, text: 'Archer is cross-referencing case law and statutes...' },
+      { delay: 45000, text: 'Building your legal strategy with confidence scores...' },
+      { delay: 60000, text: 'Almost there \u2014 finalizing battle preview and recommendations...' },
+      { delay: 120000, text: 'Deep analysis in progress \u2014 Opus is being thorough...' },
+    ];
+    const timers = messages.map(m => setTimeout(() => {
+      if (!isComplete && !error) setDeepAnalysisMsg(m.text);
+    }, m.delay));
+    return () => timers.forEach(clearTimeout);
   }, [isComplete, error]);
 
   return { currentScene, data, isComplete, error, deepAnalysisMsg };
