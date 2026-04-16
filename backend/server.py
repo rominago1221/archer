@@ -18,6 +18,7 @@ import io
 import requests
 import base64
 import bcrypt
+from utils.admin_auth import admin_required, log_admin_action
 import docx
 import fitz  # pymupdf for PDF→image conversion
 from PIL import Image
@@ -7083,7 +7084,6 @@ api_router.include_router(attorney_portal_router)
 # Admin auth system (separate from client/attorney)
 from routes.admin_auth_routes import router as admin_auth_router
 from routes.admin_attorneys_routes import router as admin_attorneys_v2_router
-from utils.admin_auth import admin_required
 api_router.include_router(admin_auth_router)
 api_router.include_router(admin_attorneys_v2_router)
 
