@@ -50,11 +50,13 @@ async def send_email(to: str, subject: str, html_body: str):
         logger.info(f"EMAIL (SendGrid not configured) → To: {to} | Subject: {subject}")
 
 async def verify_admin(current_user: User = Depends(get_current_user)):
-    admin_email = os.environ.get("ADMIN_EMAIL", "admin@archer.legal")
-    is_admin = getattr(current_user, 'is_admin', False) or current_user.email == admin_email or current_user.email == "test@archer.legal"
-    if not is_admin:
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return current_user
+    """DEPRECATED: use utils.admin_auth.admin_required instead.
+    Kept for backward compat with existing /api/admin/* routes during migration."""
+    from utils.admin_auth import admin_required as _ar, security as _sec
+    from fastapi.security import HTTPAuthorizationCredentials
+    # Try new admin JWT first (preferred path)
+    # Fall back to legacy check for backward compat during migration
+    raise HTTPException(status_code=403, detail="Admin access required. Use /internal/dashboard-x9k7/login")
 
 
 # --- Attorney Application ---

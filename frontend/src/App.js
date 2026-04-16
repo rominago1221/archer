@@ -53,6 +53,11 @@ import AttorneyPortalStripeComplete from './pages/Attorneys/StripeOnboardingComp
 import AttorneyPortalLiveCounsel from './pages/Attorneys/LiveCounsel';
 import AttorneyPortalProfile from './pages/Attorneys/Profile';
 import RequireAttorneyAuth from './components/Attorneys/RequireAttorneyAuth';
+// Internal admin dashboard
+import InternalAdminLogin from './pages/Internal/AdminLogin';
+import InternalAdminLayout from './components/Internal/AdminLayout';
+import InternalAdminDashboard from './pages/Internal/AdminDashboard';
+import InternalAdminAttorneys from './pages/Internal/AdminAttorneys';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -117,6 +122,14 @@ const AppRouter = () => {
       <Route path="/:lang/how-it-works" element={<HowItWorks />} />
       <Route path="/admin/attorneys" element={<ProtectedRoute><AdminAttorneys /></ProtectedRoute>} />
       <Route path="/admin/matching" element={<ProtectedRoute><AdminMatchingDashboard /></ProtectedRoute>} />
+
+      {/* Internal admin dashboard (new auth system) */}
+      <Route path="/internal/dashboard-x9k7/login" element={<InternalAdminLogin />} />
+      <Route path="/internal/dashboard-x9k7" element={<InternalAdminLayout />}>
+        <Route index element={<InternalAdminDashboard />} />
+        <Route path="attorneys" element={<InternalAdminAttorneys />} />
+      </Route>
+
       <Route path="/documents/:documentId" element={<ProtectedRoute><DocumentViewer /></ProtectedRoute>} />
       <Route path="/analyze/:caseId" element={<ProtectedRoute><CinematicAnalysis /></ProtectedRoute>} />
       

@@ -5108,6 +5108,22 @@ async def get_question_count(current_user: User = Depends(get_current_user)):
     count = await db.chat_messages.count_documents({"conversation_id": {"$in": conv_ids}, "role": "user"})
     return {"count": count, "limit": 3 if current_user.plan == "free" else None}
 
+# ================== Admin Notifications Count ==================
+
+@api_router.get("/admin/notifications/unread")
+async def admin_unread_notifications(admin: dict = Depends(admin_required)):
+    """Quick counts for sidebar badges."""
+    attorneys_pending = await db.attorneys.count_documents({"application_status": "pending"})
+    # TODO: implement feedbacks and system errors collections
+    return {
+        "attorneys_pending": attorneys_pending,
+        "feedbacks_flagged": 0,
+        "system_errors": 0,
+        "failed_payouts": 0,
+        "total_action_required": attorneys_pending,
+    }
+
+
 # ================== Explain Simply ==================
 
 EXPLAIN_SIMPLY_PROMPT = """Tu es Archer. Reformule l'analyse juridique suivante en langage ULTRA SIMPLE comme si tu parlais a quelqu'un de 12 ans qui n'a jamais rien lu de juridique.
@@ -5382,18 +5398,13 @@ class JurisprudenceInput(BaseModel):
 
 
 @api_router.post("/admin/legal-references")
-async def add_legal_reference(data: LegalReferenceInput, current_user: User = Depends(get_current_user)):
+async def add_legal_reference(data: LegalReferenceInput, admin: dict = Depends(admin_required)):
     """Admin endpoint to add/update a verified legal reference."""
-    if getattr(current_user, 'account_type', '') != 'admin' and getattr(current_user, 'email', '') not in [
-        os.environ.get("ADMIN_EMAIL", ""), os.environ.get("ADMIN_NOTIFY_EMAIL", ""),
-        "romain@archer.legal", "ROMAIN@nestorconfidential.com",
-    ]:
-        raise HTTPException(status_code=403, detail="Admin only")
     now = datetime.now(timezone.utc).isoformat()
     doc = data.dict()
     doc["id"] = f"lref_{uuid.uuid4().hex[:12]}"
     doc["last_verified_at"] = now
-    doc["verified_by"] = current_user.email or "admin"
+    doc["verified_by"] = admin.get("email", "admin")
     await db.legal_references.update_one(
         {"code": data.code, "article_number": data.article_number, "paragraph": data.paragraph},
         {"$set": doc}, upsert=True,
@@ -5402,18 +5413,13 @@ async def add_legal_reference(data: LegalReferenceInput, current_user: User = De
 
 
 @api_router.post("/admin/jurisprudence-references")
-async def add_jurisprudence_reference(data: JurisprudenceInput, current_user: User = Depends(get_current_user)):
+async def add_jurisprudence_reference(data: JurisprudenceInput, admin: dict = Depends(admin_required)):
     """Admin endpoint to add/update a verified jurisprudence reference."""
-    if getattr(current_user, 'account_type', '') != 'admin' and getattr(current_user, 'email', '') not in [
-        os.environ.get("ADMIN_EMAIL", ""), os.environ.get("ADMIN_NOTIFY_EMAIL", ""),
-        "romain@archer.legal", "ROMAIN@nestorconfidential.com",
-    ]:
-        raise HTTPException(status_code=403, detail="Admin only")
     now = datetime.now(timezone.utc).isoformat()
     doc = data.dict()
     doc["id"] = f"jref_{uuid.uuid4().hex[:12]}"
     doc["last_verified_at"] = now
-    doc["verified_by"] = current_user.email or "admin"
+    doc["verified_by"] = admin.get("email", "admin")
     await db.jurisprudence_references.update_one(
         {"court": data.court, "case_number": data.case_number},
         {"$set": doc}, upsert=True,
@@ -6511,6 +6517,13 @@ api_router.include_router(attorney_router)
 from routes.attorney_portal_routes import router as attorney_portal_router
 from utils.attorney_auth import ensure_indexes as ensure_attorney_portal_indexes
 api_router.include_router(attorney_portal_router)
+
+# Admin auth system (separate from client/attorney)
+from routes.admin_auth_routes import router as admin_auth_router
+from routes.admin_attorneys_routes import router as admin_attorneys_v2_router
+from utils.admin_auth import admin_required
+api_router.include_router(admin_auth_router)
+api_router.include_router(admin_attorneys_v2_router)
 
 # Sprint B — Attorney portal case endpoints + admin manual-assign
 from routes.attorney_portal_cases import router as attorney_portal_cases_router

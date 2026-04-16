@@ -370,3 +370,81 @@ async def public_profile(attorney_id: str):
         "avg_response_seconds": a.get("avg_response_seconds"),
     }
     return safe
+
+
+# -------------------------------------------------------------------------
+# Bar card upload (for admin approval workflow)
+# -------------------------------------------------------------------------
+
+@router.post("/bar-card/upload")
+async def upload_bar_card(
+    request: Request,
+    attorney: dict = Depends(attorney_required),
+):
+    """Upload bar card document (PDF, max 10 MB).
+    Auto-sets application_status to pending if profile is complete."""
+    form = await request.form()
+    file = form.get("file")
+    if not file:
+        raise HTTPException(status_code=400, detail="No file uploaded")
+
+    filename = getattr(file, "filename", "bar_card.pdf") or "bar_card.pdf"
+    if not filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files accepted")
+
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large (max 10 MB)")
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Store the file (Emergent storage or local fallback)
+    storage_path = f"bar_cards/{attorney['id']}_{filename}"
+    try:
+        from storage import upload_blob
+        bar_card_url = await asyncio.to_thread(upload_blob, storage_path, content, "application/pdf")
+    except Exception:
+        # Fallback: store path reference, file served via separate endpoint
+        bar_card_url = f"/api/attorneys/{attorney['id']}/bar-card"
+        bar_cards_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads", "bar_cards")
+        os.makedirs(bar_cards_dir, exist_ok=True)
+        with open(os.path.join(bar_cards_dir, f"{attorney['id']}.pdf"), "wb") as f:
+            f.write(content)
+
+    update = {
+        "bar_card_url": bar_card_url,
+        "bar_card_filename": filename,
+        "bar_card_uploaded_at": now,
+        "updated_at": now,
+    }
+
+    # Auto-set to pending_approval if profile looks complete
+    a = attorney
+    profile_complete = all([
+        a.get("first_name") or a.get("full_name"),
+        a.get("email"),
+        a.get("bar_number"),
+    ])
+    if profile_complete and a.get("application_status") in (None, "draft", "incomplete"):
+        update["application_status"] = "pending"
+        update["approval_submitted_at"] = now
+
+    await db.attorneys.update_one({"id": attorney["id"]}, {"$set": update})
+
+    # Notify admin
+    try:
+        from routes.attorney_routes import send_email
+        admin_email = os.environ.get("ADMIN_NOTIFY_EMAIL", "romain@archer.law")
+        name = a.get("first_name", a.get("full_name", "Unknown"))
+        await send_email(
+            admin_email,
+            f"New attorney submission: {name}",
+            f"<p>Attorney <b>{name}</b> ({a.get('email')}) has uploaded their bar card "
+            f"and is pending approval.</p>"
+            f"<p>Bar: {a.get('bar_number')} ({a.get('bar_jurisdiction', a.get('jurisdiction', ''))})</p>"
+            f"<p><a href=\"https://archer.law/internal/dashboard-x9k7/attorneys\">Review now →</a></p>",
+        )
+    except Exception:
+        pass
+
+    return {"status": "uploaded", "bar_card_url": bar_card_url}

@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
 from db import db
-from routes.attorney_routes import verify_admin
+from utils.admin_auth import admin_required as verify_admin
 from services.attorney_matching import assign_case_to_attorney, log_matching_event
 
 logger = logging.getLogger(__name__)
