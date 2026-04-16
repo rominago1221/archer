@@ -1,6 +1,8 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PublicNavbar from '../components/PublicNavbar';
+import PageHead from '../components/seo/PageHead';
+import { PAGE_METADATA } from '../lib/seo/metadata';
 
 const F = "'SF Mono', Monaco, monospace";
 const ChkSvg = ({s=14,c='#15803d'}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
@@ -263,6 +265,7 @@ export default function HowItWorks() {
 
   return (
     <div className="hiw">
+      <PageHead metadata={PAGE_METADATA.howItWorks} />
       <style>{CSS}</style>
       <PublicNavbar />
 

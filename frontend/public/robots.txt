@@ -1,0 +1,44 @@
+# Archer — robots.txt
+# Public marketing pages: allowed
+# Dashboard, attorney portal, admin: disallowed
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /cases/
+Disallow: /documents/
+Disallow: /upload
+Disallow: /settings
+Disallow: /chat
+Disallow: /lawyers
+Disallow: /attorneys/dashboard
+Disallow: /attorneys/inbox
+Disallow: /attorneys/my-cases
+Disallow: /attorneys/cases/
+Disallow: /attorneys/earnings
+Disallow: /attorneys/live-counsel
+Disallow: /attorneys/profile
+Disallow: /attorneys/onboarding/
+Disallow: /internal/
+Disallow: /admin/
+Disallow: /login
+Disallow: /signup
+Disallow: /payment/
+Disallow: /analyze/
+Disallow: /video-call/
+
+# Block AI crawlers
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+Sitemap: https://archer.law/sitemap.xml

@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import PageHead from '../components/seo/PageHead';
+import JsonLd, { ORGANIZATION_SCHEMA, SOFTWARE_APP_SCHEMA } from '../components/seo/JsonLd';
+import GoogleAnalytics from '../components/seo/GoogleAnalytics';
+import { PAGE_METADATA } from '../lib/seo/metadata';
 import JurisdictionPills from '../components/JurisdictionPills';
 import HomeJourneySection from '../components/Home/HomeJourneySection';
 import { useAuth } from '../contexts/AuthContext';
@@ -441,6 +445,10 @@ const Landing = () => {
 
   return (
     <div className="ah" style={{ minHeight: '100vh' }}>
+      <PageHead metadata={PAGE_METADATA.home} />
+      <JsonLd data={ORGANIZATION_SCHEMA} />
+      <JsonLd data={SOFTWARE_APP_SCHEMA} />
+      <GoogleAnalytics />
       <style>{CSS}</style>
 
       {/* ── NAV ── */}

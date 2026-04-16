@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Core pages -->
+  <url><loc>https://archer.law</loc><priority>1.0</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://archer.law/pricing</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://archer.law/how-it-works</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+
+  <!-- Pillar pages -->
+  <url><loc>https://archer.law/eviction-help</loc><priority>0.9</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://archer.law/wrongful-termination</loc><priority>0.9</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://archer.law/severance-negotiation</loc><priority>0.9</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://archer.law/ai-legal-assistant</loc><priority>0.9</priority><changefreq>weekly</changefreq></url>
+
+  <!-- State pages: Eviction -->
+  <url><loc>https://archer.law/eviction-help/california</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://archer.law/eviction-help/texas</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://archer.law/eviction-help/florida</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://archer.law/eviction-help/new-york</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://archer.law/eviction-help/illinois</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://archer.law/eviction-help/pennsylvania</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+
+  <!-- State pages: Wrongful Termination -->
+  <url><loc>https://archer.law/wrongful-termination/california</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://archer.law/wrongful-termination/texas</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://archer.law/wrongful-termination/florida</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://archer.law/wrongful-termination/new-york</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://archer.law/wrongful-termination/illinois</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://archer.law/wrongful-termination/pennsylvania</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+
+  <!-- Blog -->
+  <url><loc>https://archer.law/blog</loc><priority>0.8</priority><changefreq>daily</changefreq></url>
+</urlset>

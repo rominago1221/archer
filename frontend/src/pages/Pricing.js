@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PublicNavbar from '../components/PublicNavbar';
+import PageHead from '../components/seo/PageHead';
+import JsonLd, { LEGAL_SERVICE_SCHEMA } from '../components/seo/JsonLd';
+import { PAGE_METADATA } from '../lib/seo/metadata';
 
 const Chk = ({c='#16a34a'}) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
 
@@ -274,6 +277,8 @@ export default function Pricing() {
 
   return (
     <div className="pp">
+      <PageHead metadata={PAGE_METADATA.pricing} />
+      <JsonLd data={LEGAL_SERVICE_SCHEMA} />
       <style>{CSS}</style>
       <PublicNavbar />
 
