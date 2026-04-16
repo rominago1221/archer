@@ -425,63 +425,73 @@ def load_jurisprudence(case_type: str, document_type: str) -> str:
 async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4000, use_web_search: bool = False) -> dict:
     """Direct Anthropic API — Opus 4.6 for analysis pipeline.
     System prompt is cached (ephemeral) for cross-pass efficiency.
-    Auto-retries with doubled max_tokens on truncation (stop_reason=max_tokens)."""
+
+    Two-level retry:
+      - OUTER loop (3 attempts): retries on JSON parse errors or API errors
+      - INNER loop (4 attempts): auto-scales max_tokens on truncation (4k→8k→16k→32k)
+    Returns {} on total failure instead of raising (pipeline continues with partial data).
+    """
     current_max = max_tokens
-    for attempt in range(3):
+
+    for attempt in range(3):  # Outer: JSON parse / API error retries
         try:
-            async with httpx.AsyncClient(timeout=180) as client:
-                resp = await client.post(
-                    "https://api.anthropic.com/v1/messages",
-                    headers={
-                        "x-api-key": get_anthropic_key(),
-                        "anthropic-version": "2023-06-01",
-                        "anthropic-beta": "prompt-caching-2024-07-31",
-                        "content-type": "application/json",
-                    },
-                    json={
-                        "model": "claude-opus-4-6",
-                        "max_tokens": current_max,
-                        "system": [
-                            {"type": "text", "text": system_prompt, "cache_control": {"type": "ephemeral"}},
-                        ],
-                        "messages": [
-                            {"role": "user", "content": user_message + "\n\nRespond with valid JSON only. No markdown, no code blocks, just raw JSON."},
-                        ],
-                    },
-                )
+            text = None
+
+            # Inner: truncation auto-scaling
+            for scale in range(4):
+                async with httpx.AsyncClient(timeout=180) as client:
+                    resp = await client.post(
+                        "https://api.anthropic.com/v1/messages",
+                        headers={
+                            "x-api-key": get_anthropic_key(),
+                            "anthropic-version": "2023-06-01",
+                            "anthropic-beta": "prompt-caching-2024-07-31",
+                            "content-type": "application/json",
+                        },
+                        json={
+                            "model": "claude-opus-4-6",
+                            "max_tokens": current_max,
+                            "system": [
+                                {"type": "text", "text": system_prompt, "cache_control": {"type": "ephemeral"}},
+                            ],
+                            "messages": [
+                                {"role": "user", "content": user_message + "\n\nRespond with valid JSON only. No markdown, no code blocks, just raw JSON."},
+                            ],
+                        },
+                    )
                 if resp.status_code != 200:
                     body = resp.text
                     logger.error(f"Anthropic API error {resp.status_code}: {body[:500]}")
                     raise Exception(f"Anthropic API {resp.status_code}: {body[:200]}")
+
                 data = resp.json()
                 stop_reason = data.get("stop_reason", "end_turn")
                 text = data["content"][0]["text"]
 
-                # Truncated response — double max_tokens and retry
-                if stop_reason == "max_tokens":
-                    next_max = current_max * 2
-                    if next_max > 32000:
-                        logger.error(f"Response truncated at {current_max} tokens and cap reached — parsing partial JSON")
-                    else:
-                        logger.warning(f"Response truncated (stop_reason=max_tokens at {current_max}), retrying with {next_max}")
-                        current_max = next_max
-                        continue
+                if stop_reason == "max_tokens" and current_max < 32000:
+                    current_max = min(current_max * 2, 32000)
+                    logger.warning(f"Response truncated (stop_reason=max_tokens), retrying with {current_max}")
+                    continue
+                break  # Got full response or hit 32k cap
 
-                text = text.replace("```json", "").replace("```", "").strip()
-                return json.loads(text)
+            # Parse JSON
+            text = text.replace("```json", "").replace("```", "").strip()
+            return json.loads(text)
+
         except json.JSONDecodeError:
-            if attempt < 2:
-                logger.warning(f"JSON parse error from Claude (attempt {attempt+1}/3, max_tokens={current_max}), retrying")
-                await asyncio.sleep(1)
-                continue
-            raise
+            logger.warning(f"JSON parse error (attempt {attempt+1}/3, max_tokens={current_max})")
+            await asyncio.sleep(1)
+            continue
         except Exception as e:
             if attempt < 2:
                 wait = (attempt + 1) * 3
                 logger.warning(f"Claude call error: {e}, retrying in {wait}s (attempt {attempt+1}/3)")
                 await asyncio.sleep(wait)
                 continue
-            raise
+            logger.error(f"call_claude failed after 3 attempts: {e}")
+
+    logger.error(f"call_claude returning empty dict after all retries (max_tokens={current_max})")
+    return {}
 
 
 async def call_claude_fast(system_prompt: str, user_message: str, max_tokens: int = 800) -> dict:
