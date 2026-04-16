@@ -21,6 +21,7 @@ import ArcherQuestionsSection from '../components/Dashboard/Sprint2/ArcherQuesti
 import LegalNewsSection from '../components/Dashboard/Sprint3/LegalNewsSection';
 import SimilarCasesSection from '../components/Dashboard/Sprint3/SimilarCasesSection';
 import AskArcherCompact from '../components/Dashboard/Sprint3/AskArcherCompact';
+import ExplainSimplyButton from '../components/Dashboard/ExplainSimplyButton';
 import { deriveProgressStep } from '../utils/dashboard/progressStep';
 import { deriveStrategy } from '../utils/dashboard/strategyFallback';
 import { deriveBattle } from '../utils/dashboard/battle';
@@ -221,6 +222,9 @@ export default function CaseDetailV7() {
           language={language}
           documentCount={documentCount}
         />
+
+        {/* Feature 3 — Explain Simply button */}
+        <ExplainSimplyButton caseId={caseId} caseDoc={caseDoc} language={language} />
 
         <AttorneyStatusBanner status={caseDoc?.attorney_status} language={language} />
 

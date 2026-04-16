@@ -5108,6 +5108,104 @@ async def get_question_count(current_user: User = Depends(get_current_user)):
     count = await db.chat_messages.count_documents({"conversation_id": {"$in": conv_ids}, "role": "user"})
     return {"count": count, "limit": 3 if current_user.plan == "free" else None}
 
+# ================== Explain Simply ==================
+
+EXPLAIN_SIMPLY_PROMPT = """Tu es Archer. Reformule l'analyse juridique suivante en langage ULTRA SIMPLE comme si tu parlais a quelqu'un de 12 ans qui n'a jamais rien lu de juridique.
+
+Regles strictes :
+1. Pas de jargon juridique. Si tu dois citer un article, dis "la loi dit que..."
+2. Phrases courtes (max 15 mots).
+3. Utilise "vous" et adresse-toi directement au client.
+4. Commence chaque point cle par un emoji approprie (🏠 pour logement, 💼 pour travail, 🚗 pour routier, 🛡️ pour assurance, 👨‍👩‍👧 pour famille, 💳 pour consommation/dette, 📄 pour contrat).
+5. Termine par une conclusion concrete : ce que le client doit/peut faire maintenant.
+6. Ton : empathique, rassurant, mais factuel.
+7. Maximum 200 mots.
+8. Reponds UNIQUEMENT avec la version simplifiee, sans preambule.
+
+{language_instruction}"""
+
+
+class ExplainSimplyInput(BaseModel):
+    regenerate: bool = False
+
+
+@api_router.post("/cases/{case_id}/explain-simply")
+async def explain_simply(
+    case_id: str,
+    body: ExplainSimplyInput = ExplainSimplyInput(),
+    current_user: User = Depends(get_current_user),
+):
+    """Generate a plain-language explanation of the case analysis.
+    Cached in case.simple_explanation. Use regenerate=true to overwrite cache."""
+    case_doc = await db.cases.find_one(
+        {"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    # Return cached version if available and not regenerating
+    if not body.regenerate and case_doc.get("simple_explanation"):
+        return {"explanation": case_doc["simple_explanation"], "cached": True}
+
+    # Build context from case data
+    summary = case_doc.get("ai_summary") or ""
+    findings_text = ""
+    for f in (case_doc.get("ai_findings") or [])[:6]:
+        findings_text += f"- {f.get('text', '')}: {f.get('impact_description', '')}\n"
+    case_type = case_doc.get("type", "other")
+    risk_score = case_doc.get("risk_score", 0)
+
+    user_language = getattr(current_user, "language", "fr") or "fr"
+    if user_language.startswith("nl"):
+        lang_instruction = "Reponds entierement en neerlandais."
+    elif user_language.startswith("de"):
+        lang_instruction = "Reponds entierement en allemand."
+    elif user_language.startswith("en"):
+        lang_instruction = "Respond entirely in English."
+    else:
+        lang_instruction = "Reponds entierement en francais."
+
+    system = EXPLAIN_SIMPLY_PROMPT.format(language_instruction=lang_instruction)
+    user_msg = f"""Analyse a reformuler :
+{summary}
+
+Constatations :
+{findings_text}
+
+Type de cas : {case_type}
+Score de risque : {risk_score}/100
+Titre du dossier : {case_doc.get('title', '')}"""
+
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            resp = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": "claude-opus-4-6",
+                    "max_tokens": 600,
+                    "system": system,
+                    "messages": [{"role": "user", "content": user_msg}],
+                },
+            )
+            resp.raise_for_status()
+            explanation = resp.json()["content"][0]["text"]
+    except Exception as e:
+        logger.error(f"Explain simply error: {e}")
+        raise HTTPException(status_code=502, detail="Failed to generate explanation")
+
+    # Cache in DB
+    await db.cases.update_one(
+        {"case_id": case_id},
+        {"$set": {"simple_explanation": explanation, "updated_at": datetime.now(timezone.utc).isoformat()}},
+    )
+
+    return {"explanation": explanation, "cached": False}
+
+
 # ================== Similar Cases ==================
 
 @api_router.get("/cases/{case_id}/similar")
