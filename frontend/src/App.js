@@ -59,6 +59,8 @@ import InternalAdminLayout from './components/Internal/AdminLayout';
 import InternalAdminDashboard from './pages/Internal/AdminDashboard';
 import InternalAdminAttorneys from './pages/Internal/AdminAttorneys';
 import InternalAdminCustomers from './pages/Internal/AdminCustomers';
+import InternalAdminCases from './pages/Internal/AdminCases';
+import InternalAdminOperations from './pages/Internal/AdminOperations';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -130,6 +132,8 @@ const AppRouter = () => {
         <Route index element={<InternalAdminDashboard />} />
         <Route path="attorneys" element={<InternalAdminAttorneys />} />
         <Route path="customers" element={<InternalAdminCustomers />} />
+        <Route path="cases" element={<InternalAdminCases />} />
+        <Route path="operations" element={<InternalAdminOperations />} />
       </Route>
 
       <Route path="/documents/:documentId" element={<ProtectedRoute><DocumentViewer /></ProtectedRoute>} />

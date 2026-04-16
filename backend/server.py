@@ -5287,6 +5287,187 @@ async def admin_customer_detail(customer_id: str, admin: dict = Depends(admin_re
     }
 
 
+# ================== Admin Cases ==================
+
+@api_router.get("/admin/cases")
+async def admin_list_cases(
+    search: str = "", case_type: str = "", status: str = "",
+    country: str = "", page: int = 1, per_page: int = 50,
+    admin: dict = Depends(admin_required),
+):
+    query = {}
+    if search:
+        query["$or"] = [
+            {"case_id": {"$regex": search, "$options": "i"}},
+            {"title": {"$regex": search, "$options": "i"}},
+        ]
+    if case_type:
+        query["type"] = case_type
+    if status:
+        query["status"] = status
+    if country:
+        query["country"] = country
+
+    total = await db.cases.count_documents(query)
+    skip = (page - 1) * per_page
+    cases = await db.cases.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(per_page).to_list(per_page)
+
+    # Enrich with customer email + attorney name
+    for c in cases:
+        user = await db.users.find_one({"user_id": c.get("user_id")}, {"email": 1, "name": 1, "_id": 0})
+        c["customer_email"] = user.get("email") if user else None
+        c["customer_name"] = user.get("name") if user else None
+        # Find active assignment
+        assignment = await db.case_assignments.find_one(
+            {"case_id": c["case_id"], "status": {"$in": ["pending", "accepted"]}},
+            {"attorney_id": 1, "_id": 0})
+        if assignment:
+            atty = await db.attorneys.find_one({"id": assignment["attorney_id"]}, {"first_name": 1, "last_name": 1, "_id": 0})
+            c["attorney_name"] = f"{atty.get('first_name', '')} {atty.get('last_name', '')}".strip() if atty else None
+        else:
+            c["attorney_name"] = None
+
+    # Status counts for header
+    status_counts = {
+        "total": total,
+        "active": await db.cases.count_documents({"status": "active"}),
+        "pending": await db.cases.count_documents({"attorney_status": "waiting_assignment"}),
+        "completed": await db.cases.count_documents({"status": {"$in": ["resolved", "completed"]}}),
+    }
+
+    return {
+        "cases": cases, "total": total, "page": page,
+        "total_pages": max(1, (total + per_page - 1) // per_page),
+        "status_counts": status_counts,
+    }
+
+
+@api_router.get("/admin/cases/{case_id}")
+async def admin_case_detail(case_id: str, admin: dict = Depends(admin_required)):
+    case_doc = await db.cases.find_one({"case_id": case_id}, {"_id": 0})
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+    user = await db.users.find_one({"user_id": case_doc.get("user_id")}, {"_id": 0, "password_hash": 0})
+    assignments = await db.case_assignments.find(
+        {"case_id": case_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return {"case": case_doc, "customer": user, "assignments": assignments}
+
+
+class ManualAssignInput(BaseModel):
+    attorney_id: str
+
+@api_router.post("/admin/cases/{case_id}/manual-assign")
+async def admin_manual_assign(case_id: str, body: ManualAssignInput, admin: dict = Depends(admin_required)):
+    from services.attorney_matching import assign_case_to_attorney
+    result = await assign_case_to_attorney(case_id, force_attorney_id=body.attorney_id, notify=True)
+    await log_admin_action(admin, "manual_assign", entity_type="case", entity_id=case_id,
+                           metadata={"attorney_id": body.attorney_id})
+    return {"status": "assigned", "assignment": result}
+
+
+class AdminRefundInput(BaseModel):
+    reason: str
+    amount_cents: Optional[int] = None
+
+@api_router.post("/admin/cases/{case_id}/refund")
+async def admin_refund_case(case_id: str, body: AdminRefundInput, admin: dict = Depends(admin_required)):
+    case_doc = await db.cases.find_one({"case_id": case_id}, {"_id": 0})
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+    pi_id = case_doc.get("payment_intent_id")
+    if not pi_id:
+        raise HTTPException(status_code=400, detail="No payment to refund")
+
+    import stripe as _stripe
+    _stripe.api_key = os.environ.get("STRIPE_API_KEY")
+    try:
+        params = {"payment_intent": pi_id}
+        if body.amount_cents:
+            params["amount"] = body.amount_cents
+        await asyncio.to_thread(_stripe.Refund.create, **params)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Stripe refund failed: {e}")
+
+    now = datetime.now(timezone.utc).isoformat()
+    await db.cases.update_one({"case_id": case_id}, {"$set": {
+        "payment_status": "refunded", "refunded_at": now, "refund_reason": body.reason, "updated_at": now,
+    }})
+    await log_admin_action(admin, "refund", entity_type="case", entity_id=case_id,
+                           metadata={"reason": body.reason, "amount_cents": body.amount_cents})
+    return {"status": "refunded"}
+
+
+# ================== Admin Operations ==================
+
+@api_router.get("/admin/payouts")
+async def admin_list_payouts(page: int = 1, per_page: int = 50, admin: dict = Depends(admin_required)):
+    if "payouts" not in await db.list_collection_names():
+        return {"payouts": [], "total": 0}
+    total = await db.payouts.count_documents({})
+    payouts = await db.payouts.find({}, {"_id": 0}).sort("created_at", -1).skip((page - 1) * per_page).limit(per_page).to_list(per_page)
+    for p in payouts:
+        atty = await db.attorneys.find_one({"id": p.get("attorney_id")}, {"first_name": 1, "last_name": 1, "email": 1, "_id": 0})
+        p["attorney_name"] = f"{atty.get('first_name', '')} {atty.get('last_name', '')}".strip() if atty else None
+        p["attorney_email"] = atty.get("email") if atty else None
+    return {"payouts": payouts, "total": total}
+
+
+@api_router.get("/admin/refunds")
+async def admin_list_refunds(page: int = 1, per_page: int = 50, admin: dict = Depends(admin_required)):
+    cases = await db.cases.find(
+        {"payment_status": "refunded"},
+        {"_id": 0, "case_id": 1, "user_id": 1, "amount_paid_cents": 1, "refunded_at": 1, "refund_reason": 1},
+    ).sort("refunded_at", -1).skip((page - 1) * per_page).limit(per_page).to_list(per_page)
+    for c in cases:
+        user = await db.users.find_one({"user_id": c.get("user_id")}, {"email": 1, "_id": 0})
+        c["customer_email"] = user.get("email") if user else None
+    total = await db.cases.count_documents({"payment_status": "refunded"})
+    return {"refunds": cases, "total": total}
+
+
+@api_router.get("/admin/ai-usage")
+async def admin_ai_usage(period: str = "30d", admin: dict = Depends(admin_required)):
+    """AI usage stats. Returns aggregated data from ai_usage_logs if available."""
+    if "ai_usage_logs" not in await db.list_collection_names():
+        return {"models": [], "total_requests": 0, "total_tokens": 0, "total_cost_usd": 0, "cost_per_case": 0}
+    now = datetime.now(timezone.utc)
+    days = 7 if period == "7d" else 365 if period == "ytd" else 30
+    since = (now - timedelta(days=days)).isoformat()
+    pipeline = [
+        {"$match": {"created_at": {"$gte": since}}},
+        {"$group": {
+            "_id": "$model",
+            "requests": {"$sum": 1},
+            "input_tokens": {"$sum": "$input_tokens"},
+            "output_tokens": {"$sum": "$output_tokens"},
+        }},
+    ]
+    results = await db.ai_usage_logs.aggregate(pipeline).to_list(20)
+    models = []
+    total_cost = 0
+    for r in results:
+        model = r["_id"] or "unknown"
+        inp = r.get("input_tokens", 0)
+        outp = r.get("output_tokens", 0)
+        if "opus" in model:
+            cost = (inp * 5 + outp * 25) / 1_000_000
+        elif "haiku" in model:
+            cost = (inp * 0.25 + outp * 1.25) / 1_000_000
+        else:
+            cost = (inp * 3 + outp * 15) / 1_000_000
+        total_cost += cost
+        models.append({"model": model, "requests": r["requests"], "tokens": inp + outp, "cost_usd": round(cost, 2)})
+    total_requests = sum(m["requests"] for m in models)
+    total_cases = await db.cases.count_documents({"created_at": {"$gte": since}}) or 1
+    return {
+        "models": models,
+        "total_requests": total_requests,
+        "total_tokens": sum(m["tokens"] for m in models),
+        "total_cost_usd": round(total_cost, 2),
+        "cost_per_case": round(total_cost / total_cases, 2),
+    }
+
+
 # ================== Admin Notifications Count ==================
 
 @api_router.get("/admin/notifications/unread")
