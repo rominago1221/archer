@@ -719,7 +719,7 @@ async def _validate_user_arguments(user_arguments: dict, facts_str: str, analysi
         ua_retry = await call_claude(
             PASS4A_SYSTEM + lang_instruction,
             PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
-            max_tokens=1500
+            max_tokens=4000
         )
         if isinstance(ua_retry, dict) and len(ua_retry.get("strongest_arguments", [])) >= 3:
             return ua_retry
@@ -747,7 +747,7 @@ async def _validate_belgian_user_arguments(user_arguments: dict, facts_str: str,
         ua_retry = await call_claude(
             BE_PASS4A_SYSTEM + lang_instruction,
             BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
-            max_tokens=1500
+            max_tokens=4000
         )
         if isinstance(ua_retry, dict):
             if "strong_arguments" in ua_retry and "strongest_arguments" not in ua_retry:
