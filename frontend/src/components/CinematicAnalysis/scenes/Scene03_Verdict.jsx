@@ -62,14 +62,15 @@ export default function Scene03_Verdict({ data, language }) {
   const t = useCinematicT(language);
   const scoreData = data?.score_ready;
 
-  const score = scoreData?.score || {};
-  const total = score.total || 0;
-  const level = scoreData?.level || (total > 85 ? 'critical' : total > 70 ? 'high' : total > 40 ? 'moderate' : 'low');
-  const tagline = scoreData?.tagline || '';
-  const financial = score.financial || 0;
-  const urgency = score.urgency || 0;
-  const legalStrength = score.legal_strength || 0;
-  const complexity = score.complexity || 0;
+  const rawScore = scoreData?.score;
+  const score = (rawScore && typeof rawScore === 'object') ? rawScore : {};
+  const total = Number(score.total) || 0;
+  const level = scoreData?.level || score.level || (total > 85 ? 'critical' : total > 70 ? 'high' : total > 40 ? 'moderate' : 'low');
+  const tagline = scoreData?.tagline || score.tagline || '';
+  const financial = Number(score.financial) || 0;
+  const urgency = Number(score.urgency) || 0;
+  const legalStrength = Number(score.legal_strength) || 0;
+  const complexity = Number(score.complexity) || 0;
 
   // Timings (relative to scene start)
   const [phase, setPhase] = useState(0);

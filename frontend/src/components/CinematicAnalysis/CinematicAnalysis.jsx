@@ -25,7 +25,7 @@ export default function CinematicAnalysis() {
   const { user } = useAuth();
   const language = user?.language || (user?.jurisdiction === 'BE' ? 'fr' : 'en');
   const jurisdiction = user?.jurisdiction || 'US';
-  const { currentScene: streamScene, data, isComplete, error } = useAnalysisStream(caseId);
+  const { currentScene: streamScene, data, isComplete, error, deepAnalysisMsg } = useAnalysisStream(caseId);
 
   // Bug 6 — once the stream crosses into manual-nav territory, freeze the
   // scene index locally and let the user drive Prev/Next.
@@ -144,6 +144,20 @@ export default function CinematicAnalysis() {
           📎 {language?.startsWith('fr')
             ? `Analyse de ${documentCount} documents…`
             : `Analysing ${documentCount} documents…`}
+        </div>
+      )}
+
+      {/* Deep analysis message after 120s */}
+      {deepAnalysisMsg && !isComplete && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 100, padding: '10px 20px',
+          background: 'rgba(26,86,219,0.95)', backdropFilter: 'blur(8px)',
+          borderRadius: 12, border: '1px solid #1a56db',
+          fontSize: 12, fontWeight: 600, color: '#fff',
+          animation: 'fadeIn 0.5s ease',
+        }}>
+          {deepAnalysisMsg}
         </div>
       )}
 

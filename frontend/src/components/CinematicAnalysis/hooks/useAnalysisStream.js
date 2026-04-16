@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 const STAGE_TO_SCENE = {
   started: 0, facts_extracted: 1, jurisprudence_loaded: 2, score_ready: 3,
@@ -62,7 +62,7 @@ export function useAnalysisStream(caseId) {
     emittedRef.current = new Set();
     sceneStartRef.current = Date.now();
     const startedAt = Date.now();
-    const HARD_TIMEOUT_MS = 180000;
+    const HARD_TIMEOUT_MS = 360000; // 6 min — Opus 4.6 analysis can take 3-5 min
 
     const API = process.env.REACT_APP_BACKEND_URL || '';
 
@@ -236,5 +236,17 @@ export function useAnalysisStream(caseId) {
     };
   }, [caseId]);
 
-  return { currentScene, data, isComplete, error };
+  // Deep analysis message after 120s
+  const [deepAnalysisMsg, setDeepAnalysisMsg] = useState(null);
+  useEffect(() => {
+    if (isComplete || error) return;
+    const timer = setTimeout(() => {
+      if (!isComplete && !error) {
+        setDeepAnalysisMsg('Deep analysis in progress \u2014 Opus is being thorough...');
+      }
+    }, 120000);
+    return () => clearTimeout(timer);
+  }, [isComplete, error]);
+
+  return { currentScene, data, isComplete, error, deepAnalysisMsg };
 }
