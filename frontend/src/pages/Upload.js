@@ -24,7 +24,12 @@ const Upload = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [userContext, setUserContext] = useState('');
+  const [contextTouched, setContextTouched] = useState(false);
   const [analysisMode, setAnalysisMode] = useState('standard');
+  const USER_CONTEXT_MIN = 20;
+  const USER_CONTEXT_MAX = 500;
+  const userContextLen = userContext.trim().length;
+  const isContextValid = userContextLen >= USER_CONTEXT_MIN;
   // Bug 2 — multi-document upload state. `uploadMode` toggles between the
   // legacy single-file flow and the new multi-file path (binary tier-gated).
   const [uploadMode, setUploadMode] = useState('single'); // 'single' | 'multi'
@@ -39,12 +44,19 @@ const Upload = () => {
 
   const submitMulti = async () => {
     if (!multiFiles.length) return;
+    if (!isContextValid) {
+      setContextTouched(true);
+      setError(isFr
+        ? `Merci de préciser ce que vous voulez obtenir (minimum ${USER_CONTEXT_MIN} caractères).`
+        : `Please tell Archer what you want to achieve (minimum ${USER_CONTEXT_MIN} characters).`);
+      return;
+    }
     setMultiSubmitting(true);
     setError(null);
     try {
       const fd = new FormData();
       multiFiles.forEach((f) => fd.append('files', f));
-      if (userContext.trim()) fd.append('user_context', userContext.trim());
+      fd.append('user_context', userContext.trim());
       const resp = await axios.post(`${API}/cases/upload-multiple`, fd, {
         withCredentials: true,
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -133,6 +145,13 @@ const Upload = () => {
 
   const handleUpload = async () => {
     if (!file) return;
+    if (!isContextValid) {
+      setContextTouched(true);
+      setError(isFr
+        ? `Merci de préciser ce que vous voulez obtenir (minimum ${USER_CONTEXT_MIN} caractères).`
+        : `Please tell Archer what you want to achieve (minimum ${USER_CONTEXT_MIN} characters).`);
+      return;
+    }
     setUploading(true);
     setError(null);
     setResult(null);
@@ -144,7 +163,7 @@ const Upload = () => {
       const formData = new FormData();
       formData.append('file', file);
       if (selectedCaseId && analysisMode === 'standard') formData.append('case_id', selectedCaseId);
-      if (userContext.trim()) formData.append('user_context', userContext.trim());
+      formData.append('user_context', userContext.trim());
       formData.append('analysis_mode', analysisMode);
       formData.append('streaming', 'true');
 
@@ -184,6 +203,7 @@ const Upload = () => {
     setError(null);
     setUploadStage('');
     setUserContext('');
+    setContextTouched(false);
     setCopiedEmail(false);
     setExpandedSections({});
   };
@@ -330,8 +350,9 @@ const Upload = () => {
               <button
                 type="button"
                 onClick={submitMulti}
-                disabled={multiSubmitting}
-                className="w-full mt-4 bg-[#1a56db] text-white font-medium py-3 rounded-xl hover:opacity-90 disabled:opacity-50"
+                disabled={multiSubmitting || !isContextValid}
+                title={!isContextValid ? (isFr ? `Renseignez votre objectif (min ${USER_CONTEXT_MIN} caractères)` : `Add your objective (min ${USER_CONTEXT_MIN} characters)`) : ''}
+                className="w-full mt-4 bg-[#1a56db] text-white font-medium py-3 rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {multiSubmitting
                   ? (isFr ? 'Envoi…' : 'Uploading…')
@@ -416,7 +437,9 @@ const Upload = () => {
                   <div className="text-xs text-[#6b7280] mb-3">{(file.size / 1024).toFixed(1)} KB</div>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleUpload(); }}
-                    className={`btn-pill px-6 ${isContractGuard ? 'bg-[#d97706] hover:bg-[#b45309] text-white' : 'btn-blue'}`}
+                    disabled={!isContextValid}
+                    title={!isContextValid ? (isFr ? `Renseignez votre objectif (min ${USER_CONTEXT_MIN} caractères)` : `Add your objective (min ${USER_CONTEXT_MIN} characters)`) : ''}
+                    className={`btn-pill px-6 disabled:opacity-50 disabled:cursor-not-allowed ${isContractGuard ? 'bg-[#d97706] hover:bg-[#b45309] text-white' : 'btn-blue'}`}
                     data-testid="analyze-btn"
                   >
                     {isContractGuard ? 'Review contract' : 'Analyze document'}
@@ -445,30 +468,58 @@ const Upload = () => {
               ))}
             </div>
 
-            {/* User context textarea */}
+            {/* User context textarea — REQUIRED (min 20 chars) to force the client to state their objective */}
             <div className="card p-4 mb-4" data-testid="user-context-section">
               <div className="text-sm font-medium text-[#111827] mb-1">
-                {isContractGuard ? 'Tell Archer about your negotiation goals' : 'Tell Archer about your situation'}{' '}
-                <span className="text-[#9ca3af] font-normal">(optional)</span>
-              </div>
-              <div className="text-xs text-[#6b7280] mb-3">
                 {isContractGuard
-                  ? 'What matters most to you? What are your deal-breakers?'
-                  : 'Your context helps Archer analyze more accurately.'}
+                  ? (isFr ? 'Que voulez-vous négocier ?' : 'What do you want to negotiate?')
+                  : (isFr ? 'Que voulez-vous obtenir ?' : 'What do you want to achieve?')}
+                {' '}
+                <span className="text-[#dc2626] font-bold">*</span>
+              </div>
+              <div className="text-xs text-[#6b7280] mb-3 whitespace-pre-line">
+                {isContractGuard
+                  ? (isFr
+                      ? 'Soyez précis sur vos objectifs de négociation — ce qui compte, vos deal-breakers.'
+                      : 'Be specific about your negotiation goals — what matters, your deal-breakers.')
+                  : (isFr
+                      ? 'Soyez précis. Exemples :\n– Faire résilier mon bail sans payer de frais\n– Obtenir une indemnité de licenciement\n– Contester ma contravention\n– Récupérer mon dépôt de garantie'
+                      : 'Be specific. Examples:\n– Terminate my lease without penalty fees\n– Obtain a severance payment\n– Contest my traffic ticket\n– Recover my security deposit')}
               </div>
               <textarea
                 value={userContext}
-                onChange={(e) => { if (e.target.value.length <= 500) setUserContext(e.target.value); }}
+                onChange={(e) => {
+                  if (e.target.value.length <= USER_CONTEXT_MAX) setUserContext(e.target.value);
+                }}
+                onBlur={() => setContextTouched(true)}
                 placeholder={isContractGuard
-                  ? "Example: This is a job offer from a tech startup. I want to keep my IP rights for side projects. The salary is good but I'm worried about the non-compete clause..."
-                  : "Example: I have been renting this apartment for 2 years, always paid on time, I have receipts. The landlord is trying to evict me but I think it's because I complained about repairs..."}
-                className="form-input min-h-[100px] resize-none text-sm"
-                maxLength={500}
+                  ? (isFr
+                      ? 'Ex. : Je veux garder mes droits IP sur mes projets perso et supprimer la clause de non-concurrence…'
+                      : 'Ex: I want to keep IP rights for side projects and remove the non-compete clause…')
+                  : (isFr
+                      ? 'Ex. : Faire annuler la mise en demeure et obtenir un plan de paiement sur 6 mois…'
+                      : 'Ex: Cancel the demand letter and obtain a 6-month payment plan…')}
+                className={`form-input min-h-[110px] resize-none text-sm ${
+                  contextTouched && !isContextValid ? 'border-[#dc2626]' : ''
+                }`}
+                maxLength={USER_CONTEXT_MAX}
+                required
+                aria-required="true"
                 data-testid="user-context-input"
               />
-              <div className="flex justify-end mt-1.5">
+              <div className="flex justify-between mt-1.5 items-center">
+                <span
+                  className={`text-xs ${isContextValid ? 'text-[#059669]' : 'text-[#dc2626]'}`}
+                  data-testid="min-char-counter"
+                >
+                  {isContextValid
+                    ? (isFr ? '✓ Objectif bien défini' : '✓ Objective set')
+                    : (isFr
+                        ? `${userContextLen}/${USER_CONTEXT_MIN} caractères minimum`
+                        : `${userContextLen}/${USER_CONTEXT_MIN} characters minimum`)}
+                </span>
                 <span className={`text-xs ${userContext.length >= 450 ? 'text-[#d97706]' : 'text-[#9ca3af]'}`} data-testid="char-counter">
-                  {userContext.length}/500
+                  {userContext.length}/{USER_CONTEXT_MAX}
                 </span>
               </div>
             </div>

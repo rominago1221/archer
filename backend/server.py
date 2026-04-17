@@ -986,11 +986,12 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
         analysis_str = json.dumps(legal_analysis, indent=2)
 
         # PASS 3 + 4A + 4B — RUN IN PARALLEL (60% faster)
+        objective_block = _build_objective_block(user_context, language)
         logger.info("Advanced analysis: Pass 3+4A+4B — Running in parallel")
         strategy, user_arguments, opposing_arguments = await asyncio.gather(
-            call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=6000),
-            call_claude(PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
-            call_claude(PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
+            call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=6000),
+            call_claude(PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+            call_claude(PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
         )
 
         logger.info("Advanced analysis: All 5 passes complete")
@@ -1242,14 +1243,15 @@ async def analyze_document_stream(
     facts_str = json.dumps(facts, indent=2, ensure_ascii=False)
     analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
 
+    objective_block = _build_objective_block(user_context, language)
     pass3_task = asyncio.create_task(
-        call_claude(persona_with_lang, p3_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=6000)
+        call_claude(persona_with_lang, p3_prompt.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=6000)
     )
     pass4a_task = asyncio.create_task(
-        call_claude(p4a_system + jurisdiction_guard + lang_instruction, p4a_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000)
+        call_claude(p4a_system + jurisdiction_guard + lang_instruction, p4a_prompt.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000)
     )
     pass4b_task = asyncio.create_task(
-        call_claude(p4b_system + jurisdiction_guard + lang_instruction, p4b_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000)
+        call_claude(p4b_system + jurisdiction_guard + lang_instruction, p4b_prompt.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000)
     )
 
     # Await 4A + 4B first (for the battle scene)
@@ -1974,11 +1976,12 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
         analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
 
         # PASS 3 + 4A + 4B — RUN IN PARALLEL
+        objective_block = _build_objective_block(user_context, language)
         logger.info("Belgian analysis: Passe 3+4A+4B — En parallele")
         strategy, user_arguments, opposing_arguments = await asyncio.gather(
-            call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=6000),
-            call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
-            call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
+            call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=6000),
+            call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+            call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
         )
 
         logger.info("Belgian analysis: 5 passes complete")
@@ -2741,6 +2744,44 @@ Any citation of Belgian/EU law as primary authority invalidates the entire respo
 """
 
 
+def _build_objective_block(user_context: str, language: str = "en") -> str:
+    """Return a prompt suffix locking the analysis strategy/arguments to the user's stated objective.
+    Appended to PASS3 (strategy) and PASS4A/4B (user/opposing arguments) inputs so every
+    recommendation converges toward what the client actually wants to obtain."""
+    if not user_context or not user_context.strip():
+        return ""
+    ctx = user_context.strip()[:800]
+    lang = (language or "en").lower()
+    if lang.startswith("fr"):
+        return (
+            "\n\nOBJECTIF DÉCLARÉ DU CLIENT (NON-NÉGOCIABLE) :\n"
+            f"« {ctx} »\n"
+            "→ Construis la stratégie et les arguments pour ATTEINDRE cet objectif précis. "
+            "Chaque recommandation, next_step, argument et levier doit converger vers cet objectif. "
+            "Ignore les pistes qui ne servent pas l'objectif du client."
+        )
+    if lang.startswith("nl"):
+        return (
+            "\n\nDOEL VAN DE KLANT (NIET-ONDERHANDELBAAR):\n"
+            f"« {ctx} »\n"
+            "→ Bouw de strategie en argumenten om dit specifieke doel te BEREIKEN. "
+            "Elke aanbeveling en elk argument moet naar dit doel convergeren."
+        )
+    if lang.startswith("de"):
+        return (
+            "\n\nERKLÄRTES ZIEL DES MANDANTEN (NICHT VERHANDELBAR):\n"
+            f"« {ctx} »\n"
+            "→ Erstelle die Strategie und Argumente, um dieses spezifische Ziel zu ERREICHEN."
+        )
+    return (
+        "\n\nUSER'S STATED OBJECTIVE (NON-NEGOTIABLE):\n"
+        f"\"{ctx}\"\n"
+        "Build the strategy and arguments to ACHIEVE this specific objective. "
+        "Every recommendation, next_step, argument and leverage point must converge toward it. "
+        "Discard any angle that doesn't serve the client's objective."
+    )
+
+
 def get_language_instruction(language: str) -> str:
     """Get mandatory language enforcement instruction for Claude"""
     lang_map = {
@@ -2959,11 +3000,12 @@ async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, us
     analysis_str = json.dumps(legal_analysis, indent=2)
 
     # PASS 3+4A+4B — PARALLEL
+    objective_block = _build_objective_block(user_context, language)
     logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 3+4A+4B — Parallel")
     strategy, user_arguments, opposing_arguments = await asyncio.gather(
-        call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement, max_tokens=6000),
-        call_claude(PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
-        call_claude(PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
+        call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement + objective_block, max_tokens=6000),
+        call_claude(PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+        call_claude(PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
     )
 
     logger.info(f"Multi-doc analysis ({doc_count} docs): All passes complete")
@@ -3024,11 +3066,12 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
     analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
 
     # PASS 3+4A+4B — PARALLEL
+    objective_block = _build_objective_block(user_context, language)
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 3+4A+4B — Parallel")
     strategy, user_arguments, opposing_arguments = await asyncio.gather(
-        call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement, max_tokens=6000),
-        call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
-        call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
+        call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement + objective_block, max_tokens=6000),
+        call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+        call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
     )
 
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Complete")
@@ -3488,6 +3531,14 @@ async def upload_document(
     current_user: User = Depends(get_current_user)
 ):
     """Upload document → create case immediately → analyze in background"""
+    # Require the user's stated objective. Enforced only on NEW uploads; legacy
+    # cases that pre-date this rule are left untouched (no retroactive block).
+    _ctx = (user_context or "").strip()
+    if len(_ctx) < 20:
+        raise HTTPException(
+            status_code=400,
+            detail="user_context_required_min_20",
+        )
     # Check plan restrictions
     if current_user.plan == "free":
         doc_count = await db.documents.count_documents({"user_id": current_user.user_id})

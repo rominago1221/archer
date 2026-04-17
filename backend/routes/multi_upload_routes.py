@@ -91,6 +91,10 @@ async def upload_multiple(
     """Upload N documents into a single new case. Returns `case_id` so the
     frontend calls `POST /analyze/trigger?case_id=...` to kick off the
     cinematic. The cinematic is the only progress UI."""
+    # Require the user's stated objective (min 20 chars). Legacy cases untouched.
+    _ctx = (user_context or "").strip()
+    if len(_ctx) < 20:
+        raise HTTPException(status_code=400, detail="user_context_required_min_20")
     tier = _tier_for(current_user)
     tl = LIMITS[tier]
     _validate_files(files, tier, tl)
