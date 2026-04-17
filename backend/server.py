@@ -4697,6 +4697,11 @@ async def dismiss_jurisdiction_mismatch(case_id: str, current_user: User = Depen
 REFINEMENT_MAX_PER_CASE = 10
 REFINEMENT_FREE_QUOTA = 2
 REFINEMENT_MAX_INPUT_CHARS = 4000
+# After this long a stuck lock is considered stale and can be auto-stolen.
+# Full reanalysis typically runs 30-90s + self-critique + adversarial; 10 min
+# leaves generous slack for slow Claude responses without letting crashed runs
+# linger forever.
+REFINEMENT_LOCK_TIMEOUT_MINUTES = 10
 
 # Analysis fields that represent "the analysis" and get snapshotted/restored per version.
 _ANALYSIS_SNAPSHOT_FIELDS = (
@@ -4966,206 +4971,262 @@ async def refine_case(case_id: str, body: RefineRequest,
     )
     document_text = (doc or {}).get("extracted_text") or ""
 
-    # Acquire the lock.
-    now = datetime.now(timezone.utc).isoformat()
+    # Acquire the lock. Staleness override: if a previous run left the lock stuck
+    # for more than REFINEMENT_LOCK_TIMEOUT_MINUTES, we steal it — this prevents
+    # eternal locks when the process dies hard between acquire and release.
+    now_dt = datetime.now(timezone.utc)
+    now = now_dt.isoformat()
+    stale_cutoff = (now_dt - timedelta(minutes=REFINEMENT_LOCK_TIMEOUT_MINUTES)).isoformat()
     lock_res = await db.cases.update_one(
-        {"case_id": case_id, "user_id": current_user.user_id, "refinement_in_progress": {"$ne": True}},
-        {"$set": {"refinement_in_progress": True, "updated_at": now}},
+        {
+            "case_id": case_id,
+            "user_id": current_user.user_id,
+            "$or": [
+                {"refinement_in_progress": {"$ne": True}},
+                # Stale lock (missing timestamp counts as stale too — legacy rows).
+                {"refinement_started_at": {"$lt": stale_cutoff}},
+                {"refinement_started_at": None},
+                {"refinement_started_at": {"$exists": False}},
+            ],
+        },
+        {"$set": {
+            "refinement_in_progress": True,
+            "refinement_started_at": now,
+            "updated_at": now,
+        }},
     )
     if lock_res.modified_count == 0:
+        # Read the current lock age so we can report it in the error.
+        current = await db.cases.find_one({"case_id": case_id}, {"_id": 0, "refinement_started_at": 1})
+        started_at = (current or {}).get("refinement_started_at")
+        logger.warning(
+            f"refine[{case_id}] LOCK BUSY — existing lock started_at={started_at} (cutoff={stale_cutoff})"
+        )
         raise HTTPException(status_code=409, detail="refinement_in_progress")
 
-    # Ensure v1 snapshot exists (backfill at first-ever refinement).
-    try:
-        await _ensure_v1_snapshot(case_doc)
-    except Exception as e:
-        logger.error(f"_ensure_v1_snapshot failed for {case_id}: {e}")
-
-    # Fetch prior refinements (for context + strategy decision).
-    prior_refinements_cursor = db.case_refinements.find(
-        {"case_id": case_id, "status": "completed"}, {"_id": 0, "user_input": 1}
-    ).sort("created_at", 1)
-    prior_docs = await prior_refinements_cursor.to_list(REFINEMENT_MAX_PER_CASE)
-    prior_inputs = [p.get("user_input", "") for p in prior_docs]
-
-    language = _case_language(case_doc, current_user)
-    jurisdiction = case_doc.get("jurisdiction") or case_doc.get("country") or "US"
-    region = case_doc.get("region") or ""
-
-    # Create the refinement record (pending).
-    refinement_id = f"ref_{uuid.uuid4().hex[:12]}"
-    current_version = int(case_doc.get("current_analysis_version") or 1)
-    excerpt = user_input[:40]
-    await db.case_refinements.insert_one({
-        "refinement_id": refinement_id,
-        "case_id": case_id,
-        "user_id": current_user.user_id,
-        "user_input": user_input,
-        "strategy": None,
-        "status": "pending",
-        "version_before": current_version,
-        "version_after": None,
-        "created_at": now,
-        "completed_at": None,
-    })
-
-    async def _release_lock_on_error():
-        await db.cases.update_one(
-            {"case_id": case_id},
-            {"$set": {"refinement_in_progress": False, "updated_at": datetime.now(timezone.utc).isoformat()}},
-        )
-
-    # Strategy decision.
-    try:
-        decision = await decide_refinement_strategy(case_doc, user_input, prior_inputs, language)
-    except Exception as e:
-        logger.error(f"decide_refinement_strategy crashed for {case_id}: {e}")
-        await _release_lock_on_error()
-        await db.case_refinements.update_one(
-            {"refinement_id": refinement_id},
-            {"$set": {"status": "error", "error": "strategy_failed",
-                      "completed_at": datetime.now(timezone.utc).isoformat()}},
-        )
-        raise HTTPException(status_code=500, detail="Refinement classification failed")
-
-    strategy = decision["strategy"]
+    prior_started_at = case_doc.get("refinement_started_at")
+    was_stale_override = (
+        case_doc.get("refinement_in_progress")
+        and prior_started_at
+        and prior_started_at < stale_cutoff
+    )
     logger.info(
-        f"refine[{case_id}] strategy={strategy} refinement_id={refinement_id} "
-        f"plan={plan} refinement_count={refinement_count} has_document_text={bool(document_text)}"
+        f"refine[{case_id}] LOCK ACQUIRED"
+        + (f" (STALE OVERRIDE — prior lock started_at={prior_started_at})" if was_stale_override else "")
     )
 
-    # ── OFF-TOPIC: nothing to version, release lock, return gentle message.
-    if strategy == "off_topic":
-        off_topic_msg = decision.get("off_topic_message") or _off_topic_fallback_message(language)
-        completed = datetime.now(timezone.utc).isoformat()
-        await db.case_refinements.update_one(
-            {"refinement_id": refinement_id},
-            {"$set": {"strategy": "off_topic", "status": "completed",
-                      "off_topic_message": off_topic_msg, "completed_at": completed}},
-        )
-        await db.cases.update_one(
-            {"case_id": case_id},
-            {"$set": {"refinement_in_progress": False, "updated_at": completed}},
-        )
-        return {
-            "refinement_id": refinement_id,
-            "strategy": "off_topic",
-            "message": off_topic_msg,
-            "version": current_version,
-        }
+    # Track lock state so the `finally` clause only releases if we didn't already.
+    lock_released = False
+    refinement_id = f"ref_{uuid.uuid4().hex[:12]}"
 
-    # ── INCREMENTAL or FULL_REANALYSIS: run the analysis, snapshot, update case.
+    async def _release_lock(reason: str):
+        """Force-release the refinement lock. Idempotent (safe to call twice)."""
+        nonlocal lock_released
+        if lock_released:
+            return
+        lock_released = True
+        try:
+            await db.cases.update_one(
+                {"case_id": case_id},
+                {"$set": {
+                    "refinement_in_progress": False,
+                    "refinement_started_at": None,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                }},
+            )
+            logger.info(f"refine[{case_id}] LOCK RELEASED (reason: {reason})")
+        except Exception:
+            logger.exception(f"refine[{case_id}] LOCK RELEASE FAILED (reason: {reason})")
+
     try:
-        if strategy == "incremental":
-            patch = await _run_incremental_refinement(case_doc, user_input, language, jurisdiction)
-            if not patch:
-                # Fallback to full reanalysis if the incremental call degenerated.
-                logger.warning(f"Incremental refinement returned empty for {case_id} — falling back to full_reanalysis")
-                strategy = "full_reanalysis"
-            else:
-                rs = patch.get("risk_score", {}) or {}
-                update_fields = {
-                    "risk_score": int(rs.get("total", case_doc.get("risk_score", 0)) or 0),
-                    "risk_financial": int(rs.get("financial", case_doc.get("risk_financial", 0)) or 0),
-                    "risk_urgency": int(rs.get("urgency", case_doc.get("risk_urgency", 0)) or 0),
-                    "risk_legal_strength": int(rs.get("legal_strength", case_doc.get("risk_legal_strength", 0)) or 0),
-                    "risk_complexity": int(rs.get("complexity", case_doc.get("risk_complexity", 0)) or 0),
-                    "ai_summary": patch.get("ai_summary") or case_doc.get("ai_summary"),
-                    "ai_findings": patch.get("ai_findings") or case_doc.get("ai_findings", []),
-                    "ai_next_steps": patch.get("ai_next_steps") or case_doc.get("ai_next_steps", []),
-                    "key_insight": patch.get("key_insight") or case_doc.get("key_insight"),
-                }
+        # Ensure v1 snapshot exists (backfill at first-ever refinement).
+        try:
+            await _ensure_v1_snapshot(case_doc)
+        except Exception as e:
+            logger.error(f"_ensure_v1_snapshot failed for {case_id}: {e}")
+
+        # Fetch prior refinements (for context + strategy decision).
+        prior_refinements_cursor = db.case_refinements.find(
+            {"case_id": case_id, "status": "completed"}, {"_id": 0, "user_input": 1}
+        ).sort("created_at", 1)
+        prior_docs = await prior_refinements_cursor.to_list(REFINEMENT_MAX_PER_CASE)
+        prior_inputs = [p.get("user_input", "") for p in prior_docs]
+
+        language = _case_language(case_doc, current_user)
+        jurisdiction = case_doc.get("jurisdiction") or case_doc.get("country") or "US"
+        region = case_doc.get("region") or ""
+
+        # Create the refinement record (pending).
+        current_version = int(case_doc.get("current_analysis_version") or 1)
+        excerpt = user_input[:40]
+        await db.case_refinements.insert_one({
+            "refinement_id": refinement_id,
+            "case_id": case_id,
+            "user_id": current_user.user_id,
+            "user_input": user_input,
+            "strategy": None,
+            "status": "pending",
+            "version_before": current_version,
+            "version_after": None,
+            "created_at": now,
+            "completed_at": None,
+        })
+
+        # Strategy decision.
+        try:
+            decision = await decide_refinement_strategy(case_doc, user_input, prior_inputs, language)
+        except Exception as e:
+            logger.error(f"decide_refinement_strategy crashed for {case_id}: {e}")
+            await db.case_refinements.update_one(
+                {"refinement_id": refinement_id},
+                {"$set": {"status": "error", "error": "strategy_failed",
+                          "completed_at": datetime.now(timezone.utc).isoformat()}},
+            )
+            raise HTTPException(status_code=500, detail="Refinement classification failed")
+
+        strategy = decision["strategy"]
+        logger.info(
+            f"refine[{case_id}] strategy={strategy} refinement_id={refinement_id} "
+            f"plan={plan} refinement_count={refinement_count} has_document_text={bool(document_text)}"
+        )
+
+        # ── OFF-TOPIC: nothing to version, release lock, return gentle message.
+        if strategy == "off_topic":
+            off_topic_msg = decision.get("off_topic_message") or _off_topic_fallback_message(language)
+            completed = datetime.now(timezone.utc).isoformat()
+            await db.case_refinements.update_one(
+                {"refinement_id": refinement_id},
+                {"$set": {"strategy": "off_topic", "status": "completed",
+                          "off_topic_message": off_topic_msg, "completed_at": completed}},
+            )
+            await _release_lock("off_topic")
+            return {
+                "refinement_id": refinement_id,
+                "strategy": "off_topic",
+                "message": off_topic_msg,
+                "version": current_version,
+            }
+
+        # ── INCREMENTAL or FULL_REANALYSIS: run the analysis, snapshot, update case.
+        try:
+            if strategy == "incremental":
+                patch = await _run_incremental_refinement(case_doc, user_input, language, jurisdiction)
+                if not patch:
+                    # Fallback to full reanalysis if the incremental call degenerated.
+                    logger.warning(f"Incremental refinement returned empty for {case_id} — falling back to full_reanalysis")
+                    strategy = "full_reanalysis"
+                else:
+                    rs = patch.get("risk_score", {}) or {}
+                    update_fields = {
+                        "risk_score": int(rs.get("total", case_doc.get("risk_score", 0)) or 0),
+                        "risk_financial": int(rs.get("financial", case_doc.get("risk_financial", 0)) or 0),
+                        "risk_urgency": int(rs.get("urgency", case_doc.get("risk_urgency", 0)) or 0),
+                        "risk_legal_strength": int(rs.get("legal_strength", case_doc.get("risk_legal_strength", 0)) or 0),
+                        "risk_complexity": int(rs.get("complexity", case_doc.get("risk_complexity", 0)) or 0),
+                        "ai_summary": patch.get("ai_summary") or case_doc.get("ai_summary"),
+                        "ai_findings": patch.get("ai_findings") or case_doc.get("ai_findings", []),
+                        "ai_next_steps": patch.get("ai_next_steps") or case_doc.get("ai_next_steps", []),
+                        "key_insight": patch.get("key_insight") or case_doc.get("key_insight"),
+                    }
+                    new_analysis_fields = {**case_doc, **update_fields}
+
+            if strategy == "full_reanalysis":
+                if not document_text:
+                    raise HTTPException(status_code=400, detail="no_document_text_for_reanalysis")
+                full = await _run_full_reanalysis(
+                    case_doc, document_text, user_input, prior_inputs, language, jurisdiction, region,
+                    case_type=normalize_case_type(case_doc.get("type")),
+                )
+                if not full:
+                    raise HTTPException(status_code=500, detail="Full reanalysis returned no result")
+                update_fields = _build_case_update(full, case_doc, "refinement", datetime.now(timezone.utc).isoformat())
+                # Keep case title/type stable unless explicitly changed
+                if not full.get("suggested_case_title"):
+                    update_fields.pop("title", None)
                 new_analysis_fields = {**case_doc, **update_fields}
 
-        if strategy == "full_reanalysis":
-            if not document_text:
-                raise HTTPException(status_code=400, detail="no_document_text_for_reanalysis")
-            full = await _run_full_reanalysis(
-                case_doc, document_text, user_input, prior_inputs, language, jurisdiction, region,
-                case_type=normalize_case_type(case_doc.get("type")),
+        except HTTPException:
+            await db.case_refinements.update_one(
+                {"refinement_id": refinement_id},
+                {"$set": {"status": "error", "completed_at": datetime.now(timezone.utc).isoformat()}},
             )
-            if not full:
-                raise HTTPException(status_code=500, detail="Full reanalysis returned no result")
-            update_fields = _build_case_update(full, case_doc, "refinement", datetime.now(timezone.utc).isoformat())
-            # Keep case title/type stable unless explicitly changed
-            if not full.get("suggested_case_title"):
-                update_fields.pop("title", None)
-            new_analysis_fields = {**case_doc, **update_fields}
+            raise
+        except Exception as e:
+            logger.error(f"Refinement execution failed for {case_id}: {e}", exc_info=True)
+            await db.case_refinements.update_one(
+                {"refinement_id": refinement_id},
+                {"$set": {"status": "error", "error": str(e)[:200],
+                          "completed_at": datetime.now(timezone.utc).isoformat()}},
+            )
+            raise HTTPException(status_code=500, detail="Refinement failed")
 
-    except HTTPException:
-        await _release_lock_on_error()
+        # ── Persist: snapshot new version, update case, mark refinement complete.
+        new_version = current_version + 1
+        snapshot_payload = {k: new_analysis_fields.get(k) for k in _ANALYSIS_SNAPSHOT_FIELDS if k in new_analysis_fields}
+        completed = datetime.now(timezone.utc).isoformat()
+
+        snapshot_id = await _write_new_snapshot(case_doc, new_version, snapshot_payload, refinement_id, excerpt)
+
+        case_update_set = dict(update_fields)
+        case_update_set.update({
+            "current_analysis_version": new_version,
+            "refinement_count": refinement_count + 1,
+            "refinement_in_progress": False,
+            "refinement_started_at": None,
+            "updated_at": completed,
+        })
+        await db.cases.update_one({"case_id": case_id}, {"$set": case_update_set})
+        # The case-level update above clears the lock atomically with the analysis save.
+        # Mark our internal flag so the finally clause skips its redundant release.
+        lock_released = True
+        logger.info(f"refine[{case_id}] LOCK RELEASED (reason: success)")
+
         await db.case_refinements.update_one(
             {"refinement_id": refinement_id},
-            {"$set": {"status": "error", "completed_at": datetime.now(timezone.utc).isoformat()}},
+            {"$set": {"strategy": strategy, "status": "completed",
+                      "version_after": new_version, "snapshot_id": snapshot_id,
+                      "completed_at": completed}},
         )
-        raise
-    except Exception as e:
-        logger.error(f"Refinement execution failed for {case_id}: {e}", exc_info=True)
-        await _release_lock_on_error()
-        await db.case_refinements.update_one(
-            {"refinement_id": refinement_id},
-            {"$set": {"status": "error", "error": str(e)[:200],
-                      "completed_at": datetime.now(timezone.utc).isoformat()}},
-        )
-        raise HTTPException(status_code=500, detail="Refinement failed")
 
-    # ── Persist: snapshot new version, update case, mark refinement complete.
-    new_version = current_version + 1
-    snapshot_payload = {k: new_analysis_fields.get(k) for k in _ANALYSIS_SNAPSHOT_FIELDS if k in new_analysis_fields}
-    completed = datetime.now(timezone.utc).isoformat()
+        await db.case_events.insert_one({
+            "event_id": f"evt_{uuid.uuid4().hex[:12]}",
+            "case_id": case_id,
+            "event_type": "refinement_applied",
+            "title": f"Analysis refined (v{new_version})",
+            "description": f"{'Full re-analysis' if strategy == 'full_reanalysis' else 'Incremental update'} triggered by user input",
+            "metadata": {"strategy": strategy, "refinement_id": refinement_id, "version": new_version},
+            "created_at": completed,
+        })
 
-    snapshot_id = await _write_new_snapshot(case_doc, new_version, snapshot_payload, refinement_id, excerpt)
+        # Best-effort notification for long-running full reanalyses.
+        if strategy == "full_reanalysis":
+            try:
+                from routes.client_notifications_routes import create_notification
+                notif_title = "Nouvelle analyse disponible" if (language or "").startswith(("fr", "nl")) else "New analysis available"
+                notif_msg = f"Version {new_version} est prête."
+                asyncio.create_task(create_notification(
+                    client_user_id=current_user.user_id,
+                    type="other",
+                    title=notif_title,
+                    message=notif_msg,
+                    case_id=case_id,
+                    action_url=f"/cases/{case_id}",
+                ))
+            except Exception:
+                logger.exception("refinement notification failed")
 
-    case_update_set = dict(update_fields)
-    case_update_set.update({
-        "current_analysis_version": new_version,
-        "refinement_count": refinement_count + 1,
-        "refinement_in_progress": False,
-        "updated_at": completed,
-    })
-    await db.cases.update_one({"case_id": case_id}, {"$set": case_update_set})
-
-    await db.case_refinements.update_one(
-        {"refinement_id": refinement_id},
-        {"$set": {"strategy": strategy, "status": "completed",
-                  "version_after": new_version, "snapshot_id": snapshot_id,
-                  "completed_at": completed}},
-    )
-
-    await db.case_events.insert_one({
-        "event_id": f"evt_{uuid.uuid4().hex[:12]}",
-        "case_id": case_id,
-        "event_type": "refinement_applied",
-        "title": f"Analysis refined (v{new_version})",
-        "description": f"{'Full re-analysis' if strategy == 'full_reanalysis' else 'Incremental update'} triggered by user input",
-        "metadata": {"strategy": strategy, "refinement_id": refinement_id, "version": new_version},
-        "created_at": completed,
-    })
-
-    # Best-effort notification for long-running full reanalyses.
-    if strategy == "full_reanalysis":
-        try:
-            from routes.client_notifications_routes import create_notification
-            notif_title = "Nouvelle analyse disponible" if (language or "").startswith(("fr", "nl")) else "New analysis available"
-            notif_msg = f"Version {new_version} est prête."
-            asyncio.create_task(create_notification(
-                client_user_id=current_user.user_id,
-                type="other",
-                title=notif_title,
-                message=notif_msg,
-                case_id=case_id,
-                action_url=f"/cases/{case_id}",
-            ))
-        except Exception:
-            logger.exception("refinement notification failed")
-
-    updated_case = await db.cases.find_one({"case_id": case_id}, {"_id": 0})
-    return {
-        "refinement_id": refinement_id,
-        "strategy": strategy,
-        "version": new_version,
-        "case": updated_case,
-    }
+        updated_case = await db.cases.find_one({"case_id": case_id}, {"_id": 0})
+        return {
+            "refinement_id": refinement_id,
+            "strategy": strategy,
+            "version": new_version,
+            "case": updated_case,
+        }
+    finally:
+        # Guarantee the lock is released no matter how we leave the function —
+        # HTTPException, plain exception, or unhandled crash.
+        if not lock_released:
+            await _release_lock("finally_safety")
 
 
 @api_router.get("/cases/{case_id}/versions")
@@ -6855,6 +6916,34 @@ async def admin_manual_assign(case_id: str, body: ManualAssignInput, admin: dict
 class AdminRefundInput(BaseModel):
     reason: str
     amount_cents: Optional[int] = None
+
+@api_router.post("/admin/cases/{case_id}/clear-refinement-lock")
+async def admin_clear_refinement_lock(case_id: str, admin: dict = Depends(admin_required)):
+    """Admin escape hatch: force-release a stuck refinement_in_progress lock.
+    The 10-minute staleness override in the refine endpoint auto-steals normally,
+    but this gives admins an immediate manual reset if a user hits 409 in the wild."""
+    case_doc = await db.cases.find_one({"case_id": case_id}, {"_id": 0, "refinement_in_progress": 1, "refinement_started_at": 1})
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+    prior = {
+        "refinement_in_progress": bool(case_doc.get("refinement_in_progress")),
+        "refinement_started_at": case_doc.get("refinement_started_at"),
+    }
+    await db.cases.update_one(
+        {"case_id": case_id},
+        {"$set": {
+            "refinement_in_progress": False,
+            "refinement_started_at": None,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }},
+    )
+    logger.warning(
+        f"refine[{case_id}] LOCK CLEARED by admin={admin.get('email')} (prior={prior})"
+    )
+    await log_admin_action(admin, "refinement_lock_cleared",
+                           entity_type="case", entity_id=case_id, metadata=prior)
+    return {"status": "cleared", "prior": prior}
+
 
 @api_router.post("/admin/cases/{case_id}/refund")
 async def admin_refund_case(case_id: str, body: AdminRefundInput, admin: dict = Depends(admin_required)):
