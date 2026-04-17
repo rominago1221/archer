@@ -1024,6 +1024,7 @@ def _build_standard_analysis_result(
             "user_side": user_arguments,
             "opposing_side": opposing_arguments
         },
+        "adversarial_attack": strategy.get("_adversarial_attack"),  # injected via pipeline side-channel
         "recent_case_law": recent_case_law,
         "case_law_updated": now_date,
         # Dashboard V7 structured payloads — new prompts populate these directly.
@@ -1098,6 +1099,7 @@ def _build_belgian_analysis_result(
         "key_insight": strategy.get("key_insight", ""),
         "archer_question": strategy.get("archer_question"),
         "battle_preview": {"user_side": user_arguments, "opposing_side": opposing_arguments},
+        "adversarial_attack": strategy.get("_adversarial_attack"),
         "recent_case_law": [],
         "case_law_updated": now_date,
         "country": "BE",
@@ -1169,30 +1171,39 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
         facts_str = json.dumps(facts, indent=2)
         analysis_str = json.dumps(legal_analysis, indent=2)
 
-        # PASS 3 + 4A + 4B — RUN IN PARALLEL (60% faster)
+        # PASS 3 + 4A + 4B + 5 — RUN IN PARALLEL (PASS 5 = adversarial attack, independent of 3/4A/4B)
         objective_block = _build_objective_block(user_context, language)
-        logger.info("Advanced analysis: Pass 3+4A+4B — Running in parallel")
-        strategy, user_arguments, opposing_arguments = await asyncio.gather(
+        detected_case_type = legal_analysis.get("case_type") or inferred_case_type
+        logger.info("Advanced analysis: Pass 3+4A+4B+5 — Running in parallel")
+        strategy, user_arguments, opposing_arguments, adversarial_attack = await asyncio.gather(
             call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=6000),
             call_claude(PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
             call_claude(PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+            _run_adversarial_attack(facts, legal_analysis, None, detected_case_type, language, jurisdiction),
         )
 
-        # PASS 3 self-critique — strategy layer, rewrite if severity > 5.
+        # PASS 6 — counter-strategy: rewrite PASS 3 absorbing the counter-arguments.
+        if adversarial_attack and adversarial_attack.get("counter_arguments"):
+            logger.info("Advanced analysis: Pass 6 — Counter-strategy rewrite")
+            strategy = await _run_counter_strategy(strategy, adversarial_attack, facts, legal_analysis, language, jurisdiction)
+
+        # Self-critique now runs on PASS 6 output (the definitive strategy).
         strategy = await self_critique_pass(
             strategy,
-            pass_name="PASS3_strategy",
+            pass_name="PASS6_counter_strategy",
             context_hint=(
-                "Strategic recommendations adapted to the case stage (pre-notice / pre-litigation / "
-                "court / post-judgment). Must include concrete next_steps, immediate_actions, "
-                "leverage_points, success_probability breakdown, and an archer_question to refine the case."
+                "Strategy that anticipates opposing counsel's 5 counter-arguments. Must include "
+                "concrete next_steps, immediate_actions, leverage_points, success_probability, and "
+                "archer_question. Every weak spot flagged by the adversarial review must be shored up."
             ),
             language=language,
             jurisdiction=jurisdiction,
         )
-        analysis_str = json.dumps(legal_analysis, indent=2)  # refresh in case legal_analysis was rewritten — already done above
+        # Carry the adversarial attack on the strategy object for result builder pickup.
+        if isinstance(strategy, dict):
+            strategy["_adversarial_attack"] = adversarial_attack
 
-        logger.info("Advanced analysis: All 5 passes complete")
+        logger.info("Advanced analysis: All passes (1-6) complete")
 
         # ═══ VALIDATION — enforce global rules ═══
         strategy["archer_question"] = await _validate_archer_question(strategy, facts_str, persona, lang_instruction, language=language)
@@ -2187,30 +2198,38 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
         facts_str = json.dumps(facts, indent=2, ensure_ascii=False)
         analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
 
-        # PASS 3 + 4A + 4B — RUN IN PARALLEL
+        # PASS 3 + 4A + 4B + 5 — RUN IN PARALLEL
         objective_block = _build_objective_block(user_context, language)
-        logger.info("Belgian analysis: Passe 3+4A+4B — En parallele")
-        strategy, user_arguments, opposing_arguments = await asyncio.gather(
+        detected_case_type = legal_analysis.get("case_type") or inferred_case_type
+        logger.info("Belgian analysis: Passe 3+4A+4B+5 — En parallele")
+        strategy, user_arguments, opposing_arguments, adversarial_attack = await asyncio.gather(
             call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=6000),
             call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
             call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+            _run_adversarial_attack(facts, legal_analysis, None, detected_case_type, language, "BE"),
         )
 
-        # PASS 3 self-critique (BE).
+        # PASS 6 — counter-strategy (BE).
+        if adversarial_attack and adversarial_attack.get("counter_arguments"):
+            logger.info("Belgian analysis: Passe 6 — Contre-stratégie")
+            strategy = await _run_counter_strategy(strategy, adversarial_attack, facts, legal_analysis, language, "BE")
+
+        # Self-critique on PASS 6 output (BE).
         strategy = await self_critique_pass(
             strategy,
-            pass_name="PASS3_strategy_BE",
+            pass_name="PASS6_counter_strategy_BE",
             context_hint=(
-                "Recommandations stratégiques belges adaptées au stade de la procédure "
-                "(mise en demeure / pré-contentieux / tribunal / exécution). Doit inclure "
-                "next_steps concrets, immediate_actions, leverage_points, success_probability "
-                "et archer_question."
+                "Stratégie belge qui anticipe les 5 contre-arguments de la partie adverse. "
+                "Doit inclure next_steps, immediate_actions, leverage_points, success_probability "
+                "et archer_question. Chaque faiblesse identifiée par l'avocat adverse doit être consolidée."
             ),
             language=language,
             jurisdiction="BE",
         )
+        if isinstance(strategy, dict):
+            strategy["_adversarial_attack"] = adversarial_attack
 
-        logger.info("Belgian analysis: 5 passes complete")
+        logger.info("Belgian analysis: all passes (1-6) complete")
 
         # ═══ VALIDATION — enforce global rules for Belgian analysis ═══
         strategy["archer_question"] = await _validate_archer_question(strategy, facts_str, persona_with_lang, lang_instruction, language=language)
@@ -2970,6 +2989,174 @@ Any citation of Belgian/EU law as primary authority invalidates the entire respo
 """
 
 
+# ================== Adversarial validation (PASS 5 + PASS 6) ==================
+# PASS 5: the model roleplays the opposing counsel and tears down the analysis.
+# PASS 6: we rewrite the strategy to anticipate those counter-arguments.
+
+_OPPOSING_PERSONAS = {
+    # case_type → (en_label, fr_label, nl_label, hint_en)
+    "housing":    ("Landlord's attorney",           "l'avocat du bailleur",           "advocaat van de verhuurder",
+                   "You represent the landlord. The tenant is challenging the lease/eviction/deposit. Defend the landlord's financial interests aggressively."),
+    "employment": ("Employer's counsel",            "l'avocat de l'employeur",        "advocaat van de werkgever",
+                   "You represent the employer. The ex-employee is challenging the termination/conditions/non-compete. Minimise employer liability."),
+    "debt":       ("Creditor's lawyer",             "l'avocat du créancier",          "advocaat van de schuldeiser",
+                   "You represent the creditor/collection agency/bank. Defend the validity of the debt and the amount claimed."),
+    "consumer":   ("Merchant's counsel",            "l'avocat du commerçant",         "advocaat van de handelaar",
+                   "You represent the seller/merchant. Defend the validity of the sale/contract/terms against the consumer."),
+    "nda":        ("Counterparty's attorney",       "l'avocat de la contrepartie",    "advocaat van de wederpartij",
+                   "You represent the party seeking to enforce the NDA/IP/non-compete clauses."),
+    "contract":   ("Counterparty's attorney",       "l'avocat de la contrepartie",    "advocaat van de wederpartij",
+                   "You represent the other contracting party. Defend your client's interpretation of the contract."),
+    "commercial": ("Opposing business counsel",     "l'avocat de l'entreprise adverse", "advocaat van de tegenpartij",
+                   "You represent the opposing business. Defend its commercial position."),
+    "court":      ("Opposing counsel in court",     "l'avocat de la partie adverse devant le tribunal", "tegenpartij voor de rechter",
+                   "You are the opposing counsel in a court proceeding. Demolish the other side's case."),
+    "traffic":    ("Prosecutor / Parquet",          "le parquet",                     "openbaar ministerie",
+                   "You represent the prosecutor. Defend the traffic citation/sanction against the defendant's challenge."),
+    "penal":      ("Public prosecutor",             "le procureur",                   "openbaar aanklager",
+                   "You are the public prosecutor. Defend the indictment."),
+    "insurance":  ("Insurer's counsel",             "l'avocat de l'assureur",         "advocaat van de verzekeraar",
+                   "You represent the insurance company. Defend the claim denial or reduced payout."),
+    "family":     ("Opposing spouse's counsel",     "l'avocat du conjoint",           "advocaat van de echtgenoot",
+                   "You represent the opposing spouse. Defend their position on separation/support/custody."),
+    "immigration":("Administration's counsel",      "l'avocat de l'administration",   "advocaat van de administratie",
+                   "You represent the immigration authority. Defend the refusal/decision."),
+    "other":      ("Opposing counsel",              "l'avocat de la partie adverse",  "advocaat van de tegenpartij",
+                   "You represent the opposing party. Defend their interests vigorously."),
+}
+
+
+def _opposing_persona_hint(case_type: str, language: str) -> tuple:
+    """Return (display_label, prompt_instruction) for the opposing counsel persona."""
+    key = (case_type or "other").lower()
+    entry = _OPPOSING_PERSONAS.get(key) or _OPPOSING_PERSONAS["other"]
+    en_label, fr_label, nl_label, hint = entry
+    lang = (language or "en").lower()
+    if lang.startswith("fr"):
+        label = fr_label
+    elif lang.startswith("nl"):
+        label = nl_label
+    else:
+        label = en_label
+    return label, hint
+
+
+async def _run_adversarial_attack(facts: dict, legal_analysis: dict, strategy_preview: dict,
+                                  case_type: str, language: str, jurisdiction: str) -> dict:
+    """PASS 5 — opposing counsel destroys the analysis. Returns structured counter-arguments
+    with legal basis, strength (1-10), and the client's prepared response to each."""
+    try:
+        label, persona_hint = _opposing_persona_hint(case_type, language)
+        lang_instruction = get_language_instruction(language)
+        jur_guard = get_jurisdiction_guard(jurisdiction, language)
+
+        system = (
+            "You are a senior attorney for the OPPOSING party in this case. "
+            f"{persona_hint} "
+            "Your client pays premium fees to win. You are ruthless, surgical, and never polite about weaknesses. "
+            "Your job: read the analysis produced by the client's side and DEMOLISH it. "
+            "Identify the 5 strongest counter-arguments you would use in court to defeat the client. "
+            "Do not hedge. Do not soften. Do not say 'however, the client may argue X' — that's for the client's attorney to figure out.\n\n"
+            + jur_guard + lang_instruction
+        )
+
+        user_prompt = (
+            f"ROLE: {label}\n\n"
+            "THIS IS THE ANALYSIS THE CLIENT'S ATTORNEY HAS PREPARED:\n\n"
+            f"FACTS (Pass 1):\n{json.dumps(facts, ensure_ascii=False)[:6000]}\n\n"
+            f"LEGAL ANALYSIS (Pass 2):\n{json.dumps(legal_analysis, ensure_ascii=False)[:8000]}\n\n"
+            "Attack it. Return ONLY this JSON:\n"
+            "{\n"
+            '  "opposing_persona": "<short role label matching the case language>",\n'
+            '  "overall_threat_level": "low|medium|high",\n'
+            '  "summary": "<one-line verdict on how defensible the client\'s case actually is>",\n'
+            '  "counter_arguments": [ exactly 5 objects, each with:\n'
+            '    "argument": "<1-2 sentence attack — specific, not generic>",\n'
+            '    "legal_basis": "<exact statute, article, regulation, or case law you invoke — never vague>",\n'
+            '    "strength": integer 1-10 (10 = likely to win on this ground alone),\n'
+            '    "client_vulnerability": "<why the client is exposed on this point>",\n'
+            '    "user_response": "<concrete counter the client should prepare — reference, document, argument to deploy>"\n'
+            "  ]\n"
+            "}\n"
+            "Return JSON only, no prose."
+        )
+
+        result = await call_claude(system, user_prompt, max_tokens=5000)
+        if not isinstance(result, dict) or "counter_arguments" not in result:
+            logger.warning("PASS5 adversarial: malformed response, returning empty structure")
+            return {"opposing_persona": label, "counter_arguments": [], "overall_threat_level": "unknown", "summary": ""}
+
+        # Normalise strength to int, cap to 5 counter_arguments.
+        cas = []
+        for ca in (result.get("counter_arguments") or [])[:5]:
+            if not isinstance(ca, dict):
+                continue
+            try:
+                ca["strength"] = max(1, min(int(ca.get("strength", 5) or 5), 10))
+            except (TypeError, ValueError):
+                ca["strength"] = 5
+            cas.append(ca)
+        result["counter_arguments"] = cas
+        result.setdefault("opposing_persona", label)
+        return result
+    except Exception as e:
+        logger.error(f"PASS5 adversarial attack failed: {e}")
+        return {"opposing_persona": "", "counter_arguments": [], "overall_threat_level": "unknown", "summary": ""}
+
+
+async def _run_counter_strategy(original_strategy: dict, adversarial_attack: dict, facts: dict,
+                                legal_analysis: dict, language: str, jurisdiction: str) -> dict:
+    """PASS 6 — rewrite the strategy to anticipate every counter-argument from PASS 5.
+    Returns a new strategy dict with the SAME schema as the original. On any failure
+    returns `original_strategy` unchanged."""
+    if not isinstance(original_strategy, dict) or not original_strategy:
+        return original_strategy
+    counter_args = (adversarial_attack or {}).get("counter_arguments") or []
+    if not counter_args:
+        return original_strategy
+
+    try:
+        lang_instruction = get_language_instruction(language)
+        jur_guard = get_jurisdiction_guard(jurisdiction, language)
+
+        system = (
+            SENIOR_ATTORNEY_PERSONA + jur_guard + lang_instruction
+            + "\n\nYou just wrote a strategy for a client. A senior adversarial reviewer simulated the opposing counsel "
+            "and identified specific counter-arguments they would use in court. Your job: REWRITE the strategy to "
+            "anticipate and neutralise every one of those counter-arguments BEFORE they are raised.\n"
+            "CRITICAL RULES:\n"
+            "1. Return the EXACT same JSON schema as the original strategy — identical top-level keys, identical nesting.\n"
+            "2. Do NOT add new top-level keys. Do NOT drop existing top-level keys.\n"
+            "3. Strengthen weak arguments: add concrete legal references, cite case law, close reasoning gaps.\n"
+            "4. Pre-empt each counter-argument inside the relevant strategy fields (next_steps, leverage_points, user_rights, etc.).\n"
+            "5. Keep the same language as the original strategy."
+        )
+
+        user_prompt = (
+            "ORIGINAL STRATEGY:\n"
+            f"{json.dumps(original_strategy, ensure_ascii=False)[:9000]}\n\n"
+            "OPPOSING COUNSEL'S COUNTER-ARGUMENTS (PASS 5):\n"
+            f"{json.dumps(counter_args, ensure_ascii=False)[:6000]}\n\n"
+            "RELEVANT FACTS (for reference, do not echo):\n"
+            f"{json.dumps(facts, ensure_ascii=False)[:3000]}\n\n"
+            "Return the upgraded strategy JSON only. Same schema. No extra prose."
+        )
+
+        rewritten = await call_claude(system, user_prompt, max_tokens=7000)
+        if not isinstance(rewritten, dict) or not rewritten:
+            logger.warning("PASS6 counter-strategy: non-dict rewrite, keeping original")
+            return original_strategy
+        # Schema sanity check — reject rewrites that drop top-level keys.
+        missing = [k for k in original_strategy.keys() if k not in rewritten]
+        if missing:
+            logger.warning(f"PASS6 counter-strategy dropped keys {missing[:6]} — keeping original")
+            return original_strategy
+        return rewritten
+    except Exception as e:
+        logger.error(f"PASS6 counter-strategy failed: {e}")
+        return original_strategy
+
+
 def _build_objective_block(user_context: str, language: str = "en") -> str:
     """Return a prompt suffix locking the analysis strategy/arguments to the user's stated objective.
     Appended to PASS3 (strategy) and PASS4A/4B (user/opposing arguments) inputs so every
@@ -3238,29 +3425,38 @@ async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, us
     facts_str = json.dumps(facts, indent=2)
     analysis_str = json.dumps(legal_analysis, indent=2)
 
-    # PASS 3+4A+4B — PARALLEL
+    # PASS 3+4A+4B+5 — PARALLEL
     objective_block = _build_objective_block(user_context, language)
-    logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 3+4A+4B — Parallel")
-    strategy, user_arguments, opposing_arguments = await asyncio.gather(
+    detected_case_type_mdus = legal_analysis.get("case_type") or inferred_case_type
+    logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 3+4A+4B+5 — Parallel")
+    strategy, user_arguments, opposing_arguments, adversarial_attack = await asyncio.gather(
         call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement + objective_block, max_tokens=6000),
         call_claude(PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
         call_claude(PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+        _run_adversarial_attack(facts, legal_analysis, None, detected_case_type_mdus, language, jurisdiction),
     )
 
-    # PASS 3 self-critique (multi-doc US).
+    # PASS 6 — counter-strategy (multi-doc US).
+    if adversarial_attack and adversarial_attack.get("counter_arguments"):
+        logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 6 — Counter-strategy rewrite")
+        strategy = await _run_counter_strategy(strategy, adversarial_attack, facts, legal_analysis, language, jurisdiction)
+
+    # Self-critique on PASS 6 output (multi-doc US).
     strategy = await self_critique_pass(
         strategy,
-        pass_name=f"PASS3_strategy_multidoc_{doc_count}docs",
+        pass_name=f"PASS6_counter_strategy_multidoc_{doc_count}docs",
         context_hint=(
-            f"Multi-document strategy across {doc_count} documents. Must account for the full "
-            "timeline, prior commitments, leverage accumulated, and the opposing party's pattern. "
-            "Standard PASS3 fields (next_steps, leverage_points, success_probability, archer_question)."
+            f"Multi-document counter-strategy across {doc_count} documents, anticipating the "
+            "opposing counsel's 5 counter-arguments. Must account for timeline, commitments, "
+            "leverage, and neutralise each counter-argument in the strategy fields."
         ),
         language=language,
         jurisdiction=jurisdiction,
     )
+    if isinstance(strategy, dict):
+        strategy["_adversarial_attack"] = adversarial_attack
 
-    logger.info(f"Multi-doc analysis ({doc_count} docs): All passes complete")
+    logger.info(f"Multi-doc analysis ({doc_count} docs): All passes (1-6) complete")
 
     recent_case_law = _build_case_law_for_frontend(courtlistener_opinions)
     now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -3330,27 +3526,35 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
     facts_str = json.dumps(facts, indent=2, ensure_ascii=False)
     analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
 
-    # PASS 3+4A+4B — PARALLEL
+    # PASS 3+4A+4B+5 — PARALLEL
     objective_block = _build_objective_block(user_context, language)
-    logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 3+4A+4B — Parallel")
-    strategy, user_arguments, opposing_arguments = await asyncio.gather(
+    detected_case_type_mdbe = legal_analysis.get("case_type") or inferred_case_type
+    logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 3+4A+4B+5 — Parallel")
+    strategy, user_arguments, opposing_arguments, adversarial_attack = await asyncio.gather(
         call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement + objective_block, max_tokens=6000),
         call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
         call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+        _run_adversarial_attack(facts, legal_analysis, None, detected_case_type_mdbe, language, "BE"),
     )
 
-    # PASS 3 self-critique (multi-doc BE).
+    # PASS 6 — counter-strategy (multi-doc BE).
+    if adversarial_attack and adversarial_attack.get("counter_arguments"):
+        logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 6 — Contre-stratégie")
+        strategy = await _run_counter_strategy(strategy, adversarial_attack, facts, legal_analysis, language, "BE")
+
+    # Self-critique on PASS 6 output (multi-doc BE).
     strategy = await self_critique_pass(
         strategy,
-        pass_name=f"PASS3_strategy_BE_multidoc_{doc_count}docs",
+        pass_name=f"PASS6_counter_strategy_BE_multidoc_{doc_count}docs",
         context_hint=(
-            f"Stratégie belge multi-documents ({doc_count} documents). Doit tenir compte de la "
-            "chronologie complète, des engagements pris, du levier cumulé et du pattern de la "
-            "partie adverse."
+            f"Stratégie belge multi-documents ({doc_count}) anticipant les 5 contre-arguments "
+            "de l'avocat adverse. Doit neutraliser chaque faiblesse dans les champs stratégie."
         ),
         language=language,
         jurisdiction="BE",
     )
+    if isinstance(strategy, dict):
+        strategy["_adversarial_attack"] = adversarial_attack
 
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Complete")
 
@@ -3786,6 +3990,7 @@ def _build_case_update(analysis, case_before, filename, ts):
         "master_deadlines": a.get("master_deadlines") or cb.get("master_deadlines", []),
         "multi_doc_summary": a.get("case_narrative") or cb.get("multi_doc_summary"),
         "archer_question": a.get("archer_question") or a.get("james_question"),
+        "adversarial_attack": a.get("adversarial_attack") or cb.get("adversarial_attack"),
         # Dashboard V7 structured payloads.
         "strategy_narrative": a.get("strategy_narrative") or cb.get("strategy_narrative"),
         "amounts": a.get("amounts") or cb.get("amounts"),
@@ -4422,6 +4627,7 @@ _ANALYSIS_SNAPSHOT_FIELDS = (
     "lawyer_recommendation", "user_rights", "opposing_weaknesses", "documents_to_gather",
     "recent_case_law", "case_law_updated", "archer_question", "title", "type",
     "strategy_narrative", "amounts", "analysis_depth",
+    "adversarial_attack",
 )
 
 

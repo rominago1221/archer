@@ -153,6 +153,8 @@ class Case(BaseModel):
     current_analysis_version: int = 1
     refinement_count: int = 0
     refinement_in_progress: bool = False
+    # Adversarial validation (PASS 5 + PASS 6)
+    adversarial_attack: Optional[dict] = None
 
     @field_validator('deadline', mode='before')
     @classmethod

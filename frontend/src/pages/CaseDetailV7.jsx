@@ -17,6 +17,7 @@ import AttorneyStatusBanner from '../components/AttorneyStatusBanner';
 import JurisdictionMismatchBanner from '../components/JurisdictionMismatchBanner';
 import RefineAnalysisSection from '../components/RefineAnalysisSection';
 import VersionPicker from '../components/VersionPicker';
+import AdversarialCounterArgsSection from '../components/AdversarialCounterArgsSection';
 import LiveCounselCTA from '../components/LiveCounselCTA';
 import LiveCounselBookingFlow from '../components/LiveCounselBookingFlow';
 import ScoreHistoryGraph from '../components/Dashboard/Sprint2/ScoreHistoryGraph';
@@ -364,6 +365,11 @@ export default function CaseDetailV7() {
         <BattleSection
           battle={battle}
           opponentLabel={opponentLabel}
+          language={language}
+        />
+
+        <AdversarialCounterArgsSection
+          adversarial={displayedCase?.adversarial_attack}
           language={language}
         />
 
