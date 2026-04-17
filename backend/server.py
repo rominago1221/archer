@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import List, Optional, Any, Dict
 import uuid
 from datetime import datetime, timezone, timedelta
+from contextvars import ContextVar
 import httpx
 import json
 import pdfplumber
@@ -731,6 +732,176 @@ async def _validate_archer_question(strategy: dict, facts_str: str, persona: str
     return fallback
 
 
+# ================== Self-critique pass ==================
+# Anthropic-style two-phase self-critique: the model critiques its own PASS2/PASS3
+# output, and if severity > 5 we rewrite. Every critique is persisted to
+# `analysis_critiques` for post-hoc quality measurement. severity > 8 also fires
+# an admin alert into `admin_alerts`.
+
+SELF_CRITIQUE_THRESHOLD = 5      # rewrite when severity_score > this
+SELF_CRITIQUE_ADMIN_THRESHOLD = 8  # admin_alerts write when severity_score > this
+
+# Ambient context: the case_id of the analysis currently running. Set by the
+# upload / reanalyze / switch-jurisdiction / refine call sites so the critique
+# layer can attribute records without threading case_id through every function.
+_current_case_id: ContextVar[Optional[str]] = ContextVar("_current_case_id", default=None)
+
+
+async def self_critique_pass(
+    analysis_output: dict,
+    *,
+    pass_name: str,
+    context_hint: str,
+    language: str = "en",
+    jurisdiction: str = "US",
+    case_id: Optional[str] = None,
+) -> dict:
+    """Critique the given analysis JSON. If severity_score > 5, rewrite and return
+    the improved version. Otherwise return the original unchanged.
+
+    Never raises. On any failure the original `analysis_output` is returned — the
+    primary pipeline must not be destabilised by the critique layer.
+
+    `context_hint` is a 1-2 sentence reminder of what this pass was supposed to
+    produce. Used inside the critique prompt to scope the reviewer.
+    """
+    if not isinstance(analysis_output, dict) or not analysis_output:
+        return analysis_output
+
+    if case_id is None:
+        case_id = _current_case_id.get()
+
+    try:
+        original_json = json.dumps(analysis_output, ensure_ascii=False)[:12000]
+    except Exception:
+        return analysis_output
+
+    critique_system = (
+        "You are a senior litigation attorney reviewing a junior colleague's analysis before it is "
+        "used by a real client. Your job is to be brutally honest about weaknesses. Pretend this will "
+        "be scrutinised by an opposing counsel in court. Identify every gap, every superficial claim, "
+        "every missing nuance, every imprecise legal reference, every strategic alternative that was "
+        "not explored. Be specific, not generic. Cite what should be added, corrected, or deepened.\n\n"
+        "Return ONLY valid JSON with exactly these keys:\n"
+        "{\n"
+        '  "critiques": [ { "category": "findings_missed|weak_argument|imprecise_law_ref|missed_nuance|missed_alternative|other", '
+        '"description": "specific issue, 1-2 sentences", "severity": integer 1-10 } ],\n'
+        '  "severity_score": integer 0-10, representing the overall severity (max of individual severities, adjusted by count),\n'
+        '  "summary": "one-line verdict"\n'
+        "}\n"
+        "If the analysis is genuinely solid, return critiques=[] and severity_score=0."
+    )
+
+    critique_user = (
+        f"PASS UNDER REVIEW: {pass_name}\n"
+        f"WHAT THIS PASS SHOULD PRODUCE: {context_hint}\n"
+        f"JURISDICTION CONTEXT: {jurisdiction}\n\n"
+        f"ANALYSIS OUTPUT TO CRITIQUE:\n{original_json}\n\n"
+        "Review it and return the critique JSON only."
+    )
+
+    try:
+        critique_result = await call_claude(critique_system, critique_user, max_tokens=2000)
+    except Exception as e:
+        logger.error(f"self_critique_pass critique call failed for {pass_name}: {e}")
+        return analysis_output
+
+    if not isinstance(critique_result, dict):
+        return analysis_output
+
+    try:
+        severity = int(critique_result.get("severity_score", 0) or 0)
+    except (TypeError, ValueError):
+        severity = 0
+    severity = max(0, min(severity, 10))
+    critiques = critique_result.get("critiques") or []
+    applied = False
+
+    final_output = analysis_output
+
+    if severity > SELF_CRITIQUE_THRESHOLD and critiques:
+        logger.info(f"self_critique_pass {pass_name}: severity={severity} → rewriting")
+        rewrite_system = (
+            SENIOR_ATTORNEY_PERSONA + get_jurisdiction_guard(jurisdiction, language)
+            + get_language_instruction(language)
+            + "\n\nYou wrote a legal analysis. A senior reviewer flagged the issues below. "
+            "Rewrite the analysis to address every critique. CRITICAL RULES:\n"
+            "1. Return the EXACT same JSON schema as the original — identical keys, identical nesting, identical types.\n"
+            "2. Do NOT add new top-level keys. Do NOT drop existing top-level keys.\n"
+            "3. Improve CONTENT only: tighten findings, add missed nuances, strengthen weak arguments, "
+            "precise up loose legal references, surface missed strategic alternatives.\n"
+            "4. Keep numeric fields (risk_score subfields, confidence_score, etc.) realistic — recalibrate if justified by the critique, otherwise keep.\n"
+            "5. Write in the same language as the original analysis."
+        )
+        rewrite_user = (
+            f"ORIGINAL ANALYSIS ({pass_name}):\n{original_json}\n\n"
+            f"CRITIQUES TO ADDRESS:\n{json.dumps(critiques, ensure_ascii=False)[:6000]}\n\n"
+            "Return the improved analysis JSON only. Same schema, no extra prose."
+        )
+        try:
+            rewritten = await call_claude(rewrite_system, rewrite_user, max_tokens=8000)
+            if isinstance(rewritten, dict) and rewritten:
+                # Basic schema sanity: rewrite must carry at least the same top-level keys.
+                missing = [k for k in analysis_output.keys() if k not in rewritten]
+                if missing:
+                    logger.warning(
+                        f"self_critique_pass {pass_name}: rewrite dropped keys {missing[:6]} — keeping original"
+                    )
+                else:
+                    final_output = rewritten
+                    applied = True
+            else:
+                logger.warning(f"self_critique_pass {pass_name}: rewrite returned non-dict, keeping original")
+        except Exception as e:
+            logger.error(f"self_critique_pass {pass_name}: rewrite failed — {e}")
+    else:
+        logger.info(f"self_critique_pass {pass_name}: severity={severity} → keeping original")
+
+    # Persist the critique for later measurement. Best effort, never raises.
+    try:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        await db.analysis_critiques.insert_one({
+            "critique_id": f"crit_{uuid.uuid4().hex[:12]}",
+            "case_id": case_id,
+            "pass_name": pass_name,
+            "severity_score": severity,
+            "critiques": critiques,
+            "summary": critique_result.get("summary", ""),
+            "applied": applied,
+            "jurisdiction": jurisdiction,
+            "language": language,
+            "created_at": now_iso,
+        })
+    except Exception:
+        logger.exception(f"self_critique_pass {pass_name}: failed to persist critique record")
+
+    # Admin alert for severity > 8.
+    if severity > SELF_CRITIQUE_ADMIN_THRESHOLD:
+        logger.warning(
+            f"ADMIN_ALERT complex_case: {pass_name} severity={severity} case_id={case_id} "
+            f"summary={(critique_result.get('summary') or '')[:200]}"
+        )
+        try:
+            await db.admin_alerts.insert_one({
+                "alert_id": f"alert_{uuid.uuid4().hex[:12]}",
+                "type": "complex_case_self_critique",
+                "pass_name": pass_name,
+                "severity_score": severity,
+                "case_id": case_id,
+                "summary": critique_result.get("summary", ""),
+                "critiques_preview": (critiques or [])[:5],
+                "jurisdiction": jurisdiction,
+                "language": language,
+                "action_url": f"/cases/{case_id}" if case_id else None,
+                "resolved": False,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            })
+        except Exception:
+            logger.exception("self_critique_pass: failed to write admin_alert")
+
+    return final_output
+
+
 async def _validate_user_arguments(user_arguments: dict, facts_str: str, analysis_str: str, lang_instruction: str, jurisdiction_guard: str = "") -> dict:
     """Ensure user arguments contain at least 3 strongest_arguments, retrying if needed."""
     ua = user_arguments.get("strongest_arguments", []) if isinstance(user_arguments, dict) else []
@@ -982,6 +1153,19 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
             max_tokens=8000
         )
 
+        # PASS 2 self-critique — senior-attorney review, rewrite if severity > 5.
+        legal_analysis = await self_critique_pass(
+            legal_analysis,
+            pass_name="PASS2_legal_analysis",
+            context_hint=(
+                "Comprehensive legal analysis: risk_score (4 dims), procedural_defects, user_rights, "
+                "opposing_weaknesses, applicable_laws, findings with legal_ref + jurisprudence + "
+                "confidence_score, financial_exposure_detailed. Must cite specific statutes and case law."
+            ),
+            language=language,
+            jurisdiction=jurisdiction,
+        )
+
         facts_str = json.dumps(facts, indent=2)
         analysis_str = json.dumps(legal_analysis, indent=2)
 
@@ -993,6 +1177,20 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
             call_claude(PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
             call_claude(PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
         )
+
+        # PASS 3 self-critique — strategy layer, rewrite if severity > 5.
+        strategy = await self_critique_pass(
+            strategy,
+            pass_name="PASS3_strategy",
+            context_hint=(
+                "Strategic recommendations adapted to the case stage (pre-notice / pre-litigation / "
+                "court / post-judgment). Must include concrete next_steps, immediate_actions, "
+                "leverage_points, success_probability breakdown, and an archer_question to refine the case."
+            ),
+            language=language,
+            jurisdiction=jurisdiction,
+        )
+        analysis_str = json.dumps(legal_analysis, indent=2)  # refresh in case legal_analysis was rewritten — already done above
 
         logger.info("Advanced analysis: All 5 passes complete")
 
@@ -1972,6 +2170,20 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
         logger.info("Belgian analysis: Passe 2 — Analyse juridique")
         legal_analysis = await call_claude(persona_with_lang, BE_PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2, ensure_ascii=False), jurisprudence_section=jurisprudence_text), max_tokens=8000)
 
+        # PASS 2 self-critique (BE).
+        legal_analysis = await self_critique_pass(
+            legal_analysis,
+            pass_name="PASS2_legal_analysis_BE",
+            context_hint=(
+                "Analyse juridique belge: risk_score (4 dims), vices de procédure, droits de "
+                "l'utilisateur, faiblesses de la partie adverse, lois applicables (Code civil, "
+                "Code judiciaire, CCT, arrêtés royaux, ordonnances régionales), findings avec "
+                "références légales belges précises et jurisprudence."
+            ),
+            language=language,
+            jurisdiction="BE",
+        )
+
         facts_str = json.dumps(facts, indent=2, ensure_ascii=False)
         analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
 
@@ -1982,6 +2194,20 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
             call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=6000),
             call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
             call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+        )
+
+        # PASS 3 self-critique (BE).
+        strategy = await self_critique_pass(
+            strategy,
+            pass_name="PASS3_strategy_BE",
+            context_hint=(
+                "Recommandations stratégiques belges adaptées au stade de la procédure "
+                "(mise en demeure / pré-contentieux / tribunal / exécution). Doit inclure "
+                "next_steps concrets, immediate_actions, leverage_points, success_probability "
+                "et archer_question."
+            ),
+            language=language,
+            jurisdiction="BE",
         )
 
         logger.info("Belgian analysis: 5 passes complete")
@@ -2996,6 +3222,19 @@ async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, us
         max_tokens=4000, use_web_search=True
     )
 
+    # PASS 2 self-critique (multi-doc US).
+    legal_analysis = await self_critique_pass(
+        legal_analysis,
+        pass_name=f"PASS2_legal_analysis_multidoc_{doc_count}docs",
+        context_hint=(
+            f"Multi-document legal analysis across {doc_count} documents. Must surface "
+            "contradictions, cumulative exposure, master deadlines, pattern analysis of the "
+            "opposing party. All standard PASS2 fields still apply."
+        ),
+        language=language,
+        jurisdiction=jurisdiction,
+    )
+
     facts_str = json.dumps(facts, indent=2)
     analysis_str = json.dumps(legal_analysis, indent=2)
 
@@ -3006,6 +3245,19 @@ async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, us
         call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement + objective_block, max_tokens=6000),
         call_claude(PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
         call_claude(PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+    )
+
+    # PASS 3 self-critique (multi-doc US).
+    strategy = await self_critique_pass(
+        strategy,
+        pass_name=f"PASS3_strategy_multidoc_{doc_count}docs",
+        context_hint=(
+            f"Multi-document strategy across {doc_count} documents. Must account for the full "
+            "timeline, prior commitments, leverage accumulated, and the opposing party's pattern. "
+            "Standard PASS3 fields (next_steps, leverage_points, success_probability, archer_question)."
+        ),
+        language=language,
+        jurisdiction=jurisdiction,
     )
 
     logger.info(f"Multi-doc analysis ({doc_count} docs): All passes complete")
@@ -3062,6 +3314,19 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
         max_tokens=4000
     )
 
+    # PASS 2 self-critique (multi-doc BE).
+    legal_analysis = await self_critique_pass(
+        legal_analysis,
+        pass_name=f"PASS2_legal_analysis_BE_multidoc_{doc_count}docs",
+        context_hint=(
+            f"Analyse multi-documents belge ({doc_count} documents). Doit surfacer "
+            "contradictions entre documents, exposition financière cumulée, échéances maîtresses, "
+            "pattern de la partie adverse. Tous les champs standard PASS2 belges s'appliquent."
+        ),
+        language=language,
+        jurisdiction="BE",
+    )
+
     facts_str = json.dumps(facts, indent=2, ensure_ascii=False)
     analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
 
@@ -3072,6 +3337,19 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
         call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement + objective_block, max_tokens=6000),
         call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
         call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+    )
+
+    # PASS 3 self-critique (multi-doc BE).
+    strategy = await self_critique_pass(
+        strategy,
+        pass_name=f"PASS3_strategy_BE_multidoc_{doc_count}docs",
+        context_hint=(
+            f"Stratégie belge multi-documents ({doc_count} documents). Doit tenir compte de la "
+            "chronologie complète, des engagements pris, du levier cumulé et du pattern de la "
+            "partie adverse."
+        ),
+        language=language,
+        jurisdiction="BE",
     )
 
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Complete")
@@ -3689,6 +3967,9 @@ async def upload_document(
     
     # ── PHASE 2: Start background analysis ──
     async def run_background_analysis():
+        # Make case_id visible to self_critique_pass via contextvar so every critique
+        # record in analysis_critiques + admin_alerts can be tied back to this case.
+        _current_case_id.set(case_id)
         try:
             analysis = None
             context_str = (user_context or "").strip()[:500]
@@ -3928,6 +4209,7 @@ async def upload_document(
 @api_router.post("/cases/{case_id}/reanalyze")
 async def reanalyze_case(case_id: str, current_user: User = Depends(get_current_user)):
     """Re-analyze all documents in a case with the latest AI prompts"""
+    _current_case_id.set(case_id)
     case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
     if not case_doc:
         raise HTTPException(status_code=404, detail="Case not found")
@@ -4021,6 +4303,7 @@ async def reanalyze_case(case_id: str, current_user: User = Depends(get_current_
 async def switch_case_jurisdiction(case_id: str, current_user: User = Depends(get_current_user)):
     """User accepted the mismatch modal: switch case jurisdiction to the auto-detected value
     and re-run the analysis under the correct jurisdiction. The user's global profile is NOT changed."""
+    _current_case_id.set(case_id)
     case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
     if not case_doc:
         raise HTTPException(status_code=404, detail="Case not found")
@@ -4338,6 +4621,7 @@ async def refine_case(case_id: str, body: RefineRequest,
                       current_user: User = Depends(get_current_user)):
     """Accept a free-text refinement. Classifies input (incremental/full_reanalysis/off_topic),
     versions the resulting analysis, enforces plan + per-case caps + concurrency lock."""
+    _current_case_id.set(case_id)
     user_input = (body.user_input or "").strip()
     if not user_input:
         raise HTTPException(status_code=400, detail="user_input required")
