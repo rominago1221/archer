@@ -4789,12 +4789,20 @@ async def decide_refinement_strategy(case_doc: dict, user_input: str,
 
 Return ONLY valid JSON with keys: strategy (one of: "incremental", "full_reanalysis", "off_topic"), reasoning (1 short sentence), off_topic_message (string, empty unless off_topic).
 
-Rules:
-- "off_topic": input is clearly unrelated to any legal case (e.g. "I like pizza", gibberish, random test strings, product feedback about the app). Nothing that could plausibly affect a legal analysis.
-- "incremental": input is a minor clarification or correction — a number adjustment, a single missing date, a typo fix, a one-fact addition that slots into existing findings without changing the legal theory or risk profile.
-- "full_reanalysis": input reveals structural new information — a new party, a new document mentioned, a new legal claim, a major procedural fact (prior notice / prior response / deadline missed), a radically different version of events, or multiple new facts that change risk scoring.
+DEFAULT BIAS: classify as "full_reanalysis" or "incremental". Only use "off_topic" when there is ZERO plausible legal connection to the case.
 
-When in doubt between incremental and full_reanalysis, choose full_reanalysis."""
+Rules:
+- "off_topic" — extremely rare. Reserve STRICTLY for obvious cases:
+    • Pure gibberish / keyboard-mashing ("asdfgh qwerty")
+    • Placeholder / lorem ipsum
+    • Product feedback aimed at the Archer app itself ("your UI is slow", "bug in the button")
+    • Clearly unrelated personal messages ("I like pizza", "how are you?")
+    • A message addressed to customer support instead of the case
+  If the input mentions ANY fact, date, name, amount, procedure, emotion tied to the situation, or piece of context — even vague — it is NOT off_topic.
+- "incremental" — minor clarification that slots into existing findings without changing the legal theory: a number correction, a missing date, one extra fact, a typo fix, an emotional/contextual nuance. Choose this when in doubt between incremental and off_topic.
+- "full_reanalysis" — structural new information: a new party, a new document referenced, a new legal claim, a major procedural fact (prior notice / deadline missed / response already sent), a different version of events, multiple new facts. Choose this when in doubt between incremental and full_reanalysis.
+
+Meta-rule: When hesitating, ALWAYS prefer the less destructive option to off_topic. A false incremental is harmless; a false off_topic frustrates the client."""
 
     user_prompt = f"""CURRENT ANALYSIS SUMMARY:
 {current_summary}
@@ -4813,8 +4821,12 @@ ORIGINAL CASE LANGUAGE (write off_topic_message in this language if applicable):
 Return JSON only."""
 
     result = await call_claude(system, user_prompt, max_tokens=400)
+    case_id_log = _current_case_id.get() if '_current_case_id' in globals() else None
+    input_preview = (user_input or "")[:120].replace("\n", " ")
     if not isinstance(result, dict) or "strategy" not in result:
-        logger.warning(f"decide_refinement_strategy returned unexpected shape: {result!r} — defaulting to full_reanalysis")
+        logger.warning(
+            f"refine[{case_id_log}] classifier shape invalid (input_len={len(user_input)}): {result!r} — default=full_reanalysis"
+        )
         return {"strategy": "full_reanalysis", "reasoning": "classifier fallback", "off_topic_message": ""}
     strat = result.get("strategy")
     if strat not in ("incremental", "full_reanalysis", "off_topic"):
@@ -4822,6 +4834,10 @@ Return JSON only."""
     msg = result.get("off_topic_message") or ""
     if strat == "off_topic" and not msg.strip():
         msg = _off_topic_fallback_message(language)
+    logger.info(
+        f"refine[{case_id_log}] strategy={strat} input_len={len(user_input)} "
+        f"reasoning={(result.get('reasoning') or '')[:160]!r} input_preview={input_preview!r}"
+    )
     return {"strategy": strat, "reasoning": result.get("reasoning", ""), "off_topic_message": msg}
 
 
@@ -4911,6 +4927,7 @@ async def refine_case(case_id: str, body: RefineRequest,
     versions the resulting analysis, enforces plan + per-case caps + concurrency lock."""
     _current_case_id.set(case_id)
     user_input = (body.user_input or "").strip()
+    logger.info(f"refine[{case_id}] received from user={current_user.user_id} input_len={len(user_input)}")
     if not user_input:
         raise HTTPException(status_code=400, detail="user_input required")
     if len(user_input) > REFINEMENT_MAX_INPUT_CHARS:
@@ -5012,7 +5029,10 @@ async def refine_case(case_id: str, body: RefineRequest,
         raise HTTPException(status_code=500, detail="Refinement classification failed")
 
     strategy = decision["strategy"]
-    logger.info(f"Refinement {refinement_id} for {case_id}: strategy={strategy}")
+    logger.info(
+        f"refine[{case_id}] strategy={strategy} refinement_id={refinement_id} "
+        f"plan={plan} refinement_count={refinement_count} has_document_text={bool(document_text)}"
+    )
 
     # ── OFF-TOPIC: nothing to version, release lock, return gentle message.
     if strategy == "off_topic":

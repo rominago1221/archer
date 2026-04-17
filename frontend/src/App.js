@@ -68,6 +68,8 @@ import InternalAdminSettings from './pages/Internal/AdminSettings';
 import Blog from './pages/Blog';
 import BlogArticle from './pages/BlogArticle';
 import PillarPage from './pages/PillarPage';
+// Toast feedback — must be mounted once at root so useToast() from anywhere in the app is visible.
+import { Toaster } from './components/ui/toaster';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -201,6 +203,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <AppRouter />
+        <Toaster />
       </AuthProvider>
     </BrowserRouter>
   );

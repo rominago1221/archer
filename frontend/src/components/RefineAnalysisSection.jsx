@@ -86,6 +86,9 @@ export default function RefineAnalysisSection({ caseDoc, language, onRefined, on
   const [value, setValue] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  // Inline result state — independent of the toast system so the user always
+  // sees feedback even if <Toaster /> is mis-mounted.
+  const [result, setResult] = useState(null); // { kind: 'success'|'offtopic'|'error', message, version }
 
   const refinementCount = Number(caseDoc?.refinement_count || 0);
   const isFree = !user?.plan || user.plan === 'free';
@@ -110,6 +113,7 @@ export default function RefineAnalysisSection({ caseDoc, language, onRefined, on
       return;
     }
     setSubmitting(true);
+    setResult(null);
     onSubmitStart && onSubmitStart();
     try {
       const res = await axios.post(
@@ -118,29 +122,36 @@ export default function RefineAnalysisSection({ caseDoc, language, onRefined, on
         { withCredentials: true }
       );
       if (res.data?.strategy === 'off_topic') {
-        toast({ title: c.offTopicTitle, description: res.data.message || '' });
+        const msg = res.data.message || '';
+        toast({ title: c.offTopicTitle, description: msg });
+        setResult({ kind: 'offtopic', message: msg });
       } else {
-        toast({
-          title: c.successTitle,
-          description: c.successDesc(res.data?.version || '\u2014'),
-        });
+        const version = res.data?.version || '\u2014';
+        toast({ title: c.successTitle, description: c.successDesc(version) });
+        setResult({ kind: 'success', version });
         setValue('');
         onRefined && onRefined(res.data);
         setTimeout(scrollToAnalysis, 120);
       }
     } catch (err) {
       const detail = err?.response?.data?.detail;
+      let inlineMsg = c.genericError;
       if (detail === 'multi_doc_refinement_unsupported') {
-        toast({ title: c.multiDocBanner });
+        inlineMsg = c.multiDocBanner;
+        toast({ title: inlineMsg });
       } else if (detail === 'refinement_in_progress') {
-        toast({ title: c.lockMsg });
+        inlineMsg = c.lockMsg;
+        toast({ title: inlineMsg });
       } else if (detail === 'upgrade_required') {
         setShowUpgrade(true);
+        inlineMsg = null; // modal handles it
       } else if (detail === 'max_refinements_reached') {
+        inlineMsg = `${c.maxReachedTitle} — ${c.maxReachedDesc}`;
         toast({ title: c.maxReachedTitle, description: c.maxReachedDesc });
       } else {
         toast({ title: c.genericError });
       }
+      if (inlineMsg) setResult({ kind: 'error', message: inlineMsg });
     } finally {
       setSubmitting(false);
     }
@@ -224,6 +235,41 @@ export default function RefineAnalysisSection({ caseDoc, language, onRefined, on
       >
         {submitting ? c.submitting : c.submit}
       </button>
+
+      {result && !submitting && (
+        <div
+          data-testid={`refine-result-${result.kind}`}
+          style={{
+            marginTop: 14, padding: '12px 14px', borderRadius: 10, fontSize: 12, lineHeight: 1.55,
+            ...(result.kind === 'success' && {
+              background: '#dcfce7', border: '1px solid #86efac', color: '#166534',
+            }),
+            ...(result.kind === 'offtopic' && {
+              background: '#fef3c7', border: '1px solid #f59e0b', color: '#78350f',
+            }),
+            ...(result.kind === 'error' && {
+              background: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c',
+            }),
+          }}
+        >
+          {result.kind === 'success' && (
+            <>
+              <strong>{c.successTitle}</strong> — {c.successDesc(result.version)}
+            </>
+          )}
+          {result.kind === 'offtopic' && (
+            <>
+              <strong>{c.offTopicTitle}</strong>
+              {result.message ? <> — {result.message}</> : null}
+            </>
+          )}
+          {result.kind === 'error' && (
+            <>
+              <strong>!</strong> {result.message}
+            </>
+          )}
+        </div>
+      )}
 
       {showUpgrade && (
         <UpgradeModal
