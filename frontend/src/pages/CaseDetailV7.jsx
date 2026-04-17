@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useUiLanguage } from '../hooks/useUiLanguage';
@@ -18,6 +18,7 @@ import JurisdictionMismatchBanner from '../components/JurisdictionMismatchBanner
 import RefineAnalysisSection from '../components/RefineAnalysisSection';
 import VersionPicker from '../components/VersionPicker';
 import AdversarialCounterArgsSection from '../components/AdversarialCounterArgsSection';
+import { useCaseBehaviorTracking } from '../hooks/useBehaviorTracking';
 import LiveCounselCTA from '../components/LiveCounselCTA';
 import LiveCounselBookingFlow from '../components/LiveCounselBookingFlow';
 import ScoreHistoryGraph from '../components/Dashboard/Sprint2/ScoreHistoryGraph';
@@ -43,6 +44,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 export default function CaseDetailV7() {
   const { caseId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const country = user?.jurisdiction || 'BE';
   const language = useUiLanguage(country);
@@ -61,6 +63,10 @@ export default function CaseDetailV7() {
   // Refinement versioning — null means "view the live current version".
   const [viewingVersion, setViewingVersion] = useState(null);
   const [viewedAnalysis, setViewedAnalysis] = useState(null);
+
+  // Behavior tracking — fires analysis_viewed, time_spent heartbeat, case_abandoned,
+  // and scrolled_to_bottom when the sentinel at the bottom of the page becomes visible.
+  const { bottomSentinelRef, markInteracted, fire: trackFire } = useCaseBehaviorTracking(caseId);
 
   const fetchCase = useCallback(async () => {
     if (!caseId) return;
@@ -85,8 +91,29 @@ export default function CaseDetailV7() {
 
   useEffect(() => { fetchCase(); }, [fetchCase]);
 
+  // Purchase tracking — Stripe redirects to /cases/:id?payment=success for attorney-letter and
+  // live-counsel flows. Fire the right event once caseDoc is loaded, then strip the query param.
+  const purchaseFiredRef = useRef(false);
+  useEffect(() => {
+    if (purchaseFiredRef.current) return;
+    if (!caseDoc) return;
+    if (searchParams.get('payment') !== 'success') return;
+    purchaseFiredRef.current = true;
+    // Live counsel wins when active — otherwise attribute the purchase to attorney letter.
+    const isLiveCounsel = !!caseDoc?.live_counsel_active;
+    trackFire(isLiveCounsel ? 'purchased_live_counsel' : 'purchased_attorney_letter', {
+      plan: user?.plan || 'free',
+    });
+    markInteracted();
+    // Remove the query param so a refresh doesn't double-fire.
+    const next = new URLSearchParams(searchParams);
+    next.delete('payment');
+    setSearchParams(next, { replace: true });
+  }, [caseDoc, searchParams, setSearchParams, trackFire, markInteracted, user]);
+
   const handleChoiceSelect = async (choice) => {
     setPopupOpen(false);
+    markInteracted();
     if (choice === 'basic') {
       // DIY letter: generate via AI and show inline
       setLetterGenerating(true);
@@ -105,6 +132,7 @@ export default function CaseDetailV7() {
         setLetterGenerating(false);
       }
     } else if (choice === 'signed') {
+      trackFire('clicked_attorney_letter');
       // Attorney-signed letter: Stripe checkout
       try {
         const res = await axios.post(`${API}/cases/${caseId}/checkout/attorney-letter`, {}, { withCredentials: true });
@@ -116,6 +144,7 @@ export default function CaseDetailV7() {
         alert(err?.response?.data?.detail || 'Checkout failed');
       }
     } else if (choice === 'combo') {
+      trackFire('clicked_live_counsel', { source: 'generate_letter_popup' });
       // Combo: Live Counsel checkout
       try {
         const res = await axios.post(`${API}/cases/${caseId}/checkout/live-counsel`, {
@@ -461,6 +490,7 @@ export default function CaseDetailV7() {
         <RefineAnalysisSection
           caseDoc={caseDoc}
           language={language}
+          onSubmitStart={() => { markInteracted(); trackFire('refinement_started'); }}
           onRefined={() => {
             // After a successful refine, drop back to the live view and re-fetch.
             setViewingVersion(null);
@@ -468,6 +498,9 @@ export default function CaseDetailV7() {
             fetchCase();
           }}
         />
+
+        {/* Bottom sentinel for scrolled_to_bottom tracking */}
+        <div ref={bottomSentinelRef} data-testid="scroll-sentinel" style={{ height: 1 }} />
       </div>
     </div>
   );

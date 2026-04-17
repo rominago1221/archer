@@ -6954,6 +6954,286 @@ async def admin_case_types_distribution(admin: dict = Depends(admin_required)):
     return {"types": [{"type": r["_id"] or "other", "count": r["count"]} for r in results]}
 
 
+# ================== User Behavior Tracking ==================
+# Phase 1: passive tracking. Events are fired client-side and written to
+# `user_behavior_events`. Admin dashboard consumes the aggregated view.
+
+_TRACK_ALLOWED_EVENTS = {
+    "analysis_viewed", "scrolled_to_bottom", "time_spent",
+    "clicked_attorney_letter", "clicked_live_counsel",
+    "refinement_started", "case_abandoned",
+    "purchased_attorney_letter", "purchased_live_counsel",
+}
+
+
+class TrackEventRequest(BaseModel):
+    event_type: str
+    case_id: Optional[str] = None
+    metadata: Optional[dict] = None
+
+
+@api_router.post("/events/track")
+async def track_user_event(body: TrackEventRequest, current_user: User = Depends(get_current_user)):
+    """Record a passive user behavior event. Best effort — never fails the client flow."""
+    if body.event_type not in _TRACK_ALLOWED_EVENTS:
+        # Silent reject — we don't want the client to know which events are tracked.
+        return {"ok": True}
+    try:
+        case_type = None
+        jurisdiction = None
+        if body.case_id:
+            case_doc = await db.cases.find_one(
+                {"case_id": body.case_id, "user_id": current_user.user_id},
+                {"_id": 0, "type": 1, "jurisdiction": 1, "country": 1},
+            )
+            if case_doc:
+                case_type = case_doc.get("type")
+                jurisdiction = case_doc.get("jurisdiction") or case_doc.get("country")
+        meta = body.metadata if isinstance(body.metadata, dict) else {}
+        # Clamp metadata to a sane size to avoid storing garbage.
+        meta = {str(k)[:64]: (v if not isinstance(v, str) else v[:500]) for k, v in list(meta.items())[:16]}
+
+        await db.user_behavior_events.insert_one({
+            "event_id": f"evt_{uuid.uuid4().hex[:12]}",
+            "case_id": body.case_id,
+            "user_id": current_user.user_id,
+            "user_plan": (getattr(current_user, "plan", None) or "free"),
+            "event_type": body.event_type,
+            "metadata": meta,
+            "case_type": case_type,
+            "jurisdiction": jurisdiction,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+    except Exception:
+        logger.exception("track_user_event insert failed")
+    return {"ok": True}
+
+
+# ================== Admin Behavior Analytics ==================
+
+def _behavior_since(period: str) -> Optional[str]:
+    now = datetime.now(timezone.utc)
+    if period == "7d":
+        return (now - timedelta(days=7)).isoformat()
+    if period == "30d":
+        return (now - timedelta(days=30)).isoformat()
+    return None  # "all"
+
+
+def _behavior_base_match(period: str, case_type: Optional[str], plan: Optional[str],
+                        jurisdiction: Optional[str]) -> dict:
+    match: dict = {}
+    since = _behavior_since(period)
+    if since:
+        match["created_at"] = {"$gte": since}
+    if case_type:
+        match["case_type"] = case_type
+    if plan:
+        match["user_plan"] = plan
+    if jurisdiction:
+        match["jurisdiction"] = jurisdiction
+    return match
+
+
+async def _unique_cases_by_event(base_match: dict, event_type: str) -> int:
+    """Count distinct case_ids that fired a given event. Events with no case_id are ignored."""
+    pipeline = [
+        {"$match": {**base_match, "event_type": event_type, "case_id": {"$ne": None}}},
+        {"$group": {"_id": "$case_id"}},
+        {"$count": "n"},
+    ]
+    res = await db.user_behavior_events.aggregate(pipeline).to_list(1)
+    return (res[0]["n"] if res else 0)
+
+
+@api_router.get("/admin/analytics/behavior")
+async def admin_analytics_behavior(
+    period: str = "30d",
+    case_type: Optional[str] = None,
+    plan: Optional[str] = None,
+    jurisdiction: Optional[str] = None,
+    admin: dict = Depends(admin_required),
+):
+    """Behavior funnel + engagement + per-segment breakdowns.
+    Filters: period=7d|30d|all, case_type, plan (free|solo|...), jurisdiction (BE|US)."""
+    base = _behavior_base_match(period, case_type, plan, jurisdiction)
+
+    # Parallel funnel counts — distinct case_ids per event type.
+    viewed, scrolled, clicked_al, purchased_al, clicked_lc, purchased_lc, abandoned = await asyncio.gather(
+        _unique_cases_by_event(base, "analysis_viewed"),
+        _unique_cases_by_event(base, "scrolled_to_bottom"),
+        _unique_cases_by_event(base, "clicked_attorney_letter"),
+        _unique_cases_by_event(base, "purchased_attorney_letter"),
+        _unique_cases_by_event(base, "clicked_live_counsel"),
+        _unique_cases_by_event(base, "purchased_live_counsel"),
+        _unique_cases_by_event(base, "case_abandoned"),
+    )
+
+    def _rate(n: int, d: int) -> float:
+        return round(n / d, 4) if d else 0.0
+
+    # Active users in period (any event).
+    active_users_pipeline = [
+        {"$match": base},
+        {"$group": {"_id": "$user_id"}},
+        {"$count": "n"},
+    ]
+    active_res = await db.user_behavior_events.aggregate(active_users_pipeline).to_list(1)
+    total_users_active = (active_res[0]["n"] if active_res else 0)
+
+    # Avg time on analysis — take MAX time_spent_seconds per case, then average.
+    time_pipeline = [
+        {"$match": {**base, "event_type": "time_spent", "case_id": {"$ne": None}}},
+        {"$group": {"_id": "$case_id", "max_seconds": {"$max": "$metadata.time_spent_seconds"}}},
+        {"$group": {"_id": None, "avg": {"$avg": "$max_seconds"}}},
+    ]
+    time_res = await db.user_behavior_events.aggregate(time_pipeline).to_list(1)
+    avg_time_s = int(round(time_res[0]["avg"], 0)) if (time_res and time_res[0].get("avg")) else 0
+
+    # Avg refinements per case — total refinement_started events divided by unique viewed cases.
+    refs_match = {**base, "event_type": "refinement_started"}
+    total_refinements = await db.user_behavior_events.count_documents(refs_match)
+    avg_refinements = round(total_refinements / viewed, 2) if viewed else 0.0
+
+    abandonment_rate = _rate(abandoned, viewed)
+
+    # By case_type.
+    by_ct_pipeline = [
+        {"$match": {**base, "event_type": "analysis_viewed", "case_id": {"$ne": None}}},
+        {"$group": {"_id": {"case_type": "$case_type", "case_id": "$case_id"}}},
+        {"$group": {"_id": "$_id.case_type", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+    ]
+    by_ct_raw = await db.user_behavior_events.aggregate(by_ct_pipeline).to_list(30)
+    # Per-case_type conversion (clicked_attorney_letter → purchased_attorney_letter).
+    by_case_type = []
+    for row in by_ct_raw:
+        ct = row["_id"] or "other"
+        bm = {**base, "case_type": ct}
+        al_clicks = await _unique_cases_by_event(bm, "clicked_attorney_letter")
+        al_purchases = await _unique_cases_by_event(bm, "purchased_attorney_letter")
+        by_case_type.append({
+            "case_type": ct,
+            "count": row["count"],
+            "conversion_rate": _rate(al_purchases, row["count"]),
+            "attorney_click_rate": _rate(al_clicks, row["count"]),
+        })
+
+    # By plan.
+    by_plan_pipeline = [
+        {"$match": {**base, "event_type": "analysis_viewed", "case_id": {"$ne": None}}},
+        {"$group": {"_id": {"plan": "$user_plan", "case_id": "$case_id"}}},
+        {"$group": {"_id": "$_id.plan", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+    ]
+    by_plan_raw = await db.user_behavior_events.aggregate(by_plan_pipeline).to_list(10)
+    by_plan = []
+    for row in by_plan_raw:
+        p = row["_id"] or "free"
+        bm = {**base, "user_plan": p}
+        al_purchases = await _unique_cases_by_event(bm, "purchased_attorney_letter")
+        lc_purchases = await _unique_cases_by_event(bm, "purchased_live_counsel")
+        purchases = max(al_purchases, lc_purchases)  # either counts as a conversion
+        by_plan.append({
+            "plan": p,
+            "count": row["count"],
+            "conversion_to_paid": _rate(purchases, row["count"]),
+        })
+
+    # By jurisdiction.
+    by_j_pipeline = [
+        {"$match": {**base, "event_type": "analysis_viewed", "case_id": {"$ne": None}}},
+        {"$group": {"_id": {"j": "$jurisdiction", "case_id": "$case_id"}}},
+        {"$group": {"_id": "$_id.j", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+    ]
+    by_j_raw = await db.user_behavior_events.aggregate(by_j_pipeline).to_list(10)
+    by_jurisdiction = [{"jurisdiction": r["_id"] or "unknown", "count": r["count"]} for r in by_j_raw]
+
+    total_cases_analyzed = viewed
+
+    await log_admin_action(admin, "analytics_behavior_view",
+                           metadata={"period": period, "filters": {"case_type": case_type, "plan": plan, "jurisdiction": jurisdiction}})
+
+    return {
+        "period": period,
+        "filters": {"case_type": case_type, "plan": plan, "jurisdiction": jurisdiction},
+        "total_cases_analyzed": total_cases_analyzed,
+        "total_users_active": total_users_active,
+        "funnel": {
+            "analysis_viewed": viewed,
+            "scrolled_to_bottom": scrolled,
+            "clicked_attorney_letter": clicked_al,
+            "purchased_attorney_letter": purchased_al,
+            "clicked_live_counsel": clicked_lc,
+            "purchased_live_counsel": purchased_lc,
+            "case_abandoned": abandoned,
+        },
+        "conversion_rates": {
+            "view_to_scroll": _rate(scrolled, viewed),
+            "view_to_attorney_click": _rate(clicked_al, viewed),
+            "attorney_click_to_purchase": _rate(purchased_al, clicked_al),
+            "view_to_live_counsel_click": _rate(clicked_lc, viewed),
+            "live_counsel_click_to_purchase": _rate(purchased_lc, clicked_lc),
+            "overall_view_to_purchase": _rate(max(purchased_al, purchased_lc), viewed),
+        },
+        "engagement": {
+            "avg_time_on_analysis_seconds": avg_time_s,
+            "avg_refinements_per_case": avg_refinements,
+            "abandonment_rate": abandonment_rate,
+        },
+        "by_case_type": by_case_type,
+        "by_plan": by_plan,
+        "by_jurisdiction": by_jurisdiction,
+    }
+
+
+@api_router.get("/admin/analytics/abandoned-cases")
+async def admin_analytics_abandoned_cases(
+    period: str = "30d",
+    limit: int = 100,
+    admin: dict = Depends(admin_required),
+):
+    """List cases flagged as abandoned so admins can audit bad analyses."""
+    base = _behavior_base_match(period, None, None, None)
+    pipeline = [
+        {"$match": {**base, "event_type": "case_abandoned", "case_id": {"$ne": None}}},
+        {"$sort": {"created_at": -1}},
+        {"$group": {"_id": "$case_id",
+                    "abandoned_at": {"$first": "$created_at"},
+                    "user_id": {"$first": "$user_id"},
+                    "user_plan": {"$first": "$user_plan"},
+                    "case_type": {"$first": "$case_type"},
+                    "jurisdiction": {"$first": "$jurisdiction"},
+                    "metadata": {"$first": "$metadata"}}},
+        {"$sort": {"abandoned_at": -1}},
+        {"$limit": max(1, min(limit, 500))},
+    ]
+    raw = await db.user_behavior_events.aggregate(pipeline).to_list(limit)
+
+    # Enrich with case title + risk_score.
+    out = []
+    for row in raw:
+        cid = row["_id"]
+        case = await db.cases.find_one({"case_id": cid}, {"_id": 0, "title": 1, "risk_score": 1, "created_at": 1, "status": 1})
+        if not case:
+            continue
+        out.append({
+            "case_id": cid,
+            "title": case.get("title") or "Untitled",
+            "risk_score": case.get("risk_score", 0),
+            "status": case.get("status"),
+            "case_created_at": case.get("created_at"),
+            "abandoned_at": row.get("abandoned_at"),
+            "user_id": row.get("user_id"),
+            "user_plan": row.get("user_plan"),
+            "case_type": row.get("case_type"),
+            "jurisdiction": row.get("jurisdiction"),
+            "time_before_abandon_seconds": (row.get("metadata") or {}).get("time_spent_seconds"),
+        })
+    return {"period": period, "count": len(out), "cases": out}
+
+
 # ================== Admin Exports ==================
 
 @api_router.get("/admin/exports/customers.csv")

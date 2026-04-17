@@ -78,7 +78,7 @@ function copyFor(language) {
   };
 }
 
-export default function RefineAnalysisSection({ caseDoc, language, onRefined }) {
+export default function RefineAnalysisSection({ caseDoc, language, onRefined, onSubmitStart }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const c = copyFor(language);
@@ -110,6 +110,7 @@ export default function RefineAnalysisSection({ caseDoc, language, onRefined }) 
       return;
     }
     setSubmitting(true);
+    onSubmitStart && onSubmitStart();
     try {
       const res = await axios.post(
         `${API}/cases/${caseDoc.case_id}/refine`,
