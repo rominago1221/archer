@@ -149,6 +149,10 @@ class Case(BaseModel):
     attorney_status: Optional[str] = None      # Sprint C: waiting_assignment | assigned | unassigned_no_match
     payment_status: Optional[str] = None       # Sprint D: paid
     live_counsel_active: bool = False          # Sprint E: computed in GET /cases/:id
+    # Refinement feature — post-analysis context + versioning
+    current_analysis_version: int = 1
+    refinement_count: int = 0
+    refinement_in_progress: bool = False
 
     @field_validator('deadline', mode='before')
     @classmethod

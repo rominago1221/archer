@@ -4069,6 +4069,527 @@ async def dismiss_jurisdiction_mismatch(case_id: str, current_user: User = Depen
     return {"status": "dismissed"}
 
 
+# ================== REFINEMENT FEATURE ==================
+# Post-analysis free-text context. User can refine analysis up to 10 times per case
+# (Free plan: 2). AI classifies each input as incremental | full_reanalysis | off_topic
+# and the resulting analysis is preserved as a version in case_analyses_history.
+
+REFINEMENT_MAX_PER_CASE = 10
+REFINEMENT_FREE_QUOTA = 2
+REFINEMENT_MAX_INPUT_CHARS = 4000
+
+# Analysis fields that represent "the analysis" and get snapshotted/restored per version.
+_ANALYSIS_SNAPSHOT_FIELDS = (
+    "risk_score", "risk_financial", "risk_urgency", "risk_legal_strength", "risk_complexity",
+    "deadline", "deadline_description", "financial_exposure", "financial_exposure_detailed",
+    "ai_summary", "ai_findings", "ai_next_steps", "key_violation_types", "recommend_lawyer",
+    "battle_preview", "success_probability", "procedural_defects", "applicable_laws",
+    "immediate_actions", "leverage_points", "red_lines", "key_insight", "strategy",
+    "lawyer_recommendation", "user_rights", "opposing_weaknesses", "documents_to_gather",
+    "recent_case_law", "case_law_updated", "archer_question", "title", "type",
+    "strategy_narrative", "amounts", "analysis_depth",
+)
+
+
+def _case_language(case_doc: dict, current_user: User) -> str:
+    """Resolve the language in which this case's analysis was originally written."""
+    return (case_doc.get("language") or getattr(current_user, "language", None) or "en")
+
+
+def _extract_analysis_snapshot(case_doc: dict) -> dict:
+    """Pull the analysis-relevant fields out of a case doc for versioned storage."""
+    return {k: case_doc.get(k) for k in _ANALYSIS_SNAPSHOT_FIELDS if k in case_doc}
+
+
+async def _ensure_v1_snapshot(case_doc: dict) -> None:
+    """On first refinement ever for this case, persist the current analysis as version 1.
+    Idempotent: safe to call multiple times."""
+    existing = await db.case_analyses_history.find_one({"case_id": case_doc["case_id"], "version": 1})
+    if existing:
+        return
+    snapshot_id = f"snap_{uuid.uuid4().hex[:12]}"
+    await db.case_analyses_history.insert_one({
+        "snapshot_id": snapshot_id,
+        "case_id": case_doc["case_id"],
+        "user_id": case_doc["user_id"],
+        "version": 1,
+        "analysis": _extract_analysis_snapshot(case_doc),
+        "triggered_by_refinement_id": None,
+        "refinement_excerpt": None,
+        "language": case_doc.get("language") or "en",
+        "jurisdiction": case_doc.get("jurisdiction") or case_doc.get("country") or "US",
+        "created_at": case_doc.get("updated_at") or case_doc.get("created_at") or datetime.now(timezone.utc).isoformat(),
+    })
+
+
+async def _write_new_snapshot(case_doc: dict, version: int, analysis_fields: dict,
+                              refinement_id: str, excerpt: str) -> str:
+    """Write a new version snapshot after a refinement. Returns snapshot_id."""
+    snapshot_id = f"snap_{uuid.uuid4().hex[:12]}"
+    await db.case_analyses_history.insert_one({
+        "snapshot_id": snapshot_id,
+        "case_id": case_doc["case_id"],
+        "user_id": case_doc["user_id"],
+        "version": version,
+        "analysis": analysis_fields,
+        "triggered_by_refinement_id": refinement_id,
+        "refinement_excerpt": excerpt,
+        "language": case_doc.get("language") or "en",
+        "jurisdiction": case_doc.get("jurisdiction") or case_doc.get("country") or "US",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return snapshot_id
+
+
+def _off_topic_fallback_message(language: str) -> str:
+    lang = (language or "en").lower()
+    if lang.startswith("fr"):
+        return "Ces informations ne semblent pas liées à votre dossier. Pouvez-vous reformuler en donnant des détails sur les faits, dates, montants, ou parties impliquées ?"
+    if lang.startswith("nl"):
+        return "Deze informatie lijkt niet gerelateerd aan uw dossier. Kunt u deze herformuleren met details over feiten, data, bedragen of betrokken partijen?"
+    if lang.startswith("de"):
+        return "Diese Informationen scheinen nicht mit Ihrem Fall zusammenzuhängen. Können Sie sie mit Details zu Fakten, Daten, Beträgen oder Beteiligten umformulieren?"
+    return "This information doesn't appear to be related to your case. Could you rephrase with details about facts, dates, amounts, or parties involved?"
+
+
+async def decide_refinement_strategy(case_doc: dict, user_input: str,
+                                     prior_inputs: List[str], language: str) -> dict:
+    """Classify the user's refinement input. Returns {strategy, reasoning, off_topic_message}.
+    Strategy ∈ {'incremental', 'full_reanalysis', 'off_topic'}."""
+    current_summary = (case_doc.get("ai_summary") or "")[:800]
+    current_findings = case_doc.get("ai_findings") or []
+    findings_brief = "; ".join(
+        f.get("text", "")[:120] for f in current_findings[:6] if isinstance(f, dict)
+    )
+    prior_excerpts = " | ".join((x or "")[:150] for x in prior_inputs[-3:])
+
+    system = """You are a routing classifier for a legal analysis refinement system. A client adds a free-text comment to clarify or extend their case. You must decide how to process it.
+
+Return ONLY valid JSON with keys: strategy (one of: "incremental", "full_reanalysis", "off_topic"), reasoning (1 short sentence), off_topic_message (string, empty unless off_topic).
+
+Rules:
+- "off_topic": input is clearly unrelated to any legal case (e.g. "I like pizza", gibberish, random test strings, product feedback about the app). Nothing that could plausibly affect a legal analysis.
+- "incremental": input is a minor clarification or correction — a number adjustment, a single missing date, a typo fix, a one-fact addition that slots into existing findings without changing the legal theory or risk profile.
+- "full_reanalysis": input reveals structural new information — a new party, a new document mentioned, a new legal claim, a major procedural fact (prior notice / prior response / deadline missed), a radically different version of events, or multiple new facts that change risk scoring.
+
+When in doubt between incremental and full_reanalysis, choose full_reanalysis."""
+
+    user_prompt = f"""CURRENT ANALYSIS SUMMARY:
+{current_summary}
+
+CURRENT TOP FINDINGS:
+{findings_brief or '(none)'}
+
+PRIOR REFINEMENT INPUTS (for context, not the new one):
+{prior_excerpts or '(none)'}
+
+NEW USER INPUT (the comment to classify; may be in any language — translate mentally):
+\"\"\"{user_input[:3500]}\"\"\"
+
+ORIGINAL CASE LANGUAGE (write off_topic_message in this language if applicable): {language}
+
+Return JSON only."""
+
+    result = await call_claude(system, user_prompt, max_tokens=400)
+    if not isinstance(result, dict) or "strategy" not in result:
+        logger.warning(f"decide_refinement_strategy returned unexpected shape: {result!r} — defaulting to full_reanalysis")
+        return {"strategy": "full_reanalysis", "reasoning": "classifier fallback", "off_topic_message": ""}
+    strat = result.get("strategy")
+    if strat not in ("incremental", "full_reanalysis", "off_topic"):
+        strat = "full_reanalysis"
+    msg = result.get("off_topic_message") or ""
+    if strat == "off_topic" and not msg.strip():
+        msg = _off_topic_fallback_message(language)
+    return {"strategy": strat, "reasoning": result.get("reasoning", ""), "off_topic_message": msg}
+
+
+async def _run_incremental_refinement(case_doc: dict, user_input: str,
+                                      language: str, jurisdiction: str) -> dict:
+    """Incremental path: small Claude call that returns a patch merged into the current analysis."""
+    lang_instr = get_language_instruction(language)
+    jur_guard = get_jurisdiction_guard(jurisdiction, language)
+    lang_note = f"The case was originally analyzed in language code '{language}'. Maintain the same language for all output fields. The user input may be in a different language — translate mentally and incorporate without switching the analysis language."
+    system = (SENIOR_ATTORNEY_PERSONA + jur_guard + lang_instr +
+              "\n\n" + lang_note + "\n\nYou receive an existing legal analysis plus a short additional fact from the client. Produce a precise patch that integrates the new fact. Do NOT rewrite unchanged parts.")
+
+    current_summary = case_doc.get("ai_summary") or ""
+    current_findings = case_doc.get("ai_findings") or []
+    current_next_steps = case_doc.get("ai_next_steps") or []
+    current_risk = {
+        "total": case_doc.get("risk_score", 0),
+        "financial": case_doc.get("risk_financial", 0),
+        "urgency": case_doc.get("risk_urgency", 0),
+        "legal_strength": case_doc.get("risk_legal_strength", 0),
+        "complexity": case_doc.get("risk_complexity", 0),
+    }
+
+    user_prompt = f"""EXISTING ANALYSIS:
+summary: {current_summary}
+findings (top 8): {json.dumps(current_findings[:8], ensure_ascii=False)[:3000]}
+next_steps: {json.dumps(current_next_steps[:5], ensure_ascii=False)[:1500]}
+current risk_score: {json.dumps(current_risk)}
+
+NEW USER INPUT TO INCORPORATE:
+\"\"\"{user_input[:3500]}\"\"\"
+
+Return ONLY this JSON (no prose, no markdown):
+{{
+  "risk_score": {{"total": int 0-100, "financial": int 0-100, "urgency": int 0-100, "legal_strength": int 0-100, "complexity": int 0-100}},
+  "ai_summary": "updated 2-3 sentence summary reflecting the new info",
+  "ai_findings": [ <= 8 finding objects with text/impact/type, include the existing ones possibly edited plus 0-2 new ones driven by the input ],
+  "ai_next_steps": [ exactly 3 step objects with title/description/action_type ],
+  "key_insight": "one sentence the user must remember",
+  "impact_summary": "one short sentence explaining how the new input changed the analysis"
+}}"""
+    patch = await call_claude(system, user_prompt, max_tokens=3500)
+    if not isinstance(patch, dict):
+        return {}
+    return patch
+
+
+async def _run_full_reanalysis(case_doc: dict, document_text: str, user_input: str,
+                               prior_inputs: List[str], language: str,
+                               jurisdiction: str, region: str) -> dict:
+    """Full 5-pass reanalysis with the new context merged into user_context."""
+    combined_context_parts = []
+    for prior in prior_inputs:
+        if prior and prior.strip():
+            combined_context_parts.append(prior.strip())
+    combined_context_parts.append(user_input.strip())
+    merged_context = "\n---\n".join(combined_context_parts)[:3500]
+
+    lang_preserve_note = (
+        f"\n\nLANGUAGE CONSISTENCY RULE — NON-NEGOTIABLE: "
+        f"This case was originally analyzed in language code '{language}'. "
+        f"Maintain the SAME language for every field of the analysis. "
+        f"The user context below may be in a different language — translate it mentally but keep the analysis in the original language."
+    )
+    merged_context_with_note = merged_context + lang_preserve_note
+
+    if jurisdiction == "BE":
+        be_lang = language if language.startswith(("fr", "nl", "de")) else "fr-BE"
+        return await analyze_document_belgian(
+            document_text, user_context=merged_context_with_note,
+            region=region or "Wallonie", language=be_lang,
+        )
+    return await analyze_document_advanced(
+        document_text, user_context=merged_context_with_note,
+        language=language, jurisdiction=jurisdiction,
+    )
+
+
+class RefineRequest(BaseModel):
+    user_input: str
+
+
+@api_router.post("/cases/{case_id}/refine")
+async def refine_case(case_id: str, body: RefineRequest,
+                      current_user: User = Depends(get_current_user)):
+    """Accept a free-text refinement. Classifies input (incremental/full_reanalysis/off_topic),
+    versions the resulting analysis, enforces plan + per-case caps + concurrency lock."""
+    user_input = (body.user_input or "").strip()
+    if not user_input:
+        raise HTTPException(status_code=400, detail="user_input required")
+    if len(user_input) > REFINEMENT_MAX_INPUT_CHARS:
+        raise HTTPException(status_code=400, detail=f"user_input exceeds {REFINEMENT_MAX_INPUT_CHARS} chars")
+
+    case_doc = await db.cases.find_one(
+        {"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0}
+    )
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    # Guard: multi-doc cases are not yet supported on the refine path.
+    if (case_doc.get("document_count") or 0) > 1:
+        raise HTTPException(status_code=400, detail="multi_doc_refinement_unsupported")
+
+    # Concurrency: don't accept a second refine while the prior one is in flight.
+    if case_doc.get("refinement_in_progress"):
+        raise HTTPException(status_code=409, detail="refinement_in_progress")
+
+    refinement_count = int(case_doc.get("refinement_count") or 0)
+
+    # Hard cap — applies to every tier.
+    if refinement_count >= REFINEMENT_MAX_PER_CASE:
+        raise HTTPException(status_code=429, detail="max_refinements_reached")
+
+    # Free-tier quota.
+    plan = (getattr(current_user, "plan", None) or "free").lower()
+    if plan == "free" and refinement_count >= REFINEMENT_FREE_QUOTA:
+        raise HTTPException(status_code=402, detail="upgrade_required")
+
+    # Load the key document's extracted text (needed for full_reanalysis path).
+    doc = await db.documents.find_one(
+        {"case_id": case_id, "user_id": current_user.user_id, "extracted_text": {"$ne": None}},
+        {"_id": 0},
+        sort=[("uploaded_at", -1)],
+    )
+    document_text = (doc or {}).get("extracted_text") or ""
+
+    # Acquire the lock.
+    now = datetime.now(timezone.utc).isoformat()
+    lock_res = await db.cases.update_one(
+        {"case_id": case_id, "user_id": current_user.user_id, "refinement_in_progress": {"$ne": True}},
+        {"$set": {"refinement_in_progress": True, "updated_at": now}},
+    )
+    if lock_res.modified_count == 0:
+        raise HTTPException(status_code=409, detail="refinement_in_progress")
+
+    # Ensure v1 snapshot exists (backfill at first-ever refinement).
+    try:
+        await _ensure_v1_snapshot(case_doc)
+    except Exception as e:
+        logger.error(f"_ensure_v1_snapshot failed for {case_id}: {e}")
+
+    # Fetch prior refinements (for context + strategy decision).
+    prior_refinements_cursor = db.case_refinements.find(
+        {"case_id": case_id, "status": "completed"}, {"_id": 0, "user_input": 1}
+    ).sort("created_at", 1)
+    prior_docs = await prior_refinements_cursor.to_list(REFINEMENT_MAX_PER_CASE)
+    prior_inputs = [p.get("user_input", "") for p in prior_docs]
+
+    language = _case_language(case_doc, current_user)
+    jurisdiction = case_doc.get("jurisdiction") or case_doc.get("country") or "US"
+    region = case_doc.get("region") or ""
+
+    # Create the refinement record (pending).
+    refinement_id = f"ref_{uuid.uuid4().hex[:12]}"
+    current_version = int(case_doc.get("current_analysis_version") or 1)
+    excerpt = user_input[:40]
+    await db.case_refinements.insert_one({
+        "refinement_id": refinement_id,
+        "case_id": case_id,
+        "user_id": current_user.user_id,
+        "user_input": user_input,
+        "strategy": None,
+        "status": "pending",
+        "version_before": current_version,
+        "version_after": None,
+        "created_at": now,
+        "completed_at": None,
+    })
+
+    async def _release_lock_on_error():
+        await db.cases.update_one(
+            {"case_id": case_id},
+            {"$set": {"refinement_in_progress": False, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        )
+
+    # Strategy decision.
+    try:
+        decision = await decide_refinement_strategy(case_doc, user_input, prior_inputs, language)
+    except Exception as e:
+        logger.error(f"decide_refinement_strategy crashed for {case_id}: {e}")
+        await _release_lock_on_error()
+        await db.case_refinements.update_one(
+            {"refinement_id": refinement_id},
+            {"$set": {"status": "error", "error": "strategy_failed",
+                      "completed_at": datetime.now(timezone.utc).isoformat()}},
+        )
+        raise HTTPException(status_code=500, detail="Refinement classification failed")
+
+    strategy = decision["strategy"]
+    logger.info(f"Refinement {refinement_id} for {case_id}: strategy={strategy}")
+
+    # ── OFF-TOPIC: nothing to version, release lock, return gentle message.
+    if strategy == "off_topic":
+        off_topic_msg = decision.get("off_topic_message") or _off_topic_fallback_message(language)
+        completed = datetime.now(timezone.utc).isoformat()
+        await db.case_refinements.update_one(
+            {"refinement_id": refinement_id},
+            {"$set": {"strategy": "off_topic", "status": "completed",
+                      "off_topic_message": off_topic_msg, "completed_at": completed}},
+        )
+        await db.cases.update_one(
+            {"case_id": case_id},
+            {"$set": {"refinement_in_progress": False, "updated_at": completed}},
+        )
+        return {
+            "refinement_id": refinement_id,
+            "strategy": "off_topic",
+            "message": off_topic_msg,
+            "version": current_version,
+        }
+
+    # ── INCREMENTAL or FULL_REANALYSIS: run the analysis, snapshot, update case.
+    try:
+        if strategy == "incremental":
+            patch = await _run_incremental_refinement(case_doc, user_input, language, jurisdiction)
+            if not patch:
+                # Fallback to full reanalysis if the incremental call degenerated.
+                logger.warning(f"Incremental refinement returned empty for {case_id} — falling back to full_reanalysis")
+                strategy = "full_reanalysis"
+            else:
+                rs = patch.get("risk_score", {}) or {}
+                update_fields = {
+                    "risk_score": int(rs.get("total", case_doc.get("risk_score", 0)) or 0),
+                    "risk_financial": int(rs.get("financial", case_doc.get("risk_financial", 0)) or 0),
+                    "risk_urgency": int(rs.get("urgency", case_doc.get("risk_urgency", 0)) or 0),
+                    "risk_legal_strength": int(rs.get("legal_strength", case_doc.get("risk_legal_strength", 0)) or 0),
+                    "risk_complexity": int(rs.get("complexity", case_doc.get("risk_complexity", 0)) or 0),
+                    "ai_summary": patch.get("ai_summary") or case_doc.get("ai_summary"),
+                    "ai_findings": patch.get("ai_findings") or case_doc.get("ai_findings", []),
+                    "ai_next_steps": patch.get("ai_next_steps") or case_doc.get("ai_next_steps", []),
+                    "key_insight": patch.get("key_insight") or case_doc.get("key_insight"),
+                }
+                new_analysis_fields = {**case_doc, **update_fields}
+
+        if strategy == "full_reanalysis":
+            if not document_text:
+                raise HTTPException(status_code=400, detail="no_document_text_for_reanalysis")
+            full = await _run_full_reanalysis(
+                case_doc, document_text, user_input, prior_inputs, language, jurisdiction, region,
+            )
+            if not full:
+                raise HTTPException(status_code=500, detail="Full reanalysis returned no result")
+            update_fields = _build_case_update(full, case_doc, "refinement", datetime.now(timezone.utc).isoformat())
+            # Keep case title/type stable unless explicitly changed
+            if not full.get("suggested_case_title"):
+                update_fields.pop("title", None)
+            new_analysis_fields = {**case_doc, **update_fields}
+
+    except HTTPException:
+        await _release_lock_on_error()
+        await db.case_refinements.update_one(
+            {"refinement_id": refinement_id},
+            {"$set": {"status": "error", "completed_at": datetime.now(timezone.utc).isoformat()}},
+        )
+        raise
+    except Exception as e:
+        logger.error(f"Refinement execution failed for {case_id}: {e}", exc_info=True)
+        await _release_lock_on_error()
+        await db.case_refinements.update_one(
+            {"refinement_id": refinement_id},
+            {"$set": {"status": "error", "error": str(e)[:200],
+                      "completed_at": datetime.now(timezone.utc).isoformat()}},
+        )
+        raise HTTPException(status_code=500, detail="Refinement failed")
+
+    # ── Persist: snapshot new version, update case, mark refinement complete.
+    new_version = current_version + 1
+    snapshot_payload = {k: new_analysis_fields.get(k) for k in _ANALYSIS_SNAPSHOT_FIELDS if k in new_analysis_fields}
+    completed = datetime.now(timezone.utc).isoformat()
+
+    snapshot_id = await _write_new_snapshot(case_doc, new_version, snapshot_payload, refinement_id, excerpt)
+
+    case_update_set = dict(update_fields)
+    case_update_set.update({
+        "current_analysis_version": new_version,
+        "refinement_count": refinement_count + 1,
+        "refinement_in_progress": False,
+        "updated_at": completed,
+    })
+    await db.cases.update_one({"case_id": case_id}, {"$set": case_update_set})
+
+    await db.case_refinements.update_one(
+        {"refinement_id": refinement_id},
+        {"$set": {"strategy": strategy, "status": "completed",
+                  "version_after": new_version, "snapshot_id": snapshot_id,
+                  "completed_at": completed}},
+    )
+
+    await db.case_events.insert_one({
+        "event_id": f"evt_{uuid.uuid4().hex[:12]}",
+        "case_id": case_id,
+        "event_type": "refinement_applied",
+        "title": f"Analysis refined (v{new_version})",
+        "description": f"{'Full re-analysis' if strategy == 'full_reanalysis' else 'Incremental update'} triggered by user input",
+        "metadata": {"strategy": strategy, "refinement_id": refinement_id, "version": new_version},
+        "created_at": completed,
+    })
+
+    # Best-effort notification for long-running full reanalyses.
+    if strategy == "full_reanalysis":
+        try:
+            from routes.client_notifications_routes import create_notification
+            notif_title = "Nouvelle analyse disponible" if (language or "").startswith(("fr", "nl")) else "New analysis available"
+            notif_msg = f"Version {new_version} est prête."
+            asyncio.create_task(create_notification(
+                client_user_id=current_user.user_id,
+                type="other",
+                title=notif_title,
+                message=notif_msg,
+                case_id=case_id,
+                action_url=f"/cases/{case_id}",
+            ))
+        except Exception:
+            logger.exception("refinement notification failed")
+
+    updated_case = await db.cases.find_one({"case_id": case_id}, {"_id": 0})
+    return {
+        "refinement_id": refinement_id,
+        "strategy": strategy,
+        "version": new_version,
+        "case": updated_case,
+    }
+
+
+@api_router.get("/cases/{case_id}/versions")
+async def list_case_versions(case_id: str, current_user: User = Depends(get_current_user)):
+    """List all analysis versions for a case (latest first). Used by the VersionPicker."""
+    case_doc = await db.cases.find_one(
+        {"case_id": case_id, "user_id": current_user.user_id},
+        {"_id": 0, "current_analysis_version": 1},
+    )
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+    current = int(case_doc.get("current_analysis_version") or 1)
+
+    snapshots = await db.case_analyses_history.find(
+        {"case_id": case_id, "user_id": current_user.user_id},
+        {"_id": 0, "snapshot_id": 1, "version": 1, "refinement_excerpt": 1,
+         "created_at": 1, "triggered_by_refinement_id": 1},
+    ).sort("version", -1).to_list(REFINEMENT_MAX_PER_CASE + 5)
+
+    # If no snapshots exist yet (case was never refined), synthesize v1 from the live case.
+    if not snapshots:
+        live = await db.cases.find_one(
+            {"case_id": case_id, "user_id": current_user.user_id},
+            {"_id": 0, "updated_at": 1, "created_at": 1, "language": 1},
+        ) or {}
+        snapshots = [{
+            "snapshot_id": None,
+            "version": 1,
+            "refinement_excerpt": None,
+            "created_at": live.get("updated_at") or live.get("created_at"),
+            "triggered_by_refinement_id": None,
+        }]
+
+    return {
+        "case_id": case_id,
+        "current_version": current,
+        "versions": [{**s, "is_current": s.get("version") == current} for s in snapshots],
+    }
+
+
+@api_router.get("/cases/{case_id}/versions/{version}")
+async def get_case_version(case_id: str, version: int,
+                           current_user: User = Depends(get_current_user)):
+    """Read-only access to a specific historical analysis version."""
+    case_doc = await db.cases.find_one(
+        {"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0},
+    )
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+    current = int(case_doc.get("current_analysis_version") or 1)
+
+    # Current version is served from the live case doc (avoids duplicate snapshot on read).
+    if version == current:
+        return {"case_id": case_id, "version": version, "is_current": True,
+                "analysis": _extract_analysis_snapshot(case_doc)}
+
+    snap = await db.case_analyses_history.find_one(
+        {"case_id": case_id, "user_id": current_user.user_id, "version": version},
+        {"_id": 0},
+    )
+    if not snap:
+        raise HTTPException(status_code=404, detail="Version not found")
+    return {"case_id": case_id, "version": version, "is_current": False,
+            "analysis": snap.get("analysis") or {},
+            "refinement_excerpt": snap.get("refinement_excerpt"),
+            "created_at": snap.get("created_at")}
+
+
 @api_router.get("/documents/{document_id}")
 async def get_document_detail(document_id: str, current_user: User = Depends(get_current_user)):
     """Get a single document with details"""

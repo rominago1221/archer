@@ -15,6 +15,8 @@ import FindingsSection from '../components/Dashboard/Sprint2/FindingsSection';
 import DocumentsSection from '../components/Dashboard/Sprint2/DocumentsSection';
 import AttorneyStatusBanner from '../components/AttorneyStatusBanner';
 import JurisdictionMismatchBanner from '../components/JurisdictionMismatchBanner';
+import RefineAnalysisSection from '../components/RefineAnalysisSection';
+import VersionPicker from '../components/VersionPicker';
 import LiveCounselCTA from '../components/LiveCounselCTA';
 import LiveCounselBookingFlow from '../components/LiveCounselBookingFlow';
 import ScoreHistoryGraph from '../components/Dashboard/Sprint2/ScoreHistoryGraph';
@@ -55,6 +57,9 @@ export default function CaseDetailV7() {
   const [generatedLetter, setGeneratedLetter] = useState(null);
   const [answerFeedback, setAnswerFeedback] = useState(null);
   const [answerLoading, setAnswerLoading] = useState(false);
+  // Refinement versioning — null means "view the live current version".
+  const [viewingVersion, setViewingVersion] = useState(null);
+  const [viewedAnalysis, setViewedAnalysis] = useState(null);
 
   const fetchCase = useCallback(async () => {
     if (!caseId) return;
@@ -151,17 +156,24 @@ export default function CaseDetailV7() {
     );
   }
 
-  const progressStep = deriveProgressStep(caseDoc, letters);
-  const strategy = deriveStrategy(caseDoc, t, language);
+  // When viewing a historical version, merge the snapshot over the live case so
+  // every downstream section renders against the older analysis. When viewingVersion
+  // is null we render the live case as-is.
+  const displayedCase = (viewedAnalysis && viewingVersion)
+    ? { ...caseDoc, ...viewedAnalysis }
+    : caseDoc;
+
+  const progressStep = deriveProgressStep(displayedCase, letters);
+  const strategy = deriveStrategy(displayedCase, t, language);
   const documentCount = caseDoc.document_count ?? documents.length ?? 0;
 
   // Sprint 2 derivations
-  const caseTypeV7 = mapBackendCaseType(caseDoc.type);
+  const caseTypeV7 = mapBackendCaseType(displayedCase.type);
   const opponentLabel = getOpponentLabel(caseTypeV7, country, language);
-  const battle = deriveBattle(caseDoc);
-  const { critical: criticalFindings, strong: strongFindings } = deriveFindings(caseDoc);
-  const scoreHistory = deriveScoreHistory(caseDoc, language);
-  const archerQuestions = deriveArcherQuestions(caseDoc, caseTypeV7, language);
+  const battle = deriveBattle(displayedCase);
+  const { critical: criticalFindings, strong: strongFindings } = deriveFindings(displayedCase);
+  const scoreHistory = deriveScoreHistory(caseDoc, language); // always live — score_history is a timeline, not versioned
+  const archerQuestions = deriveArcherQuestions(displayedCase, caseTypeV7, language);
   const freemiumExhausted = deriveFreemiumExhausted(user, documents);
 
   // Sprint 3 derivations
@@ -216,8 +228,24 @@ export default function CaseDetailV7() {
       }}
     >
       <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
+        <VersionPicker
+          caseId={caseId}
+          currentVersion={caseDoc.current_analysis_version || 1}
+          viewingVersion={viewingVersion}
+          language={language}
+          onChangeVersion={(version, analysisSnapshot) => {
+            if (!analysisSnapshot) {
+              setViewingVersion(null);
+              setViewedAnalysis(null);
+            } else {
+              setViewingVersion(version);
+              setViewedAnalysis(analysisSnapshot);
+            }
+          }}
+        />
+
         <CaseHeader
-          caseDoc={caseDoc}
+          caseDoc={displayedCase}
           country={country}
           language={language}
           documentCount={documentCount}
@@ -422,6 +450,18 @@ export default function CaseDetailV7() {
         />
 
         <AskArcherCompact onSubmit={handleAskArcher} language={language} />
+
+        {/* Refine-analysis section — post-analysis free-text input, versioned */}
+        <RefineAnalysisSection
+          caseDoc={caseDoc}
+          language={language}
+          onRefined={() => {
+            // After a successful refine, drop back to the live view and re-fetch.
+            setViewingVersion(null);
+            setViewedAnalysis(null);
+            fetchCase();
+          }}
+        />
       </div>
     </div>
   );
