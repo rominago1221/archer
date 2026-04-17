@@ -243,10 +243,22 @@ Return ONLY this JSON — no other text:
     {{"text": "Finding title: short, specific, actionable — NEVER vague or generic", "impact": "high|medium|low", "type": "risk|opportunity|deadline|neutral", "legal_ref": "Exact statute, article, or case law citation (e.g. Fla. Stat. § 83.56(3) — Florida 3rd DCA 2023)", "jurisprudence": "Relevant case law if any", "impact_description": "What this means for the user RIGHT NOW in plain language — no legal jargon, written as if explaining to a friend", "do_now": "Exact next step the user MUST take — specific and actionable, never generic like 'consult an attorney'", "risk_if_ignored": "What happens if user does NOTHING — create urgency, explain real consequences of inaction", "confidence_score": 0.92, "jurisprudence_count": 47, "similar_cases_won": 44, "similar_cases_total": 47, "reasoning": "1-2 sentences explaining WHY this confidence score. Reference the jurisprudence consistency and how clear the law is."}}
   ],
   "key_violation_types": ["short_notice_period", "missing_formal_notice", "vague_eviction_motive"],
+  "registered_mail_recommendation": {{
+    "level": "required|recommended|optional",
+    "reason": "1-2 sentence explanation for the user in the case language",
+    "legal_basis": "exact article or statute if applicable, empty string otherwise",
+    "consequence_if_not_done": "what the user risks without a registered mail receipt"
+  }},
   "recommend_lawyer": true,
   "disclaimer": "This analysis provides legal information only, not legal advice."
 }}
 KEY_VIOLATION_TYPES: Generate 2-5 short snake_case tags describing the key violations found (e.g. "short_notice_period", "no_written_contract", "unpaid_wages", "illegal_clause", "missing_mise_en_demeure"). These tags are used to match similar cases.
+
+REGISTERED_MAIL_RECOMMENDATION: For this matter, classify whether a registered/certified mail is legally needed:
+- "required" when the law explicitly requires a dated notification with proof of receipt (e.g. prior formal notice before a lawsuit — art. 1146 BE Civil Code, eviction / lease termination, contract withdrawal, employment termination with specific formalities, insurance claim with legal deadlines, opposition to administrative sanctions, any case where dated proof of notification is a legal prerequisite).
+- "recommended" when not strictly mandated but strongly advisable because the opposing party may contest, short deadlines run from the notice date, or proof of notification is likely to be needed later (e.g. payment demand from creditor, contested invoice, commercial termination preliminary notice).
+- "optional" for amicable matters without a legal proof requirement (first informal contact, simple administrative ask).
+`reason` and `consequence_if_not_done` MUST be written in the case language; `legal_basis` should cite the exact article when applicable ("Art. 1146 Code civil", "FDCPA 15 U.S.C. § 1692g", etc.).
 
 Produce 3-6 findings. EVERY finding MUST have ALL 12 fields: text (title), impact, type, legal_ref (exact statute), jurisprudence, impact_description (plain language), do_now (specific action), risk_if_ignored (consequence of inaction), confidence_score (0.0-1.0), jurisprudence_count (int), similar_cases_won (int), similar_cases_total (int), reasoning (1-2 sentences).
 
@@ -1037,6 +1049,7 @@ def _build_standard_analysis_result(
             "opposing_side": opposing_arguments
         },
         "adversarial_attack": strategy.get("_adversarial_attack"),  # injected via pipeline side-channel
+        "registered_mail_recommendation": legal_analysis.get("registered_mail_recommendation"),
         "recent_case_law": recent_case_law,
         "case_law_updated": now_date,
         # Dashboard V7 structured payloads — new prompts populate these directly.
@@ -1112,6 +1125,7 @@ def _build_belgian_analysis_result(
         "archer_question": strategy.get("archer_question"),
         "battle_preview": {"user_side": user_arguments, "opposing_side": opposing_arguments},
         "adversarial_attack": strategy.get("_adversarial_attack"),
+        "registered_mail_recommendation": legal_analysis.get("registered_mail_recommendation"),
         "recent_case_law": [],
         "case_law_updated": now_date,
         "country": "BE",
@@ -2009,10 +2023,22 @@ Retourne UNIQUEMENT ce JSON:
   "applicable_laws": [{{"loi": "CCT n109", "pertinence": "Protection licenciement abusif", "favorable": "utilisateur|partie_adverse|neutre"}}],
   "organismes_recommandes": [{{"organisme": "Syndicat CSC/FGTB/CGSLB", "raison": "Aide juridique gratuite", "contact": "www.csc.be"}}],
   "key_violation_types": ["preavis_insuffisant", "absence_mise_en_demeure", "motif_vague"],
+  "registered_mail_recommendation": {{
+    "level": "required|recommended|optional",
+    "reason": "1-2 phrases expliquant au client pourquoi, dans la langue du dossier",
+    "legal_basis": "article exact si applicable (ex: 'Art. 1146 Code civil', 'Loi 20/02/1991 art. 3'), chaine vide sinon",
+    "consequence_if_not_done": "risque encouru sans preuve de notification datee"
+  }},
   "recommend_lawyer": true,
   "key_insight": "La phrase la plus importante"
 }}
 KEY_VIOLATION_TYPES: Genere 2-5 tags snake_case decrivant les violations cles (ex: "preavis_insuffisant", "absence_contrat_ecrit", "salaire_impaye", "clause_abusive", "absence_mise_en_demeure"). Ces tags servent a trouver des cas similaires.
+
+REGISTERED_MAIL_RECOMMENDATION: Classe si un recommande (electronique ou papier) est juridiquement necessaire pour ce dossier:
+- "required" quand la loi exige explicitement une notification datee avec preuve de reception (mise en demeure prealable a action en justice — art. 1146 CC, resiliation bail par le locataire — Loi 20/02/1991 art. 3, opposition formelle a contravention/amende, retractation contrat a distance / demarchage, notification employeur avec formes specifiques, reclamation assurance avec delais legaux, tout cas ou la preuve datee de notification est un prerequis legal).
+- "recommended" quand non strictement obligatoire mais fortement conseille: mise en demeure de payer (creancier->debiteur), contestation facture importante, preavis rupture commerciale, partie adverse susceptible de contester ou de mauvaise foi, delais courts qui courent depuis la notification.
+- "optional" pour cas amiables sans exigence legale de preuve (premier contact informel, demande simple).
+`reason` et `consequence_if_not_done` DOIVENT etre dans la langue du dossier; `legal_basis` doit citer l'article exact quand applicable.
 
 Produis 3-6 constatations. CHAQUE constatation DOIT avoir les 12 champs: text (titre), impact, type, legal_ref (loi exacte + jurisprudence), jurisprudence, impact_description (langage simple), do_now (action precise), risk_if_ignored (consequence de l'inaction), confidence_score (0.0-1.0), jurisprudence_count (int), similar_cases_won (int), similar_cases_total (int), reasoning (1-2 phrases).
 
@@ -4040,6 +4066,7 @@ def _build_case_update(analysis, case_before, filename, ts):
         "multi_doc_summary": a.get("case_narrative") or cb.get("multi_doc_summary"),
         "archer_question": a.get("archer_question") or a.get("james_question"),
         "adversarial_attack": a.get("adversarial_attack") or cb.get("adversarial_attack"),
+        "registered_mail_recommendation": a.get("registered_mail_recommendation") or cb.get("registered_mail_recommendation"),
         # Dashboard V7 structured payloads.
         "strategy_narrative": a.get("strategy_narrative") or cb.get("strategy_narrative"),
         "amounts": a.get("amounts") or cb.get("amounts"),
@@ -4682,6 +4709,7 @@ _ANALYSIS_SNAPSHOT_FIELDS = (
     "recent_case_law", "case_law_updated", "archer_question", "title", "type",
     "strategy_narrative", "amounts", "analysis_depth",
     "adversarial_attack",
+    "registered_mail_recommendation",
 )
 
 
@@ -7018,6 +7046,10 @@ _TRACK_ALLOWED_EVENTS = {
     "clicked_attorney_letter", "clicked_live_counsel",
     "refinement_started", "case_abandoned",
     "purchased_attorney_letter", "purchased_live_counsel",
+    # Send-letter 3-card flow
+    "letter_options_viewed", "diy_letter_chosen",
+    "erecommanded_clicked", "erecommanded_notify_me_clicked",
+    "attorney_letter_chosen", "registered_mail_level_shown",
 }
 
 
@@ -7061,6 +7093,46 @@ async def track_user_event(body: TrackEventRequest, current_user: User = Depends
         })
     except Exception:
         logger.exception("track_user_event insert failed")
+    return {"ok": True}
+
+
+# ================== eRecommandé waitlist (Phase 1 signal capture) ==================
+
+class ErecommandedWaitlistRequest(BaseModel):
+    email: str
+    case_id: Optional[str] = None
+
+
+@api_router.post("/waitlist/erecommanded")
+async def join_erecommanded_waitlist(body: ErecommandedWaitlistRequest,
+                                     current_user: User = Depends(get_current_user)):
+    """Phase 1 lead capture for the eRecommandé product (Phase 2 launches the real API).
+    Upserts by email so repeated clicks don't duplicate rows."""
+    email = (body.email or "").strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="invalid_email")
+    now_iso = datetime.now(timezone.utc).isoformat()
+    try:
+        await db.erecommanded_waitlist.update_one(
+            {"email": email},
+            {
+                "$setOnInsert": {
+                    "waitlist_id": f"wait_{uuid.uuid4().hex[:12]}",
+                    "email": email,
+                    "first_joined_at": now_iso,
+                },
+                "$set": {
+                    "last_click_at": now_iso,
+                    "user_id": current_user.user_id,
+                },
+                "$inc": {"click_count": 1},
+                "$addToSet": {"case_ids": body.case_id} if body.case_id else {"case_ids": ""},
+            },
+            upsert=True,
+        )
+    except Exception:
+        logger.exception("erecommanded_waitlist upsert failed")
+        raise HTTPException(status_code=500, detail="waitlist_error")
     return {"ok": True}
 
 

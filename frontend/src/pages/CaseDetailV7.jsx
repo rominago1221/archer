@@ -9,7 +9,7 @@ import ProgressTimeline from '../components/Dashboard/Sprint1/ProgressTimeline';
 import HeroSection from '../components/Dashboard/Sprint1/HeroSection';
 import StrategySection from '../components/Dashboard/Sprint1/StrategySection';
 import GenerateLetterCTA from '../components/Dashboard/Sprint1/GenerateLetterCTA';
-import GenerateLetterPopup from '../components/Dashboard/Sprint1/GenerateLetterPopup';
+import SendLetterOptions from '../components/SendLetterOptions';
 import BattleSection from '../components/Dashboard/Sprint2/BattleSection';
 import FindingsSection from '../components/Dashboard/Sprint2/FindingsSection';
 import DocumentsSection from '../components/Dashboard/Sprint2/DocumentsSection';
@@ -143,21 +143,9 @@ export default function CaseDetailV7() {
         console.error('Checkout error:', err);
         alert(err?.response?.data?.detail || 'Checkout failed');
       }
-    } else if (choice === 'combo') {
-      trackFire('clicked_live_counsel', { source: 'generate_letter_popup' });
-      // Combo: Live Counsel checkout
-      try {
-        const res = await axios.post(`${API}/cases/${caseId}/checkout/live-counsel`, {
-          service_type: 'live_counsel',
-        }, { withCredentials: true });
-        if (res.data?.checkout_url) {
-          window.location.href = res.data.checkout_url;
-        }
-      } catch (err) {
-        console.error('Combo checkout error:', err);
-        alert(err?.response?.data?.detail || 'Checkout failed');
-      }
     }
+    // NOTE: the 'combo' branch (Live Counsel) has been removed from this popup.
+    // Live Counsel retains its own dedicated LiveCounselCTA rendered higher in the page.
   };
 
   if (loading) {
@@ -313,14 +301,26 @@ export default function CaseDetailV7() {
 
         <StrategySection strategy={strategy} language={language} />
 
-        <GenerateLetterCTA onClick={() => setPopupOpen(true)} language={language} />
+        <GenerateLetterCTA
+          onClick={() => setPopupOpen(true)}
+          language={language}
+          label={language === 'fr' ? 'PROCHAINE ÉTAPE' : language === 'nl' ? 'VOLGENDE STAP' : language === 'de' ? 'NÄCHSTER SCHRITT' : 'NEXT STEP'}
+          title={language === 'fr' ? 'Envoyer ma lettre' : language === 'nl' ? 'Mijn brief versturen' : language === 'de' ? 'Brief versenden' : 'Send my letter'}
+          subtitle={language === 'fr' ? 'Gratuit · eRecommandé · Avocat'
+            : language === 'nl' ? 'Gratis · eRecommandé · Advocaat'
+            : language === 'de' ? 'Gratis · eRecommandé · Anwalt'
+            : 'Free · eRegistered · Attorney'}
+        />
 
-        <GenerateLetterPopup
+        <SendLetterOptions
           isOpen={popupOpen}
           onClose={() => setPopupOpen(false)}
-          onChoiceSelect={handleChoiceSelect}
-          country={country}
+          caseDoc={caseDoc}
           language={language}
+          onChoose={(choice) => {
+            setPopupOpen(false);
+            handleChoiceSelect(choice);
+          }}
         />
 
         {/* Generated letter display */}

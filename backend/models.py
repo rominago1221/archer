@@ -169,6 +169,9 @@ class Case(BaseModel):
     refinement_in_progress: bool = False
     # Adversarial validation (PASS 5 + PASS 6)
     adversarial_attack: Optional[dict] = None
+    # Registered-mail recommendation emitted by PASS 2 (level: required|recommended|optional).
+    # Drives the eRecommandé card banner in the "Send my letter" modal.
+    registered_mail_recommendation: Optional[dict] = None
 
     @field_validator('deadline', mode='before')
     @classmethod

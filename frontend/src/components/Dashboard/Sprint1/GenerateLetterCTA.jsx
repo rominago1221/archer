@@ -1,8 +1,12 @@
 import React from 'react';
 import { useDashboardT } from '../../../hooks/useDashboardT';
 
-export default function GenerateLetterCTA({ onClick, language = 'fr' }) {
+export default function GenerateLetterCTA({ onClick, language = 'fr', title, subtitle, label }) {
   const t = useDashboardT(language);
+  // Send-letter restructure (Phase 1): parent can override the copy without touching i18n.
+  const effectiveLabel = label ?? t('generate_letter.cta_label');
+  const effectiveTitle = title ?? t('generate_letter.cta_title');
+  const effectiveSubtitle = subtitle ?? t('generate_letter.cta_subtitle');
 
   return (
     <div
@@ -13,7 +17,7 @@ export default function GenerateLetterCTA({ onClick, language = 'fr' }) {
         fontSize: 10, fontWeight: 800, color: '#1a56db',
         letterSpacing: 1.5, marginBottom: 14,
       }}>
-        {t('generate_letter.cta_label')}
+        {effectiveLabel}
       </div>
       <button
         type="button"
@@ -57,9 +61,9 @@ export default function GenerateLetterCTA({ onClick, language = 'fr' }) {
           ✉️
         </div>
         <div style={{ textAlign: 'left' }}>
-          <div style={{ lineHeight: 1.1 }}>{t('generate_letter.cta_title')}</div>
+          <div style={{ lineHeight: 1.1 }}>{effectiveTitle}</div>
           <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.85, marginTop: 4, letterSpacing: 0 }}>
-            {t('generate_letter.cta_subtitle')}
+            {effectiveSubtitle}
           </div>
         </div>
         <div style={{ fontSize: 20, opacity: 0.7 }}>→</div>
