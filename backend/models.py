@@ -109,6 +109,11 @@ class Case(BaseModel):
     country: Optional[str] = None
     region: Optional[str] = None
     language: Optional[str] = None
+    # Jurisdiction system (Bug A + C)
+    jurisdiction: Optional[str] = None              # effective jurisdiction used for analysis ("BE" | "US")
+    detected_jurisdiction: Optional[str] = None     # auto-detected from document text
+    jurisdiction_mismatch: bool = False             # detected ≠ user.country — show banner
+    jurisdiction_override: bool = False             # user manually accepted the switch
     battle_preview: Optional[dict] = None
     success_probability: Optional[dict] = None
     procedural_defects: List[dict] = []

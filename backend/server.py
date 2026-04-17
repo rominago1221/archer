@@ -731,7 +731,7 @@ async def _validate_archer_question(strategy: dict, facts_str: str, persona: str
     return fallback
 
 
-async def _validate_user_arguments(user_arguments: dict, facts_str: str, analysis_str: str, lang_instruction: str) -> dict:
+async def _validate_user_arguments(user_arguments: dict, facts_str: str, analysis_str: str, lang_instruction: str, jurisdiction_guard: str = "") -> dict:
     """Ensure user arguments contain at least 3 strongest_arguments, retrying if needed."""
     ua = user_arguments.get("strongest_arguments", []) if isinstance(user_arguments, dict) else []
     if len(ua) >= 3:
@@ -741,7 +741,7 @@ async def _validate_user_arguments(user_arguments: dict, facts_str: str, analysi
     try:
         await asyncio.sleep(1)
         ua_retry = await call_claude(
-            PASS4A_SYSTEM + lang_instruction,
+            PASS4A_SYSTEM + jurisdiction_guard + lang_instruction,
             PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
             max_tokens=4000
         )
@@ -753,7 +753,7 @@ async def _validate_user_arguments(user_arguments: dict, facts_str: str, analysi
     return user_arguments
 
 
-async def _validate_belgian_user_arguments(user_arguments: dict, facts_str: str, analysis_str: str, lang_instruction: str) -> dict:
+async def _validate_belgian_user_arguments(user_arguments: dict, facts_str: str, analysis_str: str, lang_instruction: str, jurisdiction_guard: str = "") -> dict:
     """Ensure Belgian user arguments contain at least 3 strongest_arguments, retrying with BE prompts if needed.
     Also normalizes legacy 'strong_arguments' field to 'strongest_arguments'."""
     if isinstance(user_arguments, dict):
@@ -769,7 +769,7 @@ async def _validate_belgian_user_arguments(user_arguments: dict, facts_str: str,
     try:
         await asyncio.sleep(1)
         ua_retry = await call_claude(
-            BE_PASS4A_SYSTEM + lang_instruction,
+            BE_PASS4A_SYSTEM + jurisdiction_guard + lang_instruction,
             BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
             max_tokens=4000
         )
@@ -941,10 +941,10 @@ def _build_belgian_analysis_result(
 
 
 
-async def analyze_document_advanced(extracted_text: str, user_context: str = "", language: str = "en") -> dict:
+async def analyze_document_advanced(extracted_text: str, user_context: str = "", language: str = "en", jurisdiction: str = "US") -> dict:
     """Advanced 5-pass analysis system with real-time jurisprudence"""
     # Fix 5: Check cache first
-    doc_hash = hashlib.sha256((extracted_text[:5000] + user_context + language).encode()).hexdigest()
+    doc_hash = hashlib.sha256((extracted_text[:5000] + user_context + language + jurisdiction).encode()).hexdigest()
     cached = await get_cached_analysis(doc_hash)
     if cached:
         logger.info("Advanced analysis: Returning cached result")
@@ -956,7 +956,8 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
             context_supplement = f"\n\nADDITIONAL CONTEXT PROVIDED BY THE USER:\n{user_context}\n(Use this context to better understand the situation, identify the user's role, and extract more accurate facts.)"
 
         lang_instruction = get_language_instruction(language)
-        persona = SENIOR_ATTORNEY_PERSONA + lang_instruction
+        jurisdiction_guard = get_jurisdiction_guard(jurisdiction, language)
+        persona = SENIOR_ATTORNEY_PERSONA + jurisdiction_guard + lang_instruction
 
         # PASS 1: Fact extraction
         logger.info("Advanced analysis: Pass 1 — Fact extraction")
@@ -988,15 +989,15 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
         logger.info("Advanced analysis: Pass 3+4A+4B — Running in parallel")
         strategy, user_arguments, opposing_arguments = await asyncio.gather(
             call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=6000),
-            call_claude(PASS4A_SYSTEM + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
-            call_claude(PASS4B_SYSTEM + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
+            call_claude(PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
+            call_claude(PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
         )
 
         logger.info("Advanced analysis: All 5 passes complete")
 
         # ═══ VALIDATION — enforce global rules ═══
         strategy["archer_question"] = await _validate_archer_question(strategy, facts_str, persona, lang_instruction, language=language)
-        user_arguments = await _validate_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
+        user_arguments = await _validate_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction, jurisdiction_guard)
         strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
 
         # Build result
@@ -1081,7 +1082,8 @@ async def analyze_document_stream(
     else:
         persona = SENIOR_ATTORNEY_PERSONA
     lang_instruction = get_language_instruction(language)
-    persona_with_lang = persona + lang_instruction
+    jurisdiction_guard = get_jurisdiction_guard("BE" if is_belgian else "US", language)
+    persona_with_lang = persona + jurisdiction_guard + lang_instruction
 
     context_supplement = ""
     if user_context:
@@ -1244,10 +1246,10 @@ async def analyze_document_stream(
         call_claude(persona_with_lang, p3_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=6000)
     )
     pass4a_task = asyncio.create_task(
-        call_claude(p4a_system + lang_instruction, p4a_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000)
+        call_claude(p4a_system + jurisdiction_guard + lang_instruction, p4a_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000)
     )
     pass4b_task = asyncio.create_task(
-        call_claude(p4b_system + lang_instruction, p4b_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000)
+        call_claude(p4b_system + jurisdiction_guard + lang_instruction, p4b_prompt.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000)
     )
 
     # Await 4A + 4B first (for the battle scene)
@@ -1255,9 +1257,9 @@ async def analyze_document_stream(
 
     # Validate user arguments (shared helpers)
     if is_belgian:
-        user_arguments = await _validate_belgian_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
+        user_arguments = await _validate_belgian_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction, jurisdiction_guard)
     else:
-        user_arguments = await _validate_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
+        user_arguments = await _validate_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction, jurisdiction_guard)
 
     # --- EVENT 5: battle_ready ---
     yield {
@@ -1942,7 +1944,7 @@ def get_belgian_persona(language: str, region: str) -> str:
 async def analyze_document_belgian(extracted_text: str, user_context: str = "", region: str = "Wallonie", language: str = "fr-BE") -> dict:
     """Belgian 5-pass analysis system with Belgian jurisprudence"""
     # Check cache first
-    doc_hash = hashlib.sha256((extracted_text[:5000] + user_context + region + language).encode()).hexdigest()
+    doc_hash = hashlib.sha256((extracted_text[:5000] + user_context + region + language + "BE").encode()).hexdigest()
     cached = await get_cached_analysis(doc_hash)
     if cached:
         logger.info("Belgian analysis: Returning cached result")
@@ -1951,7 +1953,8 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
     try:
         persona = get_belgian_persona(language, region)
         lang_instruction = get_language_instruction(language)
-        persona_with_lang = persona + lang_instruction
+        jurisdiction_guard = get_jurisdiction_guard("BE", language)
+        persona_with_lang = persona + jurisdiction_guard + lang_instruction
         context_section = f"CONTEXTE FOURNI PAR L'UTILISATEUR: {user_context}" if user_context else ""
 
         # PASS 1: Fact extraction (Belgian)
@@ -1974,15 +1977,15 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
         logger.info("Belgian analysis: Passe 3+4A+4B — En parallele")
         strategy, user_arguments, opposing_arguments = await asyncio.gather(
             call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=6000),
-            call_claude(BE_PASS4A_SYSTEM + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
-            call_claude(BE_PASS4B_SYSTEM + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
+            call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
+            call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
         )
 
         logger.info("Belgian analysis: 5 passes complete")
 
         # ═══ VALIDATION — enforce global rules for Belgian analysis ═══
         strategy["archer_question"] = await _validate_archer_question(strategy, facts_str, persona_with_lang, lang_instruction, language=language)
-        user_arguments = await _validate_belgian_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
+        user_arguments = await _validate_belgian_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction, jurisdiction_guard)
         strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
 
         now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -2221,11 +2224,12 @@ async def analyze_contract_guard(extracted_text: str, user_context: str = "", co
     try:
         context_section = f"USER CONTEXT: {user_context}" if user_context else ""
 
+        jurisdiction_guard = get_jurisdiction_guard("BE" if country == "BE" else "US", language)
         if country == "BE":
-            persona = BELGIAN_CONTRACT_GUARD_PERSONA + get_language_instruction(language)
+            persona = BELGIAN_CONTRACT_GUARD_PERSONA + jurisdiction_guard + get_language_instruction(language)
             logger.info("Contract Guard (Belgian): Starting negotiation analysis")
         else:
-            persona = CONTRACT_GUARD_PERSONA
+            persona = CONTRACT_GUARD_PERSONA + jurisdiction_guard
             logger.info("Contract Guard: Starting negotiation analysis")
 
         result = await call_claude(
@@ -2526,19 +2530,87 @@ async def generate_letter_with_claude(letter_data: dict, belgian: bool = False, 
         logger.error(f"Claude Letter API error: {e}")
         raise HTTPException(status_code=500, detail=f"Letter generation failed: {str(e)}")
 
-def extract_text_from_pdf(file_bytes: bytes) -> str:
-    """Extract text from PDF file"""
+async def _ocr_page_via_vision(http_client: httpx.AsyncClient, img_b64: str, page_num: int, filename: str) -> str:
+    ocr_prompt = (
+        "Transcris intégralement le texte de ce document juridique scanné. "
+        "Conserve la structure (titres, articles, paragraphes). Langue originale. "
+        "Retourne uniquement le texte transcrit, sans commentaire ni analyse."
+    )
+    try:
+        response = await http_client.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "Content-Type": "application/json",
+                "x-api-key": get_anthropic_key(),
+                "anthropic-version": "2023-06-01",
+            },
+            json={
+                "model": "claude-opus-4-7",
+                "max_tokens": 4000,
+                "messages": [{
+                    "role": "user",
+                    "content": [
+                        {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": img_b64}},
+                        {"type": "text", "text": ocr_prompt},
+                    ],
+                }],
+            },
+        )
+        response.raise_for_status()
+        return response.json()["content"][0]["text"].strip()
+    except Exception as e:
+        logger.error(f"Vision OCR failed for {filename} page {page_num}: {e}")
+        return ""
+
+
+async def extract_text_from_pdf(file_bytes: bytes, filename: str = "") -> str:
+    """Extract text from PDF. Falls back to Claude Vision OCR when native extraction
+    yields <100 chars (scanned PDFs, photos of contracts, signed documents)."""
+    native_text = ""
     try:
         with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-            text = ""
+            parts = []
             for page in pdf.pages:
                 page_text = page.extract_text()
                 if page_text:
-                    text += page_text + "\n"
-            return text.strip()
+                    parts.append(page_text)
+            native_text = "\n".join(parts).strip()
     except Exception as e:
-        logger.error(f"PDF extraction error: {e}")
-        return ""
+        logger.error(f"PDF native extraction error for {filename}: {e}")
+
+    use_vision = len(native_text) < 100
+    logger.info(f"PDF {filename}: native text={len(native_text)} chars, using {'vision OCR' if use_vision else 'native'}")
+    if not use_vision:
+        return native_text
+
+    try:
+        pdf_doc = fitz.open(stream=file_bytes, filetype="pdf")
+        total_pages = len(pdf_doc)
+        page_count = min(total_pages, 10)
+        if total_pages > 10:
+            logger.warning(f"PDF {filename}: {total_pages} pages, OCR limited to first 10")
+        images = []
+        for i in range(page_count):
+            pix = pdf_doc[i].get_pixmap(dpi=200)
+            images.append(base64.b64encode(pix.tobytes("jpeg")).decode("utf-8"))
+        pdf_doc.close()
+    except Exception as e:
+        logger.error(f"PDF {filename}: page-to-image render failed: {e}")
+        return native_text
+
+    if not images:
+        return native_text
+
+    async with httpx.AsyncClient(timeout=120.0) as http_client:
+        results = await asyncio.gather(*[
+            _ocr_page_via_vision(http_client, b64, i + 1, filename)
+            for i, b64 in enumerate(images)
+        ])
+
+    ocr_parts = [f"--- Page {i+1} ---\n{txt}" for i, txt in enumerate(results) if txt]
+    ocr_text = "\n\n".join(ocr_parts).strip()
+    logger.info(f"PDF {filename}: vision OCR extracted {len(ocr_text)} chars from {len(ocr_parts)}/{len(images)} pages")
+    return ocr_text or native_text
 
 def extract_text_from_docx(file_bytes: bytes) -> str:
     """Extract text from DOCX file"""
@@ -2582,6 +2654,91 @@ def image_file_to_base64(file_bytes: bytes, content_type: str) -> str:
     except Exception as e:
         logger.error(f"Image conversion error: {e}")
         return base64.b64encode(file_bytes).decode("utf-8")
+
+
+# ================== Jurisdiction detection & guard ==================
+# Keywords weighted per jurisdiction. Detection is deterministic (no extra Claude call).
+
+_BE_KEYWORDS = [
+    ("moniteur belge", 8), ("code civil belge", 6), ("code civil", 3),
+    ("code judiciaire", 6), ("code des sociétés", 5), ("arrêté royal", 6),
+    ("arrete royal", 6), ("moniteur", 4), ("cct ", 5), ("onss", 5),
+    ("ejustice.be", 8), ("ejustice", 4), ("région de bruxelles", 7),
+    ("region de bruxelles", 7), ("bruxelles-capitale", 7), ("wallonie", 5),
+    ("région wallonne", 6), ("region wallonne", 6), ("flandre", 5),
+    ("vlaanderen", 5), ("communauté germanophone", 6),
+    ("justice de paix", 5), ("tribunal du travail", 5),
+    ("tribunal de première instance", 4), ("tribunal de premiere instance", 4),
+    ("belgique", 4), ("belgisch", 4), ("belgique", 4),
+    (" n.n. ", 3), ("numéro national", 4), ("numero national", 4),
+    ("indice santé", 5), ("indice sante", 5), ("précompte", 4), ("precompte", 4),
+    ("€ ", 2), ("eur ", 2), ("bail de résidence principale", 6),
+    ("bail de residence principale", 6), ("enregistrement du bail", 5),
+    ("garantie locative", 4), ("préavis", 3), ("preavis", 3),
+    ("mise en demeure", 3), ("recommandé", 2), ("recommande", 2),
+    ("livre xix", 5), ("livre xvii", 5), ("cde", 3),
+]
+
+_US_KEYWORDS = [
+    ("u.s.c.", 8), ("usc §", 7), (" usc ", 5), ("c.f.r.", 6), ("cfr §", 6),
+    ("state of ", 5), ("state of california", 7), ("state of new york", 7),
+    ("state of texas", 7), ("state of florida", 7),
+    ("plaintiff", 5), ("defendant", 5), ("superior court", 6),
+    ("district court", 5), ("circuit court", 5), ("court of appeals", 5),
+    ("county of ", 4), ("department of ", 3), ("fdcpa", 7), ("fcra", 6),
+    ("flsa", 6), ("fmla", 6), ("ada ", 4), ("title vii", 6),
+    ("hipaa", 6), ("erisa", 6), ("state statute", 5),
+    ("federal register", 6), ("irs", 4), ("ssn", 4),
+    ("zip code", 4), (" llc", 3), (" inc.", 3), (" corp.", 3),
+    ("attorney at law", 5), ("esq.", 4), ("bar association", 4),
+    (" $", 2), ("usd", 3), ("fl stat", 6), ("cal. code", 6),
+    ("n.y. ", 3), ("ca. ", 2), ("tx. ", 2),
+    ("landlord-tenant", 4), ("eviction notice", 4), ("summons", 3),
+    ("complaint filed", 4), ("motion to dismiss", 5), ("discovery", 3),
+]
+
+
+def detect_jurisdiction(text: str) -> str:
+    """Detect document jurisdiction (BE | US) from extracted text.
+    Deterministic keyword scan — no Claude call. Returns 'BE' or 'US'.
+    On tie or empty text, returns 'US' (historical default)."""
+    if not text:
+        return "US"
+    t = text.lower()
+    be_score = sum(w for kw, w in _BE_KEYWORDS if kw in t)
+    us_score = sum(w for kw, w in _US_KEYWORDS if kw in t)
+    logger.info(f"Jurisdiction detect: BE={be_score} US={us_score} (text={len(text)} chars)")
+    if be_score == 0 and us_score == 0:
+        return "US"
+    if be_score > us_score:
+        return "BE"
+    return "US"
+
+
+def get_jurisdiction_guard(jurisdiction: str, language: str = "en") -> str:
+    """Return a hard constraint block appended to the persona to forbid cross-jurisdiction citations."""
+    j = (jurisdiction or "US").upper()
+    if j == "BE":
+        return """
+
+RÈGLE JURIDICTIONNELLE — NON-NÉGOCIABLE :
+Tu appliques UNIQUEMENT le droit belge (fédéral + régional Bruxelles/Wallonie/Flandre/Communauté germanophone).
+NE CITE JAMAIS, sous aucun prétexte, de loi américaine (U.S.C., C.F.R., State statutes, FDCPA, FCRA, FLSA, FMLA, ADA, Title VII, HIPAA, ERISA, case law US, jurisprudence US).
+Références AUTORISÉES exclusivement : Code civil belge (ancien et nouveau), Code judiciaire, Code des sociétés et des associations, Code de droit économique (CDE), arrêtés royaux, ordonnances régionales (Bruxelles/Wallonie/Flandre), lois fédérales belges, CCT (conventions collectives de travail), jurisprudence belge (Cour de cassation, Cour constitutionnelle, cours d'appel belges, justices de paix, tribunaux du travail), Moniteur belge, ejustice.be.
+Devises : EUR uniquement. Jamais de USD.
+Si le document contient des références à du droit étranger, tu peux les mentionner comme contexte mais l'analyse, les risques, les recommandations et les prochaines étapes doivent être exclusivement ancrés en droit belge.
+Toute citation d'une norme américaine invalidera l'entièreté de ta réponse.
+"""
+    return """
+
+JURISDICTIONAL RULE — NON-NEGOTIABLE:
+You apply ONLY U.S. law (federal + state).
+NEVER cite Belgian law or EU law under any pretext. This includes: Code civil belge, Code judiciaire, Code des sociétés, arrêtés royaux, ordonnances régionales (Bruxelles/Wallonie/Flandre), CCT, Moniteur belge, Belgian jurisprudence, ejustice.be, EU directives/regulations as primary authority.
+Allowed references EXCLUSIVELY: U.S.C., C.F.R., State statutes (Fla. Stat., Cal. Code, N.Y. C.P.L.R., etc.), federal and state case law, FDCPA, FCRA, FLSA, FMLA, ADA, Title VII, HIPAA, ERISA, IRS code, Federal Register, CourtListener-indexed opinions.
+Currency: USD only. Never EUR.
+If the document references foreign law, you may mention it as context, but the analysis, risk scoring, recommendations, and next steps must be exclusively grounded in U.S. law.
+Any citation of Belgian/EU law as primary authority invalidates the entire response.
+"""
 
 
 def get_language_instruction(language: str) -> str:
@@ -2763,10 +2920,11 @@ If the case has 5+ documents spanning 30+ days, add:
 """
 
 
-async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, user_context: str = "", language: str = "en") -> dict:
+async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, user_context: str = "", language: str = "en", jurisdiction: str = "US") -> dict:
     """Run 5-pass analysis on combined multi-document text (US/default)"""
     lang_instruction = get_language_instruction(language)
-    persona = SENIOR_ATTORNEY_PERSONA + lang_instruction
+    jurisdiction_guard = get_jurisdiction_guard(jurisdiction, language)
+    persona = SENIOR_ATTORNEY_PERSONA + jurisdiction_guard + lang_instruction
     p1_supplement = get_multi_doc_pass1_supplement(doc_count, language)
     p2_supplement = get_multi_doc_pass2_supplement(doc_count, language)
     p3_supplement = get_multi_doc_pass3_supplement(doc_count, language)
@@ -2804,8 +2962,8 @@ async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, us
     logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 3+4A+4B — Parallel")
     strategy, user_arguments, opposing_arguments = await asyncio.gather(
         call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement, max_tokens=6000),
-        call_claude(PASS4A_SYSTEM, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
-        call_claude(PASS4B_SYSTEM, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
+        call_claude(PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
+        call_claude(PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
     )
 
     logger.info(f"Multi-doc analysis ({doc_count} docs): All passes complete")
@@ -2834,7 +2992,8 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
     """Run 5-pass multi-document analysis for Belgian users"""
     persona = get_belgian_persona(language, region)
     lang_instruction = get_language_instruction(language)
-    persona_with_lang = persona + lang_instruction
+    jurisdiction_guard = get_jurisdiction_guard("BE", language)
+    persona_with_lang = persona + jurisdiction_guard + lang_instruction
     p1_supplement = get_multi_doc_pass1_supplement(doc_count, language)
     p2_supplement = get_multi_doc_pass2_supplement(doc_count, language)
     p3_supplement = get_multi_doc_pass3_supplement(doc_count, language)
@@ -2868,15 +3027,15 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 3+4A+4B — Parallel")
     strategy, user_arguments, opposing_arguments = await asyncio.gather(
         call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement, max_tokens=6000),
-        call_claude(BE_PASS4A_SYSTEM + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
-        call_claude(BE_PASS4B_SYSTEM + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
+        call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
+        call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str), max_tokens=4000),
     )
 
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Complete")
 
     # ═══ VALIDATION — enforce global rules for Belgian multi-doc ═══
     strategy["archer_question"] = await _validate_archer_question(strategy, facts_str, persona_with_lang, lang_instruction, language=language)
-    user_arguments = await _validate_belgian_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction)
+    user_arguments = await _validate_belgian_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction, jurisdiction_guard)
     strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
 
     now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -3365,10 +3524,10 @@ async def upload_document(
         use_vision = True
         logger.info(f"Image file detected ({file_ext}), routing to Claude Vision")
     elif file_ext == "pdf":
-        extracted_text = extract_text_from_pdf(file_bytes)
+        extracted_text = await extract_text_from_pdf(file_bytes, filename=file.filename)
         if len(extracted_text.strip()) < 100:
             use_vision = True
-            logger.info(f"PDF has insufficient text ({len(extracted_text.strip())} chars), routing to Claude Vision")
+            logger.info(f"PDF has insufficient text ({len(extracted_text.strip())} chars) even after OCR fallback, routing to Claude Vision")
     elif file_ext in ["docx"]:
         extracted_text = extract_text_from_docx(file_bytes)
     elif file_ext in ["txt", "text", "eml"]:
@@ -3403,7 +3562,21 @@ async def upload_document(
     user_country = current_user.jurisdiction or "US"
     user_region = current_user.region or ""
     user_language = current_user.language or "en"
-    is_belgian = user_country == "BE"
+
+    # Bug A: auto-detect document jurisdiction from extracted text (fast keyword scan)
+    detected_jurisdiction = detect_jurisdiction(extracted_text) if extracted_text else user_country
+    jurisdiction_mismatch = detected_jurisdiction != user_country
+    # Effective jurisdiction for analysis:
+    #   - Existing case: inherit case.jurisdiction (set by first upload or explicit switch)
+    #   - New case: user's configured country (safe default; user can switch via Bug C modal)
+    existing_case_jur = None
+    if case_id and not is_contract_guard:
+        existing_case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0, "jurisdiction": 1, "country": 1})
+        if existing_case_doc:
+            existing_case_jur = existing_case_doc.get("jurisdiction") or existing_case_doc.get("country")
+    effective_jurisdiction = existing_case_jur or user_country
+    is_belgian = effective_jurisdiction == "BE"
+    logger.info(f"Jurisdiction: user={user_country} detected={detected_jurisdiction} mismatch={jurisdiction_mismatch} effective={effective_jurisdiction}")
     
     # Determine if adding to existing case
     is_existing_case = case_id is not None and not is_contract_guard
@@ -3424,6 +3597,10 @@ async def upload_document(
             "country": user_country,
             "region": user_region,
             "language": user_language,
+            "jurisdiction": effective_jurisdiction,
+            "detected_jurisdiction": detected_jurisdiction,
+            "jurisdiction_mismatch": jurisdiction_mismatch,
+            "jurisdiction_override": False,
             "risk_score": 0,
             "risk_financial": 0, "risk_urgency": 0,
             "risk_legal_strength": 0, "risk_complexity": 0,
@@ -3486,19 +3663,23 @@ async def upload_document(
                     
                     if image_b64_list:
                         try:
+                            effective_jur = "BE" if is_belgian else "US"
+                            vision_guard = get_jurisdiction_guard(effective_jur, user_language)
                             if is_contract_guard:
                                 if is_belgian:
-                                    cg_system = get_belgian_persona(user_language, user_region) + "\n\nYou are also a CONTRACT REVIEW specialist.\n" + get_language_instruction(user_language)
+                                    cg_system = get_belgian_persona(user_language, user_region) + "\n\nYou are also a CONTRACT REVIEW specialist.\n" + vision_guard + get_language_instruction(user_language)
                                     analysis = await analyze_document_vision(image_b64_list, system_prompt=cg_system, user_context=context_str, language=user_language)
                                 else:
-                                    analysis = await analyze_document_vision(image_b64_list, user_context=context_str)
+                                    us_cg_system = CLAUDE_SYSTEM_PROMPT + "\n\nYou are also a CONTRACT REVIEW specialist." + vision_guard
+                                    analysis = await analyze_document_vision(image_b64_list, system_prompt=us_cg_system, user_context=context_str, language=user_language)
                             elif not is_multi_doc:
                                 if is_belgian:
                                     be_persona = get_belgian_persona(user_language, user_region)
-                                    be_system = "Tu es un expert OCR + analyse juridique. Lis d'abord TOUT le texte visible dans les images. Puis analyse le document juridique belge.\n\n" + be_persona + get_language_instruction(user_language)
+                                    be_system = "Tu es un expert OCR + analyse juridique. Lis d'abord TOUT le texte visible dans les images. Puis analyse le document juridique belge.\n\n" + be_persona + vision_guard + get_language_instruction(user_language)
                                     analysis = await analyze_document_vision(image_b64_list, system_prompt=be_system, user_context=context_str, language=user_language)
                                 else:
-                                    analysis = await analyze_document_vision(image_b64_list, user_context=context_str)
+                                    us_vision_system = "You are an OCR + legal analysis expert. First, read ALL text visible in the document images. Then analyze the extracted text as a legal document.\n\n" + CLAUDE_SYSTEM_PROMPT + vision_guard
+                                    analysis = await analyze_document_vision(image_b64_list, system_prompt=us_vision_system, user_context=context_str, language=user_language)
                             else:
                                 ocr_prompt = "Read ALL text from this scanned document. Return ONLY the extracted text, nothing else."
                                 ocr_system = "You are an OCR expert. Extract all text from the document image(s). Return only the text content."
@@ -3531,7 +3712,7 @@ async def upload_document(
                                 )
                             else:
                                 analysis = await run_multi_doc_analysis_advanced(
-                                    combined_text, total_doc_count, user_context=context_str, language=user_language
+                                    combined_text, total_doc_count, user_context=context_str, language=user_language, jurisdiction=effective_jurisdiction
                                 )
                             if analysis:
                                 analysis["_multi_doc"] = True
@@ -3542,21 +3723,21 @@ async def upload_document(
                             if is_belgian:
                                 analysis = await analyze_document_belgian(new_text, user_context=context_str, region=user_region, language=user_language)
                             else:
-                                analysis = await analyze_document_advanced(new_text, user_context=context_str, language=user_language)
-                
+                                analysis = await analyze_document_advanced(new_text, user_context=context_str, language=user_language, jurisdiction=effective_jurisdiction)
+
                 # Single-document analysis
                 if analysis is None and not use_vision and not is_contract_guard:
                     if is_belgian:
                         analysis = await analyze_document_belgian(extracted_text, user_context=context_str, region=user_region, language=user_language)
                     else:
-                        analysis = await analyze_document_advanced(extracted_text, user_context=context_str, language=user_language)
+                        analysis = await analyze_document_advanced(extracted_text, user_context=context_str, language=user_language, jurisdiction=effective_jurisdiction)
                 
                 # Contract guard fallback
                 if analysis is None and is_contract_guard and not use_vision:
                     if is_belgian:
                         analysis = await analyze_contract_guard(extracted_text, user_context=context_str, country="BE", region=user_region, language=user_language)
                     else:
-                        analysis = await analyze_contract_guard(extracted_text, user_context=context_str)
+                        analysis = await analyze_contract_guard(extracted_text, user_context=context_str, country=effective_jurisdiction, language=user_language)
             
             # Fallback
             if analysis is None:
@@ -3710,15 +3891,16 @@ async def reanalyze_case(case_id: str, current_user: User = Depends(get_current_
         raise HTTPException(status_code=400, detail="No analyzable document found in this case")
     
     extracted_text = doc["extracted_text"]
-    user_country = getattr(current_user, 'country', None) or getattr(current_user, 'jurisdiction', 'US')
     user_language = getattr(current_user, 'language', 'en') or 'en'
     user_region = getattr(current_user, 'region', '') or ''
-    
+    # Prefer case-level jurisdiction (may have been switched via Bug C modal). Fall back to user profile.
+    effective_jurisdiction = case_doc.get("jurisdiction") or case_doc.get("country") or getattr(current_user, 'jurisdiction', 'US') or "US"
+
     try:
-        if user_country == "BE":
+        if effective_jurisdiction == "BE":
             analysis = await analyze_document_belgian(extracted_text, region=user_region, language=user_language)
         else:
-            analysis = await analyze_document_advanced(extracted_text, language=user_language)
+            analysis = await analyze_document_advanced(extracted_text, language=user_language, jurisdiction=effective_jurisdiction)
     except Exception as e:
         logger.error(f"Re-analysis failed: {e}")
         raise HTTPException(status_code=500, detail="Re-analysis failed. Please try again.")
@@ -3780,6 +3962,111 @@ async def reanalyze_case(case_id: str, current_user: User = Depends(get_current_
     # Return updated case
     updated = await db.cases.find_one({"case_id": case_id}, {"_id": 0})
     return updated
+
+
+# ========== Bug C: Jurisdiction switch / dismiss ==========
+
+@api_router.post("/cases/{case_id}/switch-jurisdiction")
+async def switch_case_jurisdiction(case_id: str, current_user: User = Depends(get_current_user)):
+    """User accepted the mismatch modal: switch case jurisdiction to the auto-detected value
+    and re-run the analysis under the correct jurisdiction. The user's global profile is NOT changed."""
+    case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    detected = case_doc.get("detected_jurisdiction") or "US"
+    current_jur = case_doc.get("jurisdiction") or case_doc.get("country") or "US"
+    if detected == current_jur:
+        # Nothing to switch — just clear the flag.
+        await db.cases.update_one(
+            {"case_id": case_id},
+            {"$set": {"jurisdiction_mismatch": False, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        return {"status": "no_switch_needed", "jurisdiction": current_jur}
+
+    # Fetch key document text for re-analysis
+    doc = await db.documents.find_one(
+        {"case_id": case_id, "user_id": current_user.user_id, "extracted_text": {"$ne": None}},
+        {"_id": 0},
+        sort=[("uploaded_at", -1)]
+    )
+    if not doc or not doc.get("extracted_text"):
+        raise HTTPException(status_code=400, detail="No analyzable document text available")
+    extracted_text = doc["extracted_text"]
+
+    user_language = getattr(current_user, 'language', 'en') or 'en'
+    user_region = getattr(current_user, 'region', '') or ''
+    # For BE re-analysis we need a French/Dutch language — if user's lang is English but doc is BE, default to fr-BE
+    be_lang = user_language if user_language.startswith(("fr", "nl", "de")) else "fr-BE"
+
+    now = datetime.now(timezone.utc).isoformat()
+    # Mark as re-analyzing in the case so the frontend can show a spinner/loading state
+    await db.cases.update_one(
+        {"case_id": case_id},
+        {"$set": {
+            "jurisdiction": detected,
+            "jurisdiction_override": True,
+            "jurisdiction_mismatch": False,
+            "status": "analyzing",
+            "updated_at": now,
+        }}
+    )
+
+    try:
+        if detected == "BE":
+            analysis = await analyze_document_belgian(extracted_text, region=user_region or "Wallonie", language=be_lang)
+        else:
+            analysis = await analyze_document_advanced(extracted_text, language=user_language, jurisdiction=detected)
+    except Exception as e:
+        logger.error(f"Jurisdiction switch re-analysis failed for {case_id}: {e}")
+        await db.cases.update_one({"case_id": case_id}, {"$set": {"status": "active"}})
+        raise HTTPException(status_code=500, detail="Re-analysis failed after jurisdiction switch")
+
+    if not analysis:
+        raise HTTPException(status_code=500, detail="Analysis returned no results")
+
+    bg_now = datetime.now(timezone.utc).isoformat()
+    new_score = analysis["risk_score"]["total"] if isinstance(analysis.get("risk_score"), dict) else 0
+    update_fields = _build_case_update(analysis, case_doc, doc.get("file_name", ""), bg_now)
+    update_fields["status"] = "active"
+    update_fields["updated_at"] = bg_now
+    await db.cases.update_one(
+        {"case_id": case_id},
+        {"$set": update_fields,
+         "$push": {"risk_score_history": {
+             "score": new_score,
+             "financial": analysis.get("risk_score", {}).get("financial", 0),
+             "urgency": analysis.get("risk_score", {}).get("urgency", 0),
+             "legal_strength": analysis.get("risk_score", {}).get("legal_strength", 0),
+             "complexity": analysis.get("risk_score", {}).get("complexity", 0),
+             "document_name": f"Re-analysis ({detected} law)",
+             "date": bg_now,
+         }}}
+    )
+    await db.case_events.insert_one({
+        "event_id": f"evt_{uuid.uuid4().hex[:12]}",
+        "case_id": case_id,
+        "event_type": "jurisdiction_switched",
+        "title": f"Jurisdiction switched to {detected}",
+        "description": f"Analysis re-run under {'Belgian' if detected == 'BE' else 'U.S.'} law",
+        "metadata": {"from": current_jur, "to": detected},
+        "created_at": bg_now,
+    })
+
+    updated = await db.cases.find_one({"case_id": case_id}, {"_id": 0})
+    return updated
+
+
+@api_router.post("/cases/{case_id}/dismiss-jurisdiction-mismatch")
+async def dismiss_jurisdiction_mismatch(case_id: str, current_user: User = Depends(get_current_user)):
+    """User declined the switch — clear the mismatch flag. Analysis remains under the current jurisdiction."""
+    result = await db.cases.update_one(
+        {"case_id": case_id, "user_id": current_user.user_id},
+        {"$set": {"jurisdiction_mismatch": False, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Case not found")
+    return {"status": "dismissed"}
 
 
 @api_router.get("/documents/{document_id}")

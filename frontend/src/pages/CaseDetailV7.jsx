@@ -14,6 +14,7 @@ import BattleSection from '../components/Dashboard/Sprint2/BattleSection';
 import FindingsSection from '../components/Dashboard/Sprint2/FindingsSection';
 import DocumentsSection from '../components/Dashboard/Sprint2/DocumentsSection';
 import AttorneyStatusBanner from '../components/AttorneyStatusBanner';
+import JurisdictionMismatchBanner from '../components/JurisdictionMismatchBanner';
 import LiveCounselCTA from '../components/LiveCounselCTA';
 import LiveCounselBookingFlow from '../components/LiveCounselBookingFlow';
 import ScoreHistoryGraph from '../components/Dashboard/Sprint2/ScoreHistoryGraph';
@@ -220,6 +221,16 @@ export default function CaseDetailV7() {
           country={country}
           language={language}
           documentCount={documentCount}
+        />
+
+        <JurisdictionMismatchBanner
+          caseDoc={caseDoc}
+          language={language}
+          onUpdated={(updated) => {
+            setCaseDoc(updated);
+            // Always refetch to pick up any derived fields the endpoint didn't echo.
+            fetchCase();
+          }}
         />
 
         {/* Feature 3 — Explain Simply button */}

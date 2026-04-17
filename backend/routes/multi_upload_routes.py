@@ -159,7 +159,7 @@ async def upload_multiple(
 
         extracted_text = ""
         if p["ext"] == "pdf":
-            try: extracted_text = extract_text_from_pdf(p["bytes"])
+            try: extracted_text = await extract_text_from_pdf(p["bytes"], filename=p.get("filename", ""))
             except Exception: pass
         elif p["ext"] == "docx":
             try: extracted_text = extract_text_from_docx(p["bytes"])
