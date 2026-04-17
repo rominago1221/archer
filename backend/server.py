@@ -4415,7 +4415,7 @@ async def scan_document(
                     "anthropic-version": "2023-06-01"
                 },
                 json={
-                    "model": "claude-sonnet-4-6",
+                    "model": "claude-opus-4-7",
                     "max_tokens": 3000,
                     "system": "First, extract all text from this document image (OCR). Then analyze the extracted text as a legal document.\n\n" + CLAUDE_SYSTEM_PROMPT,
                     "messages": [{
