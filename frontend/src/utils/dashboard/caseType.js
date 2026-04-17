@@ -1,22 +1,46 @@
 // Maps the backend case_type enum (traffic|housing|employment|...) to the
 // V7 canonical taxonomy (penal_routier|logement|travail|...). This keeps the
 // backend prompts unchanged while the UI speaks its own vocabulary.
+// Covers the 18-value canonical taxonomy (backend/constants/case_types.py) plus
+// legacy values still present in old DB rows. Unknown values → 'generic'.
 const BACKEND_TO_V7 = {
+  // housing
+  eviction: 'logement',
+  real_estate: 'logement',
+  // employment
+  wrongful_termination: 'travail',
+  severance: 'travail',
+  workplace_discrimination: 'travail',
+  harassment: 'travail',
+  // financial
+  consumer_disputes: 'consommation',
+  debt: 'consommation',
+  insurance_disputes: 'assurance',
+  tax_disputes: 'administratif',
+  identity_theft: 'consommation',
+  // health
+  medical_malpractice: 'civil',
+  disability_claims: 'administratif',
+  // personal
+  family: 'famille',
+  criminal: 'penal_routier',
+  immigration: 'administratif',
   traffic: 'penal_routier',
-  court: 'penal_routier',
+  // catch-all
+  other: 'generic',
+  // legacy aliases
   housing: 'logement',
   employment: 'travail',
   consumer: 'consommation',
-  debt: 'consommation',
   demand: 'consommation',
-  immigration: 'administratif',
   administrative: 'administratif',
-  family: 'famille',
   civil: 'civil',
   insurance: 'assurance',
   contract: 'civil',
   nda: 'civil',
-  other: 'generic',
+  court: 'penal_routier',
+  penal: 'penal_routier',
+  commercial: 'civil',
 };
 
 export function mapBackendCaseType(backendValue) {

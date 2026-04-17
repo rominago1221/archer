@@ -35,6 +35,8 @@ from models import (
     Document, Lawyer, LawyerCallCreate, LawyerCall, CaseEvent, ProfileUpdate,
     LetterRequest, normalize_deadline, normalize_financial_exposure,
 )
+from constants.case_types import CASE_TYPES, normalize_case_type
+from prompts.case_type_personas import get_expertise_block
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -154,9 +156,19 @@ Read this legal document carefully and extract every factual element. Do not int
 DOCUMENT TEXT:
 {document_text}
 
+You must also classify the document into one of Archer's 18 canonical case_types:
+eviction | real_estate | wrongful_termination | severance | workplace_discrimination | harassment | consumer_disputes | debt | insurance_disputes | tax_disputes | identity_theft | medical_malpractice | disability_claims | family | criminal | immigration | traffic | other
+
+Compare your detected_case_type with the user-declared case_type (USER_DECLARED_CASE_TYPE below). The user's declaration prevails for routing; your job is to FLAG any material mismatch in case_type_notes.
+
+USER_DECLARED_CASE_TYPE: {user_declared_case_type}
+
 Return ONLY this JSON — no other text:
 {{
   "document_type": "demand_letter|eviction_notice|employment_contract|court_notice|debt_collection|nda|lease|other",
+  "detected_case_type": "one of the 18 values above",
+  "detected_case_subtypes": ["optional fine-grained subtags like: security_deposit, wage_theft, credit_card_debt, ..."],
+  "case_type_notes": "empty if user-declared matches detected; otherwise 1-2 sentences explaining the mismatch",
   "document_date": "YYYY-MM-DD or null",
   "parties": {{
     "opposing_party": {{"name": "exact name from document", "type": "individual|company|government|law_firm"}},
@@ -1114,10 +1126,11 @@ def _build_belgian_analysis_result(
 
 
 
-async def analyze_document_advanced(extracted_text: str, user_context: str = "", language: str = "en", jurisdiction: str = "US") -> dict:
+async def analyze_document_advanced(extracted_text: str, user_context: str = "", language: str = "en", jurisdiction: str = "US", case_type: str = "other") -> dict:
     """Advanced 5-pass analysis system with real-time jurisprudence"""
-    # Fix 5: Check cache first
-    doc_hash = hashlib.sha256((extracted_text[:5000] + user_context + language + jurisdiction).encode()).hexdigest()
+    # Fix 5: Check cache first — case_type is part of the hash so different
+    # user-declared categories don't collide on the same document.
+    doc_hash = hashlib.sha256((extracted_text[:5000] + user_context + language + jurisdiction + (case_type or "other")).encode()).hexdigest()
     cached = await get_cached_analysis(doc_hash)
     if cached:
         logger.info("Advanced analysis: Returning cached result")
@@ -1130,11 +1143,13 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
 
         lang_instruction = get_language_instruction(language)
         jurisdiction_guard = get_jurisdiction_guard(jurisdiction, language)
-        persona = SENIOR_ATTORNEY_PERSONA + jurisdiction_guard + lang_instruction
+        case_type = normalize_case_type(case_type)
+        expertise_block = get_expertise_block(case_type, jurisdiction, language)
+        persona = SENIOR_ATTORNEY_PERSONA + jurisdiction_guard + expertise_block + lang_instruction
 
         # PASS 1: Fact extraction
-        logger.info("Advanced analysis: Pass 1 — Fact extraction")
-        facts = await call_claude(persona, PASS1_PROMPT.format(document_text=extracted_text[:15000]) + context_supplement)
+        logger.info(f"Advanced analysis: Pass 1 — Fact extraction (case_type={case_type})")
+        facts = await call_claude(persona, PASS1_PROMPT.format(document_text=extracted_text[:15000], user_declared_case_type=case_type) + context_supplement)
 
         # Load jurisprudence + real-time case law
         doc_type = facts.get("document_type", "other")
@@ -1173,12 +1188,15 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
 
         # PASS 3 + 4A + 4B + 5 — RUN IN PARALLEL (PASS 5 = adversarial attack, independent of 3/4A/4B)
         objective_block = _build_objective_block(user_context, language)
-        detected_case_type = legal_analysis.get("case_type") or inferred_case_type
-        logger.info("Advanced analysis: Pass 3+4A+4B+5 — Running in parallel")
+        # case_type resolution precedence: legal_analysis PASS2 > facts PASS1 detected > user-declared > inferred
+        detected_case_type = normalize_case_type(
+            legal_analysis.get("case_type") or facts.get("detected_case_type") or case_type or inferred_case_type
+        )
+        logger.info(f"Advanced analysis: Pass 3+4A+4B+5 — Running in parallel (case_type={detected_case_type})")
         strategy, user_arguments, opposing_arguments, adversarial_attack = await asyncio.gather(
             call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=6000),
-            call_claude(PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
-            call_claude(PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+            call_claude(PASS4A_SYSTEM + jurisdiction_guard + expertise_block + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+            call_claude(PASS4B_SYSTEM + jurisdiction_guard + expertise_block + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
             _run_adversarial_attack(facts, legal_analysis, None, detected_case_type, language, jurisdiction),
         )
 
@@ -1279,6 +1297,7 @@ async def analyze_document_stream(
     region: str = "",
     language: str = "en",
     user_context: str = "",
+    case_type: str = "other",
 ):
     """Streaming version of analysis. Yields SSE events at each pipeline stage.
     Reuses shared helpers — zero duplication of business logic."""
@@ -1293,7 +1312,9 @@ async def analyze_document_stream(
         persona = SENIOR_ATTORNEY_PERSONA
     lang_instruction = get_language_instruction(language)
     jurisdiction_guard = get_jurisdiction_guard("BE" if is_belgian else "US", language)
-    persona_with_lang = persona + jurisdiction_guard + lang_instruction
+    case_type = normalize_case_type(case_type)
+    expertise_block = get_expertise_block(case_type, "BE" if is_belgian else "US", language)
+    persona_with_lang = persona + jurisdiction_guard + expertise_block + lang_instruction
 
     context_supplement = ""
     if user_context:
@@ -1328,12 +1349,12 @@ async def analyze_document_stream(
     }
 
     # --- PASS 1: Fact extraction ---
-    logger.info("Stream analysis: Pass 1 — Fact extraction")
+    logger.info(f"Stream analysis: Pass 1 — Fact extraction (case_type={case_type})")
     if is_belgian:
         context_section = f"CONTEXTE FOURNI PAR L'UTILISATEUR: {user_context}" if user_context else ""
-        facts = await call_claude(persona_with_lang, p1_prompt.format(document_text=extracted_text[:15000], user_context_section=context_section))
+        facts = await call_claude(persona_with_lang, p1_prompt.format(document_text=extracted_text[:15000], user_context_section=context_section, user_declared_case_type=case_type))
     else:
-        facts = await call_claude(persona_with_lang, p1_prompt.format(document_text=extracted_text[:15000]) + context_supplement)
+        facts = await call_claude(persona_with_lang, p1_prompt.format(document_text=extracted_text[:15000], user_declared_case_type=case_type) + context_supplement)
 
     # Determine case type (shared helpers)
     if is_belgian:
@@ -1457,10 +1478,10 @@ async def analyze_document_stream(
         call_claude(persona_with_lang, p3_prompt.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=6000)
     )
     pass4a_task = asyncio.create_task(
-        call_claude(p4a_system + jurisdiction_guard + lang_instruction, p4a_prompt.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000)
+        call_claude(p4a_system + jurisdiction_guard + expertise_block + lang_instruction, p4a_prompt.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000)
     )
     pass4b_task = asyncio.create_task(
-        call_claude(p4b_system + jurisdiction_guard + lang_instruction, p4b_prompt.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000)
+        call_claude(p4b_system + jurisdiction_guard + expertise_block + lang_instruction, p4b_prompt.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000)
     )
 
     # Await 4A + 4B first (for the battle scene)
@@ -1617,6 +1638,8 @@ async def analyze_stream_endpoint(
     user_country = current_user.jurisdiction or "US"
     user_region = current_user.region or ""
     user_language = current_user.language or "en"
+    case_for_type = await db.cases.find_one({"case_id": case_id}, {"_id": 0, "type": 1})
+    stream_case_type = normalize_case_type((case_for_type or {}).get("type"))
 
     # Use asyncio.Queue: background task pushes events, SSE endpoint reads them.
     # Analysis always runs to completion even if client disconnects.
@@ -1631,6 +1654,7 @@ async def analyze_stream_endpoint(
                 region=user_region,
                 language=user_language,
                 user_context="",
+                case_type=stream_case_type,
             ):
                 await event_queue.put(event)
                 if event.get("stage") == "complete":
@@ -1722,6 +1746,8 @@ async def _start_streaming_analysis(case_id: str, user_country: str, user_region
 
     extracted_text = doc.get("extracted_text", "")
     filename = doc.get("file_name", "document")
+    trigger_case = await db.cases.find_one({"case_id": case_id}, {"_id": 0, "type": 1})
+    trigger_case_type = normalize_case_type((trigger_case or {}).get("type"))
 
     async def run_background():
         full_result = None
@@ -1731,6 +1757,7 @@ async def _start_streaming_analysis(case_id: str, user_country: str, user_region
                 country=user_country,
                 region=user_region,
                 language=user_language,
+                case_type=trigger_case_type,
             ):
                 if event.get("stage") == "complete":
                     full_result = event.get("full_result", {})
@@ -1907,9 +1934,19 @@ TEXTE DU DOCUMENT:
 
 {user_context_section}
 
+Tu dois aussi classer le dossier dans l'une des 18 categories canoniques Archer:
+eviction | real_estate | wrongful_termination | severance | workplace_discrimination | harassment | consumer_disputes | debt | insurance_disputes | tax_disputes | identity_theft | medical_malpractice | disability_claims | family | criminal | immigration | traffic | other
+
+Compare ton detected_case_type avec le type declare par l'utilisateur (USER_DECLARED_CASE_TYPE ci-dessous). Le choix de l'utilisateur prevaut pour le routing; ton role est de SIGNALER toute incoherence materielle dans case_type_notes.
+
+USER_DECLARED_CASE_TYPE: {user_declared_case_type}
+
 Retourne UNIQUEMENT ce JSON:
 {{
   "type_document": "contrat_travail|bail|licenciement|mise_en_demeure|jugement|nda|facture|c4|lettre_huissier|autre",
+  "detected_case_type": "une des 18 valeurs ci-dessus",
+  "detected_case_subtypes": ["sous-etiquettes fines optionnelles: garantie_locative, motif_grave, ..."],
+  "case_type_notes": "vide si concordance; sinon 1-2 phrases expliquant l'ecart",
   "date_document": "YYYY-MM-DD ou null",
   "region_applicable": "Wallonie|Bruxelles-Capitale|Flandre|Communaute germanophone|Federal",
   "langue_document": "fr|nl|de",
@@ -2152,10 +2189,10 @@ def get_belgian_persona(language: str, region: str) -> str:
     return BELGIAN_PERSONA_FR.format(region=region or "Belgique")
 
 
-async def analyze_document_belgian(extracted_text: str, user_context: str = "", region: str = "Wallonie", language: str = "fr-BE") -> dict:
+async def analyze_document_belgian(extracted_text: str, user_context: str = "", region: str = "Wallonie", language: str = "fr-BE", case_type: str = "other") -> dict:
     """Belgian 5-pass analysis system with Belgian jurisprudence"""
-    # Check cache first
-    doc_hash = hashlib.sha256((extracted_text[:5000] + user_context + region + language + "BE").encode()).hexdigest()
+    # Check cache first (case_type part of the hash to avoid cross-category collisions).
+    doc_hash = hashlib.sha256((extracted_text[:5000] + user_context + region + language + "BE" + (case_type or "other")).encode()).hexdigest()
     cached = await get_cached_analysis(doc_hash)
     if cached:
         logger.info("Belgian analysis: Returning cached result")
@@ -2165,12 +2202,14 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
         persona = get_belgian_persona(language, region)
         lang_instruction = get_language_instruction(language)
         jurisdiction_guard = get_jurisdiction_guard("BE", language)
-        persona_with_lang = persona + jurisdiction_guard + lang_instruction
+        case_type = normalize_case_type(case_type)
+        expertise_block = get_expertise_block(case_type, "BE", language)
+        persona_with_lang = persona + jurisdiction_guard + expertise_block + lang_instruction
         context_section = f"CONTEXTE FOURNI PAR L'UTILISATEUR: {user_context}" if user_context else ""
 
         # PASS 1: Fact extraction (Belgian)
-        logger.info("Belgian analysis: Passe 1 — Extraction des faits")
-        facts = await call_claude(persona_with_lang, BE_PASS1_PROMPT.format(document_text=extracted_text[:15000], user_context_section=context_section))
+        logger.info(f"Belgian analysis: Passe 1 — Extraction des faits (case_type={case_type})")
+        facts = await call_claude(persona_with_lang, BE_PASS1_PROMPT.format(document_text=extracted_text[:15000], user_context_section=context_section, user_declared_case_type=case_type))
 
         doc_type = facts.get("type_document", "autre")
         detected_region = facts.get("region_applicable", region)
@@ -2200,12 +2239,14 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
 
         # PASS 3 + 4A + 4B + 5 — RUN IN PARALLEL
         objective_block = _build_objective_block(user_context, language)
-        detected_case_type = legal_analysis.get("case_type") or inferred_case_type
-        logger.info("Belgian analysis: Passe 3+4A+4B+5 — En parallele")
+        detected_case_type = normalize_case_type(
+            legal_analysis.get("case_type") or facts.get("detected_case_type") or case_type or inferred_case_type
+        )
+        logger.info(f"Belgian analysis: Passe 3+4A+4B+5 — En parallele (case_type={detected_case_type})")
         strategy, user_arguments, opposing_arguments, adversarial_attack = await asyncio.gather(
             call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=6000),
-            call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
-            call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+            call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + expertise_block + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+            call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + expertise_block + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
             _run_adversarial_attack(facts, legal_analysis, None, detected_case_type, language, "BE"),
         )
 
@@ -3374,11 +3415,13 @@ If the case has 5+ documents spanning 30+ days, add:
 """
 
 
-async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, user_context: str = "", language: str = "en", jurisdiction: str = "US") -> dict:
+async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, user_context: str = "", language: str = "en", jurisdiction: str = "US", case_type: str = "other") -> dict:
     """Run 5-pass analysis on combined multi-document text (US/default)"""
     lang_instruction = get_language_instruction(language)
     jurisdiction_guard = get_jurisdiction_guard(jurisdiction, language)
-    persona = SENIOR_ATTORNEY_PERSONA + jurisdiction_guard + lang_instruction
+    case_type = normalize_case_type(case_type)
+    expertise_block = get_expertise_block(case_type, jurisdiction, language)
+    persona = SENIOR_ATTORNEY_PERSONA + jurisdiction_guard + expertise_block + lang_instruction
     p1_supplement = get_multi_doc_pass1_supplement(doc_count, language)
     p2_supplement = get_multi_doc_pass2_supplement(doc_count, language)
     p3_supplement = get_multi_doc_pass3_supplement(doc_count, language)
@@ -3389,8 +3432,8 @@ async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, us
     text_for_analysis = combined_text[:max_text]
 
     # PASS 1: Multi-doc fact extraction
-    logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 1 — Fact extraction")
-    facts = await call_claude(persona, PASS1_PROMPT.format(document_text=text_for_analysis) + p1_supplement + context_supplement)
+    logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 1 — Fact extraction (case_type={case_type})")
+    facts = await call_claude(persona, PASS1_PROMPT.format(document_text=text_for_analysis, user_declared_case_type=case_type) + p1_supplement + context_supplement)
 
     doc_type = facts.get("document_type", "other")
     inferred_case_type = DOC_TYPE_TO_CASE.get(doc_type, "other")
@@ -3427,12 +3470,14 @@ async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, us
 
     # PASS 3+4A+4B+5 — PARALLEL
     objective_block = _build_objective_block(user_context, language)
-    detected_case_type_mdus = legal_analysis.get("case_type") or inferred_case_type
-    logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 3+4A+4B+5 — Parallel")
+    detected_case_type_mdus = normalize_case_type(
+        legal_analysis.get("case_type") or facts.get("detected_case_type") or case_type or inferred_case_type
+    )
+    logger.info(f"Multi-doc analysis ({doc_count} docs): Pass 3+4A+4B+5 — Parallel (case_type={detected_case_type_mdus})")
     strategy, user_arguments, opposing_arguments, adversarial_attack = await asyncio.gather(
         call_claude(persona, PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement + objective_block, max_tokens=6000),
-        call_claude(PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
-        call_claude(PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+        call_claude(PASS4A_SYSTEM + jurisdiction_guard + expertise_block + lang_instruction, PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+        call_claude(PASS4B_SYSTEM + jurisdiction_guard + expertise_block + lang_instruction, PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
         _run_adversarial_attack(facts, legal_analysis, None, detected_case_type_mdus, language, jurisdiction),
     )
 
@@ -3478,12 +3523,14 @@ async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, us
     return result
 
 
-async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, user_context: str = "", region: str = "Wallonie", language: str = "fr-BE") -> dict:
+async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, user_context: str = "", region: str = "Wallonie", language: str = "fr-BE", case_type: str = "other") -> dict:
     """Run 5-pass multi-document analysis for Belgian users"""
     persona = get_belgian_persona(language, region)
     lang_instruction = get_language_instruction(language)
     jurisdiction_guard = get_jurisdiction_guard("BE", language)
-    persona_with_lang = persona + jurisdiction_guard + lang_instruction
+    case_type = normalize_case_type(case_type)
+    expertise_block = get_expertise_block(case_type, "BE", language)
+    persona_with_lang = persona + jurisdiction_guard + expertise_block + lang_instruction
     p1_supplement = get_multi_doc_pass1_supplement(doc_count, language)
     p2_supplement = get_multi_doc_pass2_supplement(doc_count, language)
     p3_supplement = get_multi_doc_pass3_supplement(doc_count, language)
@@ -3494,8 +3541,8 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
     text_for_analysis = combined_text[:max_text]
 
     # PASS 1
-    logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 1")
-    facts = await call_claude(persona_with_lang, BE_PASS1_PROMPT.format(document_text=text_for_analysis, user_context_section=context_section) + p1_supplement)
+    logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 1 (case_type={case_type})")
+    facts = await call_claude(persona_with_lang, BE_PASS1_PROMPT.format(document_text=text_for_analysis, user_context_section=context_section, user_declared_case_type=case_type) + p1_supplement)
 
     doc_type = facts.get("type_document", "autre")
     detected_region = facts.get("region_applicable", region)
@@ -3528,12 +3575,14 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
 
     # PASS 3+4A+4B+5 — PARALLEL
     objective_block = _build_objective_block(user_context, language)
-    detected_case_type_mdbe = legal_analysis.get("case_type") or inferred_case_type
-    logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 3+4A+4B+5 — Parallel")
+    detected_case_type_mdbe = normalize_case_type(
+        legal_analysis.get("case_type") or facts.get("detected_case_type") or case_type or inferred_case_type
+    )
+    logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 3+4A+4B+5 — Parallel (case_type={detected_case_type_mdbe})")
     strategy, user_arguments, opposing_arguments, adversarial_attack = await asyncio.gather(
         call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement + objective_block, max_tokens=6000),
-        call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
-        call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+        call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + expertise_block + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
+        call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + expertise_block + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
         _run_adversarial_attack(facts, legal_analysis, None, detected_case_type_mdbe, language, "BE"),
     )
 
@@ -4011,6 +4060,7 @@ async def upload_document(
     user_context: Optional[str] = Form(None),
     analysis_mode: Optional[str] = Form("standard"),
     streaming: Optional[str] = Form(None),
+    case_type: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user)
 ):
     """Upload document → create case immediately → analyze in background"""
@@ -4096,6 +4146,8 @@ async def upload_document(
     user_country = current_user.jurisdiction or "US"
     user_region = current_user.region or ""
     user_language = current_user.language or "en"
+    # User-declared case_type from the card picker (P5). Normalised to the 18-enum.
+    declared_case_type = normalize_case_type(case_type)
 
     # Bug A: auto-detect document jurisdiction from extracted text (fast keyword scan)
     detected_jurisdiction = detect_jurisdiction(extracted_text) if extracted_text else user_country
@@ -4126,7 +4178,7 @@ async def upload_document(
             "case_id": case_id,
             "user_id": current_user.user_id,
             "title": f"Analyzing {file.filename}...",
-            "type": "other",
+            "type": declared_case_type,
             "status": "analyzing",
             "country": user_country,
             "region": user_region,
@@ -4245,11 +4297,11 @@ async def upload_document(
                             if is_belgian:
                                 analysis = await run_multi_doc_analysis_belgian(
                                     combined_text, total_doc_count, user_context=context_str,
-                                    region=user_region, language=user_language
+                                    region=user_region, language=user_language, case_type=declared_case_type
                                 )
                             else:
                                 analysis = await run_multi_doc_analysis_advanced(
-                                    combined_text, total_doc_count, user_context=context_str, language=user_language, jurisdiction=effective_jurisdiction
+                                    combined_text, total_doc_count, user_context=context_str, language=user_language, jurisdiction=effective_jurisdiction, case_type=declared_case_type
                                 )
                             if analysis:
                                 analysis["_multi_doc"] = True
@@ -4258,16 +4310,16 @@ async def upload_document(
                         except Exception as e:
                             logger.error(f"Multi-doc analysis failed, fallback: {e}")
                             if is_belgian:
-                                analysis = await analyze_document_belgian(new_text, user_context=context_str, region=user_region, language=user_language)
+                                analysis = await analyze_document_belgian(new_text, user_context=context_str, region=user_region, language=user_language, case_type=declared_case_type)
                             else:
-                                analysis = await analyze_document_advanced(new_text, user_context=context_str, language=user_language, jurisdiction=effective_jurisdiction)
+                                analysis = await analyze_document_advanced(new_text, user_context=context_str, language=user_language, jurisdiction=effective_jurisdiction, case_type=declared_case_type)
 
                 # Single-document analysis
                 if analysis is None and not use_vision and not is_contract_guard:
                     if is_belgian:
-                        analysis = await analyze_document_belgian(extracted_text, user_context=context_str, region=user_region, language=user_language)
+                        analysis = await analyze_document_belgian(extracted_text, user_context=context_str, region=user_region, language=user_language, case_type=declared_case_type)
                     else:
-                        analysis = await analyze_document_advanced(extracted_text, user_context=context_str, language=user_language, jurisdiction=effective_jurisdiction)
+                        analysis = await analyze_document_advanced(extracted_text, user_context=context_str, language=user_language, jurisdiction=effective_jurisdiction, case_type=declared_case_type)
                 
                 # Contract guard fallback
                 if analysis is None and is_contract_guard and not use_vision:
@@ -4434,11 +4486,12 @@ async def reanalyze_case(case_id: str, current_user: User = Depends(get_current_
     # Prefer case-level jurisdiction (may have been switched via Bug C modal). Fall back to user profile.
     effective_jurisdiction = case_doc.get("jurisdiction") or case_doc.get("country") or getattr(current_user, 'jurisdiction', 'US') or "US"
 
+    case_type_from_case = normalize_case_type(case_doc.get("type"))
     try:
         if effective_jurisdiction == "BE":
-            analysis = await analyze_document_belgian(extracted_text, region=user_region, language=user_language)
+            analysis = await analyze_document_belgian(extracted_text, region=user_region, language=user_language, case_type=case_type_from_case)
         else:
-            analysis = await analyze_document_advanced(extracted_text, language=user_language, jurisdiction=effective_jurisdiction)
+            analysis = await analyze_document_advanced(extracted_text, language=user_language, jurisdiction=effective_jurisdiction, case_type=case_type_from_case)
     except Exception as e:
         logger.error(f"Re-analysis failed: {e}")
         raise HTTPException(status_code=500, detail="Re-analysis failed. Please try again.")
@@ -4551,11 +4604,12 @@ async def switch_case_jurisdiction(case_id: str, current_user: User = Depends(ge
         }}
     )
 
+    case_type_from_case = normalize_case_type(case_doc.get("type"))
     try:
         if detected == "BE":
-            analysis = await analyze_document_belgian(extracted_text, region=user_region or "Wallonie", language=be_lang)
+            analysis = await analyze_document_belgian(extracted_text, region=user_region or "Wallonie", language=be_lang, case_type=case_type_from_case)
         else:
-            analysis = await analyze_document_advanced(extracted_text, language=user_language, jurisdiction=detected)
+            analysis = await analyze_document_advanced(extracted_text, language=user_language, jurisdiction=detected, case_type=case_type_from_case)
     except Exception as e:
         logger.error(f"Jurisdiction switch re-analysis failed for {case_id}: {e}")
         await db.cases.update_one({"case_id": case_id}, {"$set": {"status": "active"}})
@@ -4789,7 +4843,7 @@ Return ONLY this JSON (no prose, no markdown):
 
 async def _run_full_reanalysis(case_doc: dict, document_text: str, user_input: str,
                                prior_inputs: List[str], language: str,
-                               jurisdiction: str, region: str) -> dict:
+                               jurisdiction: str, region: str, case_type: str = "other") -> dict:
     """Full 5-pass reanalysis with the new context merged into user_context."""
     combined_context_parts = []
     for prior in prior_inputs:
@@ -4810,11 +4864,11 @@ async def _run_full_reanalysis(case_doc: dict, document_text: str, user_input: s
         be_lang = language if language.startswith(("fr", "nl", "de")) else "fr-BE"
         return await analyze_document_belgian(
             document_text, user_context=merged_context_with_note,
-            region=region or "Wallonie", language=be_lang,
+            region=region or "Wallonie", language=be_lang, case_type=case_type,
         )
     return await analyze_document_advanced(
         document_text, user_context=merged_context_with_note,
-        language=language, jurisdiction=jurisdiction,
+        language=language, jurisdiction=jurisdiction, case_type=case_type,
     )
 
 
@@ -4980,6 +5034,7 @@ async def refine_case(case_id: str, body: RefineRequest,
                 raise HTTPException(status_code=400, detail="no_document_text_for_reanalysis")
             full = await _run_full_reanalysis(
                 case_doc, document_text, user_input, prior_inputs, language, jurisdiction, region,
+                case_type=normalize_case_type(case_doc.get("type")),
             )
             if not full:
                 raise HTTPException(status_code=500, detail="Full reanalysis returned no result")

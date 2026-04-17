@@ -4,7 +4,15 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContaine
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 function authHeaders() { return { Authorization: `Bearer ${localStorage.getItem('admin_token')}` }; }
 
-const BEHAVIOR_CASE_TYPES = ['', 'housing', 'employment', 'debt', 'consumer', 'nda', 'contract', 'commercial', 'court', 'traffic', 'penal', 'insurance', 'family', 'immigration', 'other'];
+const BEHAVIOR_CASE_TYPES = [
+  '',
+  'eviction', 'real_estate',
+  'wrongful_termination', 'severance', 'workplace_discrimination', 'harassment',
+  'consumer_disputes', 'debt', 'insurance_disputes', 'tax_disputes', 'identity_theft',
+  'medical_malpractice', 'disability_claims',
+  'family', 'criminal', 'immigration', 'traffic',
+  'other',
+];
 const BEHAVIOR_PLANS = ['', 'free', 'solo', 'family', 'pro'];
 const BEHAVIOR_JURISDICTIONS = ['', 'BE', 'US'];
 

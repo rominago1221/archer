@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import { Upload as UploadIcon, FileText, AlertCircle, Loader2, Camera, Smartphone, ArrowRight, Scale, ExternalLink, BookOpen, Shield, ShieldAlert, AlertTriangle, CheckCircle, XCircle, Mail, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 import MultiDocumentUploader from '../components/MultiDocumentUploader';
+import CaseTypePicker from '../components/CaseTypePicker';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -25,11 +26,13 @@ const Upload = () => {
   const [scanning, setScanning] = useState(false);
   const [userContext, setUserContext] = useState('');
   const [contextTouched, setContextTouched] = useState(false);
+  const [caseType, setCaseType] = useState('');
   const [analysisMode, setAnalysisMode] = useState('standard');
   const USER_CONTEXT_MIN = 20;
   const USER_CONTEXT_MAX = 500;
   const userContextLen = userContext.trim().length;
   const isContextValid = userContextLen >= USER_CONTEXT_MIN;
+  const isCaseTypeValid = !!caseType;
   // Bug 2 — multi-document upload state. `uploadMode` toggles between the
   // legacy single-file flow and the new multi-file path (binary tier-gated).
   const [uploadMode, setUploadMode] = useState('single'); // 'single' | 'multi'
@@ -44,6 +47,10 @@ const Upload = () => {
 
   const submitMulti = async () => {
     if (!multiFiles.length) return;
+    if (!isCaseTypeValid) {
+      setError(isFr ? 'Choisissez une catégorie avant de continuer.' : 'Pick a category before continuing.');
+      return;
+    }
     if (!isContextValid) {
       setContextTouched(true);
       setError(isFr
@@ -57,6 +64,7 @@ const Upload = () => {
       const fd = new FormData();
       multiFiles.forEach((f) => fd.append('files', f));
       fd.append('user_context', userContext.trim());
+      fd.append('case_type', caseType);
       const resp = await axios.post(`${API}/cases/upload-multiple`, fd, {
         withCredentials: true,
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -145,6 +153,10 @@ const Upload = () => {
 
   const handleUpload = async () => {
     if (!file) return;
+    if (!isCaseTypeValid) {
+      setError(isFr ? 'Choisissez une catégorie avant de continuer.' : 'Pick a category before continuing.');
+      return;
+    }
     if (!isContextValid) {
       setContextTouched(true);
       setError(isFr
@@ -164,6 +176,7 @@ const Upload = () => {
       formData.append('file', file);
       if (selectedCaseId && analysisMode === 'standard') formData.append('case_id', selectedCaseId);
       formData.append('user_context', userContext.trim());
+      formData.append('case_type', caseType);
       formData.append('analysis_mode', analysisMode);
       formData.append('streaming', 'true');
 
@@ -204,6 +217,7 @@ const Upload = () => {
     setUploadStage('');
     setUserContext('');
     setContextTouched(false);
+    setCaseType('');
     setCopiedEmail(false);
     setExpandedSections({});
   };
@@ -350,8 +364,10 @@ const Upload = () => {
               <button
                 type="button"
                 onClick={submitMulti}
-                disabled={multiSubmitting || !isContextValid}
-                title={!isContextValid ? (isFr ? `Renseignez votre objectif (min ${USER_CONTEXT_MIN} caractères)` : `Add your objective (min ${USER_CONTEXT_MIN} characters)`) : ''}
+                disabled={multiSubmitting || !isContextValid || !isCaseTypeValid}
+                title={!isCaseTypeValid
+                  ? (isFr ? 'Choisissez une catégorie' : 'Pick a category')
+                  : (!isContextValid ? (isFr ? `Renseignez votre objectif (min ${USER_CONTEXT_MIN} caractères)` : `Add your objective (min ${USER_CONTEXT_MIN} characters)`) : '')}
                 className="w-full mt-4 bg-[#1a56db] text-white font-medium py-3 rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {multiSubmitting
@@ -437,8 +453,10 @@ const Upload = () => {
                   <div className="text-xs text-[#6b7280] mb-3">{(file.size / 1024).toFixed(1)} KB</div>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleUpload(); }}
-                    disabled={!isContextValid}
-                    title={!isContextValid ? (isFr ? `Renseignez votre objectif (min ${USER_CONTEXT_MIN} caractères)` : `Add your objective (min ${USER_CONTEXT_MIN} characters)`) : ''}
+                    disabled={!isContextValid || !isCaseTypeValid}
+                    title={!isCaseTypeValid
+                      ? (isFr ? 'Choisissez une catégorie' : 'Pick a category')
+                      : (!isContextValid ? (isFr ? `Renseignez votre objectif (min ${USER_CONTEXT_MIN} caractères)` : `Add your objective (min ${USER_CONTEXT_MIN} characters)`) : '')}
                     className={`btn-pill px-6 disabled:opacity-50 disabled:cursor-not-allowed ${isContractGuard ? 'bg-[#d97706] hover:bg-[#b45309] text-white' : 'btn-blue'}`}
                     data-testid="analyze-btn"
                   >
@@ -467,6 +485,12 @@ const Upload = () => {
                 <span key={type} className="px-3 py-1.5 bg-[#f5f5f5] text-[#6b7280] text-xs rounded-full">{type}</span>
               ))}
             </div>
+
+            <CaseTypePicker
+              value={caseType}
+              onChange={setCaseType}
+              language={isFr ? 'fr' : 'en'}
+            />
 
             {/* User context textarea — REQUIRED (min 20 chars) to force the client to state their objective */}
             <div className="card p-4 mb-4" data-testid="user-context-section">

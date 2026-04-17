@@ -2,6 +2,8 @@
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import List, Optional, Any, Dict
 
+from constants.case_types import normalize_case_type
+
 
 class EmailRegister(BaseModel):
     email: str
@@ -54,11 +56,23 @@ class CaseCreate(BaseModel):
     title: str
     type: str = "other"
 
+    @field_validator('type', mode='before')
+    @classmethod
+    def _norm_type(cls, v):
+        return normalize_case_type(v)
+
 
 class CaseUpdate(BaseModel):
     title: Optional[str] = None
     type: Optional[str] = None
     status: Optional[str] = None
+
+    @field_validator('type', mode='before')
+    @classmethod
+    def _norm_type(cls, v):
+        if v is None:
+            return v
+        return normalize_case_type(v)
 
 
 def normalize_deadline(val):
@@ -177,6 +191,13 @@ class Case(BaseModel):
             return int(v)
         except (ValueError, TypeError):
             return 0
+
+    @field_validator('type', mode='before')
+    @classmethod
+    def normalize_case_type_field(cls, v):
+        # Normalize legacy values (e.g. "housing" → "eviction", "nda" → "other")
+        # so old DB rows stay queryable under the new 18-value taxonomy.
+        return normalize_case_type(v) if v is not None else 'other'
 
 
 class Document(BaseModel):
