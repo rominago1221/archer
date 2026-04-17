@@ -534,7 +534,7 @@ async def generate_case_brief(call_id: str, current_user: User = Depends(get_cur
             resp = await http_client.post("https://api.anthropic.com/v1/messages", headers={
                 "Content-Type": "application/json", "x-api-key": get_anthropic_key(), "anthropic-version": "2023-06-01"
             }, json={
-                "model": "claude-opus-4-6", "max_tokens": 3000,
+                "model": "claude-opus-4-7", "max_tokens": 3000,
                 "system": CASE_BRIEF_SYSTEM,
                 "messages": [{"role": "user", "content": f"Generate a pre-call brief for this case:\n\n{brief_content}"}]
             }, timeout=60.0)

@@ -449,7 +449,7 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4
                             "content-type": "application/json",
                         },
                         json={
-                            "model": "claude-opus-4-6",
+                            "model": "claude-opus-4-7",
                             "max_tokens": current_max,
                             "system": [
                                 {"type": "text", "text": system_prompt, "cache_control": {"type": "ephemeral"}},
@@ -507,7 +507,7 @@ async def call_claude_fast(system_prompt: str, user_message: str, max_tokens: in
                         "content-type": "application/json",
                     },
                     json={
-                        "model": "claude-opus-4-6",
+                        "model": "claude-opus-4-7",
                         "max_tokens": max_tokens,
                         "system": system_prompt,
                         "messages": [
@@ -2506,7 +2506,7 @@ async def generate_letter_with_claude(letter_data: dict, belgian: bool = False, 
                     "anthropic-version": "2023-06-01"
                 },
                 json={
-                    "model": "claude-opus-4-6",
+                    "model": "claude-opus-4-7",
                     "max_tokens": 3000,
                     "system": system_prompt,
                     "messages": [{
@@ -2931,7 +2931,7 @@ async def analyze_document_vision(image_b64_list: list, system_prompt: str = Non
                         "anthropic-version": "2023-06-01"
                     },
                     json={
-                        "model": "claude-opus-4-6",
+                        "model": "claude-opus-4-7",
                         "max_tokens": 4000,
                         "system": system_prompt,
                         "messages": [{"role": "user", "content": content_blocks}]
@@ -4351,7 +4351,7 @@ async def predict_outcome(case_id: str, current_user: User = Depends(get_current
                     "anthropic-version": "2023-06-01"
                 },
                 json={
-                    "model": "claude-opus-4-6",
+                    "model": "claude-opus-4-7",
                     "max_tokens": 2000,
                     "system": (BELGIAN_OUTCOME_SYSTEM if current_user.jurisdiction == "BE" else OUTCOME_SYSTEM_PROMPT) + get_language_instruction(getattr(current_user, 'language', 'en') or 'en'),
                     "messages": [{
@@ -5859,7 +5859,7 @@ Titre du dossier : {case_doc.get('title', '')}"""
                     "content-type": "application/json",
                 },
                 json={
-                    "model": "claude-opus-4-6",
+                    "model": "claude-opus-4-7",
                     "max_tokens": 600,
                     "system": system,
                     "messages": [{"role": "user", "content": user_msg}],
