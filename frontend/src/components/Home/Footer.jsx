@@ -18,7 +18,7 @@ const COLUMNS = [
       { to: '/how',       key: 'how' },
       { to: '/cases',     key: 'cases' },
       { to: '/pricing',   key: 'pricing' },
-      { to: '/attorneys', key: 'attorneys' },
+      { to: '/attorneys', key: 'attorneys' }, // public /attorneys page
     ],
   },
   {

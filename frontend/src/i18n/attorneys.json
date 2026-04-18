@@ -1,0 +1,330 @@
+{
+  "en": {
+    "hero": {
+      "eyebrow": "REAL ATTORNEYS, ON YOUR SIDE",
+      "title_1": "Real lawyers.",
+      "title_2": "Only when you need them.",
+      "sub_strong": "70% of cases are resolved with Archer alone.",
+      "sub_rest": "For the rest, a real attorney steps in to validate strategy, sign the official letter, and follow your case to resolution.",
+      "roles": {
+        "validate": {
+          "h": "Validate the Archer strategy",
+          "d": "Cross-check findings, customize the legal angle."
+        },
+        "sign": {
+          "h": "Sign & send the official letter",
+          "d": "Bar-certified signature, sent under 24h."
+        },
+        "follow": {
+          "h": "Follow your case to resolution",
+          "d": "Real-time updates, escalation if needed."
+        }
+      },
+      "cta_primary": "Meet our attorneys",
+      "cta_secondary": "How we select them",
+      "card1": {
+        "status": "ATTORNEY-VALIDATED CASE",
+        "reviewing": "REVIEWING NOW",
+        "verified": "VERIFIED",
+        "service": "STRATEGY VALIDATION + SIGNED LETTER",
+        "price": "$49.99 fixed",
+        "price_suffix": "fixed",
+        "delivery": "Sent under 24h",
+        "cta": "Get attorney-signed letter",
+        "trust": "Bar-certified · No subscription · Money-back guarantee"
+      },
+      "card2": {
+        "title": "Most cases never need a lawyer",
+        "text_strong": "70%",
+        "text_rest": "of disputes are resolved with the Archer letter alone. You only pay for an attorney if you actually need one."
+      },
+      "card3": {
+        "status": "LIVE ATTORNEY ON DEMAND",
+        "online": "14 ONLINE",
+        "verified": "VERIFIED",
+        "service": "VIDEO CALL · 30 MIN",
+        "price": "$90 fixed",
+        "price_suffix": "fixed",
+        "delivery": "Connect in 2 min",
+        "cta": "Book a live call now",
+        "trust": "Encrypted · Recording included · Cancel anytime"
+      },
+      "bar_years_template": "{bar} · {years} yrs"
+    },
+    "pricing": {
+      "eyebrow": "PRICING",
+      "title_1": "Same service.",
+      "title_2": "Up to 95% cheaper.",
+      "sub": "Bar-certified attorneys, fixed prices. Compare with what you'd pay traditionally.",
+      "columns": {
+        "service": "SERVICE",
+        "traditional": "TRADITIONAL FIRM",
+        "archer": "ARCHER",
+        "save": "YOU SAVE"
+      },
+      "rows": {
+        "letter": {
+          "service": "Strategy validation + signed letter",
+          "desc": "Attorney reviews case & sends signed letter under 24h",
+          "traditional_price": "$800 – $1,500",
+          "traditional_desc": "Hourly billing · 4–8h work",
+          "archer_price": "$49.99",
+          "archer_desc": "Fixed · all included",
+          "save": "−97%"
+        },
+        "call": {
+          "service": "Live attorney call · 30 min",
+          "desc": "Video call with a bar-certified attorney, connect in 2 min",
+          "traditional_price": "$250 – $450",
+          "traditional_desc": "+ travel · + scheduling delay",
+          "archer_price": "$90",
+          "archer_desc": "Fixed · recording included",
+          "save": "−75%"
+        }
+      },
+      "footer": "No surprises, ever. Fixed prices shown upfront, no hourly billing, no hidden fees."
+    },
+    "meet": {
+      "eyebrow": "MEET OUR ATTORNEYS",
+      "title_1": "2,000+ bar-certified.",
+      "title_2": "Matched to your case.",
+      "sub": "Filter by area of law to discover specialists ready to help.",
+      "filters": {
+        "all": "All areas",
+        "traffic": "Traffic",
+        "debt": "Debt",
+        "consumer": "Consumer",
+        "family": "Family",
+        "eviction": "Eviction",
+        "employment": "Employment",
+        "insurance": "Insurance",
+        "discrimination": "Discrimination",
+        "real_estate": "Real estate"
+      },
+      "stat_labels": {
+        "experience": "Experience",
+        "winRate": "Win rate",
+        "cases": "Cases"
+      },
+      "verified": "VERIFIED",
+      "years_template": "{n} yrs",
+      "view_all": "View all 2,047 attorneys"
+    },
+    "select": {
+      "eyebrow": "HOW WE SELECT",
+      "title_1": "A bar of",
+      "title_2": "very high standards.",
+      "sub": "Only 1 in 27 attorneys who apply make it onto the Archer network.",
+      "criteria": {
+        "c1": {
+          "h": "Bar certification verified",
+          "d": "Every attorney is verified directly with their national bar. Active license, no disciplinary history, in good standing."
+        },
+        "c2": {
+          "h": "5+ years of practice",
+          "d": "Minimum 5 years of active legal practice in their domain. We don't take fresh graduates — only proven specialists."
+        },
+        "c3": {
+          "h": "Win rate above 85%",
+          "d": "Track record audited from public records and previous case outcomes. Below 85% win rate, we don't onboard."
+        },
+        "c4": {
+          "h": "Response time under 4h",
+          "d": "Commit to respond to client requests within 4 business hours. Ongoing monitoring — repeated delays mean removal."
+        },
+        "c5": {
+          "h": "Client rating above 4.7/5",
+          "d": "Continuous client feedback after every case. Below 4.7 average over 20+ cases, we transparently remove from network."
+        },
+        "c6": {
+          "h": "Background & conflict check",
+          "d": "Background screening, conflict of interest declaration, and signed code of conduct before joining the network."
+        }
+      },
+      "stats": {
+        "s1": { "num": "1 in 27", "label": "acceptance rate" },
+        "s2": { "num": "94%",     "label": "avg. win rate" },
+        "s3": { "num": "4.9/5",   "label": "client rating" },
+        "s4": { "num": "2.1h",    "label": "avg. response" }
+      }
+    },
+    "join": {
+      "eyebrow": "ATTORNEYS — JOIN ARCHER",
+      "title_1": "Are you an attorney?",
+      "title_2": "Join Archer.",
+      "sub": "Join 2,000+ bar-certified attorneys earning extra income on Archer. Pre-qualified cases, transparent pricing, weekly payouts. No subscription, no commitment.",
+      "cta_primary": "Apply to join",
+      "cta_secondary": "Learn how it works",
+      "stats": {
+        "s1": { "num": "25",      "label": "Cases / month avg." },
+        "s2": { "num": "0%",      "label": "Commission fees" },
+        "s3": { "num": "Mondays", "label": "Weekly payouts" },
+        "s4": { "num": "100%",    "label": "Pre-qualified leads" }
+      }
+    }
+  },
+  "fr": {
+    "hero": {
+      "eyebrow": "DE VRAIS AVOCATS, À VOS CÔTÉS",
+      "title_1": "De vrais avocats.",
+      "title_2": "Seulement quand vous en avez besoin.",
+      "sub_strong": "70% des dossiers sont résolus avec Archer seul.",
+      "sub_rest": "Pour le reste, un vrai avocat intervient pour valider la stratégie, signer le courrier officiel et suivre votre dossier jusqu'à la résolution.",
+      "roles": {
+        "validate": {
+          "h": "Valider la stratégie Archer",
+          "d": "Contre-vérifier l'analyse, affiner l'angle juridique."
+        },
+        "sign": {
+          "h": "Signer et envoyer la lettre officielle",
+          "d": "Signature d'avocat agréé, envoyée sous 24h."
+        },
+        "follow": {
+          "h": "Suivre votre dossier jusqu'à la résolution",
+          "d": "Mises à jour en temps réel, escalade si besoin."
+        }
+      },
+      "cta_primary": "Rencontrez nos avocats",
+      "cta_secondary": "Comment nous les sélectionnons",
+      "card1": {
+        "status": "DOSSIER VALIDÉ PAR AVOCAT",
+        "reviewing": "EN COURS DE RELECTURE",
+        "verified": "VÉRIFIÉ",
+        "service": "VALIDATION DE STRATÉGIE + LETTRE SIGNÉE",
+        "price": "49,99 € fixe",
+        "price_suffix": "fixe",
+        "delivery": "Envoyée sous 24h",
+        "cta": "Obtenir la lettre signée par avocat",
+        "trust": "Avocat agréé · Sans abonnement · Satisfait ou remboursé"
+      },
+      "card2": {
+        "title": "La plupart des dossiers n'ont pas besoin d'avocat",
+        "text_strong": "70 %",
+        "text_rest": "des litiges sont résolus avec la seule lettre Archer. Vous ne payez un avocat que si vous en avez réellement besoin."
+      },
+      "card3": {
+        "status": "AVOCAT EN DIRECT À LA DEMANDE",
+        "online": "14 EN LIGNE",
+        "verified": "VÉRIFIÉ",
+        "service": "APPEL VIDÉO · 30 MIN",
+        "price": "90 € fixe",
+        "price_suffix": "fixe",
+        "delivery": "Connecté en 2 min",
+        "cta": "Réserver un appel maintenant",
+        "trust": "Chiffré · Enregistrement inclus · Annulez quand vous voulez"
+      },
+      "bar_years_template": "{bar} · {years} ans"
+    },
+    "pricing": {
+      "eyebrow": "TARIFS",
+      "title_1": "Même service.",
+      "title_2": "Jusqu'à 95% moins cher.",
+      "sub": "Avocats agréés, prix fixes. Comparez avec ce que vous paieriez traditionnellement.",
+      "columns": {
+        "service": "SERVICE",
+        "traditional": "CABINET TRADITIONNEL",
+        "archer": "ARCHER",
+        "save": "VOUS ÉCONOMISEZ"
+      },
+      "rows": {
+        "letter": {
+          "service": "Validation de stratégie + lettre signée",
+          "desc": "L'avocat relit le dossier et envoie la lettre signée sous 24h",
+          "traditional_price": "800 € – 1 500 €",
+          "traditional_desc": "Facturation à l'heure · 4–8h de travail",
+          "archer_price": "49,99 €",
+          "archer_desc": "Forfait · tout inclus",
+          "save": "−97 %"
+        },
+        "call": {
+          "service": "Appel d'avocat en direct · 30 min",
+          "desc": "Visio avec un avocat agréé, connecté en 2 min",
+          "traditional_price": "250 € – 450 €",
+          "traditional_desc": "+ déplacement · + délai de rdv",
+          "archer_price": "90 €",
+          "archer_desc": "Forfait · enregistrement inclus",
+          "save": "−75 %"
+        }
+      },
+      "footer": "Aucune surprise. Prix fixes affichés d'emblée, pas de facturation horaire, pas de frais cachés."
+    },
+    "meet": {
+      "eyebrow": "RENCONTREZ NOS AVOCATS",
+      "title_1": "2 000+ avocats agréés.",
+      "title_2": "Sélectionnés pour votre dossier.",
+      "sub": "Filtrez par domaine de droit pour découvrir les spécialistes prêts à vous aider.",
+      "filters": {
+        "all": "Tous les domaines",
+        "traffic": "Circulation",
+        "debt": "Dettes",
+        "consumer": "Consommation",
+        "family": "Famille",
+        "eviction": "Expulsion",
+        "employment": "Travail",
+        "insurance": "Assurance",
+        "discrimination": "Discrimination",
+        "real_estate": "Immobilier"
+      },
+      "stat_labels": {
+        "experience": "Expérience",
+        "winRate": "Taux de succès",
+        "cases": "Dossiers"
+      },
+      "verified": "VÉRIFIÉ",
+      "years_template": "{n} ans",
+      "view_all": "Voir les 2 047 avocats"
+    },
+    "select": {
+      "eyebrow": "COMMENT NOUS SÉLECTIONNONS",
+      "title_1": "Un barreau aux",
+      "title_2": "exigences très élevées.",
+      "sub": "Seul 1 avocat sur 27 qui postule intègre le réseau Archer.",
+      "criteria": {
+        "c1": {
+          "h": "Certification du barreau vérifiée",
+          "d": "Chaque avocat est vérifié directement auprès de son barreau national. Licence active, aucun antécédent disciplinaire, en règle."
+        },
+        "c2": {
+          "h": "5 ans de pratique minimum",
+          "d": "Minimum 5 ans de pratique active dans leur domaine. Pas de jeunes diplômés — uniquement des spécialistes confirmés."
+        },
+        "c3": {
+          "h": "Taux de succès supérieur à 85 %",
+          "d": "Parcours audité à partir des registres publics et des dossiers précédents. En dessous de 85 % de succès, nous n'intégrons pas."
+        },
+        "c4": {
+          "h": "Délai de réponse inférieur à 4h",
+          "d": "Engagement de répondre aux demandes clients sous 4 heures ouvrées. Suivi continu — des retards répétés entraînent le retrait."
+        },
+        "c5": {
+          "h": "Note client supérieure à 4,7/5",
+          "d": "Feedback client continu après chaque dossier. En dessous de 4,7 de moyenne sur 20+ dossiers, retrait transparent du réseau."
+        },
+        "c6": {
+          "h": "Vérification antécédents et conflits",
+          "d": "Enquête de moralité, déclaration de conflit d'intérêts et code de conduite signé avant intégration au réseau."
+        }
+      },
+      "stats": {
+        "s1": { "num": "1 sur 27", "label": "taux d'acceptation" },
+        "s2": { "num": "94 %",     "label": "taux de succès moyen" },
+        "s3": { "num": "4,9/5",    "label": "note client" },
+        "s4": { "num": "2,1h",     "label": "délai moyen" }
+      }
+    },
+    "join": {
+      "eyebrow": "AVOCATS — REJOIGNEZ ARCHER",
+      "title_1": "Vous êtes avocat ?",
+      "title_2": "Rejoignez Archer.",
+      "sub": "Rejoignez plus de 2 000 avocats agréés qui génèrent un revenu complémentaire sur Archer. Dossiers pré-qualifiés, tarifs transparents, paiements hebdomadaires. Sans abonnement, sans engagement.",
+      "cta_primary": "Postuler",
+      "cta_secondary": "Voir comment ça marche",
+      "stats": {
+        "s1": { "num": "25",     "label": "Dossiers / mois en moyenne" },
+        "s2": { "num": "0 %",    "label": "Frais de commission" },
+        "s3": { "num": "Lundis", "label": "Paiements hebdomadaires" },
+        "s4": { "num": "100 %",  "label": "Leads pré-qualifiés" }
+      }
+    }
+  }
+}

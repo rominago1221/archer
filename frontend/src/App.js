@@ -7,6 +7,7 @@ import Layout from './components/Layout';
 import AttorneyLayout from './components/AttorneyLayout';
 import Landing from './pages/Landing';
 import HomePage from './pages/HomePage';
+import AttorneysPage from './pages/AttorneysPage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
@@ -124,6 +125,7 @@ const AppRouter = () => {
       <Route path="/ai-legal-assistant" element={<PillarPage />} />
 
       {/* Sprint A — Attorney Portal (must be declared BEFORE /attorneys/:slug) */}
+      <Route path="/attorneys" element={<AttorneysPage />} />
       <Route path="/attorneys/join" element={<AttorneyPortalJoin />} />
       <Route path="/attorneys/login" element={<AttorneyPortalLogin />} />
       <Route path="/attorneys/login/verify" element={<AttorneyPortalMagicVerify />} />

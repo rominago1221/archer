@@ -106,6 +106,13 @@ export default function PublicHeader({ onLanguageChange, onJurisdictionChange })
             {t.nav.howItWorks}
           </span>
           <span
+            onClick={() => navigate('/attorneys')}
+            className="hover:text-[#1a56db] cursor-pointer"
+            data-testid="public-header-attorneys"
+          >
+            {t.nav.attorneys}
+          </span>
+          <span
             onClick={() => navigate('/pricing')}
             className="hover:text-[#1a56db] cursor-pointer"
           >
