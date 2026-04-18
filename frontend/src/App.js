@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import AttorneyLayout from './components/AttorneyLayout';
 import Landing from './pages/Landing';
+import HomePage from './pages/HomePage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
@@ -104,7 +105,9 @@ const AppRouter = () => {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={<Landing />} />
+      <Route path="/" element={<HomePage />} />
+      {/* Legacy landing archived under /legacy-landing for rollback / diff during v3 rollout. */}
+      <Route path="/legacy-landing" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/shared/:token" element={<SharedCase />} />
