@@ -131,6 +131,12 @@ async def match_case_to_attorney(
         q["calendly_url"] = {"$ne": None}
         q["calendly_url_validated"] = True
 
+    # Credits+Subscription sprint: gate routing on an active Archer Partner
+    # subscription (€99/mo, trial or active). Enforced via env so we can
+    # stage the rollout without breaking prod during the lawyer migration.
+    if os.environ.get("REQUIRE_LAWYER_SUBSCRIPTION", "true").lower() != "false":
+        q["is_active_for_routing"] = True
+
     candidates = await db.attorneys.find(q, {"_id": 0}).to_list(500)
     candidates = [a for a in candidates if a.get("id") not in exclude]
 
