@@ -72,6 +72,260 @@
       "subtitle": "Ta première analyse de dossier est offerte.",
       "subnote": "Aucune carte requise · Tu ne paies que si tu décides d'agir",
       "btn": "Démarrer ton dossier"
+    },
+    "v3": {
+      "hero": {
+        "eyebrow_be": "🇧🇪 EN LIGNE EN BELGIQUE",
+        "eyebrow_us": "🇺🇸 EN LIGNE AUX ÉTATS-UNIS",
+        "title_meet": "Meet",
+        "title_archer": "Archer.",
+        "sub_strong": "L'IA juridique la plus puissante au monde.",
+        "sub_rest": "De vrais avocats, à vos côtés en quelques minutes.",
+        "cta_primary": "Commencer gratuitement",
+        "cta_secondary": "Voir comment ça marche",
+        "pill1_num_accent": "7",
+        "pill1_num_suffix": "couches",
+        "pill1_label": "Raisonnement juridique profond",
+        "pill2_badge": "QUOTIDIEN",
+        "pill2_num_accent": "3M+",
+        "pill2_num_suffix": "sources",
+        "pill2_label": "Références juridiques vérifiées",
+        "pill3_badge": "LIVE",
+        "pill3_num_accent": "18K+",
+        "pill3_num_suffix": "quotidiennes",
+        "pill3_label": "Décisions de justice synchronisées en direct",
+        "pill4_num_accent": "2 000+",
+        "pill4_num_suffix": "avocats",
+        "pill4_label": "Réseau certifié au Barreau",
+        "sphere_tag_top": "ARCHER · LIVE",
+        "badge_sources_label": "Sources",
+        "badge_sources_meta_prefix": "+",
+        "badge_sources_meta_suffix": " sur 60s",
+        "badge_confidence_label": "Confiance",
+        "badge_confidence_meta": "σ 3,1 · dernier 100",
+        "badge_reasoning_label": "Raisonnement",
+        "badge_reasoning_value": "7",
+        "badge_reasoning_unit": " couches",
+        "badge_reasoning_meta": "Passe 5 sur 7",
+        "badge_cases_label": "Dossiers analysés",
+        "badge_cases_meta_prefix": "▲ +",
+        "badge_cases_meta_suffix": " sur 60s"
+      },
+      "howItWorks": {
+        "eyebrow": "COMMENT ÇA MARCHE",
+        "title_line1": "Le système juridique est cassé.",
+        "title_highlight": "Nous le reconstruisons.",
+        "sub": "Votre dossier juridique entier. Géré de A à Z.",
+        "steps": {
+          "s1": {
+            "num": "01 · DÉPOT",
+            "name": "Vous déposez votre dossier",
+            "desc": "Téléversez n'importe quel document, scan ou photo",
+            "tooltip_h": "Vous déposez votre dossier",
+            "tooltip_items": [
+              "Tous formats : PDF, scan, photos, emails",
+              "OCR intégré pour documents manuscrits",
+              "Chiffré de bout en bout, conforme RGPD"
+            ],
+            "tooltip_meta": "⏱ Moins de 60 secondes"
+          },
+          "s2": {
+            "num": "02 · ANALYSE",
+            "name": "L'IA croise la jurisprudence",
+            "desc": "7 couches, 3M+ sources juridiques",
+            "tooltip_h": "L'IA croise la jurisprudence",
+            "tooltip_items": [
+              "Moteur de raisonnement 7 couches (Opus 4.7)",
+              "3M+ sources juridiques vérifiées scannées",
+              "18K+ décisions synchronisées en direct chaque jour"
+            ],
+            "tooltip_meta": "⚡ Moyenne : 30 secondes"
+          },
+          "s3": {
+            "num": "03 · STRATÉGIE",
+            "name": "Analyse profonde et plan d'action",
+            "desc": "Constats + prochaines étapes claires",
+            "tooltip_h": "Analyse profonde et plan d'action",
+            "tooltip_items": [
+              "Chaque constat noté par score de confiance",
+              "Prochaines étapes recommandées priorisées",
+              "Brouillon de lettre personnalisée auto-généré"
+            ],
+            "tooltip_meta": "📊 Score de confiance sur chaque constat"
+          },
+          "s4": {
+            "num": "04 · RÉVISION",
+            "name": "Un avocat intervient si besoin",
+            "desc_eur": "Valide la stratégie · €49,99",
+            "desc_usd": "Validates strategy · $49.99",
+            "tooltip_h": "Un vrai avocat valide",
+            "tooltip_items": [
+              "2 000+ avocats certifiés au Barreau",
+              "Valide la stratégie + signe la lettre",
+              "Spécialisés par juridiction et domaine"
+            ],
+            "tooltip_meta_eur": "⚖️ Optionnel · €49,99 fixe",
+            "tooltip_meta_usd": "⚖️ Optional · Fixed $49.99"
+          },
+          "s5": {
+            "num": "05 · RÉSOLUTION",
+            "name": "Vous gagnez ou vous transigez",
+            "desc": "7 jours en moyenne",
+            "tooltip_h": "Résolution. Plus rapide que jamais.",
+            "tooltip_items": [
+              "Suivi en temps réel + notifications",
+              "Gain, transaction ou escalade au tribunal",
+              "L'avocat reste à vos côtés jusqu'au bout"
+            ],
+            "tooltip_meta": "🚀 87% des dossiers ne vont jamais au tribunal"
+          }
+        }
+      },
+      "whatWeHandle": {
+        "eyebrow": "CE QUE NOUS GÉRONS",
+        "title_line1": "Peu importe ce à quoi vous faites face.",
+        "title_highlight": "Nous l'avons déjà vu.",
+        "sub_html": "Des petits tracas quotidiens aux litiges qui changent une vie, Archer gère les problèmes juridiques réels des vraies personnes — à travers <strong>17 domaines du droit</strong>.",
+        "see_all": "Voir les 17 domaines couverts",
+        "cards": {
+          "traffic": {
+            "badge": "LE PLUS FRÉQUENT · T1 2026",
+            "title": "Contraventions & roulage",
+            "desc": "Excès de vitesse, radars mal calibrés, PV contestés, déchéance du permis. Notre domaine le plus traité — et le plus facile à gagner.",
+            "stat_value": "94%",
+            "stat_label": "taux de succès · 6 derniers mois"
+          },
+          "debt": {
+            "title": "Dettes & recouvrement",
+            "desc": "Stoppez les créanciers abusifs. Réduisez ce que vous devez.",
+            "stat_eur": "€3 200",
+            "stat_usd": "$3,500",
+            "stat_label": "dette moyenne réduite"
+          },
+          "consumer": {
+            "title": "Litiges consommation",
+            "desc": "Remboursements, publicités mensongères, frais cachés.",
+            "stat_eur": "€620",
+            "stat_usd": "$700",
+            "stat_label": "remboursement moyen"
+          },
+          "family": {
+            "title": "Droit de la famille",
+            "desc": "Garde, divorce, pension.",
+            "stat_eur": "€1 200",
+            "stat_usd": "$1,400",
+            "stat_label": "pension mensuelle"
+          },
+          "eviction": {
+            "title": "Congé / éviction",
+            "desc": "Congés illégaux, vices de procédure, protection des droits du locataire.",
+            "stat_eur": "€4 800",
+            "stat_usd": "$5,200",
+            "stat_label": "économisé en moyenne"
+          },
+          "wrongful": {
+            "title": "Licenciement abusif",
+            "desc": "Licenciement injuste, préavis manquant.",
+            "stat_eur": "€8 400",
+            "stat_usd": "$9,500",
+            "stat_label": "indemnité moyenne"
+          },
+          "insurance": {
+            "title": "Refus d'assurance",
+            "desc": "Mauvaise foi, couverture refusée.",
+            "stat_eur": "€2 100",
+            "stat_usd": "$2,400",
+            "stat_label": "indemnité récupérée"
+          }
+        }
+      },
+      "vsOldWay": {
+        "eyebrow": "POURQUOI ARCHER",
+        "title_line1": "L'ancienne voie",
+        "title_vs": "vs",
+        "title_highlight": "La voie Archer.",
+        "sub": "Même résultat. Expérience radicalement différente.",
+        "col_criteria": "CRITÈRE",
+        "col_old": "ANCIENNE VOIE",
+        "col_archer": "LA VOIE ARCHER",
+        "rows": {
+          "time": {
+            "label": "Délai de démarrage",
+            "old": "2-3 semaines pour le 1er rendez-vous",
+            "archer": "Moins de 2 minutes"
+          },
+          "pricing": {
+            "label": "Tarif",
+            "old_eur": "€500–2 000+ · facturé à l'heure",
+            "old_usd": "$500–2,000+ · billed by the hour",
+            "archer_eur": "€29,99",
+            "archer_usd": "$29.99"
+          },
+          "analysis": {
+            "label": "Analyse du document",
+            "old": "Heures de lecture manuelle",
+            "archer": "30 secondes · IA 7 couches"
+          },
+          "comm": {
+            "label": "Communication",
+            "old": "Rappels lents · délais email",
+            "archer": "Mises à jour temps réel · chat 24/7"
+          },
+          "predict": {
+            "label": "Prédictibilité du résultat",
+            "old": "\"On verra\" · aucun repère",
+            "archer": "Score de confiance sur chaque constat"
+          },
+          "resolution": {
+            "label": "Délai de résolution",
+            "old": "3-12 mois en moyenne",
+            "archer": "7 jours en moyenne"
+          },
+          "attorney": {
+            "label": "Avocat",
+            "old": "Trié sur le volet, mais cher",
+            "archer_eur": "€49,99",
+            "archer_usd": "$49.99"
+          }
+        }
+      },
+      "finalCta": {
+        "eyebrow": "Votre force juridique commence ici",
+        "title_line1": "Arrêtez de subir seul.",
+        "title_highlight": "Reprenez le contrôle.",
+        "sub": "Téléversez votre premier document. Obtenez une analyse juridique complète en 60 secondes. Premier dossier gratuit.",
+        "cta": "Téléverser mon document",
+        "meta": "Première analyse gratuite · Annulez quand vous voulez"
+      },
+      "footer": {
+        "tagline": "L'IA juridique la plus puissante au monde. De vrais avocats, à vos côtés en quelques minutes.",
+        "col_product": "PRODUIT",
+        "col_resources": "RESSOURCES",
+        "col_company": "ENTREPRISE",
+        "col_legal": "MENTIONS LÉGALES",
+        "links": {
+          "how": "Comment ça marche",
+          "cases": "Cas traités",
+          "pricing": "Tarifs",
+          "attorneys": "Pour les avocats",
+          "blog": "Blog",
+          "faq": "FAQ",
+          "help": "Centre d'aide",
+          "contact": "Contact",
+          "about": "À propos",
+          "careers": "Carrières",
+          "press": "Presse",
+          "security": "Sécurité",
+          "terms": "Conditions d'utilisation",
+          "privacy": "Politique de confidentialité",
+          "gdpr": "RGPD",
+          "cookies": "Cookies",
+          "status": "Statut",
+          "changelog": "Historique",
+          "sitemap": "Plan du site"
+        },
+        "copyright": "© 2026 Archer Legal SA · Tous droits réservés · Bruxelles, BE"
+      }
     }
   },
   "en": {
@@ -147,6 +401,260 @@
       "subtitle": "Your first case analysis is on us.",
       "subnote": "No credit card required · Pay only when you choose to take action",
       "btn": "Start your case"
+    },
+    "v3": {
+      "hero": {
+        "eyebrow_be": "🇧🇪 LIVE IN BELGIUM",
+        "eyebrow_us": "🇺🇸 LIVE IN THE USA",
+        "title_meet": "Meet",
+        "title_archer": "Archer.",
+        "sub_strong": "The world's most powerful legal AI.",
+        "sub_rest": "Real attorneys, on your side in minutes.",
+        "cta_primary": "Start free",
+        "cta_secondary": "See how it works",
+        "pill1_num_accent": "7",
+        "pill1_num_suffix": "layers",
+        "pill1_label": "Deep legal reasoning",
+        "pill2_badge": "DAILY",
+        "pill2_num_accent": "3M+",
+        "pill2_num_suffix": "sources",
+        "pill2_label": "Verified legal references",
+        "pill3_badge": "LIVE",
+        "pill3_num_accent": "18K+",
+        "pill3_num_suffix": "daily",
+        "pill3_label": "Court rulings synced live",
+        "pill4_num_accent": "2,000+",
+        "pill4_num_suffix": "attorneys",
+        "pill4_label": "Bar-certified network",
+        "sphere_tag_top": "ARCHER · LIVE",
+        "badge_sources_label": "Sources",
+        "badge_sources_meta_prefix": "+",
+        "badge_sources_meta_suffix": " last 60s",
+        "badge_confidence_label": "Confidence",
+        "badge_confidence_meta": "σ 3.1 · last 100",
+        "badge_reasoning_label": "Reasoning",
+        "badge_reasoning_value": "7",
+        "badge_reasoning_unit": " layers",
+        "badge_reasoning_meta": "Pass 5 of 7",
+        "badge_cases_label": "Cases analyzed",
+        "badge_cases_meta_prefix": "▲ +",
+        "badge_cases_meta_suffix": " last 60s"
+      },
+      "howItWorks": {
+        "eyebrow": "HOW IT WORKS",
+        "title_line1": "The legal system is broken.",
+        "title_highlight": "We rebuild it.",
+        "sub": "Your entire legal case. Handled from A to Z.",
+        "steps": {
+          "s1": {
+            "num": "01 · DROP",
+            "name": "You drop your case",
+            "desc": "Upload any document, scan, or photo",
+            "tooltip_h": "You drop your case",
+            "tooltip_items": [
+              "All formats: PDF, scan, photos, emails",
+              "OCR built-in for handwritten docs",
+              "End-to-end encrypted, GDPR compliant"
+            ],
+            "tooltip_meta": "⏱ Takes under 60 seconds"
+          },
+          "s2": {
+            "num": "02 · ANALYZE",
+            "name": "AI cross-checks the law",
+            "desc": "7 layers, 3M+ legal sources",
+            "tooltip_h": "AI cross-checks the law",
+            "tooltip_items": [
+              "7-layer reasoning engine (Opus 4.7)",
+              "3M+ verified legal sources scanned",
+              "18K+ daily court rulings synced live"
+            ],
+            "tooltip_meta": "⚡ Average: 30 seconds"
+          },
+          "s3": {
+            "num": "03 · STRATEGY",
+            "name": "Deep analysis & action plan",
+            "desc": "Findings + clear next steps",
+            "tooltip_h": "Deep analysis & action plan",
+            "tooltip_items": [
+              "Each finding scored by confidence",
+              "Recommended next steps prioritized",
+              "Custom letter draft auto-generated"
+            ],
+            "tooltip_meta": "📊 Confidence score on every finding"
+          },
+          "s4": {
+            "num": "04 · REVIEW",
+            "name": "Lawyer steps in if needed",
+            "desc_eur": "Validates strategy · €49.99",
+            "desc_usd": "Validates strategy · $49.99",
+            "tooltip_h": "A real attorney validates",
+            "tooltip_items": [
+              "2,000+ bar-certified attorneys",
+              "Validates strategy + signs the letter",
+              "Specialized by jurisdiction & domain"
+            ],
+            "tooltip_meta_eur": "⚖️ Optional · Fixed €49.99",
+            "tooltip_meta_usd": "⚖️ Optional · Fixed $49.99"
+          },
+          "s5": {
+            "num": "05 · RESOLUTION",
+            "name": "You win or settle",
+            "desc": "7 days on average",
+            "tooltip_h": "Resolution. Faster than ever.",
+            "tooltip_items": [
+              "Real-time case tracking & notifications",
+              "Win, settle, or escalate to court",
+              "Attorney stays with you all the way"
+            ],
+            "tooltip_meta": "🚀 87% of cases never reach court"
+          }
+        }
+      },
+      "whatWeHandle": {
+        "eyebrow": "WHAT WE HANDLE",
+        "title_line1": "Whatever you're dealing with.",
+        "title_highlight": "We've seen it before.",
+        "sub_html": "From small daily annoyances to life-changing disputes, Archer handles the legal issues real people actually face — across <strong>17 areas of law</strong>.",
+        "see_all": "See all 17 areas we cover",
+        "cards": {
+          "traffic": {
+            "badge": "MOST REPORTED · Q1 2026",
+            "title": "Traffic violations",
+            "desc": "Speeding tickets, wrong readings, contested fines, license suspension. Archer's most-handled case type — and the easiest to win.",
+            "stat_value": "94%",
+            "stat_label": "success rate · last 6 months"
+          },
+          "debt": {
+            "title": "Debt & collections",
+            "desc": "Stop predatory collectors. Reduce what you owe.",
+            "stat_eur": "€3,200",
+            "stat_usd": "$3,500",
+            "stat_label": "avg. debt reduced"
+          },
+          "consumer": {
+            "title": "Consumer disputes",
+            "desc": "Refunds, false ads, hidden fees.",
+            "stat_eur": "€620",
+            "stat_usd": "$700",
+            "stat_label": "avg. refund"
+          },
+          "family": {
+            "title": "Family law",
+            "desc": "Custody, divorce, support.",
+            "stat_eur": "€1,200",
+            "stat_usd": "$1,400",
+            "stat_label": "monthly support"
+          },
+          "eviction": {
+            "title": "Eviction notice",
+            "desc": "Illegal notices, procedural violations, tenant rights protection.",
+            "stat_eur": "€4,800",
+            "stat_usd": "$5,200",
+            "stat_label": "avg. saved per case"
+          },
+          "wrongful": {
+            "title": "Wrongful termination",
+            "desc": "Unfair firing, missing notice.",
+            "stat_eur": "€8,400",
+            "stat_usd": "$9,500",
+            "stat_label": "avg. compensation"
+          },
+          "insurance": {
+            "title": "Insurance denial",
+            "desc": "Bad faith claims, refused coverage.",
+            "stat_eur": "€2,100",
+            "stat_usd": "$2,400",
+            "stat_label": "avg. claim recovered"
+          }
+        }
+      },
+      "vsOldWay": {
+        "eyebrow": "WHY ARCHER",
+        "title_line1": "Old way",
+        "title_vs": "vs",
+        "title_highlight": "The Archer way.",
+        "sub": "Same outcome. Radically different experience.",
+        "col_criteria": "CRITERIA",
+        "col_old": "OLD WAY",
+        "col_archer": "THE ARCHER WAY",
+        "rows": {
+          "time": {
+            "label": "Time to start",
+            "old": "2-3 weeks for first appointment",
+            "archer": "Under 2 minutes"
+          },
+          "pricing": {
+            "label": "Pricing",
+            "old_eur": "€500–2,000+ · billed by the hour",
+            "old_usd": "$500–2,000+ · billed by the hour",
+            "archer_eur": "€29.99",
+            "archer_usd": "$29.99"
+          },
+          "analysis": {
+            "label": "Document analysis",
+            "old": "Hours of manual review",
+            "archer": "30 seconds · 7-layer AI engine"
+          },
+          "comm": {
+            "label": "Communication",
+            "old": "Slow phone callbacks · email lag",
+            "archer": "Real-time updates · 24/7 chat"
+          },
+          "predict": {
+            "label": "Outcome predictability",
+            "old": "\"We'll see\" · no benchmarks",
+            "archer": "Confidence score on every finding"
+          },
+          "resolution": {
+            "label": "Resolution time",
+            "old": "3-12 months on average",
+            "archer": "7 days on average"
+          },
+          "attorney": {
+            "label": "Attorney involvement",
+            "old": "Hand-picked, but expensive",
+            "archer_eur": "€49.99",
+            "archer_usd": "$49.99"
+          }
+        }
+      },
+      "finalCta": {
+        "eyebrow": "Your legal power starts here",
+        "title_line1": "Stop facing it alone.",
+        "title_highlight": "Start fighting back.",
+        "sub": "Upload your first document. Get a full legal analysis in 60 seconds. First case free.",
+        "cta": "Upload my document",
+        "meta": "Free first analysis · Cancel anytime"
+      },
+      "footer": {
+        "tagline": "The world's most powerful legal AI. Real attorneys, on your side in minutes.",
+        "col_product": "PRODUCT",
+        "col_resources": "RESOURCES",
+        "col_company": "COMPANY",
+        "col_legal": "LEGAL",
+        "links": {
+          "how": "How it works",
+          "cases": "Cases we handle",
+          "pricing": "Pricing",
+          "attorneys": "For attorneys",
+          "blog": "Blog",
+          "faq": "FAQ",
+          "help": "Help center",
+          "contact": "Contact",
+          "about": "About",
+          "careers": "Careers",
+          "press": "Press",
+          "security": "Security",
+          "terms": "Terms of service",
+          "privacy": "Privacy policy",
+          "gdpr": "GDPR",
+          "cookies": "Cookies",
+          "status": "Status",
+          "changelog": "Changelog",
+          "sitemap": "Sitemap"
+        },
+        "copyright": "© 2026 Archer Legal SA · All rights reserved · Brussels, BE"
+      }
     }
   }
 }
