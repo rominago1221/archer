@@ -1,0 +1,34 @@
+{
+  "code_civil_livre3_biens": {
+    "target": "code_civil_livre3_biens",
+    "candidates": []
+  },
+  "code_civil_livre4_obligations": {
+    "target": "code_civil_livre4_obligations",
+    "candidates": []
+  },
+  "code_civil_livre5_obligations_2022": {
+    "target": "code_civil_livre5_obligations_2022",
+    "candidates": []
+  },
+  "code_civil_ancien": {
+    "target": "code_civil_ancien",
+    "candidates": []
+  },
+  "loi_1991_baux_residentiels": {
+    "target": "loi_1991_baux_residentiels",
+    "candidates": []
+  },
+  "code_judiciaire": {
+    "target": "code_judiciaire",
+    "candidates": []
+  },
+  "code_penal": {
+    "target": "code_penal",
+    "candidates": []
+  },
+  "cct_109": {
+    "target": "cct_109",
+    "candidates": []
+  }
+}

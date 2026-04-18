@@ -37,6 +37,7 @@ from models import (
 )
 from constants.case_types import CASE_TYPES, normalize_case_type
 from prompts.case_type_personas import get_expertise_block
+from services.legal_rag import retrieve_relevant_law, format_rag_block
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -2242,6 +2243,18 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
         jurisprudence_text = load_belgian_jurisprudence(doc_type, detected_region)
         inferred_case_type = BE_DOC_TYPE_TO_CASE.get(doc_type, "other")
 
+        # RAG BE — append retrieved statutes + jurisprudence to the jurisprudence_section.
+        try:
+            rag = await retrieve_relevant_law(
+                facts=facts, jurisdiction="BE", language=language,
+                case_type=case_type, case_id=_current_case_id.get(),
+            )
+            if rag:
+                jurisprudence_text = (jurisprudence_text or "") + format_rag_block(rag, language)
+                logger.info(f"Belgian analysis: RAG injected — {len(rag.get('articles',[]))} articles + {len(rag.get('jurisprudences',[]))} cases, top_score={rag['metadata']['top_score']}")
+        except Exception as e:
+            logger.warning(f"Belgian analysis: RAG retrieval failed (non-fatal) — {e}")
+
         # PASS 2: Legal analysis
         logger.info("Belgian analysis: Passe 2 — Analyse juridique")
         legal_analysis = await call_claude(persona_with_lang, BE_PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2, ensure_ascii=False), jurisprudence_section=jurisprudence_text), max_tokens=8000)
@@ -3574,6 +3587,18 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
     detected_region = facts.get("region_applicable", region)
     jurisprudence_text = load_belgian_jurisprudence(doc_type, detected_region)
     inferred_case_type = BE_DOC_TYPE_TO_CASE.get(doc_type, "other")
+
+    # RAG BE — inject retrieved statutes + case law into jurisprudence_section.
+    try:
+        rag = await retrieve_relevant_law(
+            facts=facts, jurisdiction="BE", language=language,
+            case_type=case_type, case_id=_current_case_id.get(),
+        )
+        if rag:
+            jurisprudence_text = (jurisprudence_text or "") + format_rag_block(rag, language)
+            logger.info(f"Belgian multi-doc analysis: RAG injected — {len(rag.get('articles',[]))} articles + {len(rag.get('jurisprudences',[]))} cases")
+    except Exception as e:
+        logger.warning(f"Belgian multi-doc analysis: RAG retrieval failed (non-fatal) — {e}")
 
     # PASS 2
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 2")
@@ -7134,6 +7159,48 @@ async def admin_attorney_leaderboard(admin: dict = Depends(admin_required)):
         a["cases_completed"] = completed
     attorneys.sort(key=lambda a: a.get("cases_completed", 0), reverse=True)
     return {"attorneys": attorneys[:20]}
+
+
+@api_router.get("/admin/legal-rag-stats")
+async def admin_legal_rag_stats(admin: dict = Depends(admin_required)):
+    """Stats on the Belgian legal RAG: cache state + top-retrieved docs + coverage gaps.
+    Source of truth for "is the RAG actually helping?" questions."""
+    from services.legal_rag import cache_stats
+    stats = await cache_stats(db)
+    # Most retrieved docs (over the recent window).
+    top_pipeline = [
+        {"$match": {"retrieved_doc_ids": {"$exists": True}}},
+        {"$unwind": "$retrieved_doc_ids"},
+        {"$group": {"_id": "$retrieved_doc_ids", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 20},
+    ]
+    top = await db.rag_retrievals.aggregate(top_pipeline).to_list(20)
+    # Average top_score + case_type coverage.
+    coverage_pipeline = [
+        {"$group": {
+            "_id": "$case_type",
+            "count": {"$sum": 1},
+            "avg_top_score": {"$avg": "$top_score"},
+            "pct_above_0_7": {"$avg": {"$cond": [{"$gt": ["$top_score", 0.7]}, 1, 0]}},
+        }},
+        {"$sort": {"count": -1}},
+    ]
+    by_case_type = await db.rag_retrievals.aggregate(coverage_pipeline).to_list(30)
+    total_retrievals = await db.rag_retrievals.count_documents({})
+    return {
+        "cache": stats,
+        "total_retrievals_logged": total_retrievals,
+        "top_retrieved_docs": top,
+        "by_case_type": by_case_type,
+    }
+
+
+@api_router.post("/admin/legal-rag-stats/reload")
+async def admin_legal_rag_reload(admin: dict = Depends(admin_required)):
+    """Force-reload the in-memory RAG cache (e.g. after a fresh seed)."""
+    from services.legal_rag import reload_cache
+    return await reload_cache(db)
 
 
 @api_router.get("/admin/analytics/case-types")

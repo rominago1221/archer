@@ -1,0 +1,10 @@
+# Build artifacts — large and regeneratable, not meant for git.
+.venv/
+raw_documents/
+enriched_documents/
+*.log
+*.jsonl
+*.npy
+
+# Discovery notes we DO want to keep in git
+!cn_discovery.json
