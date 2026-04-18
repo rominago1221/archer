@@ -60,15 +60,21 @@ done
 
 ## Deploy to Emergent
 
-1. `git pull` on Emergent to get the latest code + scripts.
-2. Copy the `legal_db_v2.jsonl` + `legal_db_v2_embeddings.npy` files produced
-   locally into the Emergent pod (scp or rsync — they are not in git because
-   they're large).
-3. Run `python seed_legal_db_v2.py --drop-existing` inside the pod → loads
-   the `legal_db_v2` collection.
-4. Hit `POST /api/admin/legal-rag-stats/reload` to force the backend's
-   in-memory cache to refresh without restart.
-5. Verify `GET /api/admin/legal-rag-stats` shows `cache.count` > 0.
+1. `git pull` on Emergent to get the latest code + the committed
+   `legal_db_v2_seed.tar.gz` corpus bundle (~11 MB, 2 575 docs).
+2. Make sure `VOYAGE_API_KEY` is in the Emergent `.env` (required at
+   runtime to embed each query in `retrieve_relevant_law`). Without it
+   the RAG layer silently falls back to `load_belgian_jurisprudence`.
+3. One-shot seed — inside the pod:
+   ```
+   cd backend/scripts/legal_db_construction
+   tar xzf legal_db_v2_seed.tar.gz
+   python seed_legal_db_v2.py --drop-existing
+   ```
+4. Hit `POST /api/admin/legal-rag-stats/reload` (admin auth) to force the
+   backend's in-memory cache to refresh without a service restart.
+5. Verify `GET /api/admin/legal-rag-stats` shows `cache.count` = 2575 and
+   `cache.dim` = 1024.
 
 ## Secrets
 

@@ -8,3 +8,7 @@ enriched_documents/
 
 # Discovery notes we DO want to keep in git
 !cn_discovery.json
+
+# Committed corpus bundle (used by seed_legal_db_v2.py on deploy).
+# Overrides root .gitignore's **/*.tar.gz exclusion.
+!legal_db_v2_seed.tar.gz
