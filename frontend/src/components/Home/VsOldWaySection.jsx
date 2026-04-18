@@ -70,11 +70,11 @@ export default function VsOldWaySection({ language = 'en', currency }) {
               <div className="vs-row" key={row} data-testid={`vs-row-${row}`}>
                 <div className="vs-cell label">{label}</div>
                 <div className="vs-cell old">
-                  <span className="vs-icon x"><IconX /></span>
+                  <span className="vs-icon x" aria-hidden="true"><IconX /></span>
                   {oldValue}
                 </div>
                 <div className="vs-cell archer">
-                  <span className="vs-icon check"><IconCheck /></span>
+                  <span className="vs-icon check" aria-hidden="true"><IconCheck /></span>
                   {archerValue}
                 </div>
               </div>

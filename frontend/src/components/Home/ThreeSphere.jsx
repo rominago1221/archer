@@ -221,6 +221,7 @@ export default function ThreeSphere() {
       <canvas
         ref={canvasRef}
         id="canvas-3d"
+        aria-hidden="true"
         style={{ width: '100%', height: '100%', background: 'transparent' }}
       />
     </div>
