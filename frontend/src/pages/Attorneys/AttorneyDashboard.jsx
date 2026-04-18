@@ -1,11 +1,13 @@
 import React from 'react';
 import AttorneyLayout from '../../components/Attorneys/AttorneyLayout';
+import LawyerSubscriptionSection from '../../components/Attorneys/LawyerSubscriptionSection';
 import { useAttorneyAuth } from '../../hooks/attorneys/useAttorneyAuth';
 import { useAttorneyT } from '../../hooks/attorneys/useAttorneyT';
+import '../../styles/credits.css';
 
 export default function AttorneyDashboard() {
   const { attorney } = useAttorneyAuth();
-  const { t } = useAttorneyT();
+  const { t, lang } = useAttorneyT();
   const name = `${attorney?.first_name || ''} ${attorney?.last_name || ''}`.trim();
   const welcome = t.dashboard.welcome.replace('{{name}}', name);
 
@@ -14,6 +16,9 @@ export default function AttorneyDashboard() {
       <div className="max-w-3xl">
         <h1 className="font-serif text-3xl text-neutral-900 mb-2">{welcome}</h1>
         <p className="text-neutral-600 mb-8">{t.dashboard.placeholder}</p>
+
+        {/* Credits sprint — Archer Partner subscription status + Welcome counsels counter */}
+        <LawyerSubscriptionSection language={lang} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-white border border-neutral-200 rounded-lg p-6">

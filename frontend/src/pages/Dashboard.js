@@ -9,6 +9,8 @@ import CaseChatDrawer from '../components/CaseChatDrawer';
 import NextActionsPanel from '../components/NextActionsPanel';
 import LetterFormModal from '../components/LetterFormModal';
 import NotificationBell from '../components/NotificationBell';
+import CreditBalanceWidget from '../components/credits/CreditBalanceWidget';
+import '../styles/credits.css';
 import LetterReadyBanner from '../components/LetterReadyBanner';
 import AttorneyLetterModal from '../components/AttorneyLetterModal';
 import JurisdictionPills from '../components/JurisdictionPills';
@@ -560,6 +562,8 @@ const Dashboard = () => {
               <div style={{ padding: '4px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#eff6ff', color: '#1d4ed8', border: '0.5px solid #bfdbfe' }}>{t.credSources}</div>
               <div style={{ padding: '4px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#f0fdf4', color: '#15803d', border: '0.5px solid #86efac' }}>{t.credLive}</div>
               {sc && score >= 70 && <div style={{ padding: '4px 10px', borderRadius: 20, fontSize: 9, fontWeight: 600, background: '#fff5f5', color: '#dc2626', border: '0.5px solid #fca5a5' }}>⚡ {t.credUrgent}</div>}
+              {/* Credits sprint — live balance */}
+              <CreditBalanceWidget language={lang} compact />
               {/* Phase 2 — Notifications bell */}
               <div style={{ marginLeft: 4, color: '#374151' }}>
                 <NotificationBell language={lang} />
