@@ -1597,3 +1597,186 @@
   .attorneys-page .pricing-amount-num { font-size: 44px; }
 
 }
+
+
+/* ═════════════════════════════════════════════
+   Hero RIGHT — Attorney services box (animated beam border)
+   ═════════════════════════════════════════════ */
+@property --services-box-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.attorneys-page .services-box {
+  position: relative;
+  border-radius: 20px;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--services-box-angle, 0deg),
+    transparent 0%,
+    transparent 70%,
+    var(--archer-blue) 85%,
+    var(--archer-blue-light) 90%,
+    var(--archer-blue) 95%,
+    transparent 100%
+  );
+  animation: servicesBoxBeam 4s linear infinite;
+}
+
+/* Fallback : browsers that don't support @property keep a static soft blue frame */
+@supports not (background: conic-gradient(from 0deg, red, blue)) {
+  .attorneys-page .services-box {
+    background: var(--archer-blue);
+    animation: none;
+  }
+}
+
+@keyframes servicesBoxBeam { to { --services-box-angle: 360deg; } }
+
+.attorneys-page .services-box-inner {
+  background: white;
+  border-radius: 18px;
+  padding: 20px 22px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.02),
+    0 30px 80px -20px rgba(10, 10, 15, 0.18),
+    0 12px 24px -8px rgba(10, 10, 15, 0.08);
+}
+
+.attorneys-page .services-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.attorneys-page .services-box-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 1px;
+}
+
+.attorneys-page .services-box-pill-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  padding: 3px 8px;
+  border-radius: 100px;
+  color: var(--green);
+  background: var(--green-50);
+}
+
+.attorneys-page .services-box-pill-live::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background: var(--green-bright);
+  border-radius: 50%;
+  animation: servicesBoxBlink 1.5s ease-in-out infinite;
+}
+
+@keyframes servicesBoxBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.attorneys-page .services-box-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.attorneys-page .services-box-opt {
+  padding: 14px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-soft);
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.attorneys-page .services-box-opt.primary {
+  border: 2px solid var(--archer-blue);
+  background: linear-gradient(135deg, #eff6ff, #f5f8ff);
+  box-shadow: 0 4px 14px rgba(26, 86, 219, 0.08);
+}
+
+.attorneys-page .services-box-opt:hover { transform: translateY(-2px); }
+
+.attorneys-page .services-box-opt-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 0.6px;
+  margin-bottom: 8px;
+}
+
+.attorneys-page .services-box-opt.primary .services-box-opt-label { color: var(--archer-blue); }
+
+.attorneys-page .services-box-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  margin: 0 auto 10px;
+  display: block;
+  object-fit: cover;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px var(--line), 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+.attorneys-page .services-box-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.attorneys-page .services-box-bar {
+  font-size: 9.5px;
+  color: var(--ink-4);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 10px;
+  letter-spacing: 0.3px;
+}
+
+.attorneys-page .services-box-price {
+  font-weight: 900;
+  font-size: 22px;
+  color: var(--ink);
+  letter-spacing: -0.8px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.attorneys-page .services-box-opt.primary .services-box-price { color: var(--archer-blue); }
+
+.attorneys-page .services-box-price-sub {
+  font-size: 10px;
+  color: var(--ink-3);
+  margin-top: 3px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.attorneys-page .services-box-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--bg-soft);
+  border-radius: 10px;
+  font-size: 11px;
+  color: var(--ink-3);
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.attorneys-page .services-box-footer strong { color: var(--ink); }

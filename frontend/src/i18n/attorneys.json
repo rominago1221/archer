@@ -49,7 +49,20 @@
         "cta": "Book a live call now",
         "trust": "Encrypted · Recording included · Cancel anytime"
       },
-      "bar_years_template": "{bar} · {years} yrs"
+      "bar_years_template": "{bar} · {years} yrs",
+      "services_box": {
+        "validated_label": "ATTORNEY-VALIDATED",
+        "online_count": "{count} ONLINE",
+        "letter_label": "★ LETTER",
+        "letter_bar": "BRUSSELS · 12Y",
+        "sent_24h": "SENT 24H",
+        "call_label": "LIVE CALL",
+        "call_bar": "ANTWERP · 9Y",
+        "duration_30min": "30 MIN",
+        "trust_bar_certified": "Bar-certified",
+        "trust_money_back": "Money-back",
+        "trust_no_sub": "No subscription"
+      }
     },
     "pricing": {
       "eyebrow": "PRICING",
@@ -213,7 +226,20 @@
         "cta": "Réserver un appel maintenant",
         "trust": "Chiffré · Enregistrement inclus · Annulez quand vous voulez"
       },
-      "bar_years_template": "{bar} · {years} ans"
+      "bar_years_template": "{bar} · {years} ans",
+      "services_box": {
+        "validated_label": "VALIDÉ PAR AVOCAT",
+        "online_count": "{count} EN LIGNE",
+        "letter_label": "★ LETTRE",
+        "letter_bar": "BRUXELLES · 12 ANS",
+        "sent_24h": "SOUS 24H",
+        "call_label": "APPEL DIRECT",
+        "call_bar": "ANVERS · 9 ANS",
+        "duration_30min": "30 MIN",
+        "trust_bar_certified": "Avocat agréé",
+        "trust_money_back": "Satisfait ou remboursé",
+        "trust_no_sub": "Sans abonnement"
+      }
     },
     "pricing": {
       "eyebrow": "TARIFS",
