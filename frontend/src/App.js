@@ -72,6 +72,7 @@ import InternalAdminSettings from './pages/Internal/AdminSettings';
 import Blog from './pages/Blog';
 import BlogArticle from './pages/BlogArticle';
 import PillarPage from './pages/PillarPage';
+import EnginePage from './pages/EnginePage';
 // Toast feedback — must be mounted once at root so useToast() from anywhere in the app is visible.
 import { Toaster } from './components/ui/toaster';
 import './App.css';
@@ -128,6 +129,7 @@ const AppRouter = () => {
 
       {/* Sprint A — Attorney Portal (must be declared BEFORE /attorneys/:slug) */}
       <Route path="/attorneys" element={<AttorneysPage />} />
+      <Route path="/engine" element={<EnginePage />} />
       <Route path="/plans" element={<PricingPlansPage />} />
       <Route path="/account/credits" element={<ProtectedRoute><CreditHistoryPage /></ProtectedRoute>} />
       <Route path="/attorneys/join" element={<AttorneyPortalJoin />} />

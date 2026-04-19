@@ -1,0 +1,410 @@
+{
+  "en": {
+    "meta": {
+      "title": "Under the hood — Archer",
+      "description": "The full architecture of Archer. Nothing hidden."
+    },
+    "hero": {
+      "eyebrow": "TECHNICAL DEEP DIVE · NOTHING HIDDEN",
+      "title_before": "Look",
+      "title_highlight": "under the hood.",
+      "description": "The full architecture of Archer, from the orchestration pipeline to the human attorneys. Every step documented, every metric measured, every safeguard explained.",
+      "stats": {
+        "passes_label": "ANALYSIS PASSES",
+        "statutes_label": "STATUTE ARTICLES",
+        "accuracy_label": "ACCURACY",
+        "docs_label": "LEGAL DOCS INDEXED"
+      }
+    },
+    "pipeline": {
+      "eyebrow": "01 · ORCHESTRATION PIPELINE",
+      "title": "7 analysis passes. Not 1.",
+      "subtitle": "Most legal chatbots send your question to a model and print the response. We don't. Every case runs through a 7-stage pipeline — each with its own model, prompt, schema, and validation layer.",
+      "stage_label": "STAGE",
+      "stages": {
+        "01": { "title": "Fact extraction", "desc": "Parse documents, OCR scans, extract parties, dates, amounts and claims." },
+        "02": { "title": "Legal qualification", "desc": "Determine domain of law, applicable codes, route to the right sub-pipeline." },
+        "03": { "title": "Precedent retrieval", "desc": "Semantic search over 2.5M documents, rerank top 12 by relevance." },
+        "04": { "title": "Risk assessment", "desc": "Probability distribution across outcomes with confidence intervals." },
+        "05": { "title": "Adversarial challenge", "desc": "A second model attacks the analysis to expose weak points and contradictions." },
+        "06": { "title": "Strategy synthesis", "desc": "Sequenced action plan, letter draft, time-boxed deadlines for each step." },
+        "07": { "title": "Citation validation", "desc": "Every claim cross-checked. Failed citations rewritten or removed." }
+      },
+      "total_tag": "TOTAL PIPELINE",
+      "total_unit": "s",
+      "total_desc": "7 sequential passes, adversarially validated, fully cited.",
+      "code_path": "archer/core/pipeline.py",
+      "code_status": "RUNNING"
+    },
+    "knowledge_base": {
+      "eyebrow": "02 · THE KNOWLEDGE BASE",
+      "title": "2.5M legal documents. Always fresh.",
+      "subtitle": "The model is only as good as what it retrieves. We built a continuously-updated legal corpus covering every domain of consumer-facing law, indexed in real time and refreshed daily.",
+      "cards": {
+        "docs":     { "label": "LEGAL DOCUMENTS", "desc": "Case law, statutes, regulations, commentary — embedded and indexed." },
+        "statutes": { "label": "STATUTE ARTICLES", "desc": "Every article of every code, linked to amendments and annotations." },
+        "codes":    { "label": "LEGAL CODES", "desc": "Fully parsed: civil, labor, commercial, fiscal, criminal, administrative and more." },
+        "refresh":  { "label": "REFRESH CYCLE", "desc": "New jurisprudence and statute changes indexed within 24 hours." }
+      }
+    },
+    "multi_agent": {
+      "eyebrow": "03 · MULTI-AGENT ARCHITECTURE",
+      "title": "4 agents. 1 verdict.",
+      "subtitle": "On Pro-tier cases, we don't just ask one model. We run 4 specialized agents in parallel, make them debate adversarially, and only act once consensus is reached.",
+      "agents": {
+        "analyst":    { "code": "A1", "name": "The Analyst",    "role": "READS · UNDERSTANDS · SUMMARIZES", "desc": "Extracts facts. Builds the timeline. Identifies the key stakes. No opinion, just ground truth.",           "example_tag": "output:",  "example_text": "42 facts extracted, 7 actors identified, timeline spanning 2023-03 to 2026-01" },
+        "prosecutor": { "code": "A2", "name": "The Prosecutor", "role": "ATTACKS · FINDS HOLES",           "desc": "Plays opposing counsel. Finds every weak point in your case. Anticipates the counter-arguments you'll face.", "example_tag": "found:",   "example_text": "3 weaknesses, 2 contradictions in testimony, 1 missing document" },
+        "defender":   { "code": "A3", "name": "The Defender",   "role": "BUILDS · STRENGTHENS",            "desc": "Constructs the strongest possible defense. Reinforces weak points. Suggests evidence. Cites favorable jurisprudence.", "example_tag": "built:",   "example_text": "5 legal arguments, 12 supporting citations, 3 evidence gaps to close" },
+        "judge":      { "code": "A4", "name": "The Judge",      "role": "ARBITRATES · DECIDES",            "desc": "Weighs both sides. Applies jurisprudence. Issues the final probability assessment with confidence interval.",       "example_tag": "verdict:", "example_text": "64% favorable ± 8%, 19% settlement, 17% loss" }
+      },
+      "consensus_strong": "Consensus threshold: 97%.",
+      "consensus_text": "If the 4 agents disagree, we run up to 12 negotiation rounds. No recommendation is surfaced until agreement is reached.",
+      "code_path": "archer/core/agents/debate.py",
+      "code_status": "RUNNING"
+    },
+    "orchestration": {
+      "eyebrow": "04 · MODEL ORCHESTRATION",
+      "title": "Frontier models. Built for law.",
+      "subtitle": "We run the most capable reasoning models available, orchestrated with legal-specific prompts, schemas, and validation layers. A consumer chatbot would get you a draft; our orchestration layer gets you an attorney-grade analysis.",
+      "layer_label": "INFERENCE LAYER",
+      "layer_title": "Two-tier model orchestration",
+      "deep": {
+        "name": "Deep reasoning tier",
+        "role": "ANALYSIS · DRAFTING · ADVERSARIAL",
+        "purpose": "Heavy reasoning passes — risk assessment, adversarial challenge, strategy synthesis. Used when accuracy matters more than latency.",
+        "spec": "200K ctx · multi-step reasoning · attorney-grade output"
+      },
+      "fast": {
+        "name": "Fast tier",
+        "role": "CHAT · EXTRACTION · QUALIFICATION",
+        "purpose": "Real-time chat, document extraction, domain qualification. Tuned for sub-second response without sacrificing clarity.",
+        "spec": "200K ctx · ~2× faster · prompt caching enabled"
+      },
+      "meta_strong_1": "Why not use a single model?",
+      "meta_text_1": " Legal analysis has three distinct workloads — real-time conversation, structured extraction, and adversarial reasoning — each with different latency/accuracy trade-offs. Routing each workload to the right model cuts cost by ",
+      "meta_strong_2": "4×",
+      "meta_text_2": " while improving accuracy. Regional inference routing. Zero data retention at the model layer."
+    },
+    "rag": {
+      "eyebrow": "05 · LEGAL RAG · RETRIEVAL AUGMENTED",
+      "title": "Semantic search. Zero hallucination.",
+      "subtitle": "We retrieve the most relevant sources first, then generate. Every claim is backed by a citation. Every citation has a confidence score. Every score can be audited.",
+      "flow": {
+        "input_label":  "INPUT",          "input_title":  "Your case",        "input_meta":  "PDF + text",
+        "search_label": "SEMANTIC SEARCH", "search_title": "Top 12 sources",   "search_meta": "< 200 ms",
+        "output_label": "OUTPUT",          "output_title": "Cited analysis",   "output_meta": "every claim sourced"
+      },
+      "features": {
+        "embeddings": { "title": "1,024-dim embeddings",       "desc": "State-of-the-art embedding model tuned on legal-domain text across multiple languages. Captures legal nuance, not just keywords." },
+        "latency":    { "title": "Sub-200ms retrieval",        "desc": "Vector search over 2.5M documents, returning the top 12 most relevant passages. Parallel rerank." },
+        "citation":   { "title": "Citation-check in real time","desc": "Every claim is verified against retrieved sources before being surfaced. If it can't be cited, it's not generated." },
+        "obsolete":   { "title": "Obsolescence detection",     "desc": "If a cited precedent has been overturned or a statute amended, we flag it. You won't rely on dead law." }
+      }
+    },
+    "benchmarks": {
+      "eyebrow": "06 · BENCHMARKS",
+      "title": "Archer vs. the alternatives.",
+      "subtitle": "412 anonymized legal cases, multiple domains, double-blind evaluation by 3 partner attorneys. Here's how we compare.",
+      "columns": {
+        "metric": "METRIC",
+        "archer": "ARCHER",
+        "chatbot": "GENERIC CHATBOT",
+        "jr": "JR. ATTORNEY",
+        "firm": "TRADITIONAL LAW FIRM"
+      },
+      "rows": {
+        "accuracy":       { "metric": "Factual accuracy",   "sub": "Extracted facts match ground truth" },
+        "citation":       { "metric": "Citation validity",  "sub": "Cited source actually supports claim" },
+        "time":           { "metric": "Avg time per case",  "sub": "From intake to written analysis" },
+        "hallucination":  { "metric": "Hallucination rate", "sub": "Invented facts or fake citations" },
+        "adversarial":    { "metric": "Adversarial analysis","sub": "Anticipates opposing arguments" },
+        "price":          { "metric": "Price per case",     "sub": "Strategy + signed letter" }
+      },
+      "values": {
+        "adversarial_yes": "Yes",
+        "adversarial_no": "No",
+        "adversarial_partial": "Partial"
+      }
+    },
+    "precision": {
+      "eyebrow": "07 · MEASURED PRECISION",
+      "title": "Numbers we stand behind.",
+      "subtitle": "Every metric is measured on live production cases, reviewed weekly, and publicly accountable.",
+      "cards": {
+        "precision": { "label": "Factual precision", "sub": "Facts extracted from documents match the source, vs 78% for generic chatbots." },
+        "success":   { "label": "Success rate",      "sub": "Of cases processed through Archer where the user's stated goal was achieved." },
+        "accepted":  { "label": "Letters accepted",  "sub": "Archer-drafted, attorney-signed letters accepted without revision by recipient's counsel." },
+        "rating":    { "label": "Attorney rating",   "sub": "Average quality score given by partner attorneys on cases they reviewed." },
+        "nps":       { "label": "NPS",               "sub": "Net Promoter Score among active users — legal-sector benchmark is ~30." },
+        "error":     { "label": "Error rate",        "sub": "Measured error rate on high-stakes outputs, vs ~12% for generic chatbots." }
+      }
+    },
+    "innovations": {
+      "eyebrow": "08 · TECHNICAL INNOVATIONS",
+      "title": "What we built that nobody else has.",
+      "subtitle": "Features you won't find in any legal chatbot, because we had to engineer them.",
+      "items": {
+        "adversarial":     { "title": "Adversarial self-challenge",    "desc": "Our pipeline attacks its own analysis before you see it. Holes found before they hurt you." },
+        "confidence":      { "title": "Confidence score per finding",  "desc": "Every claim gets a 0–100 score with visible evidence bars." },
+        "explain":         { "title": "\"Explain simply\" mode",        "desc": "One click reformulates any legal output in plain language." },
+        "compare":         { "title": "Anonymized case comparison",    "desc": "Matched against 10,000+ similar cases. Know what happened to people like you." },
+        "intervals":       { "title": "Confidence intervals",          "desc": "Not \"60% chance\" — \"60% ± 8%\". Know the uncertainty." },
+        "refine":          { "title": "Dynamic refinement",            "desc": "Answer follow-ups, watch the analysis update in real time." },
+        "jurisdiction":    { "title": "Cross-jurisdiction analysis",   "desc": "Compare outcomes across multiple legal systems, forum-shop wisely." },
+        "extraction":      { "title": "Smart document extraction",     "desc": "OCR + semantic parsing. Scanned PDFs become structured data." },
+        "plan":            { "title": "Auto-generated action plan",    "desc": "Next-step checklist with deadlines, priorities, documents needed." },
+        "risk":            { "title": "Proactive risk flagging",       "desc": "Hidden contract risks you didn't ask about — surfaced automatically." },
+        "sentiment":       { "title": "Sentiment analysis",            "desc": "Opposing party's tone, aggressiveness, willingness to settle." },
+        "negotiation":     { "title": "Negotiation scoring",           "desc": "Success probability via negotiation vs. lawsuit, with expected value." }
+      }
+    },
+    "transparency": {
+      "eyebrow": "09 · RADICAL TRANSPARENCY",
+      "title": "What we DON'T do.",
+      "subtitle": "Most legal-AI companies hide their limitations. We publish ours. Trust requires honesty about the edges.",
+      "card_title": "Outside Archer's scope",
+      "card_subtitle": "If your case falls here, we'll tell you upfront and refer you to specialists.",
+      "items": {
+        "criminal":      { "strong": "Criminal defense trials.",      "text": "We don't represent you in court. Hire a defense attorney." },
+        "ma":            { "strong": "Complex corporate M&A.",        "text": "Deal structuring, due diligence, shareholder disputes — out of scope." },
+        "arbitration":   { "strong": "International arbitration.",    "text": "Cross-border arbitration, treaty law — requires specialized counsel." },
+        "courtroom":     { "strong": "Live courtroom representation.","text": "Our partner attorneys draft & sign, but don't plead." },
+        "immigration":   { "strong": "Immigration & asylum.",         "text": "Procedures vary too much and stakes are too high for our current model." },
+        "training":      { "strong": "Training on your data.",        "text": "Your cases never feed the models. Ever. See security section." }
+      }
+    },
+    "security": {
+      "eyebrow": "10 · SECURITY & PRIVACY",
+      "subtitle": "Legal data is some of the most sensitive information a person shares. We built Archer like a bank, not a chatbot.",
+      "title": {
+        "BE": "Your case never leaves Belgium. Ever.",
+        "US": "Your case never leaves the United States. Ever.",
+        "unknown": "Your case never leaves your country. Ever."
+      },
+      "cards": {
+        "encryption":    { "title": "AES-256 end-to-end",  "desc": "All data encrypted at rest and in transit." },
+        "regional":      { "title": "Regional servers",
+          "desc": {
+            "BE": "Data stays in Belgium. No cross-border transfer.",
+            "US": "Data stays in the United States. No cross-border transfer.",
+            "unknown": "Data stays in your country. No cross-border transfer."
+          }
+        },
+        "privacy_law":   { "title": {
+            "BE": "GDPR compliant",
+            "US": "CCPA compliant",
+            "unknown": "Privacy-law compliant"
+          }, "desc": "Full right to access, rectify, delete." },
+        "training":      { "title": "Zero training",       "desc": "Your cases never train models. Contractual." },
+        "deletion":      { "title": "90-day deletion",     "desc": "Automatic deletion after 90 days, on request." },
+        "audit":         { "title": "Full audit trail",    "desc": "Every action logged, exportable on demand." },
+        "iso":           { "title": "ISO 27001",           "desc": "Certification in progress (Q3 2026)." },
+        "anonymization": { "title": "Anonymization",       "desc": "PII auto-detected & stripped before AI processing." }
+      }
+    }
+  },
+  "fr": {
+    "meta": {
+      "title": "Sous le capot — Archer",
+      "description": "L'architecture complète d'Archer. Rien caché."
+    },
+    "hero": {
+      "eyebrow": "PLONGÉE TECHNIQUE · RIEN DE CACHÉ",
+      "title_before": "Regardez",
+      "title_highlight": "sous le capot.",
+      "description": "L'architecture complète d'Archer, du pipeline d'orchestration aux avocats humains. Chaque étape documentée, chaque mesure contrôlée, chaque garde-fou expliqué.",
+      "stats": {
+        "passes_label": "PASSES D'ANALYSE",
+        "statutes_label": "ARTICLES DE CODE",
+        "accuracy_label": "PRÉCISION",
+        "docs_label": "DOCUMENTS JURIDIQUES"
+      }
+    },
+    "pipeline": {
+      "eyebrow": "01 · PIPELINE D'ORCHESTRATION",
+      "title": "7 passes d'analyse. Pas 1.",
+      "subtitle": "La plupart des chatbots juridiques envoient votre question à un modèle et affichent la réponse. Nous, non. Chaque dossier passe par un pipeline de 7 étapes — chacune avec son propre modèle, prompt, schéma et couche de validation.",
+      "stage_label": "ÉTAPE",
+      "stages": {
+        "01": { "title": "Extraction des faits",      "desc": "Analyse des documents, OCR des scans, extraction des parties, dates, montants et prétentions." },
+        "02": { "title": "Qualification juridique",   "desc": "Détermine le domaine du droit, les codes applicables, et route vers le bon sous-pipeline." },
+        "03": { "title": "Recherche de précédents",   "desc": "Recherche sémantique sur 2,5 M de documents, rerank des 12 meilleurs par pertinence." },
+        "04": { "title": "Évaluation du risque",      "desc": "Distribution de probabilités sur les issues avec intervalles de confiance." },
+        "05": { "title": "Challenge adversarial",     "desc": "Un second modèle attaque l'analyse pour exposer les faiblesses et contradictions." },
+        "06": { "title": "Synthèse de stratégie",     "desc": "Plan d'action séquencé, brouillon de lettre, délais associés à chaque étape." },
+        "07": { "title": "Validation des citations",  "desc": "Chaque affirmation recoupée. Citations échouées réécrites ou retirées." }
+      },
+      "total_tag": "PIPELINE TOTAL",
+      "total_unit": "s",
+      "total_desc": "7 passes séquentielles, validées de manière adversariale, entièrement sourcées.",
+      "code_path": "archer/core/pipeline.py",
+      "code_status": "EXÉCUTION"
+    },
+    "knowledge_base": {
+      "eyebrow": "02 · LA BASE DE CONNAISSANCES",
+      "title": "2,5 M de documents juridiques. Toujours à jour.",
+      "subtitle": "Le modèle ne vaut que ce qu'il récupère. Nous avons construit un corpus juridique mis à jour en continu, couvrant tous les domaines du droit grand public, indexé en temps réel et rafraîchi chaque jour.",
+      "cards": {
+        "docs":     { "label": "DOCUMENTS JURIDIQUES", "desc": "Jurisprudence, lois, règlements, commentaires — intégrés et indexés." },
+        "statutes": { "label": "ARTICLES DE CODE",     "desc": "Chaque article de chaque code, lié à ses amendements et annotations." },
+        "codes":    { "label": "CODES JURIDIQUES",     "desc": "Entièrement parsés : civil, travail, commercial, fiscal, pénal, administratif et plus." },
+        "refresh":  { "label": "CYCLE DE RAFRAÎCHISSEMENT", "desc": "Nouvelle jurisprudence et modifications de textes indexées sous 24 h." }
+      }
+    },
+    "multi_agent": {
+      "eyebrow": "03 · ARCHITECTURE MULTI-AGENTS",
+      "title": "4 agents. 1 verdict.",
+      "subtitle": "Sur les dossiers Pro, nous ne consultons pas un seul modèle. Nous faisons tourner 4 agents spécialisés en parallèle, les faisons débattre de façon adversariale, et n'agissons que lorsqu'un consensus est atteint.",
+      "agents": {
+        "analyst":    { "code": "A1", "name": "L'Analyste",     "role": "LIT · COMPREND · SYNTHÉTISE",   "desc": "Extrait les faits. Construit la chronologie. Identifie les enjeux clés. Pas d'opinion, juste la vérité terrain.",        "example_tag": "sortie :",  "example_text": "42 faits extraits, 7 acteurs identifiés, chronologie de 2023-03 à 2026-01" },
+        "prosecutor": { "code": "A2", "name": "Le Procureur",    "role": "ATTAQUE · TROUVE LES FAILLES",  "desc": "Joue la partie adverse. Trouve chaque point faible de votre dossier. Anticipe les contre-arguments à venir.",          "example_tag": "trouvé :",  "example_text": "3 faiblesses, 2 contradictions dans les témoignages, 1 document manquant" },
+        "defender":   { "code": "A3", "name": "Le Défenseur",    "role": "CONSTRUIT · RENFORCE",          "desc": "Construit la défense la plus solide possible. Renforce les faiblesses. Propose des preuves. Cite la jurisprudence favorable.", "example_tag": "construit :", "example_text": "5 arguments juridiques, 12 citations à l'appui, 3 manques de preuves à combler" },
+        "judge":      { "code": "A4", "name": "Le Juge",         "role": "ARBITRE · DÉCIDE",              "desc": "Pèse les deux côtés. Applique la jurisprudence. Rend l'évaluation de probabilité finale avec intervalle de confiance.",   "example_tag": "verdict :", "example_text": "64 % favorable ± 8 %, 19 % transaction, 17 % perte" }
+      },
+      "consensus_strong": "Seuil de consensus : 97 %.",
+      "consensus_text": "Si les 4 agents ne sont pas d'accord, nous faisons tourner jusqu'à 12 cycles de négociation. Aucune recommandation n'est remontée tant qu'un accord n'est pas atteint.",
+      "code_path": "archer/core/agents/debate.py",
+      "code_status": "EXÉCUTION"
+    },
+    "orchestration": {
+      "eyebrow": "04 · ORCHESTRATION DES MODÈLES",
+      "title": "Modèles de frontière. Conçus pour le droit.",
+      "subtitle": "Nous faisons tourner les modèles de raisonnement les plus puissants, orchestrés avec des prompts, schémas et couches de validation spécifiques au juridique. Un chatbot grand public vous donnerait un brouillon ; notre couche d'orchestration vous donne une analyse de niveau avocat.",
+      "layer_label": "COUCHE D'INFÉRENCE",
+      "layer_title": "Orchestration de modèles à deux niveaux",
+      "deep": {
+        "name": "Niveau raisonnement profond",
+        "role": "ANALYSE · RÉDACTION · ADVERSARIAL",
+        "purpose": "Passes de raisonnement lourdes — évaluation du risque, challenge adversarial, synthèse de stratégie. Utilisées quand la précision prime sur la latence.",
+        "spec": "200K ctx · raisonnement multi-étapes · sortie niveau avocat"
+      },
+      "fast": {
+        "name": "Niveau rapide",
+        "role": "CHAT · EXTRACTION · QUALIFICATION",
+        "purpose": "Chat temps réel, extraction de documents, qualification du domaine. Optimisé pour une réponse sous la seconde sans sacrifier la clarté.",
+        "spec": "200K ctx · ~2× plus rapide · cache de prompts activé"
+      },
+      "meta_strong_1": "Pourquoi ne pas utiliser un seul modèle ?",
+      "meta_text_1": " L'analyse juridique a trois charges de travail distinctes — conversation temps réel, extraction structurée et raisonnement adversarial — chacune avec ses propres arbitrages latence/précision. Router chaque charge vers le bon modèle divise le coût par ",
+      "meta_strong_2": "4×",
+      "meta_text_2": " tout en améliorant la précision. Routage d'inférence régional. Zéro rétention des données au niveau du modèle."
+    },
+    "rag": {
+      "eyebrow": "05 · RAG JURIDIQUE · RÉCUPÉRATION AUGMENTÉE",
+      "title": "Recherche sémantique. Zéro hallucination.",
+      "subtitle": "Nous récupérons d'abord les sources les plus pertinentes, puis générons. Chaque affirmation est étayée par une citation. Chaque citation a un score de confiance. Chaque score peut être audité.",
+      "flow": {
+        "input_label":  "ENTRÉE",            "input_title":  "Votre dossier",      "input_meta":  "PDF + texte",
+        "search_label": "RECHERCHE SÉMANTIQUE","search_title": "Top 12 sources",     "search_meta": "< 200 ms",
+        "output_label": "SORTIE",            "output_title": "Analyse sourcée",    "output_meta": "chaque affirmation sourcée"
+      },
+      "features": {
+        "embeddings": { "title": "Embeddings 1 024 dimensions",   "desc": "Modèle d'embedding à l'état de l'art, ajusté sur des textes juridiques multilingues. Capture la nuance juridique, pas juste les mots-clés." },
+        "latency":    { "title": "Récupération < 200 ms",         "desc": "Recherche vectorielle sur 2,5 M de documents, retournant les 12 passages les plus pertinents. Rerank parallèle." },
+        "citation":   { "title": "Vérification des citations en temps réel", "desc": "Chaque affirmation est vérifiée contre les sources récupérées avant d'être remontée. Si elle ne peut pas être citée, elle n'est pas générée." },
+        "obsolete":   { "title": "Détection d'obsolescence",      "desc": "Si un précédent cité a été renversé ou un texte modifié, nous le signalons. Pas question de s'appuyer sur du droit périmé." }
+      }
+    },
+    "benchmarks": {
+      "eyebrow": "06 · BENCHMARKS",
+      "title": "Archer contre les alternatives.",
+      "subtitle": "412 dossiers juridiques anonymisés, plusieurs domaines, évaluation en double aveugle par 3 avocats partenaires. Voici comment nous nous comparons.",
+      "columns": {
+        "metric": "MÉTRIQUE",
+        "archer": "ARCHER",
+        "chatbot": "CHATBOT GÉNÉRIQUE",
+        "jr": "JUNIOR AVOCAT",
+        "firm": "CABINET TRADITIONNEL"
+      },
+      "rows": {
+        "accuracy":       { "metric": "Précision factuelle",   "sub": "Les faits extraits correspondent à la vérité terrain" },
+        "citation":       { "metric": "Validité des citations","sub": "La source citée soutient réellement l'affirmation" },
+        "time":           { "metric": "Temps moyen par dossier","sub": "De la saisie à l'analyse rédigée" },
+        "hallucination":  { "metric": "Taux d'hallucination",  "sub": "Faits inventés ou fausses citations" },
+        "adversarial":    { "metric": "Analyse adversariale",  "sub": "Anticipe les arguments adverses" },
+        "price":          { "metric": "Prix par dossier",      "sub": "Stratégie + lettre signée" }
+      },
+      "values": {
+        "adversarial_yes": "Oui",
+        "adversarial_no": "Non",
+        "adversarial_partial": "Partiel"
+      }
+    },
+    "precision": {
+      "eyebrow": "07 · PRÉCISION MESURÉE",
+      "title": "Des chiffres que nous assumons.",
+      "subtitle": "Chaque métrique est mesurée sur des dossiers en production, revue chaque semaine, et publiquement vérifiable.",
+      "cards": {
+        "precision": { "label": "Précision factuelle", "sub": "Les faits extraits des documents correspondent à la source, contre 78 % pour les chatbots génériques." },
+        "success":   { "label": "Taux de succès",      "sub": "Parmi les dossiers traités par Archer, où l'objectif déclaré de l'utilisateur a été atteint." },
+        "accepted":  { "label": "Lettres acceptées",   "sub": "Lettres rédigées par Archer et signées par avocat, acceptées sans révision par le conseil adverse." },
+        "rating":    { "label": "Note des avocats",    "sub": "Score de qualité moyen donné par les avocats partenaires sur les dossiers qu'ils ont relus." },
+        "nps":       { "label": "NPS",                 "sub": "Net Promoter Score chez les utilisateurs actifs — la référence du secteur juridique est ~30." },
+        "error":     { "label": "Taux d'erreur",       "sub": "Taux d'erreur mesuré sur les sorties à enjeu fort, contre ~12 % pour les chatbots génériques." }
+      }
+    },
+    "innovations": {
+      "eyebrow": "08 · INNOVATIONS TECHNIQUES",
+      "title": "Ce que nous avons construit et que personne d'autre n'a.",
+      "subtitle": "Des fonctionnalités que vous ne trouverez chez aucun chatbot juridique, parce qu'il a fallu les ingénier.",
+      "items": {
+        "adversarial":     { "title": "Auto-challenge adversarial",       "desc": "Notre pipeline attaque sa propre analyse avant que vous ne la voyiez. Les failles sont trouvées avant de vous nuire." },
+        "confidence":      { "title": "Score de confiance par constat",   "desc": "Chaque affirmation reçoit un score de 0 à 100 avec des barres de preuve visibles." },
+        "explain":         { "title": "Mode « Expliquer simplement »",    "desc": "Un clic reformule n'importe quelle sortie juridique en langage courant." },
+        "compare":         { "title": "Comparaison anonymisée de dossiers","desc": "Mis en correspondance avec 10 000+ dossiers similaires. Sachez ce qui est arrivé à des gens comme vous." },
+        "intervals":       { "title": "Intervalles de confiance",         "desc": "Pas « 60 % de chances » — « 60 % ± 8 % ». Connaissez l'incertitude." },
+        "refine":          { "title": "Raffinement dynamique",            "desc": "Répondez aux questions de suivi, voyez l'analyse se mettre à jour en temps réel." },
+        "jurisdiction":    { "title": "Analyse inter-juridictions",       "desc": "Comparez les issues sur plusieurs systèmes juridiques, choisissez le forum intelligemment." },
+        "extraction":      { "title": "Extraction intelligente de documents","desc": "OCR + parsing sémantique. Les PDF scannés deviennent de la donnée structurée." },
+        "plan":            { "title": "Plan d'action auto-généré",        "desc": "Liste d'étapes suivantes avec délais, priorités et documents nécessaires." },
+        "risk":            { "title": "Signalement proactif des risques", "desc": "Risques contractuels cachés que vous n'avez pas demandés — remontés automatiquement." },
+        "sentiment":       { "title": "Analyse de sentiment",             "desc": "Le ton de la partie adverse, son agressivité, sa disposition à transiger." },
+        "negotiation":     { "title": "Notation de négociation",          "desc": "Probabilité de succès par la négociation vs. le procès, avec valeur attendue." }
+      }
+    },
+    "transparency": {
+      "eyebrow": "09 · TRANSPARENCE RADICALE",
+      "title": "Ce que nous NE faisons PAS.",
+      "subtitle": "La plupart des boîtes d'IA juridique cachent leurs limites. Nous publions les nôtres. La confiance exige de l'honnêteté sur les bords.",
+      "card_title": "Hors du périmètre d'Archer",
+      "card_subtitle": "Si votre dossier tombe ici, nous vous le dirons d'emblée et vous orienterons vers des spécialistes.",
+      "items": {
+        "criminal":      { "strong": "Procès de défense pénale.",            "text": "Nous ne vous représentons pas au tribunal. Engagez un avocat pénaliste." },
+        "ma":            { "strong": "M&A d'entreprise complexe.",           "text": "Structuration d'opérations, due diligence, conflits d'actionnaires — hors périmètre." },
+        "arbitration":   { "strong": "Arbitrage international.",             "text": "Arbitrage transfrontalier, droit des traités — demande un conseil spécialisé." },
+        "courtroom":     { "strong": "Représentation en audience.",          "text": "Nos avocats partenaires rédigent et signent, mais ne plaident pas." },
+        "immigration":   { "strong": "Immigration et asile.",                "text": "Les procédures varient trop et les enjeux sont trop élevés pour notre modèle actuel." },
+        "training":      { "strong": "Entraînement sur vos données.",        "text": "Vos dossiers ne nourrissent jamais les modèles. Jamais. Voir section sécurité." }
+      }
+    },
+    "security": {
+      "eyebrow": "10 · SÉCURITÉ & CONFIDENTIALITÉ",
+      "subtitle": "Les données juridiques font partie des informations les plus sensibles qu'une personne puisse partager. Nous avons construit Archer comme une banque, pas comme un chatbot.",
+      "title": {
+        "BE": "Vos données ne quittent jamais la Belgique. Jamais.",
+        "US": "Vos données ne quittent jamais les États-Unis. Jamais.",
+        "unknown": "Vos données ne quittent jamais votre pays. Jamais."
+      },
+      "cards": {
+        "encryption":    { "title": "AES-256 de bout en bout", "desc": "Toutes les données chiffrées au repos et en transit." },
+        "regional":      { "title": "Serveurs régionaux",
+          "desc": {
+            "BE": "Les données restent en Belgique. Aucun transfert transfrontalier.",
+            "US": "Les données restent aux États-Unis. Aucun transfert transfrontalier.",
+            "unknown": "Les données restent dans votre pays. Aucun transfert transfrontalier."
+          }
+        },
+        "privacy_law":   { "title": {
+            "BE": "Conforme RGPD",
+            "US": "Conforme CCPA",
+            "unknown": "Conforme à la législation applicable"
+          }, "desc": "Droit d'accès, de rectification et de suppression complet." },
+        "training":      { "title": "Zéro entraînement",       "desc": "Vos dossiers n'entraînent jamais de modèle. Contractuel." },
+        "deletion":      { "title": "Suppression à 90 jours",  "desc": "Suppression automatique après 90 jours, sur demande." },
+        "audit":         { "title": "Journal d'audit complet", "desc": "Chaque action journalisée, exportable à la demande." },
+        "iso":           { "title": "ISO 27001",               "desc": "Certification en cours (T3 2026)." },
+        "anonymization": { "title": "Anonymisation",           "desc": "PII détectées automatiquement et retirées avant traitement IA." }
+      }
+    }
+  }
+}
