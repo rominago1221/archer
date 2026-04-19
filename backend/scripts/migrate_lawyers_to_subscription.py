@@ -31,14 +31,14 @@ async def migrate_existing_lawyers() -> dict:
     now = _utcnow()
     ids_migrated: list[str] = []
 
-    async for lawyer in db.attorneys.find({}):
+    async for lawyer in db.attorney_profiles.find({}):
         total += 1
         if lawyer.get("subscription_status"):
             skipped += 1
             continue
 
-        await db.attorneys.update_one(
-            {"id": lawyer["id"]},
+        await db.attorney_profiles.update_one(
+            {"attorney_id": lawyer["attorney_id"]},
             {"$set": {
                 "early_access":                     True,
                 "subscription_status":              "inactive",
@@ -51,8 +51,8 @@ async def migrate_existing_lawyers() -> dict:
                 "updated_at":                       now,
             }},
         )
-        logger.info(f"  migrated attorney {lawyer['id']} (early_access=True)")
-        ids_migrated.append(lawyer["id"])
+        logger.info(f"  migrated attorney {lawyer['attorney_id']} (early_access=True)")
+        ids_migrated.append(lawyer["attorney_id"])
         migrated += 1
 
     logger.info(f"Done. total={total} migrated={migrated} skipped={skipped}")
