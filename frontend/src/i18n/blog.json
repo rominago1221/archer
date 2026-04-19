@@ -1,0 +1,207 @@
+{
+  "en": {
+    "hero": {
+      "eyebrow": "ARCHER LEGAL GUIDES",
+      "title_1": "Plain-English law.",
+      "title_2": "For real situations.",
+      "sub": "Step-by-step guides written by the Archer legal team. Know your rights, know your options, know what to do next.",
+      "featured_label": "FEATURED"
+    },
+    "filters": {
+      "country_heading": "COUNTRY",
+      "country_all": "All countries",
+      "country_be": "Belgium",
+      "country_us": "USA",
+      "category_heading": "TOPIC",
+      "category_all": "All topics",
+      "category_housing": "Housing",
+      "category_traffic": "Traffic",
+      "category_employment": "Employment",
+      "category_consumer": "Consumer",
+      "category_family": "Family"
+    },
+    "empty_state": "No guides match these filters yet. Try loosening them or check back soon.",
+    "meta": {
+      "by": "By {author}",
+      "reading_time": "{time} read",
+      "read_article": "Read article"
+    },
+    "article": {
+      "back_to_blog": "Back to all guides",
+      "related_guides": "Related guides",
+      "disclaimer_label": "Disclaimer",
+      "disclaimer_text": "This article is for informational purposes only and does not constitute legal advice. For advice specific to your situation, consult a licensed attorney.",
+      "about_author_label": "ABOUT THE AUTHOR",
+      "about_author_text": "Archer's legal content is reviewed by licensed attorneys across jurisdictions. Our mission is to make legal help accessible to everyone.",
+      "cta_title": "Need help with your case?",
+      "cta_text": "Archer analyzes your legal documents for free and drafts attorney-signed letters when you need one.",
+      "cta_button": "Start my case — free",
+      "not_found_title": "Article not found",
+      "not_found_back": "Back to the blog"
+    }
+  },
+  "fr": {
+    "hero": {
+      "eyebrow": "GUIDES JURIDIQUES ARCHER",
+      "title_1": "Le droit expliqué simplement.",
+      "title_2": "Pour les vraies situations.",
+      "sub": "Des guides pas-à-pas rédigés par l'équipe juridique Archer. Connaissez vos droits, vos options, et les prochaines étapes.",
+      "featured_label": "À LA UNE"
+    },
+    "filters": {
+      "country_heading": "PAYS",
+      "country_all": "Tous les pays",
+      "country_be": "Belgique",
+      "country_us": "USA",
+      "category_heading": "SUJET",
+      "category_all": "Tous les sujets",
+      "category_housing": "Logement",
+      "category_traffic": "Route",
+      "category_employment": "Travail",
+      "category_consumer": "Consommation",
+      "category_family": "Famille"
+    },
+    "empty_state": "Aucun guide ne correspond à ces filtres pour l'instant. Essayez d'en retirer un ou revenez bientôt.",
+    "meta": {
+      "by": "Par {author}",
+      "reading_time": "Lecture {time}",
+      "read_article": "Lire l'article"
+    },
+    "article": {
+      "back_to_blog": "Retour à tous les guides",
+      "related_guides": "Guides similaires",
+      "disclaimer_label": "Avertissement",
+      "disclaimer_text": "Cet article est fourni à titre informatif et ne constitue pas un conseil juridique. Pour un avis adapté à votre situation, consultez un avocat habilité.",
+      "about_author_label": "À PROPOS DE L'AUTEUR",
+      "about_author_text": "Le contenu juridique d'Archer est relu par des avocats agréés dans chaque juridiction. Notre mission : rendre l'aide juridique accessible à tous.",
+      "cta_title": "Besoin d'aide sur votre dossier ?",
+      "cta_text": "Archer analyse vos documents juridiques gratuitement et rédige des lettres signées par avocat quand c'est nécessaire.",
+      "cta_button": "Démarrer mon dossier — gratuit",
+      "not_found_title": "Article introuvable",
+      "not_found_back": "Retour au blog"
+    }
+  },
+  "nl": {
+    "hero": {
+      "eyebrow": "ARCHER JURIDISCHE GIDSEN",
+      "title_1": "Recht in heldere taal.",
+      "title_2": "Voor echte situaties.",
+      "sub": "Stap-voor-stap gidsen geschreven door het juridische team van Archer. Ken uw rechten, uw opties en de volgende stap.",
+      "featured_label": "UITGELICHT"
+    },
+    "filters": {
+      "country_heading": "LAND",
+      "country_all": "Alle landen",
+      "country_be": "België",
+      "country_us": "VS",
+      "category_heading": "ONDERWERP",
+      "category_all": "Alle onderwerpen",
+      "category_housing": "Huisvesting",
+      "category_traffic": "Verkeer",
+      "category_employment": "Werk",
+      "category_consumer": "Consument",
+      "category_family": "Familie"
+    },
+    "empty_state": "Geen gidsen voor deze filters. Pas ze aan of kom binnenkort terug.",
+    "meta": {
+      "by": "Door {author}",
+      "reading_time": "{time} lezen",
+      "read_article": "Artikel lezen"
+    },
+    "article": {
+      "back_to_blog": "Terug naar alle gidsen",
+      "related_guides": "Gerelateerde gidsen",
+      "disclaimer_label": "Disclaimer",
+      "disclaimer_text": "Dit artikel is louter informatief en vormt geen juridisch advies. Raadpleeg een erkende advocaat voor advies over uw specifieke situatie.",
+      "about_author_label": "OVER DE AUTEUR",
+      "about_author_text": "De juridische inhoud van Archer wordt nagelezen door erkende advocaten in elk rechtsgebied. Onze missie: juridische hulp toegankelijk maken voor iedereen.",
+      "cta_title": "Hulp nodig met uw dossier?",
+      "cta_text": "Archer analyseert uw juridische documenten gratis en stelt door een advocaat ondertekende brieven op wanneer dat nodig is.",
+      "cta_button": "Start mijn dossier — gratis",
+      "not_found_title": "Artikel niet gevonden",
+      "not_found_back": "Terug naar het blog"
+    }
+  },
+  "de": {
+    "hero": {
+      "eyebrow": "ARCHER RECHTSRATGEBER",
+      "title_1": "Recht verständlich erklärt.",
+      "title_2": "Für echte Situationen.",
+      "sub": "Schritt-für-Schritt-Leitfäden vom Rechtsteam von Archer. Kennen Sie Ihre Rechte, Ihre Optionen und den nächsten Schritt.",
+      "featured_label": "EMPFOHLEN"
+    },
+    "filters": {
+      "country_heading": "LAND",
+      "country_all": "Alle Länder",
+      "country_be": "Belgien",
+      "country_us": "USA",
+      "category_heading": "THEMA",
+      "category_all": "Alle Themen",
+      "category_housing": "Wohnen",
+      "category_traffic": "Verkehr",
+      "category_employment": "Arbeit",
+      "category_consumer": "Verbraucher",
+      "category_family": "Familie"
+    },
+    "empty_state": "Keine Ratgeber zu diesen Filtern. Passen Sie sie an oder schauen Sie bald wieder vorbei.",
+    "meta": {
+      "by": "Von {author}",
+      "reading_time": "{time} Lesezeit",
+      "read_article": "Artikel lesen"
+    },
+    "article": {
+      "back_to_blog": "Zurück zu allen Ratgebern",
+      "related_guides": "Verwandte Ratgeber",
+      "disclaimer_label": "Hinweis",
+      "disclaimer_text": "Dieser Artikel dient ausschließlich der Information und stellt keine Rechtsberatung dar. Für Ratschläge zu Ihrer konkreten Situation wenden Sie sich an eine zugelassene Anwältin oder einen zugelassenen Anwalt.",
+      "about_author_label": "ÜBER DIE AUTORIN",
+      "about_author_text": "Die juristischen Inhalte von Archer werden von zugelassenen Anwältinnen und Anwälten aller Rechtsgebiete geprüft. Unsere Mission: juristische Hilfe für alle zugänglich machen.",
+      "cta_title": "Brauchen Sie Unterstützung bei Ihrem Fall?",
+      "cta_text": "Archer analysiert Ihre Rechtsdokumente kostenlos und erstellt bei Bedarf von Anwälten unterzeichnete Schreiben.",
+      "cta_button": "Fall starten — kostenlos",
+      "not_found_title": "Artikel nicht gefunden",
+      "not_found_back": "Zurück zum Blog"
+    }
+  },
+  "es": {
+    "hero": {
+      "eyebrow": "GUÍAS LEGALES ARCHER",
+      "title_1": "El derecho, sin tecnicismos.",
+      "title_2": "Para situaciones reales.",
+      "sub": "Guías paso a paso del equipo jurídico de Archer. Conozca sus derechos, sus opciones y el siguiente paso.",
+      "featured_label": "DESTACADO"
+    },
+    "filters": {
+      "country_heading": "PAÍS",
+      "country_all": "Todos los países",
+      "country_be": "Bélgica",
+      "country_us": "EE. UU.",
+      "category_heading": "TEMA",
+      "category_all": "Todos los temas",
+      "category_housing": "Vivienda",
+      "category_traffic": "Tráfico",
+      "category_employment": "Trabajo",
+      "category_consumer": "Consumo",
+      "category_family": "Familia"
+    },
+    "empty_state": "Ninguna guía coincide con estos filtros. Pruebe a relajarlos o vuelva más tarde.",
+    "meta": {
+      "by": "Por {author}",
+      "reading_time": "{time} de lectura",
+      "read_article": "Leer artículo"
+    },
+    "article": {
+      "back_to_blog": "Volver a todas las guías",
+      "related_guides": "Guías relacionadas",
+      "disclaimer_label": "Aviso",
+      "disclaimer_text": "Este artículo tiene fines informativos y no constituye asesoramiento jurídico. Para consejos adaptados a su situación, consulte a una persona colegiada.",
+      "about_author_label": "SOBRE LA AUTORÍA",
+      "about_author_text": "El contenido jurídico de Archer es revisado por personas colegiadas en cada jurisdicción. Nuestra misión: hacer accesible la ayuda jurídica a todo el mundo.",
+      "cta_title": "¿Necesita ayuda con su caso?",
+      "cta_text": "Archer analiza sus documentos jurídicos gratis y redacta cartas firmadas por abogados cuando hace falta.",
+      "cta_button": "Empezar mi caso — gratis",
+      "not_found_title": "Artículo no encontrado",
+      "not_found_back": "Volver al blog"
+    }
+  }
+}

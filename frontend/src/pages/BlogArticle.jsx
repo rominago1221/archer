@@ -1,22 +1,71 @@
-import React from 'react';
+/**
+ * /blog/:slug — article page.
+ *
+ * Same shell as the blog index (`.blog-page` wrapper + PublicHeader +
+ * shared Footer). Article body is rendered from a small markdown subset
+ * (h2/h3, bold, italic, links, lists, blockquotes, hr) into scoped HTML
+ * that inherits all typography from blog.css.
+ */
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import PageHead from '../components/seo/PageHead';
 import JsonLd, { createArticleSchema, createBreadcrumbSchema } from '../components/seo/JsonLd';
 import { generateMetadata, SITE_URL } from '../lib/seo/metadata';
 import { getPostBySlug, getRelatedPosts } from '../lib/blog';
-import PublicNavbar from '../components/PublicNavbar';
+import PublicHeader from '../components/PublicHeader';
+import Footer from '../components/Home/Footer';
+import { useBlogT } from '../hooks/useBlogT';
+import { getStoredLocale } from '../data/landingTranslations';
+import '../styles/home.css';
+import '../styles/blog.css';
+
+function resolveLang() {
+  const loc = getStoredLocale() || 'us-en';
+  return (loc.split('-')[1] || 'en').toLowerCase();
+}
+
+function resolveCountry() {
+  const loc = getStoredLocale() || 'us-en';
+  return (loc.split('-')[0] || 'us').toUpperCase();
+}
+
+function formatDate(iso, lang) {
+  if (!iso) return '';
+  try {
+    const locale = { en: 'en-US', fr: 'fr-FR', nl: 'nl-BE', de: 'de-DE', es: 'es-ES' }[lang] || 'en-US';
+    return new Intl.DateTimeFormat(locale, { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(iso));
+  } catch {
+    return '';
+  }
+}
 
 export default function BlogArticle() {
   const { slug } = useParams();
   const post = getPostBySlug(slug);
+  const [language, setLanguage] = useState(resolveLang);
+  const [, setCountry] = useState(resolveCountry);
+
+  useEffect(() => {
+    setLanguage(resolveLang());
+    setCountry(resolveCountry());
+  }, []);
+
+  const t = useBlogT(language);
 
   if (!post) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: '#0a0a0f' }}>Article not found</h1>
-          <Link to="/blog" style={{ color: '#1a56db', marginTop: 12, display: 'inline-block' }}>Back to blog</Link>
-        </div>
+      <div data-testid="blog-article-not-found">
+        <PublicHeader
+          onLanguageChange={setLanguage}
+          onJurisdictionChange={setCountry}
+        />
+        <main className="blog-page">
+          <div className="article-not-found">
+            <h1>{t('article.not_found_title')}</h1>
+            <Link to="/blog">{t('article.not_found_back')} →</Link>
+          </div>
+        </main>
+        <Footer language={language} country={resolveCountry()} />
       </div>
     );
   }
@@ -36,9 +85,11 @@ export default function BlogArticle() {
   });
 
   const related = getRelatedPosts(slug, 3);
+  const categoryLabel = t(`filters.category_${post.category}`);
+  const countryLabel = post.country ? t(`filters.country_${String(post.country).toLowerCase()}`) : '';
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fafaf8' }}>
+    <div data-testid="blog-article">
       <PageHead metadata={metadata} />
       <JsonLd data={createArticleSchema(post)} />
       <JsonLd data={createBreadcrumbSchema([
@@ -46,109 +97,124 @@ export default function BlogArticle() {
         { name: 'Blog', url: `${SITE_URL}/blog` },
         { name: post.title },
       ])} />
-      <PublicNavbar />
+      <PublicHeader
+        onLanguageChange={setLanguage}
+        onJurisdictionChange={setCountry}
+      />
 
-      <article style={{ maxWidth: 720, margin: '0 auto', padding: '48px 24px' }}>
-        {/* Breadcrumb */}
-        <nav style={{ fontSize: 12, color: '#9ca3af', marginBottom: 24, display: 'flex', gap: 6 }}>
-          <Link to="/" style={{ color: '#9ca3af', textDecoration: 'none' }}>Home</Link>
-          <span>/</span>
-          <Link to="/blog" style={{ color: '#9ca3af', textDecoration: 'none' }}>Blog</Link>
-          <span>/</span>
-          <span style={{ color: '#6b7280' }}>{post.category}</span>
-        </nav>
+      <main className="blog-page">
+        <article className="article" lang={post.language || undefined}>
+          <Link to="/blog" className="article-back">← {t('article.back_to_blog')}</Link>
 
-        {/* Header */}
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#1a56db', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-          {post.category}
-        </span>
-        <h1 style={{ fontSize: 36, fontWeight: 800, color: '#0a0a0f', letterSpacing: -1, lineHeight: 1.2, margin: '12px 0 16px' }}>
-          {post.title}
-        </h1>
-
-        {/* Meta */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 13, color: '#6b7280', marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid #e2e0db' }}>
-          <span>{post.author}</span>
-          <span>{new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-          <span>{post.readingTime}</span>
-        </div>
-
-        {/* Content */}
-        <div
-          style={{ fontSize: 17, lineHeight: 1.8, color: '#1a1a2e' }}
-          dangerouslySetInnerHTML={{ __html: renderContent(post.content) }}
-        />
-
-        {/* Disclaimer */}
-        <div style={{
-          marginTop: 40, padding: '16px 20px', background: '#f3f4f6',
-          borderRadius: 10, fontSize: 12, color: '#6b7280', lineHeight: 1.6,
-        }}>
-          <strong>Disclaimer:</strong> This article is for informational purposes only and does not constitute legal advice.
-          For advice specific to your situation, consult a licensed attorney.
-        </div>
-
-        {/* CTA */}
-        <div style={{
-          marginTop: 32, padding: '28px 32px', background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
-          borderRadius: 14, border: '1px solid #1a56db', textAlign: 'center',
-        }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#0a0a0f', marginBottom: 8 }}>
-            Need help with your case?
-          </div>
-          <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 16 }}>
-            Archer analyzes your legal documents for free and drafts attorney-signed letters for $49.
-          </div>
-          <Link to="/signup" style={{
-            display: 'inline-block', padding: '12px 28px', background: '#1a56db', color: '#fff',
-            borderRadius: 8, fontSize: 14, fontWeight: 700, textDecoration: 'none',
-          }}>
-            Start my case free
-          </Link>
-        </div>
-
-        {/* Author bio (E-E-A-T) */}
-        <div style={{ marginTop: 32, padding: '20px 24px', background: '#fff', borderRadius: 12, border: '0.5px solid #e2e0db' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', letterSpacing: 0.5, marginBottom: 8 }}>ABOUT THE AUTHOR</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#0a0a0f' }}>{post.author}</div>
-          <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5, marginTop: 4 }}>
-            Archer's legal content is reviewed by licensed attorneys across jurisdictions. Our mission is to make legal help accessible to everyone.
-          </div>
-        </div>
-
-        {/* Related articles */}
-        {related.length > 0 && (
-          <div style={{ marginTop: 40 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0a0a0f', marginBottom: 16 }}>Related guides</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14 }}>
-              {related.map(r => (
-                <Link key={r.slug} to={`/blog/${r.slug}`} style={{
-                  padding: '16px 18px', background: '#fff', borderRadius: 10,
-                  border: '0.5px solid #e2e0db', textDecoration: 'none',
-                }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#0a0a0f', lineHeight: 1.4 }}>{r.title}</div>
-                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>{r.readingTime}</div>
-                </Link>
-              ))}
+          <header className="article-header">
+            <div className="article-header-row">
+              <span className="article-category">{categoryLabel}</span>
+              {countryLabel && <span className="article-country">{countryLabel}</span>}
             </div>
+            <h1 className="article-title">{post.title}</h1>
+            <p className="article-desc">{post.description}</p>
+            <div className="article-meta">
+              <span>{t('meta.by', { author: post.author })}</span>
+              <span>{formatDate(post.publishedAt, language)}</span>
+              <span>{t('meta.reading_time', { time: post.readingTime })}</span>
+            </div>
+          </header>
+
+          <div
+            className="article-content"
+            dangerouslySetInnerHTML={{ __html: renderContent(post.content) }}
+          />
+
+          <div className="article-disclaimer">
+            <strong>{t('article.disclaimer_label')} :</strong> {t('article.disclaimer_text')}
           </div>
-        )}
-      </article>
+
+          <div className="article-cta">
+            <div className="article-cta-title">{t('article.cta_title')}</div>
+            <div className="article-cta-text">{t('article.cta_text')}</div>
+            <Link to="/signup" className="article-cta-button">
+              {t('article.cta_button')} <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+
+          <div className="article-author-box">
+            <div className="article-author-label">{t('article.about_author_label')}</div>
+            <div className="article-author-name">{post.author}</div>
+            <div className="article-author-text">{t('article.about_author_text')}</div>
+          </div>
+
+          {related.length > 0 && (
+            <div className="article-related">
+              <h2 className="article-related-title">{t('article.related_guides')}</h2>
+              <div className="article-related-grid">
+                {related.map((r) => (
+                  <Link key={r.slug} to={`/blog/${r.slug}`} className="article-related-card">
+                    <div className="article-related-card-title">{r.title}</div>
+                    <div className="article-related-card-meta">
+                      {t('meta.reading_time', { time: r.readingTime })}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </article>
+      </main>
+
+      <Footer language={language} country={resolveCountry()} />
     </div>
   );
 }
 
-// Simple markdown-ish renderer (## headers, **bold**, [links], ---)
+
+/* ─── Markdown subset renderer ─────────────────────────────────────
+ * Supports: ## h2, ### h3, #### h4, **bold**, *italic*, [text](url),
+ * > blockquote (single line or multi-line with `> ` prefix), - / 1.
+ * lists, --- horizontal rule, paragraphs. Authored content is trusted
+ * (no raw user input), so we don't escape HTML entities. */
+
 function renderContent(text) {
   if (!text) return '';
+  const blocks = text.replace(/\r\n/g, '\n').split(/\n{2,}/);
+  return blocks.map(renderBlock).join('');
+}
+
+function renderBlock(raw) {
+  const block = raw.trim();
+  if (!block) return '';
+
+  if (block === '---' || /^-{3,}$/.test(block)) return '<hr/>';
+
+  if (block.startsWith('#### ')) return `<h4>${inline(block.slice(5))}</h4>`;
+  if (block.startsWith('### '))  return `<h3>${inline(block.slice(4))}</h3>`;
+  if (block.startsWith('## '))   return `<h2>${inline(block.slice(3))}</h2>`;
+
+  const lines = block.split('\n');
+
+  // Blockquote: every line starts with "> "
+  if (lines.every((l) => /^>\s?/.test(l))) {
+    const text = lines.map((l) => l.replace(/^>\s?/, '')).join(' ');
+    return `<blockquote><p>${inline(text)}</p></blockquote>`;
+  }
+
+  // Unordered list: every line starts with "- "
+  if (lines.every((l) => /^-\s/.test(l))) {
+    const items = lines.map((l) => `<li>${inline(l.slice(2))}</li>`).join('');
+    return `<ul>${items}</ul>`;
+  }
+
+  // Ordered list: every line starts with digit + ". "
+  if (lines.every((l) => /^\d+\.\s/.test(l))) {
+    const items = lines.map((l) => `<li>${inline(l.replace(/^\d+\.\s/, ''))}</li>`).join('');
+    return `<ol>${items}</ol>`;
+  }
+
+  return `<p>${inline(lines.join(' '))}</p>`;
+}
+
+function inline(text) {
   return text
-    .replace(/^### (.+)$/gm, '<h3 style="font-size:20px;font-weight:700;color:#0a0a0f;margin:28px 0 12px;">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 style="font-size:24px;font-weight:800;color:#0a0a0f;margin:36px 0 14px;">$1</h2>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color:#1a56db;text-decoration:underline;">$1</a>')
-    .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid #e2e0db;margin:32px 0;" />')
-    .replace(/\n\n/g, '</p><p style="margin:0 0 16px;">')
-    .replace(/^/, '<p style="margin:0 0 16px;">')
-    .replace(/$/, '</p>');
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
 }

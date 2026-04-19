@@ -1,0 +1,47 @@
+import { useMemo } from 'react';
+import blog from '../i18n/blog.json';
+
+const SUPPORTED = ['en', 'fr', 'nl', 'de', 'es'];
+
+function resolveLang(language) {
+  if (!language) return 'en';
+  const short = String(language).slice(0, 2).toLowerCase();
+  return SUPPORTED.includes(short) ? short : 'en';
+}
+
+function interpolate(template, params) {
+  if (!params || typeof template !== 'string') return template;
+  let out = template;
+  for (const [k, v] of Object.entries(params)) {
+    out = out.split(`{${k}}`).join(String(v));
+  }
+  return out;
+}
+
+function lookup(tree, path) {
+  if (!tree || !path) return undefined;
+  const parts = path.split('.');
+  let node = tree;
+  for (const p of parts) {
+    if (node && typeof node === 'object' && p in node) node = node[p];
+    else return undefined;
+  }
+  return node;
+}
+
+/**
+ * Path-based translator for the /blog page. Mirrors `useAttorneysT` so the
+ * blog feels like a sibling of /attorneys. Falls back: resolved language →
+ * en → raw path (missing keys surface loudly).
+ */
+export function useBlogT(language) {
+  return useMemo(() => {
+    const lang = resolveLang(language);
+    return (path, params) => {
+      const fromLang = lookup(blog[lang], path);
+      const fromEn = fromLang === undefined ? lookup(blog.en, path) : fromLang;
+      const value = fromEn === undefined ? path : fromEn;
+      return typeof value === 'string' ? interpolate(value, params) : value;
+    };
+  }, [language]);
+}
