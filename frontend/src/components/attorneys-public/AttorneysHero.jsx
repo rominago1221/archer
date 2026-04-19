@@ -6,16 +6,15 @@
  * + live call) inside an animated conic-gradient beam border.
  */
 import React from 'react';
+import { CheckCircle2, PenLine, TrendingUp } from 'lucide-react';
 import { useAttorneysT } from '../../hooks/useAttorneysT';
 import AttorneyServicesBox from './AttorneyServicesBox';
 
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
+const ROLE_ICONS = {
+  validate: CheckCircle2,
+  sign: PenLine,
+  follow: TrendingUp,
+};
 
 export default function AttorneysHero({ language = 'en', country = 'BE' }) {
   const t = useAttorneysT(language);
@@ -34,15 +33,20 @@ export default function AttorneysHero({ language = 'en', country = 'BE' }) {
           </p>
 
           <div className="hero-roles">
-            {['validate', 'sign', 'follow'].map((k) => (
-              <div className="role-item" key={k}>
-                <div className="role-icon"><CheckIcon /></div>
-                <div className="role-text">
-                  <div className="role-h">{t(`hero.roles.${k}.h`)}</div>
-                  <div className="role-d">{t(`hero.roles.${k}.d`)}</div>
+            {['validate', 'sign', 'follow'].map((k) => {
+              const Icon = ROLE_ICONS[k];
+              return (
+                <div className="role-item" key={k}>
+                  <div className="role-icon">
+                    <Icon aria-hidden="true" strokeWidth={2.25} />
+                  </div>
+                  <div className="role-text">
+                    <div className="role-h">{t(`hero.roles.${k}.h`)}</div>
+                    <div className="role-d">{t(`hero.roles.${k}.d`)}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="hero-cta-row">
