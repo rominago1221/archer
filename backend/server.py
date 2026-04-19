@@ -38,6 +38,15 @@ from models import (
 from constants.case_types import CASE_TYPES, normalize_case_type
 from prompts.case_type_personas import get_expertise_block
 from services.legal_rag import retrieve_relevant_law, format_rag_block
+from services.credits import (
+    calculate_credit_cost,
+    detect_analysis_complexity,
+    check_credits_available,
+    deduct_credits,
+    get_balance,
+    CreditInsufficientError,
+)
+from constants.credits import CREDIT_PACKS
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -1656,6 +1665,36 @@ async def analyze_stream_endpoint(
     case_for_type = await db.cases.find_one({"case_id": case_id}, {"_id": 0, "type": 1})
     stream_case_type = normalize_case_type((case_for_type or {}).get("type"))
 
+    # ── Credits pre-flight ─────────────────────────────────────────────
+    # Compute the expected cost from document stats and tier, check that
+    # the user can afford it; deduction happens in the background task
+    # once analysis completes successfully.
+    all_docs_for_case = await db.documents.find(
+        {"case_id": case_id}, {"_id": 0, "page_count": 1, "extracted_text": 1, "is_scan": 1, "has_ocr": 1},
+    ).to_list(None)
+    _credit_action_type = detect_analysis_complexity(all_docs_for_case)
+    _credit_has_ocr = any(bool(d.get("is_scan") or d.get("has_ocr")) for d in all_docs_for_case)
+    _credit_user_tier = (getattr(current_user, "plan", None) or "free")
+    _credit_cost = calculate_credit_cost(_credit_action_type, _credit_user_tier, _credit_has_ocr)
+    try:
+        await check_credits_available(current_user.user_id, _credit_cost)
+    except CreditInsufficientError as e:
+        # Release the stream_active flag we just set; this run never starts.
+        await db.cases.update_one({"case_id": case_id}, {"$unset": {"stream_active": ""}})
+        _bal = await get_balance(current_user.user_id)
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "error":           "INSUFFICIENT_CREDITS",
+                "current_balance": _bal["total_credits"],
+                "required":        _credit_cost,
+                "packs_available": [
+                    {"code": p["code"], "credits": p["credits"], "price_eur": p["price_eur"]}
+                    for p in CREDIT_PACKS
+                ],
+            },
+        )
+
     # Use asyncio.Queue: background task pushes events, SSE endpoint reads them.
     # Analysis always runs to completion even if client disconnects.
     event_queue = asyncio.Queue()
@@ -1680,9 +1719,11 @@ async def analyze_stream_endpoint(
         finally:
             await event_queue.put(None)  # Sentinel to end the stream
             # Always save result when analysis completes
+            analysis_succeeded = False
             if full_result:
                 try:
                     await _save_stream_result_to_case(case_id, full_result, filename)
+                    analysis_succeeded = True
                 except Exception as save_err:
                     logger.error(f"Failed to save stream result: {save_err}")
             else:
@@ -1691,6 +1732,22 @@ async def analyze_stream_endpoint(
                     {"case_id": case_id},
                     {"$set": {"status": "active", "ai_summary": "Analysis completed.", "updated_at": datetime.now(timezone.utc).isoformat()}}
                 )
+            # Credits deduction AFTER success only — do not bill on failure.
+            if analysis_succeeded:
+                try:
+                    await deduct_credits(
+                        user_id=current_user.user_id,
+                        amount=_credit_cost,
+                        source="analysis",
+                        metadata={
+                            "case_id":     case_id,
+                            "action_type": _credit_action_type,
+                            "has_ocr":     _credit_has_ocr,
+                            "user_tier":   _credit_user_tier,
+                        },
+                    )
+                except Exception as credit_err:
+                    logger.error(f"Credit deduction failed post-analysis: {credit_err}")
             # Clear stream_active flag
             await db.cases.update_one({"case_id": case_id}, {"$unset": {"stream_active": ""}})
 
@@ -4977,6 +5034,26 @@ async def refine_case(case_id: str, body: RefineRequest,
     if case_doc.get("refinement_in_progress"):
         raise HTTPException(status_code=409, detail="refinement_in_progress")
 
+    # ── Credits pre-flight for refinement (200 flat) ──
+    _refine_user_tier = (getattr(current_user, "plan", None) or "free")
+    _refine_cost = calculate_credit_cost("refinement", _refine_user_tier, has_ocr=False)
+    try:
+        await check_credits_available(current_user.user_id, _refine_cost)
+    except CreditInsufficientError:
+        _bal = await get_balance(current_user.user_id)
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "error":           "INSUFFICIENT_CREDITS",
+                "current_balance": _bal["total_credits"],
+                "required":        _refine_cost,
+                "packs_available": [
+                    {"code": p["code"], "credits": p["credits"], "price_eur": p["price_eur"]}
+                    for p in CREDIT_PACKS
+                ],
+            },
+        )
+
     refinement_count = int(case_doc.get("refinement_count") or 0)
 
     # Hard cap — applies to every tier.
@@ -5212,6 +5289,23 @@ async def refine_case(case_id: str, body: RefineRequest,
                       "version_after": new_version, "snapshot_id": snapshot_id,
                       "completed_at": completed}},
         )
+
+        # Deduct refinement credits AFTER success (never on failure).
+        try:
+            await deduct_credits(
+                user_id=current_user.user_id,
+                amount=_refine_cost,
+                source="refinement",
+                metadata={
+                    "case_id":         case_id,
+                    "refinement_id":   refinement_id,
+                    "strategy":        strategy,
+                    "new_version":     new_version,
+                    "user_tier":       _refine_user_tier,
+                },
+            )
+        except Exception as credit_err:
+            logger.error(f"Credit deduction failed after refinement {refinement_id}: {credit_err}")
 
         await db.case_events.insert_one({
             "event_id": f"evt_{uuid.uuid4().hex[:12]}",
@@ -9159,6 +9253,17 @@ from routes.client_notifications_routes import (
     ensure_indexes as ensure_client_notifications_indexes,
 )
 api_router.include_router(client_notifications_router)
+
+# Credits + subscriptions sprint — credits balance, history, packs, tier checkout,
+# lawyer subscription, and the Stripe-subscription webhook.
+from routes.credits_routes import router as credits_router
+from routes.stripe_subscriptions_webhook import router as stripe_subs_webhook_router
+from routes.lawyer_subscription_routes import router as lawyer_subscription_router
+from routes.admin_migrations_routes import router as admin_migrations_router
+api_router.include_router(credits_router)
+api_router.include_router(stripe_subs_webhook_router)
+api_router.include_router(lawyer_subscription_router)
+api_router.include_router(admin_migrations_router)
 
 from utils.attorney_auth import (
     migrate_sprint_c_fields, migrate_sprint_d_fields,
