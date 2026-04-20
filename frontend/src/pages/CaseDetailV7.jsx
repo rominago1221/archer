@@ -533,41 +533,53 @@ export default function CaseDetailV7() {
         <aside className="v3-rail" data-testid="v3-rail">
           <LawyerRailCTA caseId={caseId} t={t} />
 
-          <RefineAnalysisSection
-            caseDoc={caseDoc}
-            language={language}
-            onSubmitStart={() => { markInteracted(); trackFire('refinement_started'); }}
-            onRefined={() => {
-              setViewingVersion(null);
-              setViewedAnalysis(null);
-              fetchCase();
-            }}
-          />
+          <div className="rail-wrap">
+            <RefineAnalysisSection
+              caseDoc={caseDoc}
+              language={language}
+              onSubmitStart={() => { markInteracted(); trackFire('refinement_started'); }}
+              onRefined={() => {
+                setViewingVersion(null);
+                setViewedAnalysis(null);
+                fetchCase();
+              }}
+            />
+          </div>
 
-          <DocumentsSection
-            documents={documents}
-            isFreemiumExhausted={freemiumExhausted}
-            onAddDocument={handleAddDocument}
-            onUpgrade={handleUpgrade}
-            language={language}
-          />
+          <div className="rail-wrap">
+            <DocumentsSection
+              documents={documents}
+              isFreemiumExhausted={freemiumExhausted}
+              onAddDocument={handleAddDocument}
+              onUpgrade={handleUpgrade}
+              language={language}
+            />
+          </div>
 
-          <ArcherQuestionsSection
-            questions={archerQuestions}
-            onAnswer={handleAnswerQuestion}
-            language={language}
-          />
+          <div className="rail-wrap">
+            <ArcherQuestionsSection
+              questions={archerQuestions}
+              onAnswer={handleAnswerQuestion}
+              language={language}
+            />
+          </div>
 
-          <SimilarCasesSection
-            caseId={caseId}
-            stats={similarCases}
-            country={country}
-            language={language}
-          />
+          <div className="rail-wrap">
+            <SimilarCasesSection
+              caseId={caseId}
+              stats={similarCases}
+              country={caseCountry}
+              language={language}
+            />
+          </div>
 
-          <LegalNewsSection news={legalNews} language={language} />
+          <div className="rail-wrap">
+            <LegalNewsSection news={legalNews} language={language} />
+          </div>
 
-          <AskArcherCompact onSubmit={handleAskArcher} language={language} />
+          <div className="rail-wrap">
+            <AskArcherCompact onSubmit={handleAskArcher} language={language} />
+          </div>
         </aside>
       </div>
     </div>

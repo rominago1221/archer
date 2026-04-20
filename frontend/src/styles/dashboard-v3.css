@@ -1424,6 +1424,25 @@
 }
 
 /* ═══════════ RIGHT RAIL (act 09) ═══════════ */
+/* Wrap each legacy rail component in `.rail-wrap` so its existing internal
+ * styling gets framed by the V3 white-card look without rewriting the
+ * component. Flush-corners because the component already has its own
+ * padding; the wrap provides the 14px radius + line border. */
+.dashboard-v3 .rail-wrap {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+.dashboard-v3 .rail-wrap:hover { border-color: var(--archer-blue-100); }
+.dashboard-v3 .rail-wrap > * {
+  /* Legacy components often set their own margin-bottom / max-width that
+   * collides with the 340px rail. Neutralise the most common offenders. */
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
 .dashboard-v3 .rail-card {
   background: #fff;
   border: 1px solid var(--line);
