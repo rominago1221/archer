@@ -12,6 +12,19 @@ function pickFirstRef(item) {
   return item?.legal_ref || item?.law_reference || item?.ref || null;
 }
 
+// Checklist lines need to stay single-line. Walk the text, keep the first
+// sentence, hard-cap at 80 chars with an ellipsis. Titles already short
+// pass through untouched.
+function clampChecklistText(s) {
+  if (!s) return '';
+  const clean = String(s).trim().replace(/\s+/g, ' ');
+  if (clean.length <= 80) return clean;
+  const firstSentence = clean.slice(0, 80).search(/[.!?]\s/);
+  if (firstSentence > 20) return clean.slice(0, firstSentence + 1);
+  const lastSpace = clean.slice(0, 79).lastIndexOf(' ');
+  return clean.slice(0, lastSpace > 30 ? lastSpace : 77) + '…';
+}
+
 function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
 
 export function deriveStrCard(caseDoc, strategy) {
@@ -50,13 +63,13 @@ export function deriveStrCard(caseDoc, strategy) {
   const args = Array.isArray(strategy?.arguments) ? strategy.arguments : [];
   if (args.length > 0) {
     checklist = args.slice(0, 3).map((a) => ({
-      text: a.title || a.argument || '',
+      text: clampChecklistText(a.title || a.argument || ''),
       ref: pickFirstRef(a),
     }));
   } else {
     const steps = Array.isArray(caseDoc?.ai_next_steps) ? caseDoc.ai_next_steps : [];
     checklist = steps.slice(0, 3).map((s) => ({
-      text: s.title || s.description || '',
+      text: clampChecklistText(s.title || s.description || ''),
       ref: pickFirstRef(s),
     }));
   }

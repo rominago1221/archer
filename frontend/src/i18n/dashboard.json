@@ -235,13 +235,14 @@
           "cta": "Télécharger la lettre"
         },
         "option_erecommande": {
-          "title": "Rejoindre la waitlist eRecommandé",
-          "tag": "BIENTÔT",
-          "desc": "Archer enverra ta lettre en <strong>recommandé électronique</strong> avec valeur juridique.",
-          "bullet_1": "Valeur juridique identique",
-          "bullet_2": "Envoi instantané",
-          "bullet_3": "Preuve horodatée",
-          "cta": "Rejoindre la waitlist",
+          "title": "Archer envoie en recommandé",
+          "tag": "9€",
+          "desc": "Archer imprime la lettre et l'<strong>expédie en courrier postal recommandé avec accusé de réception</strong>.",
+          "bullet_1": "Preuve légale d'envoi (AR)",
+          "bullet_2": "Expédition sous 24h",
+          "bullet_3": "Suivi temps réel",
+          "cta": "Envoyer le courrier",
+          "cta_soon": "Bientôt disponible",
           "joined": "Tu es sur la liste ✓"
         },
         "option_lawyer": {
@@ -571,13 +572,14 @@
           "cta": "Download the letter"
         },
         "option_erecommande": {
-          "title": "Join the eRecommandé waitlist",
-          "tag": "SOON",
-          "desc": "Archer will send your letter as an <strong>electronic registered mail</strong> with legal value.",
-          "bullet_1": "Same legal standing",
-          "bullet_2": "Instant delivery",
-          "bullet_3": "Timestamped proof",
-          "cta": "Join the waitlist",
+          "title": "Archer sends by registered mail",
+          "tag": "€9",
+          "desc": "Archer prints the letter and <strong>ships it by paper registered mail with acknowledgement of receipt</strong>.",
+          "bullet_1": "Legal proof of dispatch (AR)",
+          "bullet_2": "Shipped within 24h",
+          "bullet_3": "Real-time tracking",
+          "cta": "Send the letter",
+          "cta_soon": "Coming soon",
           "joined": "You're on the list ✓"
         },
         "option_lawyer": {
@@ -729,13 +731,14 @@
           "cta": "Brief downloaden"
         },
         "option_erecommande": {
-          "title": "Op de eRecommandé-wachtlijst",
-          "tag": "BINNENKORT",
-          "desc": "Archer verstuurt je brief als <strong>elektronisch aangetekend</strong> met juridische waarde.",
-          "bullet_1": "Dezelfde juridische waarde",
-          "bullet_2": "Direct verzonden",
-          "bullet_3": "Bewijs met tijdstempel",
-          "cta": "Op de wachtlijst",
+          "title": "Archer verstuurt aangetekend",
+          "tag": "€9",
+          "desc": "Archer drukt de brief af en <strong>verzendt per aangetekende post met ontvangstbevestiging</strong>.",
+          "bullet_1": "Juridisch bewijs van verzending (AR)",
+          "bullet_2": "Verzonden binnen 24u",
+          "bullet_3": "Real-time opvolging",
+          "cta": "Brief versturen",
+          "cta_soon": "Binnenkort beschikbaar",
           "joined": "Je staat op de lijst ✓"
         },
         "option_lawyer": {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import {
-  Check, Pen, Mail, Scale, Download, ArrowRight, Lock, Star, CheckCircle2,
+  Check, Pen, Mail, Scale, Download, Lock, Star, CheckCircle2,
 } from 'lucide-react';
 import { deriveStrCard } from '../../../utils/dashboard/v3/strCard';
 
@@ -149,7 +149,12 @@ export default function StrCard({
             </button>
           </Opt>
 
-          {/* OPTION 2 — eRECOMMANDÉ WAITLIST */}
+          {/* OPTION 2 — POSTAL REGISTERED MAIL (coming soon)
+              Product decision: the postal flow isn't wired backend yet, but
+              the marketing surface lives here so users see the future
+              option. The CTA is a disabled "Bientôt disponible" with a
+              title tooltip; clicking POSTs to the eRecommandé waitlist the
+              same way as before so early interest is captured. */}
           <Opt tone="mail">
             <div className="v1-opt-header">
               <div className="v1-opt-icon-wrap">
@@ -174,14 +179,14 @@ export default function StrCard({
               className="v1-opt-cta ghost"
               data-testid="act2-option-erecommande-cta"
               onClick={submitWaitlist}
-              disabled={waitlistState.submitting || waitlistState.joined}
-              style={waitlistState.joined ? { color: 'var(--green)', borderColor: '#bbf7d0', background: 'var(--green-50)' } : undefined}
+              disabled
+              aria-disabled="true"
+              title={t('v3.act2.option_erecommande.cta_soon')}
+              style={{ opacity: 0.55, cursor: 'not-allowed' }}
             >
-              {waitlistState.joined ? (
-                <><CheckCircle2 size={13} aria-hidden /> {t('v3.act2.option_erecommande.joined')}</>
-              ) : (
-                <>{t('v3.act2.option_erecommande.cta')} <ArrowRight size={13} aria-hidden /></>
-              )}
+              {waitlistState.joined
+                ? <><CheckCircle2 size={13} aria-hidden /> {t('v3.act2.option_erecommande.joined')}</>
+                : t('v3.act2.option_erecommande.cta_soon')}
             </button>
           </Opt>
 
