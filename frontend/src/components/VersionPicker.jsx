@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
+import { ChevronDown } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -119,7 +120,7 @@ export default function VersionPicker({ caseId, currentVersion, language,
   if ((currentVersion || 1) <= 1 && versions.length <= 1) return null;
 
   return (
-    <div data-testid="version-picker-wrapper" style={{ marginBottom: 14 }}>
+    <div data-testid="version-picker" style={{ marginBottom: 14 }}>
       <div ref={triggerRef} style={{ position: 'relative', display: 'inline-block' }}>
         <button
           data-testid="version-picker-trigger"
@@ -133,7 +134,7 @@ export default function VersionPicker({ caseId, currentVersion, language,
           }}
         >
           {triggerLabel}
-          <span style={{ fontSize: 10, opacity: 0.7 }}>\u25BC</span>
+          <ChevronDown size={12} style={{ opacity: 0.7 }} aria-hidden />
         </button>
 
         {open && (

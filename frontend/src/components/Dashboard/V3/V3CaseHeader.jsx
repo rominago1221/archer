@@ -32,7 +32,10 @@ const STEP_LABELS = {
   ],
 };
 
-const LOCKED_STEPS = new Set([4, 5]); // TODO(product): gate by user.plan
+const LOCKED_STEPS = new Set([4, 5]);
+// Any plan that isn't solo/pro is treated as free — covers null, undefined,
+// legacy empty string, and any future tier label we haven't wired yet.
+const UNLOCKED_PLANS = new Set(['solo', 'pro']);
 const NOW_SUFFIX = {
   fr: ' · NOW',
   en: ' · NOW',
@@ -144,7 +147,7 @@ export default function V3CaseHeader({
   const labels = STEP_LABELS[lang];
 
   const docCount = documentCount ?? (caseDoc?.document_count ?? 0);
-  const isFree = userPlan === 'free';
+  const isFree = !UNLOCKED_PLANS.has(String(userPlan || '').toLowerCase());
 
   return (
     <div className="case-header" data-testid="v3-case-header">

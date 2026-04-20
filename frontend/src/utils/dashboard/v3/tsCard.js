@@ -12,12 +12,19 @@ function dimensionLevel(value) {
   return 'low';
 }
 
-// Format an amount (number) as "€6 200" — space as thousand sep, no decimals.
+// Format an amount (number) as "€6 200" — regular space as thousand sep,
+// no decimals. fr-FR is more consistent than fr-BE across browsers, which
+// was rendering the narrow no-break space (U+202F) as invisible on Safari
+// and collapsing the digits to "€6" on some locales.
 function fmtEur(n) {
   if (n == null || !Number.isFinite(Number(n))) return '—';
   const abs = Math.abs(Math.round(Number(n)));
   const sign = Number(n) < 0 ? '−' : '';
-  return `${sign}€${abs.toLocaleString('fr-BE').replace(/\u202f/g, ' ')}`;
+  // Replace every non-ASCII space variant (202F, A0, 2009) with a plain space.
+  const formatted = abs
+    .toLocaleString('fr-FR')
+    .replace(/[\u00A0\u202F\u2009]/g, ' ');
+  return `${sign}€${formatted}`;
 }
 
 // Sparkline: 8 points over the last 7 days of risk_score_history.
