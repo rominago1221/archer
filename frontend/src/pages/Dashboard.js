@@ -509,13 +509,32 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* Spacer + New Case Button */}
+          {/* Spacer + New Case Button (v3: white + blue border, blue text) */}
           <div style={{ padding: 10 }}>
-            <button data-testid="new-case-btn" onClick={() => setShowOverlay(true)} style={{
-              width: '100%', padding: '10px 0', background: '#1a56db', color: '#fff',
-              border: 'none', borderRadius: 9, fontSize: 11, fontWeight: 600,
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            }}>
+            <button
+              data-testid="new-case-btn"
+              onClick={() => setShowOverlay(true)}
+              style={{
+                width: '100%', padding: '10px 0',
+                background: '#fff', color: '#1a56db',
+                border: '1px solid #dbeafe', borderRadius: 9,
+                fontSize: 11, fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                transition: 'all 0.15s',
+                boxShadow: '0 1px 2px rgba(26,86,219,0.04)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#eff6ff';
+                e.currentTarget.style.borderColor = '#1a56db';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(26,86,219,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#fff';
+                e.currentTarget.style.borderColor = '#dbeafe';
+                e.currentTarget.style.boxShadow = '0 1px 2px rgba(26,86,219,0.04)';
+              }}
+            >
               <Plus size={13} />{t.newCase}
             </button>
           </div>
