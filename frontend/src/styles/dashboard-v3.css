@@ -169,15 +169,15 @@
 
 /* ═══════════ CASE HEADER ═══════════ */
 /* Full-bleed white strip (matches .quickbar full-width) so the banner
- * extends edge-to-edge against the sidebar with no uncovered gap. The
- * inner container caps the content at 1440px + 20px padding, aligned
- * with .v3-body below. */
+ * extends edge-to-edge against the sidebar with no uncovered gap.
+ * Horizontal padding matches .v3-body so Act 1 card aligns under the
+ * title. No max-width — we use the full available main area. */
 .dashboard-v3 .case-header {
   background: #fff;
-  padding: 28px 20px 0;
+  padding: 28px 24px 0;
   border-bottom: 1px solid var(--line);
 }
-.dashboard-v3 .case-header-inner { max-width: 1440px; margin: 0 auto; }
+.dashboard-v3 .case-header-inner { width: 100%; }
 .dashboard-v3 .case-eyebrow-row {
   display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
 }
@@ -363,12 +363,16 @@
  * margin-bottom is generous so the content has breathing room above the
  * page fold. */
 .dashboard-v3 .v3-body {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 0 20px 48px;
+  /* No max-width: use the full main area (viewport minus the 240 px
+   * sidebar) so neither column feels cramped. Horizontal padding kept
+   * tight (20 px) so both the 1 fr main column and the 340 px rail
+   * actually breathe. */
+  width: 100%;
+  margin: 0;
+  padding: 0 24px 48px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 20px;
   align-items: start;
 }
 
