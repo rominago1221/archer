@@ -1,6 +1,11 @@
 // Derives { amount_at_stake, amount_max_risk, amount_potential_savings } for
 // the "ENJEU FINANCIER" card. Prefers backend-provided structured fields,
 // falls back to financial_exposure_detailed or financial_exposure string.
+//
+// parseAmount is defensive: it handles every separator convention the
+// backend / user text might use. Previous version collapsed the comma to
+// a dot unconditionally, so "6,200" (US thousand sep) parsed as 6.2 and
+// we showed "€6" instead of "€6 200". Fixed.
 const NUMERIC_RE = /-?\d[\d\s.,]*/;
 
 function parseAmount(raw) {
@@ -8,9 +13,51 @@ function parseAmount(raw) {
   if (typeof raw === 'number') return raw;
   const match = String(raw).match(NUMERIC_RE);
   if (!match) return null;
-  const cleaned = match[0].replace(/\s/g, '').replace(',', '.');
-  const n = parseFloat(cleaned);
-  return Number.isFinite(n) ? n : null;
+  let token = match[0].replace(/\s/g, '');
+  const negative = token.startsWith('-');
+  if (negative) token = token.slice(1);
+
+  const hasDot = token.includes('.');
+  const hasComma = token.includes(',');
+  let normalized;
+
+  if (hasDot && hasComma) {
+    // Both present → the LATER one is decimal, the earlier one is
+    // thousand separator. "6,200.50" (US) → 6200.50. "6.200,50" (EU)
+    // → 6200.50.
+    const lastDot = token.lastIndexOf('.');
+    const lastComma = token.lastIndexOf(',');
+    if (lastComma > lastDot) {
+      normalized = token.replace(/\./g, '').replace(',', '.');
+    } else {
+      normalized = token.replace(/,/g, '');
+    }
+  } else if (hasComma) {
+    // Only commas. Groups of 3 digits → thousand sep. Else decimal.
+    // "6,200" → 6200 (3-digit tail), "6,50" → 6.50 (2-digit tail).
+    const parts = token.split(',');
+    const last = parts[parts.length - 1];
+    if (parts.length > 2 || last.length === 3) {
+      normalized = token.replace(/,/g, '');
+    } else {
+      normalized = token.replace(',', '.');
+    }
+  } else if (hasDot) {
+    // Only dots. Same 3-digit rule: "6.200" → 6200, "6.50" → 6.50.
+    const parts = token.split('.');
+    const last = parts[parts.length - 1];
+    if (parts.length > 2 || last.length === 3) {
+      normalized = token.replace(/\./g, '');
+    } else {
+      normalized = token;
+    }
+  } else {
+    normalized = token;
+  }
+
+  const n = parseFloat(normalized);
+  if (!Number.isFinite(n)) return null;
+  return negative ? -n : n;
 }
 
 export function deriveAmounts(caseDoc) {
