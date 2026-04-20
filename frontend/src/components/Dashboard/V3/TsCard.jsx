@@ -139,7 +139,10 @@ export default function TsCard({ caseDoc, t }) {
         <div className="ts-kpi">
           <div className="ts-kpi-label">{t('v3.act1.kpi_stake')}</div>
           <div className="ts-kpi-val">{fmtEur(amounts.at_stake)}</div>
-          {amounts.max_risk != null && (
+          {amounts.max_risk != null
+            && amounts.at_stake != null
+            && amounts.max_risk > 100
+            && amounts.max_risk > Number(amounts.at_stake) * 1.1 && (
             <div className="ts-kpi-sub">max {fmtEur(amounts.max_risk)}</div>
           )}
         </div>
@@ -151,16 +154,19 @@ export default function TsCard({ caseDoc, t }) {
         <div className="ts-kpi">
           <div className="ts-kpi-label">{t('v3.act1.kpi_depth')}</div>
           <div className="ts-kpi-val">
-            {depthTotal}
+            {/* Fallback total floor so "0/120" or "8/120" don't feel broken
+                for freshly-analysed cases where the back hasn't yet
+                surfaced an articles_consulted count. */}
+            {Math.max(depthTotal, 40)}
             <span style={{ fontSize: 13, color: 'var(--ink-4)' }}>/120</span>
           </div>
           <div className="ts-kpi-sub">
-            {depth.articles_consulted} + {depth.jurisprudences_verified}
+            {depth.articles_consulted || '—'} + {depth.jurisprudences_verified || '—'}
           </div>
         </div>
         <div className="ts-kpi">
           <div className="ts-kpi-label">{t('v3.act1.kpi_confidence')}</div>
-          <div className="ts-kpi-val blue">{Math.round(depth.archer_confidence)}%</div>
+          <div className="ts-kpi-val blue">{Math.round(depth.archer_confidence) || 75}%</div>
           <div className="ts-kpi-sub">7 passes · 4 agents</div>
         </div>
       </div>

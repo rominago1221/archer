@@ -197,9 +197,14 @@ export default function CaseDetailV7() {
   const strategy = deriveStrategy(displayedCase, t, language);
   const documentCount = caseDoc.document_count ?? documents.length ?? 0;
 
+  // Case jurisdiction wins over the user's default for everything that
+  // resolves legal sources (.law-ref pills, findings, attack refs, etc.).
+  // A BE user viewing a US case must see Cornell / Justia, not ejustice.
+  const caseCountry = (displayedCase?.jurisdiction || displayedCase?.country || country || 'BE').toUpperCase();
+
   // Sprint 2 derivations
   const caseTypeV7 = mapBackendCaseType(displayedCase.type);
-  const opponentLabel = getOpponentLabel(caseTypeV7, country, language);
+  const opponentLabel = getOpponentLabel(caseTypeV7, caseCountry, language);
   const battle = deriveBattle(displayedCase);
   const { critical: criticalFindings, strong: strongFindings } = deriveFindings(displayedCase);
   const archerQuestions = deriveArcherQuestions(displayedCase, caseTypeV7, language);
@@ -449,7 +454,7 @@ export default function CaseDetailV7() {
               isOpen={openAccordions.has('arms')}
               onToggle={() => toggleAccordion('arms')}
             >
-              <ArmsStack findings={strongFindings} country={country} t={t} />
+              <ArmsStack findings={strongFindings} country={caseCountry} t={t} />
             </AccordionItem>
 
             <AccordionItem
@@ -463,7 +468,7 @@ export default function CaseDetailV7() {
               isOpen={openAccordions.has('critical')}
               onToggle={() => toggleAccordion('critical')}
             >
-              <CritBox findings={criticalFindings} country={country} t={t} />
+              <CritBox findings={criticalFindings} country={caseCountry} t={t} />
             </AccordionItem>
 
             <AccordionItem
@@ -477,7 +482,7 @@ export default function CaseDetailV7() {
               isOpen={openAccordions.has('anticipation')}
               onToggle={() => toggleAccordion('anticipation')}
             >
-              <AtkList caseDoc={displayedCase} language={language} country={country} t={t} />
+              <AtkList caseDoc={displayedCase} language={language} country={caseCountry} t={t} />
             </AccordionItem>
           </div>
 

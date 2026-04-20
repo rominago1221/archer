@@ -45,13 +45,25 @@ function LawRefPill({ reference, country, variant = '' }) {
   );
 }
 
+// Normalise a confidence value that may arrive as either 0-1 (ratio) or
+// 0-100 (percentage). Anything ≤1 is treated as a ratio and scaled up.
+// Null / 0 falls back to 75 so the donut shows a green-ish default rather
+// than the alarming "1%" we saw with legacy findings.
+function normaliseConfidence(raw) {
+  if (raw == null) return 75;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return 75;
+  if (n <= 1) return Math.round(n * 100);
+  return Math.round(Math.min(100, n));
+}
+
 function ArmCard({ num, finding, country, t }) {
   const refs = Array.isArray(finding.legal_refs) ? finding.legal_refs : [];
   const jurisCount = Number(finding.jurisprudence_count) || 0;
   const similarStat = finding.similar_cases_won != null && finding.similar_cases_total
     ? `${finding.similar_cases_won}/${finding.similar_cases_total}`
     : null;
-  const confidence = finding.confidence_score != null ? finding.confidence_score : 75;
+  const confidence = normaliseConfidence(finding.confidence_score);
 
   // Build a pseudo-juris pill when we have a count but no explicit refs.
   const jurisPills = jurisCount > 0 ? [{

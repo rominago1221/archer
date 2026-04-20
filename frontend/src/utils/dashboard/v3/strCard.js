@@ -19,10 +19,29 @@ export function deriveStrCard(caseDoc, strategy) {
   const confidence = Math.round(depth.archer_confidence || 0);
 
   // ── Title / subtitle ──────────────────────────────────────────────────
-  const title = strategy?.intro_text
+  // Prefer short strategy titles over paragraph-length summaries. We walk a
+  // priority list and cap the final string at ~80 chars so the 28px headline
+  // never wraps to 3+ lines like the old ai_summary fallback did.
+  const TITLE_MAX = 90;
+  function clampTitle(s) {
+    if (!s) return null;
+    const clean = String(s).trim().replace(/\s+/g, ' ');
+    if (clean.length <= TITLE_MAX) return clean;
+    // Cut on the first sentence-ending punctuation if possible, else hard cut + ellipsis.
+    const sentenceEnd = clean.slice(0, TITLE_MAX).lastIndexOf('. ');
+    if (sentenceEnd > 30) return clean.slice(0, sentenceEnd + 1);
+    return clean.slice(0, TITLE_MAX - 1).trimEnd() + '…';
+  }
+
+  const firstStep = Array.isArray(caseDoc?.ai_next_steps) && caseDoc.ai_next_steps[0];
+  const title = clampTitle(
+    caseDoc?.strategy_title
+    || caseDoc?.strategy?.title
+    || (firstStep && (firstStep.title || firstStep.description))
+    || strategy?.intro_text
     || caseDoc?.key_insight
     || caseDoc?.ai_summary
-    || null;
+  );
 
   const jurisCount = depth.jurisprudences_verified || 0;
 
