@@ -238,7 +238,6 @@
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.18s;
-  min-height: 60px;
 }
 .dashboard-v3 .tl-step:hover { border-color: var(--archer-blue-100); transform: translateY(-2px); }
 .dashboard-v3 .tl-step.done { background: #fff; border-color: var(--line); }
@@ -373,14 +372,20 @@
 .dashboard-v3 .v3-main > * + * { margin-top: 0; }
 
 .dashboard-v3 .v3-rail {
-  position: sticky;
-  top: 72px;
   align-self: start;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  max-height: calc(100vh - 88px);
-  overflow-y: auto;
+  min-width: 0;
+}
+/* Only stick when the rail is short enough to fit the viewport.
+ * When it's taller (7+ cards on small screens), it scrolls with the
+ * main column so no card gets cut off and no internal slider appears. */
+@media (min-height: 1100px) {
+  .dashboard-v3 .v3-rail {
+    position: sticky;
+    top: 72px;
+  }
 }
 
 /* ═══════════ ACT DIVIDERS (01/02/03 badges) ═══════════ */
