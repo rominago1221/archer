@@ -6,9 +6,6 @@ import { useUiLanguage } from '../hooks/useUiLanguage';
 import { useDashboardT } from '../hooks/useDashboardT';
 import CaseHeader from '../components/Dashboard/Sprint1/CaseHeader';
 import ProgressTimeline from '../components/Dashboard/Sprint1/ProgressTimeline';
-import StrategySection from '../components/Dashboard/Sprint1/StrategySection';
-import GenerateLetterCTA from '../components/Dashboard/Sprint1/GenerateLetterCTA';
-import SendLetterOptions from '../components/SendLetterOptions';
 import BattleSection from '../components/Dashboard/Sprint2/BattleSection';
 import FindingsSection from '../components/Dashboard/Sprint2/FindingsSection';
 import DocumentsSection from '../components/Dashboard/Sprint2/DocumentsSection';
@@ -38,6 +35,7 @@ import { getOpponentLabel } from '../utils/dashboard/opponent';
 import { deriveLegalNews } from '../utils/dashboard/legalNews';
 import { deriveSimilarCases } from '../utils/dashboard/similarCases';
 import TsCard from '../components/Dashboard/V3/TsCard';
+import StrCard from '../components/Dashboard/V3/StrCard';
 import '../styles/dashboard-v3.css';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -310,33 +308,15 @@ export default function CaseDetailV7() {
             <div className="act-eyebrow">{t('v3.act2.eyebrow')}</div>
             <div className="act-divider-line" />
           </div>
-          <div className="v3-placeholder" data-testid="act2-placeholder">
-            StrCard — commit 04
-          </div>
-
-        <StrategySection strategy={strategy} language={language} />
-
-        <GenerateLetterCTA
-          onClick={() => setPopupOpen(true)}
-          language={language}
-          label={language === 'fr' ? 'PROCHAINE ÉTAPE' : language === 'nl' ? 'VOLGENDE STAP' : language === 'de' ? 'NÄCHSTER SCHRITT' : 'NEXT STEP'}
-          title={language === 'fr' ? 'Envoyer ma lettre' : language === 'nl' ? 'Mijn brief versturen' : language === 'de' ? 'Brief versenden' : 'Send my letter'}
-          subtitle={language === 'fr' ? 'Gratuit · eRecommandé · Avocat'
-            : language === 'nl' ? 'Gratis · eRecommandé · Advocaat'
-            : language === 'de' ? 'Gratis · eRecommandé · Anwalt'
-            : 'Free · eRegistered · Attorney'}
-        />
-
-        <SendLetterOptions
-          isOpen={popupOpen}
-          onClose={() => setPopupOpen(false)}
-          caseDoc={caseDoc}
-          language={language}
-          onChoose={(choice) => {
-            setPopupOpen(false);
-            handleChoiceSelect(choice);
-          }}
-        />
+          <StrCard
+            caseDoc={displayedCase}
+            strategy={strategy}
+            userPlan={user?.plan}
+            language={language}
+            t={t}
+            onDiy={() => handleChoiceSelect('basic')}
+            onAttorney={() => handleChoiceSelect('signed')}
+          />
 
         {/* Generated letter display */}
         {letterGenerating && (
