@@ -12,17 +12,27 @@ function pickFirstRef(item) {
   return item?.legal_ref || item?.law_reference || item?.ref || null;
 }
 
-// Checklist lines need to stay single-line. Walk the text, keep the first
-// sentence, hard-cap at 80 chars with an ellipsis. Titles already short
-// pass through untouched.
+// Checklist lines stay punchy: keep the first sentence or comma clause if
+// the input is long, otherwise pass through. No ellipsis — the user reads
+// a complete phrase even when the source was wordy. Targets < 80 chars
+// when possible, but never truncates mid-word.
 function clampChecklistText(s) {
   if (!s) return '';
   const clean = String(s).trim().replace(/\s+/g, ' ');
   if (clean.length <= 80) return clean;
-  const firstSentence = clean.slice(0, 80).search(/[.!?]\s/);
-  if (firstSentence > 20) return clean.slice(0, firstSentence + 1);
-  const lastSpace = clean.slice(0, 79).lastIndexOf(' ');
-  return clean.slice(0, lastSpace > 30 ? lastSpace : 77) + '…';
+  // First sentence wins.
+  const firstSentence = clean.search(/[.!?](\s|$)/);
+  if (firstSentence > 20 && firstSentence < 100) {
+    return clean.slice(0, firstSentence + 1);
+  }
+  // Else try first comma clause.
+  const firstComma = clean.indexOf(', ');
+  if (firstComma > 20 && firstComma < 90) {
+    return clean.slice(0, firstComma);
+  }
+  // As a last resort return the whole string — let it wrap. Better a
+  // two-line item than a truncated "…" dangling phrase.
+  return clean;
 }
 
 function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }

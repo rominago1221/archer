@@ -102,6 +102,23 @@ function Dimension({ dim, t }) {
   );
 }
 
+// Keep the verdict tagline to ~2 short sentences. The legacy ai_summary
+// is often a 5-line paragraph; the mockup wants one tight insight line.
+function shortTagline(raw) {
+  if (!raw) return null;
+  const clean = String(raw).trim().replace(/\s+/g, ' ');
+  if (clean.length <= 200) return clean;
+  // Keep the first 2 sentences (split on `. ` / `! ` / `? `).
+  const sentences = clean.match(/[^.!?]+[.!?]+/g) || [clean];
+  let acc = '';
+  for (const s of sentences) {
+    if ((acc + s).length > 240) break;
+    acc += s;
+    if (acc.length > 140) break; // stop after one good sentence
+  }
+  return acc.trim() || clean.slice(0, 200).trim();
+}
+
 export default function TsCard({ caseDoc, t }) {
   const { score, band, sparkline, amounts, depth, dimensions } = deriveTsCard(caseDoc);
 
@@ -128,7 +145,7 @@ export default function TsCard({ caseDoc, t }) {
           </div>
           <h3 className="ts-verdict-title">{verdictTitle}</h3>
           {caseDoc?.ai_summary && (
-            <p className="ts-verdict-p">{caseDoc.ai_summary}</p>
+            <p className="ts-verdict-p">{shortTagline(caseDoc.ai_summary)}</p>
           )}
           <Sparkline points={sparkline.points} delta={sparkline.delta} t={t} />
         </div>

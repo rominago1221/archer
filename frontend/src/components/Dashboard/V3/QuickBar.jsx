@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Mail } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import ExplainSimplyButton from '../ExplainSimplyButton';
 
 // Sticky top bar for /cases/:id. Breadcrumb + version pill + 2 CTAs.
@@ -47,15 +47,14 @@ export default function QuickBar({
         <span className="breadcrumb-current">{title}</span>
       </div>
       <div className="quick-actions">
-        <button
-          type="button"
+        <span
           className="version-pill"
-          onClick={onOpenVersionPicker}
           data-testid="quickbar-version-pill"
+          role="status"
+          aria-label={versionLabel}
         >
           {versionLabel}
-          <ChevronDown size={10} strokeWidth={2.5} aria-hidden />
-        </button>
+        </span>
         <ExplainSimplyButton
           caseId={caseId}
           caseDoc={caseDoc}

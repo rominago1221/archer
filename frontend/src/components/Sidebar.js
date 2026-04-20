@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  LayoutDashboard, FolderOpen, FileText, MessageCircle, Users, Settings,
+  LayoutDashboard, FolderOpen, FileText, MessageCircle, Phone, Settings,
   Search, LogOut, Plus, ShieldCheck,
 } from 'lucide-react';
 import { useUiLanguage } from '../hooks/useUiLanguage';
@@ -79,7 +79,17 @@ function MiniCase({ c, active, lang, onClick }) {
   const typeLabel = CASE_TYPE_LABEL[lang]?.[typeKey] || CASE_TYPE_LABEL.en[typeKey] || typeKey;
   const emoji = CASE_EMOJI[typeKey] || CASE_EMOJI.other;
   const days = daysUntil(c.deadline);
-  const deadlineTone = days != null && days <= 3 ? 'red' : days != null && days <= 14 ? 'amber' : 'green';
+  const isWon = String(c.status || '').toLowerCase() === 'won';
+  // Status pill tone: won → green, otherwise based on urgency.
+  let pillTone = null;
+  let pillLabel = null;
+  if (isWon) {
+    pillTone = 'green';
+    pillLabel = lang === 'fr' ? 'Gagné' : lang === 'nl' ? 'Gewonnen' : 'Won';
+  } else if (days != null) {
+    pillTone = days <= 3 ? 'red' : days <= 14 ? 'amber' : 'green';
+    pillLabel = days <= 0 ? '0j' : `${days}j`;
+  }
 
   return (
     <button
@@ -88,19 +98,17 @@ function MiniCase({ c, active, lang, onClick }) {
       onClick={onClick}
       data-testid={`sidebar-case-${c.case_id || c.id}`}
     >
-      <div className={`case-mini-dot ${dotTone}`} />
-      <div className="case-mini-txt">
+      <div className="case-mini-row-top">
+        <div className={`case-mini-dot ${dotTone}`} />
         <div className="case-mini-name">{c.title || '—'}</div>
-        <div className="case-mini-meta">
-          <span className="case-mini-score">{c.risk_score || '—'}</span>
-          {' · '}
-          <span>{emoji} {typeLabel}</span>
-          {days != null && (
-            <span className={`case-mini-deadline ${deadlineTone}`}>
-              {' · '}{days <= 0 ? '0j' : `${days}j`}
-            </span>
-          )}
-        </div>
+      </div>
+      <div className="case-mini-row-bottom">
+        <span className="case-mini-score">{c.risk_score || '—'}</span>
+        <span className="case-mini-sep">·</span>
+        <span className="case-mini-type">{emoji} {typeLabel}</span>
+        {pillLabel && (
+          <span className={`case-mini-pill ${pillTone}`}>{pillLabel}</span>
+        )}
       </div>
     </button>
   );
@@ -161,13 +169,14 @@ const Sidebar = () => {
   const activeCount = cases.filter((c) => c.status !== 'closed' && c.status !== 'archived').length;
   const documentsPath = location.pathname.startsWith('/documents');
 
+  // 6 items per mockup — no standalone "Upload" row; the "+ Ouvrir un
+  // nouveau dossier" button at the bottom of the sidebar takes that role.
   const navItems = [
     { path: '/dashboard', label: navLabels.dashboard, icon: LayoutDashboard },
     { path: '/cases', label: navLabels.cases, icon: FolderOpen, count: activeCount > 0 ? activeCount : null },
     { path: '/documents', label: navLabels.documents, icon: FileText, active: documentsPath },
-    { path: '/upload', label: navLabels.upload, icon: Plus },
     { path: '/chat', label: navLabels.chat, icon: MessageCircle },
-    { path: '/lawyers', label: navLabels.lawyers, icon: Users },
+    { path: '/lawyers', label: navLabels.lawyers, icon: Phone },
     { path: '/settings', label: navLabels.settings, icon: Settings },
   ];
 

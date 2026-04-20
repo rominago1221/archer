@@ -278,24 +278,13 @@ export default function CaseDetailV7() {
         onLockClick={() => navigate('/plans')}
       />
 
-      {/* Banners + paid Live Counsel flow — kept as flush-width blocks under the header. */}
+      {/* Banners + paid Live Counsel flow — kept as flush-width blocks under the header.
+          The standalone <VersionPicker> block was removed: the QuickBar already
+          surfaces "V{N} LATEST", and the old pill below duplicated it. Users
+          viewing a historical refinement version would see the pill both places
+          before. Behaviour still works on the QuickBar's version-pill click
+          (scroll target removed — it now just shows the version label). */}
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '16px 32px 0' }}>
-        <VersionPicker
-          caseId={caseId}
-          currentVersion={caseDoc.current_analysis_version || 1}
-          viewingVersion={viewingVersion}
-          language={language}
-          onChangeVersion={(version, analysisSnapshot) => {
-            if (!analysisSnapshot) {
-              setViewingVersion(null);
-              setViewedAnalysis(null);
-            } else {
-              setViewingVersion(version);
-              setViewedAnalysis(analysisSnapshot);
-            }
-          }}
-        />
-
         <JurisdictionMismatchBanner
           caseDoc={caseDoc}
           language={language}

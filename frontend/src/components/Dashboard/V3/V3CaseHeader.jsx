@@ -147,7 +147,11 @@ export default function V3CaseHeader({
   const labels = STEP_LABELS[lang];
 
   const docCount = documentCount ?? (caseDoc?.document_count ?? 0);
-  const isFree = !UNLOCKED_PLANS.has(String(userPlan || '').toLowerCase());
+  // Steps 4 + 5 are ALWAYS locked in the UI — they represent the paid
+  // "meet / video" tier and the subscribe-to-unlock hover overlay is
+  // part of the conversion path. Users on solo/pro still see the lock
+  // visually; the CTA itself lives in the rail's Lawyer card.
+  void userPlan; void UNLOCKED_PLANS;
 
   return (
     <div className="case-header" data-testid="v3-case-header">
@@ -170,7 +174,7 @@ export default function V3CaseHeader({
           <div className="timeline-inner">
             {labels.map((label, i) => {
               const n = i + 1;
-              const isLocked = LOCKED_STEPS.has(n) && isFree;
+              const isLocked = LOCKED_STEPS.has(n);
               const state = isLocked
                 ? 'locked'
                 : n < currentStep ? 'done'
