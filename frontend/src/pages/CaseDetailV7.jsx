@@ -38,6 +38,7 @@ import { mapBackendCaseType } from '../utils/dashboard/caseType';
 import { getOpponentLabel } from '../utils/dashboard/opponent';
 import { deriveLegalNews } from '../utils/dashboard/legalNews';
 import { deriveSimilarCases } from '../utils/dashboard/similarCases';
+import '../styles/dashboard-v3.css';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -237,15 +238,9 @@ export default function CaseDetailV7() {
   };
 
   return (
-    <div
-      data-testid="case-detail-v7"
-      style={{
-        background: '#f4f4f1',
-        minHeight: '100vh',
-        padding: '32px 40px',
-      }}
-    >
-      <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
+    <div data-testid="case-detail-v7" className="dashboard-v3">
+      {/* ── Legacy header area: VersionPicker + CaseHeader + banners stay above the acts ── */}
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '24px 32px 0' }}>
         <VersionPicker
           caseId={caseId}
           currentVersion={caseDoc.current_analysis_version || 1}
@@ -294,10 +289,34 @@ export default function CaseDetailV7() {
             language={language}
           />
         )}
+      </div>
 
-        <ProgressTimeline currentStep={progressStep} language={language} />
+      {/* ═══════════ V3 BODY — 2 columns: main + right rail ═══════════ */}
+      <div className="v3-body">
+        <div className="v3-main">
+          {/* ── ACT 1 · TA SITUATION ─────────────────────────────────── */}
+          <div className="act-divider" data-testid="act1-divider">
+            <div className="act-num">ACT 1</div>
+            <div className="act-eyebrow">{t('v3.act1.eyebrow')}</div>
+            <div className="act-divider-line" />
+          </div>
+          <div className="v3-placeholder" data-testid="act1-placeholder">
+            TsCard — commit 03
+          </div>
+
+          <ProgressTimeline currentStep={progressStep} language={language} />
 
         <HeroSection caseDoc={caseDoc} country={country} language={language} />
+
+          {/* ── ACT 2 · LA STRATÉGIE ─────────────────────────────────── */}
+          <div className="act-divider" data-testid="act2-divider">
+            <div className="act-num">ACT 2</div>
+            <div className="act-eyebrow">{t('v3.act2.eyebrow')}</div>
+            <div className="act-divider-line" />
+          </div>
+          <div className="v3-placeholder" data-testid="act2-placeholder">
+            StrCard — commit 04
+          </div>
 
         <StrategySection strategy={strategy} language={language} />
 
@@ -389,6 +408,19 @@ export default function CaseDetailV7() {
             )}
           </div>
         )}
+
+          {/* ── ACT 3 · TOUT LE DÉTAIL ───────────────────────────────── */}
+          <div className="act-divider" data-testid="act3-divider">
+            <div className="act-num">ACT 3</div>
+            <div className="act-eyebrow">{t('v3.act3.eyebrow')}</div>
+            <div className="act-divider-line" />
+            <button type="button" className="act-divider-expand" data-testid="act3-expand-all">
+              {t('v3.act3.expand_all')}
+            </button>
+          </div>
+          <div className="v3-placeholder" data-testid="act3-placeholder">
+            4 accordions — commits 05 · 06 · 07 · 08
+          </div>
 
         {/* ── Sprint 2 sections ──────────────────────────────────────── */}
         <BattleSection
@@ -501,6 +533,13 @@ export default function CaseDetailV7() {
 
         {/* Bottom sentinel for scrolled_to_bottom tracking */}
         <div ref={bottomSentinelRef} data-testid="scroll-sentinel" style={{ height: 1 }} />
+        </div>
+        {/* ═══════════ RIGHT RAIL ═══════════ */}
+        <aside className="v3-rail" data-testid="v3-rail">
+          <div className="v3-placeholder" data-testid="rail-placeholder">
+            Right rail — commit 09
+          </div>
+        </aside>
       </div>
     </div>
   );

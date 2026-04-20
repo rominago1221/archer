@@ -6,8 +6,8 @@ const SUPPORTED = ['en', 'fr', 'es', 'nl'];
 function resolveLang(language) {
   if (!language) return 'en';
   const short = String(language).slice(0, 2).toLowerCase();
-  // Sprint 1 only ships fr+en; fall back to en for unsupported languages.
   if (short === 'fr') return 'fr';
+  if (short === 'nl') return 'nl';
   if (short === 'en') return 'en';
   if (SUPPORTED.includes(short)) return short;
   return 'en';

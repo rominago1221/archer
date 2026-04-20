@@ -188,6 +188,11 @@
       "trust_gdpr": "Conforme RGPD",
       "trust_encryption": "Données chiffrées AES-256",
       "trust_attorneys": "Avocats agréés BE & US"
+    },
+    "v3": {
+      "act1": { "eyebrow": "OÙ TU EN ES" },
+      "act2": { "eyebrow": "LE PLAN D'ARCHER" },
+      "act3": { "eyebrow": "TOUT LE DÉTAIL", "expand_all": "TOUT OUVRIR", "collapse_all": "TOUT FERMER" }
     }
   },
   "en": {
@@ -378,6 +383,11 @@
       "trust_gdpr": "GDPR compliant",
       "trust_encryption": "AES-256 encrypted",
       "trust_attorneys": "Certified BE & US attorneys"
+    },
+    "v3": {
+      "act1": { "eyebrow": "WHERE YOU STAND" },
+      "act2": { "eyebrow": "ARCHER'S PLAN" },
+      "act3": { "eyebrow": "ALL THE DETAIL", "expand_all": "EXPAND ALL", "collapse_all": "COLLAPSE ALL" }
     }
   }
 }
