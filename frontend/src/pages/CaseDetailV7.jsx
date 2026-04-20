@@ -39,7 +39,8 @@ import AccordionItem from '../components/Dashboard/V3/AccordionItem';
 import BattleBlock from '../components/Dashboard/V3/BattleBlock';
 import ArmsStack from '../components/Dashboard/V3/ArmsStack';
 import CritBox from '../components/Dashboard/V3/CritBox';
-import { Swords, Sword, AlertTriangle } from 'lucide-react';
+import AtkList from '../components/Dashboard/V3/AtkList';
+import { Swords, Sword, AlertTriangle, Target } from 'lucide-react';
 import '../styles/dashboard-v3.css';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -456,6 +457,20 @@ export default function CaseDetailV7() {
               onToggle={() => toggleAccordion('critical')}
             >
               <CritBox findings={criticalFindings} country={country} t={t} />
+            </AccordionItem>
+
+            <AccordionItem
+              id="anticipation"
+              iconTone="amber"
+              Icon={Target}
+              title={t('v3.act3.anticipation.title')}
+              sub={t('v3.act3.anticipation.sub')}
+              badgeTone="amber"
+              badgeText={t('v3.act3.anticipation.threat_mid')}
+              isOpen={openAccordions.has('anticipation')}
+              onToggle={() => toggleAccordion('anticipation')}
+            >
+              <AtkList caseDoc={displayedCase} language={language} country={country} t={t} />
             </AccordionItem>
           </div>
 

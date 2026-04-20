@@ -935,7 +935,185 @@
   border-top: 1px dashed #fecaca;
 }
 
-/* ═══════════ PLACEHOLDER (commits 08-09 will replace these) ═══════════ */
+/* ═══════════ ANTICIPATION / ATK (act3.4) ═══════════ */
+.dashboard-v3 .atk-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--bg-soft) 0%, #fff 100%);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+.dashboard-v3 .atk-stat { display: flex; flex-direction: column; gap: 3px; padding: 0 8px; }
+.dashboard-v3 .atk-stat + .atk-stat { border-left: 1px solid var(--line); }
+.dashboard-v3 .atk-stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px; font-weight: 700; color: var(--ink-4);
+  letter-spacing: 0.7px;
+}
+.dashboard-v3 .atk-stat-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 17px; font-weight: 700; color: var(--ink);
+  letter-spacing: -0.6px; line-height: 1.1;
+}
+.dashboard-v3 .atk-stat-val.green { color: var(--green); }
+.dashboard-v3 .atk-stat-val.amber { color: var(--amber); }
+
+.dashboard-v3 .atk-list { display: flex; flex-direction: column; gap: 14px; }
+.dashboard-v3 .atk-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+.dashboard-v3 .atk-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  border-color: var(--archer-blue-100);
+}
+.dashboard-v3 .atk-card-head {
+  padding: 12px 16px;
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dashboard-v3 .atk-card-num {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: -0.3px;
+}
+.dashboard-v3 .atk-card-head-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dashboard-v3 .atk-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 1px;
+}
+.dashboard-v3 .atk-title {
+  font-size: 14px; font-weight: 700; color: var(--ink);
+  letter-spacing: -0.3px; line-height: 1.3;
+}
+.dashboard-v3 .atk-threat-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 100px;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.dashboard-v3 .atk-threat-badge.low  { color: var(--green); background: var(--green-50); border-color: var(--green-100); }
+.dashboard-v3 .atk-threat-badge.mid  { color: var(--amber); background: var(--amber-50); border-color: var(--amber-100); }
+.dashboard-v3 .atk-threat-badge.high { color: var(--red);   background: var(--red-50);   border-color: #fecaca; }
+
+.dashboard-v3 .atk-duel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+}
+.dashboard-v3 .atk-duel::before {
+  content: '';
+  position: absolute;
+  top: 16px; bottom: 16px;
+  left: 50%;
+  width: 1px;
+  background: var(--line);
+}
+.dashboard-v3 .atk-duel-side {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.dashboard-v3 .atk-duel-side.attack  { background: linear-gradient(180deg, var(--red-50) 0%, rgba(254,242,242,0.2) 100%); }
+.dashboard-v3 .atk-duel-side.defense { background: linear-gradient(180deg, var(--green-50) 0%, rgba(240,253,244,0.2) 100%); }
+.dashboard-v3 .atk-duel-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.8px;
+  width: fit-content;
+}
+.dashboard-v3 .atk-duel-label.attack  { color: var(--red); }
+.dashboard-v3 .atk-duel-label.defense { color: var(--green); }
+.dashboard-v3 .atk-quote {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  font-style: italic;
+  padding-left: 10px;
+  border-left: 2px solid #fca5a5;
+}
+.dashboard-v3 .atk-quote::before { content: '« '; color: var(--red); font-weight: 700; font-style: normal; opacity: 0.7; }
+.dashboard-v3 .atk-quote::after  { content: ' »'; color: var(--red); font-weight: 700; font-style: normal; opacity: 0.7; }
+.dashboard-v3 .atk-response {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  padding-left: 10px;
+  border-left: 2px solid #86efac;
+}
+.dashboard-v3 .atk-response strong { color: var(--ink); font-weight: 700; }
+.dashboard-v3 .atk-response em { font-style: italic; color: var(--ink-2); }
+.dashboard-v3 .atk-refs { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: auto; }
+
+.dashboard-v3 .atk-footer {
+  padding: 10px 16px;
+  background: #fff;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dashboard-v3 .atk-footer-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.dashboard-v3 .atk-footer-left strong { color: var(--green); font-weight: 700; }
+.dashboard-v3 .atk-footer-force {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.dashboard-v3 .atk-force-bar {
+  width: 80px; height: 5px;
+  background: var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.dashboard-v3 .atk-force-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green-bright), var(--green));
+  border-radius: 3px;
+}
+.dashboard-v3 .atk-force-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700;
+  color: var(--green);
+  letter-spacing: -0.3px;
+  min-width: 34px;
+  text-align: right;
+}
+
+/* ═══════════ PLACEHOLDER (commit 09 will replace this) ═══════════ */
 .dashboard-v3 .v3-placeholder {
   background: #fff;
   border: 1px dashed var(--line-2);
