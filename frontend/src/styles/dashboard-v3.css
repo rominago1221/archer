@@ -377,38 +377,58 @@
   overflow-y: auto;
 }
 
-/* ═══════════ ACT DIVIDERS ═══════════ */
+/* ═══════════ ACT DIVIDERS (01/02/03 badges) ═══════════ */
 .dashboard-v3 .act-divider {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 8px 0 4px;
-  margin-top: 12px;
+  gap: 16px;
+  margin: 40px 0 20px;
 }
-.dashboard-v3 .act-divider:first-child { margin-top: 0; }
+.dashboard-v3 .act-divider:first-child { margin-top: 8px; }
 
-.dashboard-v3 .act-num {
+.dashboard-v3 .act-divider-num {
+  flex-shrink: 0;
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
   font-weight: 700;
-  color: var(--archer-blue);
-  letter-spacing: 1.4px;
-  padding: 5px 11px;
-  background: var(--archer-blue-50);
-  border-radius: 100px;
-  white-space: nowrap;
+  font-size: 15px;
+  letter-spacing: -0.5px;
+  color: #fff;
+  transition: all 0.2s;
+}
+.dashboard-v3 .act-divider-num.a1 {
+  background: linear-gradient(135deg, var(--archer-blue) 0%, var(--archer-blue-dark) 100%);
+  box-shadow: 0 4px 14px rgba(26, 86, 219, 0.3);
+}
+.dashboard-v3 .act-divider-num.a2 {
+  background: linear-gradient(135deg, var(--archer-blue) 0%, var(--archer-blue-light) 100%);
+  box-shadow: 0 4px 14px rgba(26, 86, 219, 0.35);
+}
+.dashboard-v3 .act-divider-num.a3 {
+  background: linear-gradient(135deg, var(--archer-blue-light) 0%, var(--archer-blue) 100%);
+  box-shadow: 0 4px 14px rgba(26, 86, 219, 0.3);
 }
 
-.dashboard-v3 .act-eyebrow {
+.dashboard-v3 .act-divider-txt { flex: 1; min-width: 0; }
+.dashboard-v3 .act-divider-eyebrow {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
-  color: var(--ink-3);
-  letter-spacing: 1.1px;
-  text-transform: uppercase;
+  color: var(--ink-4);
+  letter-spacing: 1.2px;
+  margin-bottom: 2px;
 }
-
-.dashboard-v3 .act-divider-line {
+.dashboard-v3 .act-divider-title {
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+}
+.dashboard-v3 .act-divider-rule {
   flex: 1;
   height: 1px;
   background: var(--line);
@@ -416,16 +436,19 @@
 
 .dashboard-v3 .act-divider-expand {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
-  color: var(--ink-3);
-  letter-spacing: 0.8px;
+  color: var(--ink-4);
+  letter-spacing: 0.5px;
   padding: 5px 10px;
   background: transparent;
   border: 1px solid var(--line);
   border-radius: 100px;
   cursor: pointer;
   transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 .dashboard-v3 .act-divider-expand:hover {
   border-color: var(--archer-blue);

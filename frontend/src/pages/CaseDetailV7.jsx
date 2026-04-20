@@ -312,17 +312,23 @@ export default function CaseDetailV7() {
         <div className="v3-main">
           {/* ── ACT 1 · TA SITUATION ─────────────────────────────────── */}
           <div className="act-divider" data-testid="act1-divider">
-            <div className="act-num">ACT 1</div>
-            <div className="act-eyebrow">{t('v3.act1.eyebrow')}</div>
-            <div className="act-divider-line" />
+            <div className="act-divider-num a1">01</div>
+            <div className="act-divider-txt">
+              <div className="act-divider-eyebrow">{t('v3.act1.eyebrow')}</div>
+              <div className="act-divider-title">{t('v3.act1.title')}</div>
+            </div>
+            <div className="act-divider-rule" />
           </div>
           <TsCard caseDoc={displayedCase} t={t} />
 
           {/* ── ACT 2 · LA STRATÉGIE ─────────────────────────────────── */}
           <div className="act-divider" data-testid="act2-divider">
-            <div className="act-num">ACT 2</div>
-            <div className="act-eyebrow">{t('v3.act2.eyebrow')}</div>
-            <div className="act-divider-line" />
+            <div className="act-divider-num a2">02</div>
+            <div className="act-divider-txt">
+              <div className="act-divider-eyebrow">{t('v3.act2.eyebrow')}</div>
+              <div className="act-divider-title">{t('v3.act2.title')}</div>
+            </div>
+            <div className="act-divider-rule" />
           </div>
           <StrCard
             caseDoc={displayedCase}
@@ -403,9 +409,12 @@ export default function CaseDetailV7() {
 
           {/* ── ACT 3 · TOUT LE DÉTAIL ───────────────────────────────── */}
           <div className="act-divider" data-testid="act3-divider">
-            <div className="act-num">ACT 3</div>
-            <div className="act-eyebrow">{t('v3.act3.eyebrow')}</div>
-            <div className="act-divider-line" />
+            <div className="act-divider-num a3">03</div>
+            <div className="act-divider-txt">
+              <div className="act-divider-eyebrow">{t('v3.act3.eyebrow')}</div>
+              <div className="act-divider-title">{t('v3.act3.title')}</div>
+            </div>
+            <div className="act-divider-rule" />
             <button
               type="button"
               className="act-divider-expand"
