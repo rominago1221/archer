@@ -1450,6 +1450,285 @@
   padding: 16px 18px;
   transition: all 0.2s;
 }
+.dashboard-v3 .rail-card-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+.dashboard-v3 .rail-card-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 0.6px;
+}
+
+/* ─── Documents rail ─── */
+.dashboard-v3 .doc-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.dashboard-v3 .doc-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  transition: all 0.15s;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+  text-align: left;
+}
+.dashboard-v3 .doc-item:hover { border-color: var(--archer-blue-100); transform: translateX(2px); }
+.dashboard-v3 .doc-icon {
+  width: 30px; height: 30px;
+  background: var(--red-50);
+  color: var(--red);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.dashboard-v3 .doc-name {
+  font-size: 12px; font-weight: 600; color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dashboard-v3 .doc-meta {
+  font-size: 10.5px; color: var(--ink-4);
+  margin-top: 1px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.dashboard-v3 .doc-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  color: var(--green);
+  padding: 2px 6px;
+  background: var(--green-50);
+  border-radius: 100px;
+  letter-spacing: 0.4px;
+  flex-shrink: 0;
+}
+.dashboard-v3 .doc-add {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px;
+  border: 1px dashed var(--line-2);
+  background: #fff;
+  border-radius: 10px;
+  font-size: 12px; font-weight: 600;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  width: 100%;
+}
+.dashboard-v3 .doc-add:hover { border-color: var(--archer-blue); color: var(--archer-blue); background: var(--archer-blue-50); }
+
+/* ─── Questions rail ─── */
+.dashboard-v3 .q-card {
+  border-top: 1px solid var(--line);
+  padding: 12px 0;
+}
+.dashboard-v3 .q-card:first-of-type { padding-top: 0; border-top: 0; }
+.dashboard-v3 .q-card:last-of-type { padding-bottom: 0; }
+.dashboard-v3 .q-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px; font-weight: 700;
+  color: var(--archer-blue);
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.dashboard-v3 .q-text {
+  font-size: 12.5px; font-weight: 600; color: var(--ink);
+  margin-bottom: 8px; line-height: 1.4;
+}
+.dashboard-v3 .q-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+.dashboard-v3 .q-btn {
+  padding: 5px 10px;
+  border: 1px solid var(--line-2);
+  background: #fff;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 11.5px; font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.dashboard-v3 .q-btn:hover {
+  border-color: var(--archer-blue);
+  color: var(--archer-blue);
+  transform: translateY(-1px);
+}
+
+/* ─── Similar cases rail ─── */
+.dashboard-v3 .sim-big {
+  padding: 16px;
+  background: linear-gradient(135deg, var(--archer-blue-50) 0%, #f5f8ff 100%);
+  border: 1px solid var(--archer-blue-100);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.dashboard-v3 .sim-big-num {
+  font-weight: 800;
+  font-size: 38px;
+  color: var(--archer-blue);
+  letter-spacing: -1.5px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 4px;
+}
+.dashboard-v3 .sim-big-txt {
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.4;
+}
+.dashboard-v3 .sim-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.dashboard-v3 .sim-stat {
+  padding: 8px 6px;
+  background: var(--bg-soft);
+  border-radius: 8px;
+  text-align: center;
+}
+.dashboard-v3 .sim-stat-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px; font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.4px;
+  margin-bottom: 2px;
+}
+.dashboard-v3 .sim-stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 0.6px;
+}
+
+/* ─── News rail ─── */
+.dashboard-v3 .news-live {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  color: var(--green);
+  letter-spacing: 0.8px;
+  padding: 2px 7px;
+  background: var(--green-50);
+  border-radius: 100px;
+}
+.dashboard-v3 .news-live-dot {
+  width: 5px; height: 5px;
+  background: var(--green-bright);
+  border-radius: 50%;
+  animation: v3blink 1.5s ease-in-out infinite;
+}
+.dashboard-v3 .news-item {
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.dashboard-v3 .news-item:first-of-type { padding-top: 0; border-top: 0; }
+.dashboard-v3 .news-item:last-of-type { padding-bottom: 0; }
+.dashboard-v3 .news-meta-row {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 6px;
+}
+.dashboard-v3 .news-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 100px;
+  letter-spacing: 0.6px;
+  border: 1px solid;
+}
+.dashboard-v3 .news-tag.amber { color: var(--amber); background: var(--amber-50); border-color: var(--amber-100); }
+.dashboard-v3 .news-tag.green { color: var(--green); background: var(--green-50); border-color: var(--green-100); }
+.dashboard-v3 .news-tag.blue  { color: var(--archer-blue); background: var(--archer-blue-50); border-color: var(--archer-blue-100); }
+.dashboard-v3 .news-date {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-4);
+}
+.dashboard-v3 .news-text {
+  font-size: 12px;
+  color: var(--ink-2);
+  line-height: 1.45;
+  margin-bottom: 6px;
+}
+.dashboard-v3 .news-impact {
+  font-size: 11px;
+  color: var(--green);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* ─── Chat rail ─── */
+.dashboard-v3 .chat-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  color: var(--green);
+  letter-spacing: 0.8px;
+  padding: 2px 7px;
+  background: var(--green-50);
+  border-radius: 100px;
+}
+.dashboard-v3 .chat-input-row {
+  display: flex; gap: 6px;
+  margin-bottom: 10px;
+}
+.dashboard-v3 .chat-input {
+  flex: 1; min-width: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--bg-soft);
+  outline: none;
+  transition: all 0.15s;
+}
+.dashboard-v3 .chat-input:focus {
+  border-color: var(--archer-blue);
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--archer-blue-50);
+}
+.dashboard-v3 .chat-send {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--archer-blue);
+  color: #fff;
+  border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.dashboard-v3 .chat-send:hover:not(:disabled) {
+  background: var(--archer-blue-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(26, 86, 219, 0.25);
+}
+.dashboard-v3 .chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+.dashboard-v3 .chat-suggestions {
+  display: flex; flex-wrap: wrap; gap: 5px;
+}
+.dashboard-v3 .chat-sug {
+  padding: 5px 10px;
+  border: 1px solid var(--line-2);
+  background: #fff;
+  border-radius: 100px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.dashboard-v3 .chat-sug:hover {
+  border-color: var(--archer-blue);
+  color: var(--archer-blue);
+  background: var(--archer-blue-50);
+}
 .dashboard-v3 .rail-card + .rail-card { margin-top: 0; }
 .dashboard-v3 .rail-card-h {
   font-family: 'JetBrains Mono', monospace;

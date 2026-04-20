@@ -6,17 +6,17 @@ import { useUiLanguage } from '../hooks/useUiLanguage';
 import { useDashboardT } from '../hooks/useDashboardT';
 import V3CaseHeader from '../components/Dashboard/V3/V3CaseHeader';
 import QuickBar from '../components/Dashboard/V3/QuickBar';
-import DocumentsSection from '../components/Dashboard/Sprint2/DocumentsSection';
+import V3RailDocuments from '../components/Dashboard/V3/V3RailDocuments';
+import V3RailQuestions from '../components/Dashboard/V3/V3RailQuestions';
+import V3RailSimilarCases from '../components/Dashboard/V3/V3RailSimilarCases';
+import V3RailNews from '../components/Dashboard/V3/V3RailNews';
+import V3RailChat from '../components/Dashboard/V3/V3RailChat';
 import AttorneyStatusBanner from '../components/AttorneyStatusBanner';
 import JurisdictionMismatchBanner from '../components/JurisdictionMismatchBanner';
 import RefineAnalysisSection from '../components/RefineAnalysisSection';
 import VersionPicker from '../components/VersionPicker';
 import { useCaseBehaviorTracking } from '../hooks/useBehaviorTracking';
 import LiveCounselBookingFlow from '../components/LiveCounselBookingFlow';
-import ArcherQuestionsSection from '../components/Dashboard/Sprint2/ArcherQuestionsSection';
-import LegalNewsSection from '../components/Dashboard/Sprint3/LegalNewsSection';
-import SimilarCasesSection from '../components/Dashboard/Sprint3/SimilarCasesSection';
-import AskArcherCompact from '../components/Dashboard/Sprint3/AskArcherCompact';
 import { deriveProgressStep } from '../utils/dashboard/progressStep';
 import { deriveStrategy } from '../utils/dashboard/strategyFallback';
 import { deriveBattle } from '../utils/dashboard/battle';
@@ -546,40 +546,28 @@ export default function CaseDetailV7() {
             />
           </div>
 
-          <div className="rail-wrap">
-            <DocumentsSection
-              documents={documents}
-              isFreemiumExhausted={freemiumExhausted}
-              onAddDocument={handleAddDocument}
-              onUpgrade={handleUpgrade}
-              language={language}
-            />
-          </div>
+          <V3RailDocuments
+            documents={documents}
+            onAddDocument={handleAddDocument}
+            language={language}
+            t={t}
+          />
 
-          <div className="rail-wrap">
-            <ArcherQuestionsSection
-              questions={archerQuestions}
-              onAnswer={handleAnswerQuestion}
-              language={language}
-            />
-          </div>
+          <V3RailQuestions
+            questions={archerQuestions}
+            onAnswer={handleAnswerQuestion}
+            language={language}
+          />
 
-          <div className="rail-wrap">
-            <SimilarCasesSection
-              caseId={caseId}
-              stats={similarCases}
-              country={caseCountry}
-              language={language}
-            />
-          </div>
+          <V3RailSimilarCases
+            stats={similarCases}
+            country={caseCountry}
+            language={language}
+          />
 
-          <div className="rail-wrap">
-            <LegalNewsSection news={legalNews} language={language} />
-          </div>
+          <V3RailNews news={legalNews} language={language} />
 
-          <div className="rail-wrap">
-            <AskArcherCompact onSubmit={handleAskArcher} language={language} />
-          </div>
+          <V3RailChat onSubmit={handleAskArcher} language={language} />
         </aside>
       </div>
     </div>
