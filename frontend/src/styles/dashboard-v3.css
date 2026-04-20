@@ -834,7 +834,80 @@
 .dashboard-v3 .battle-verdict-txt strong { color: var(--archer-blue); font-weight: 700; }
 .dashboard-v3 .battle-verdict-txt em { font-style: normal; color: var(--ink); font-weight: 600; }
 
-/* ═══════════ PLACEHOLDER (commits 06-09 will replace these) ═══════════ */
+/* ═══════════ ARMS (act3.2) ═══════════ */
+.dashboard-v3 .arms-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dashboard-v3 .arm-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  transition: all 0.2s;
+  display: grid;
+  grid-template-columns: 36px 1fr 48px;
+  gap: 14px;
+  align-items: flex-start;
+}
+.dashboard-v3 .arm-card:hover { border-color: var(--archer-blue-100); box-shadow: 0 4px 14px rgba(26,86,219,0.05); }
+.dashboard-v3 .arm-num {
+  width: 32px; height: 32px;
+  border-radius: 10px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  color: var(--ink-3);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  letter-spacing: -0.3px;
+}
+.dashboard-v3 .arm-body { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.dashboard-v3 .arm-title {
+  font-weight: 700; font-size: 14px;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+  line-height: 1.3;
+}
+.dashboard-v3 .arm-legal-desc {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  padding: 9px 11px;
+  background: var(--bg-soft);
+  border-radius: 8px;
+  border-left: 3px solid var(--green);
+}
+.dashboard-v3 .arm-legal-desc strong { color: var(--ink); font-weight: 700; }
+.dashboard-v3 .arm-legal-desc em { font-style: italic; color: var(--ink-2); }
+
+.dashboard-v3 .arm-refs-row { display: flex; flex-direction: column; gap: 5px; }
+.dashboard-v3 .arm-refs-row .law-ref-label { margin-bottom: 2px; display: inline-flex; align-items: center; gap: 4px; }
+.dashboard-v3 .law-ref-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.dashboard-v3 .arm-conf-circ {
+  width: 44px; height: 44px;
+  flex-shrink: 0;
+  position: relative;
+}
+.dashboard-v3 .arm-conf-val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700;
+}
+
+/* ═══════════ PLACEHOLDER (commits 07-09 will replace these) ═══════════ */
 .dashboard-v3 .v3-placeholder {
   background: #fff;
   border: 1px dashed var(--line-2);

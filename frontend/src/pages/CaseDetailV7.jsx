@@ -37,7 +37,8 @@ import TsCard from '../components/Dashboard/V3/TsCard';
 import StrCard from '../components/Dashboard/V3/StrCard';
 import AccordionItem from '../components/Dashboard/V3/AccordionItem';
 import BattleBlock from '../components/Dashboard/V3/BattleBlock';
-import { Swords } from 'lucide-react';
+import ArmsStack from '../components/Dashboard/V3/ArmsStack';
+import { Swords, Sword } from 'lucide-react';
 import '../styles/dashboard-v3.css';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -427,28 +428,21 @@ export default function CaseDetailV7() {
             >
               <BattleBlock caseDoc={displayedCase} t={t} />
             </AccordionItem>
+
+            <AccordionItem
+              id="arms"
+              iconTone="green"
+              Icon={Sword}
+              title={t('v3.act3.arms.title')}
+              sub={t('v3.act3.arms.sub')}
+              badgeTone="green"
+              badgeText={t('v3.act3.arms.badge', { count: Math.min(5, strongFindings.length) })}
+              isOpen={openAccordions.has('arms')}
+              onToggle={() => toggleAccordion('arms')}
+            >
+              <ArmsStack findings={strongFindings} country={country} t={t} />
+            </AccordionItem>
           </div>
-
-        {/* ── Sprint 2 legacy (arms/critical/anticipation will be absorbed in 06-08) ─── */}
-
-        <AdversarialCounterArgsSection
-          adversarial={displayedCase?.adversarial_attack}
-          language={language}
-        />
-
-        <FindingsSection
-          type="critical"
-          findings={criticalFindings}
-          country={country}
-          language={language}
-        />
-
-        <FindingsSection
-          type="strong"
-          findings={strongFindings}
-          country={country}
-          language={language}
-        />
 
         <DocumentsSection
           documents={documents}
