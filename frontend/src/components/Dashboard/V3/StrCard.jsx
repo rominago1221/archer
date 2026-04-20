@@ -74,7 +74,8 @@ export default function StrCard({
               <div className="str-check" key={i}>
                 <div className="str-check-icon"><Check size={11} strokeWidth={3.5} aria-hidden /></div>
                 <div className="str-check-txt">
-                  <strong>{c.text}</strong>
+                  <strong>{c.bold}</strong>
+                  {c.rest && <> {c.rest}</>}
                   {c.ref && <span className="str-check-ref">{c.ref}</span>}
                 </div>
               </div>

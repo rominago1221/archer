@@ -12,27 +12,66 @@ function pickFirstRef(item) {
   return item?.legal_ref || item?.law_reference || item?.ref || null;
 }
 
-// Checklist lines stay punchy: keep the first sentence or comma clause if
-// the input is long, otherwise pass through. No ellipsis — the user reads
-// a complete phrase even when the source was wordy. Targets < 80 chars
-// when possible, but never truncates mid-word.
-function clampChecklistText(s) {
-  if (!s) return '';
-  const clean = String(s).trim().replace(/\s+/g, ' ');
-  if (clean.length <= 80) return clean;
-  // First sentence wins.
-  const firstSentence = clean.search(/[.!?](\s|$)/);
-  if (firstSentence > 20 && firstSentence < 100) {
-    return clean.slice(0, firstSentence + 1);
+// Condense a long legal_ref to a short pill label (~15 chars).
+// Examples: "Loi du 20/02/1991 article 3 §5" → "Loi 20/02/1991"
+//           "Ord. bxl 27/07/2017 article 224 §1" → "Ord. bxl 27/07/2017"
+function compactRefPill(raw) {
+  if (!raw) return null;
+  let s = String(raw).trim();
+  // Strip trailing " article X §Y" chunks to keep pill compact.
+  s = s.replace(/\s*,?\s*article\s+\d+[^,]*$/i, '');
+  s = s.replace(/\s*§\s*\d+.*$/, '');
+  // Abbreviate Ordonnance / Article / Loi
+  s = s.replace(/\bOrdonnance\b/i, 'Ord.');
+  s = s.replace(/\bArticle\b/i, 'art.');
+  if (s.length > 22) s = s.slice(0, 20) + '…';
+  return s;
+}
+
+// Split a checklist source into { bold, rest, ref } so the UI can render
+// a short bold action + short continuation + green ref pill — matching
+// the mockup pattern:
+//   **Invalidation de la clause pénale à 12%** [art. 5.74]
+//   **Demande de réduction du loyer** au prix de référence bruxellois
+//   **Mise en demeure d'enregistrer le bail** [15 jours max]
+// Hard-cap the bold at 60 chars and the continuation at 45 chars; if the
+// source string has a ":" separator we use it to split bold vs rest,
+// otherwise bold takes everything up to the first break and rest is
+// dropped. No ellipsis — the user sees a complete short phrase.
+function splitChecklistItem(rawTitle, rawRef) {
+  const clean = String(rawTitle || '').trim().replace(/\s+/g, ' ');
+  if (!clean) return { bold: '', rest: '', ref: compactRefPill(rawRef) };
+
+  // Colon / em-dash / parenthesis = primary split points
+  let bold;
+  let rest = '';
+  const primaryMatch = clean.search(/\s*[:—–]\s|\s*\(\s*/);
+  if (primaryMatch > 8 && primaryMatch < 70) {
+    bold = clean.slice(0, primaryMatch).trim();
+    rest = clean.slice(primaryMatch).replace(/^[\s:—–()]+/, '').trim();
+  } else {
+    bold = clean;
   }
-  // Else try first comma clause.
-  const firstComma = clean.indexOf(', ');
-  if (firstComma > 20 && firstComma < 90) {
-    return clean.slice(0, firstComma);
+
+  // Cap bold at 60 chars on a word boundary
+  if (bold.length > 60) {
+    const cut = bold.slice(0, 60).lastIndexOf(' ');
+    bold = bold.slice(0, cut > 25 ? cut : 60).trim();
+    rest = ''; // drop continuation if bold already got cropped
   }
-  // As a last resort return the whole string — let it wrap. Better a
-  // two-line item than a truncated "…" dangling phrase.
-  return clean;
+
+  // Cap continuation at 45 chars; drop if it doesn't open with lowercase
+  // (avoids keeping long detail explanations).
+  if (rest) {
+    if (rest.length > 45) {
+      const cut = rest.slice(0, 45).lastIndexOf(' ');
+      rest = rest.slice(0, cut > 10 ? cut : 45).trim();
+    }
+    // Strip trailing comma/semicolon/dot
+    rest = rest.replace(/[,;.]\s*$/, '');
+  }
+
+  return { bold, rest, ref: compactRefPill(rawRef) };
 }
 
 function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
@@ -42,18 +81,25 @@ export function deriveStrCard(caseDoc, strategy) {
   const confidence = Math.round(depth.archer_confidence || 0);
 
   // ── Title / subtitle ──────────────────────────────────────────────────
-  // Prefer short strategy titles over paragraph-length summaries. We walk a
-  // priority list and cap the final string at ~80 chars so the 28px headline
-  // never wraps to 3+ lines like the old ai_summary fallback did.
-  const TITLE_MAX = 90;
+  // Strategy title must stay on 1-2 lines (mockup: "Contester 3 clauses
+  // du bail pour réduire ton loyer." — 53 chars). We walk the priority
+  // list and force a short cut even if the source is a full paragraph.
+  const TITLE_MAX = 75;
   function clampTitle(s) {
     if (!s) return null;
-    const clean = String(s).trim().replace(/\s+/g, ' ');
+    let clean = String(s).trim().replace(/\s+/g, ' ');
+    // Drop trailing colon details ("Title : long explanation" → "Title")
+    const colonIdx = clean.search(/\s*:\s/);
+    if (colonIdx > 20 && colonIdx < TITLE_MAX) {
+      clean = clean.slice(0, colonIdx).trim();
+    }
     if (clean.length <= TITLE_MAX) return clean;
-    // Cut on the first sentence-ending punctuation if possible, else hard cut + ellipsis.
-    const sentenceEnd = clean.slice(0, TITLE_MAX).lastIndexOf('. ');
-    if (sentenceEnd > 30) return clean.slice(0, sentenceEnd + 1);
-    return clean.slice(0, TITLE_MAX - 1).trimEnd() + '…';
+    // Cut at first period if any before 80 chars
+    const firstStop = clean.slice(0, 90).search(/\.\s|[!?]\s|[!?]$/);
+    if (firstStop > 25) return clean.slice(0, firstStop + 1);
+    // Last resort: hard cut on word boundary
+    const lastSpace = clean.slice(0, TITLE_MAX).lastIndexOf(' ');
+    return clean.slice(0, lastSpace > 40 ? lastSpace : TITLE_MAX).trimEnd() + '.';
   }
 
   const firstStep = Array.isArray(caseDoc?.ai_next_steps) && caseDoc.ai_next_steps[0];
@@ -72,16 +118,12 @@ export function deriveStrCard(caseDoc, strategy) {
   let checklist = [];
   const args = Array.isArray(strategy?.arguments) ? strategy.arguments : [];
   if (args.length > 0) {
-    checklist = args.slice(0, 3).map((a) => ({
-      text: clampChecklistText(a.title || a.argument || ''),
-      ref: pickFirstRef(a),
-    }));
+    checklist = args.slice(0, 3).map((a) =>
+      splitChecklistItem(a.title || a.argument || '', pickFirstRef(a)));
   } else {
     const steps = Array.isArray(caseDoc?.ai_next_steps) ? caseDoc.ai_next_steps : [];
-    checklist = steps.slice(0, 3).map((s) => ({
-      text: clampChecklistText(s.title || s.description || ''),
-      ref: pickFirstRef(s),
-    }));
+    checklist = steps.slice(0, 3).map((s) =>
+      splitChecklistItem(s.title || s.description || '', pickFirstRef(s)));
   }
 
   // ── Projection (stacked bar) ──────────────────────────────────────────
