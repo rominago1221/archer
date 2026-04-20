@@ -44,7 +44,15 @@ export default function StrCard({
     }
   };
 
-  const subtitleText = t('v3.act2.based_on', { count: jurisCount || '—' });
+  // Mockup subtitle: "Basé sur X jurisprudences BE similaires. Rapport
+  // de force en ta faveur sur les N points." We append the second
+  // sentence only when we have N checklist items so the sub reads clean
+  // on cases without a strategy narrative.
+  const baseSub = t('v3.act2.based_on', { count: jurisCount || '—' });
+  const strengthSuffix = checklist.length > 0
+    ? ` ${t('v3.act2.strength_suffix', { count: checklist.length })}`
+    : '';
+  const subtitleText = baseSub + strengthSuffix;
 
   return (
     <div className="str-card" data-testid="act2-str-card">

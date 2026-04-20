@@ -1478,6 +1478,140 @@
   letter-spacing: 0.6px;
 }
 
+/* ─── Refine rail card ─── */
+.dashboard-v3 .refine-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+}
+.dashboard-v3 .refine-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--archer-blue), var(--archer-blue-light));
+}
+.dashboard-v3 .refine-head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.dashboard-v3 .refine-icon {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--archer-blue), var(--archer-blue-dark));
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.dashboard-v3 .refine-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+}
+.dashboard-v3 .refine-sub {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+  margin: 4px 0 12px;
+}
+.dashboard-v3 .refine-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--bg-soft);
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.45;
+  transition: all 0.15s;
+  margin-bottom: 10px;
+}
+.dashboard-v3 .refine-textarea::placeholder { color: var(--ink-4); }
+.dashboard-v3 .refine-textarea:focus {
+  border-color: var(--archer-blue);
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--archer-blue-50);
+}
+.dashboard-v3 .refine-upload {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px dashed var(--line-2);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 12px;
+  width: 100%;
+  font-family: inherit;
+  text-align: left;
+}
+.dashboard-v3 .refine-upload:hover {
+  border-color: var(--archer-blue);
+  background: var(--archer-blue-50);
+}
+.dashboard-v3 .refine-upload-icon {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--archer-blue-50);
+  color: var(--archer-blue);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.dashboard-v3 .refine-upload-txt { flex: 1; min-width: 0; }
+.dashboard-v3 .refine-upload-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.dashboard-v3 .refine-upload-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--ink-4);
+  margin-top: 2px;
+}
+.dashboard-v3 .refine-btn-primary {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--archer-blue);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: all 0.15s;
+}
+.dashboard-v3 .refine-btn-primary:hover:not(:disabled) {
+  background: var(--archer-blue-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(26, 86, 219, 0.25);
+}
+.dashboard-v3 .refine-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.dashboard-v3 .refine-footnote {
+  margin-top: 8px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-4);
+  letter-spacing: 0.3px;
+}
+
 /* ─── Documents rail ─── */
 .dashboard-v3 .doc-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
 .dashboard-v3 .doc-item {
@@ -1536,6 +1670,16 @@
 .dashboard-v3 .doc-add:hover { border-color: var(--archer-blue); color: var(--archer-blue); background: var(--archer-blue-50); }
 
 /* ─── Questions rail ─── */
+.dashboard-v3 .q-progress {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--archer-blue-50);
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: var(--archer-blue-dark);
+  line-height: 1.4;
+}
+.dashboard-v3 .q-progress strong { color: var(--archer-blue); font-weight: 700; }
 .dashboard-v3 .q-card {
   border-top: 1px solid var(--line);
   padding: 12px 0;

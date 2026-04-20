@@ -11,9 +11,9 @@ import V3RailQuestions from '../components/Dashboard/V3/V3RailQuestions';
 import V3RailSimilarCases from '../components/Dashboard/V3/V3RailSimilarCases';
 import V3RailNews from '../components/Dashboard/V3/V3RailNews';
 import V3RailChat from '../components/Dashboard/V3/V3RailChat';
+import V3RailRefine from '../components/Dashboard/V3/V3RailRefine';
 import AttorneyStatusBanner from '../components/AttorneyStatusBanner';
 import JurisdictionMismatchBanner from '../components/JurisdictionMismatchBanner';
-import RefineAnalysisSection from '../components/RefineAnalysisSection';
 import VersionPicker from '../components/VersionPicker';
 import { useCaseBehaviorTracking } from '../hooks/useBehaviorTracking';
 import LiveCounselBookingFlow from '../components/LiveCounselBookingFlow';
@@ -522,18 +522,16 @@ export default function CaseDetailV7() {
         <aside className="v3-rail" data-testid="v3-rail">
           <LawyerRailCTA caseId={caseId} t={t} />
 
-          <div className="rail-wrap">
-            <RefineAnalysisSection
-              caseDoc={caseDoc}
-              language={language}
-              onSubmitStart={() => { markInteracted(); trackFire('refinement_started'); }}
-              onRefined={() => {
-                setViewingVersion(null);
-                setViewedAnalysis(null);
-                fetchCase();
-              }}
-            />
-          </div>
+          <V3RailRefine
+            caseDoc={caseDoc}
+            language={language}
+            onSubmitStart={() => { markInteracted(); trackFire('refinement_started'); }}
+            onRefined={() => {
+              setViewingVersion(null);
+              setViewedAnalysis(null);
+              fetchCase();
+            }}
+          />
 
           <V3RailDocuments
             documents={documents}
