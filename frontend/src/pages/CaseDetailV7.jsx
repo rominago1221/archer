@@ -6,7 +6,6 @@ import { useUiLanguage } from '../hooks/useUiLanguage';
 import { useDashboardT } from '../hooks/useDashboardT';
 import CaseHeader from '../components/Dashboard/Sprint1/CaseHeader';
 import ProgressTimeline from '../components/Dashboard/Sprint1/ProgressTimeline';
-import HeroSection from '../components/Dashboard/Sprint1/HeroSection';
 import StrategySection from '../components/Dashboard/Sprint1/StrategySection';
 import GenerateLetterCTA from '../components/Dashboard/Sprint1/GenerateLetterCTA';
 import SendLetterOptions from '../components/SendLetterOptions';
@@ -38,6 +37,7 @@ import { mapBackendCaseType } from '../utils/dashboard/caseType';
 import { getOpponentLabel } from '../utils/dashboard/opponent';
 import { deriveLegalNews } from '../utils/dashboard/legalNews';
 import { deriveSimilarCases } from '../utils/dashboard/similarCases';
+import TsCard from '../components/Dashboard/V3/TsCard';
 import '../styles/dashboard-v3.css';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -300,13 +300,9 @@ export default function CaseDetailV7() {
             <div className="act-eyebrow">{t('v3.act1.eyebrow')}</div>
             <div className="act-divider-line" />
           </div>
-          <div className="v3-placeholder" data-testid="act1-placeholder">
-            TsCard — commit 03
-          </div>
+          <TsCard caseDoc={displayedCase} t={t} />
 
           <ProgressTimeline currentStep={progressStep} language={language} />
-
-        <HeroSection caseDoc={caseDoc} country={country} language={language} />
 
           {/* ── ACT 2 · LA STRATÉGIE ─────────────────────────────────── */}
           <div className="act-divider" data-testid="act2-divider">

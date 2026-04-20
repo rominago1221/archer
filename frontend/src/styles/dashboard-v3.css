@@ -145,7 +145,218 @@
   color: var(--archer-blue);
 }
 
-/* ═══════════ PLACEHOLDER (commits 03-09 will replace these) ═══════════ */
+/* ═══════════════════════════════════════════════════════════
+   ACT 1 · TS-CARD — score ring + KPIs + 4 dimensions
+   ═══════════════════════════════════════════════════════════ */
+.dashboard-v3 .ts-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 32px 36px;
+}
+.dashboard-v3 .ts-top {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 28px;
+  align-items: center;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.dashboard-v3 .ts-score { width: 132px; height: 132px; position: relative; flex-shrink: 0; }
+.dashboard-v3 .ts-score-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.dashboard-v3 .ts-score-num {
+  font-weight: 800;
+  font-size: 48px;
+  color: var(--ink);
+  letter-spacing: -2.5px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.dashboard-v3 .ts-score-total {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-4);
+  font-weight: 600;
+  margin-top: 2px;
+  letter-spacing: 0.8px;
+}
+
+.dashboard-v3 .ts-verdict { display: flex; flex-direction: column; gap: 8px; }
+.dashboard-v3 .ts-verdict-head { display: flex; align-items: center; gap: 10px; }
+.dashboard-v3 .ts-risk-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 1.2px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  color: var(--amber);
+  background: var(--amber-50);
+  border: 1px solid #fde68a;
+}
+.dashboard-v3 .ts-risk-pill::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--amber-bright);
+}
+.dashboard-v3 .ts-risk-pill--low { color: var(--green); background: var(--green-50); border-color: #bbf7d0; }
+.dashboard-v3 .ts-risk-pill--low::before { background: var(--green-bright); }
+.dashboard-v3 .ts-risk-pill--high,
+.dashboard-v3 .ts-risk-pill--critical { color: var(--red); background: var(--red-50); border-color: #fecaca; }
+.dashboard-v3 .ts-risk-pill--high::before,
+.dashboard-v3 .ts-risk-pill--critical::before { background: var(--red); }
+
+.dashboard-v3 .ts-verdict-title {
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.6px;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.dashboard-v3 .ts-verdict-p {
+  font-size: 13.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+  max-width: 560px;
+}
+
+.dashboard-v3 .ts-sparkline {
+  display: inline-flex; align-items: center; gap: 10px;
+  margin-top: 6px;
+  padding: 6px 12px;
+  background: var(--green-50);
+  border: 1px solid #bbf7d0;
+  border-radius: 100px;
+  width: fit-content;
+}
+.dashboard-v3 .ts-sparkline-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--ink-3);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.dashboard-v3 .ts-sparkline-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.dashboard-v3 .ts-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+}
+.dashboard-v3 .ts-kpi { padding: 0 20px; border-right: 1px solid var(--line); }
+.dashboard-v3 .ts-kpi:first-child { padding-left: 0; }
+.dashboard-v3 .ts-kpi:last-child { border-right: none; padding-right: 0; }
+.dashboard-v3 .ts-kpi-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 1.1px;
+  margin-bottom: 6px;
+}
+.dashboard-v3 .ts-kpi-val {
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--ink);
+  letter-spacing: -0.8px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.dashboard-v3 .ts-kpi-val.pos { color: var(--green); }
+.dashboard-v3 .ts-kpi-val.blue { color: var(--archer-blue); }
+.dashboard-v3 .ts-kpi-sub { font-size: 11px; color: var(--ink-4); margin-top: 3px; }
+
+.dashboard-v3 .ts-dims {
+  padding-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dashboard-v3 .ts-dims-h {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.dashboard-v3 .ts-dims-h-l {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 1.2px;
+}
+.dashboard-v3 .ts-dims-h-r {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-4);
+  letter-spacing: 0.5px;
+}
+.dashboard-v3 .ts-dim-row {
+  display: grid;
+  grid-template-columns: 24px 110px 1fr 40px 80px;
+  gap: 14px;
+  align-items: center;
+  padding: 6px 0;
+  transition: opacity 0.15s;
+}
+.dashboard-v3 .ts-dim-row:hover { opacity: 0.75; }
+.dashboard-v3 .ts-dim-icon {
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+.dashboard-v3 .ts-dim-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.dashboard-v3 .ts-dim-bar {
+  height: 6px;
+  background: var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.dashboard-v3 .ts-dim-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s;
+}
+.dashboard-v3 .ts-risk-low { background: var(--green); }
+.dashboard-v3 .ts-risk-med { background: var(--amber-bright); }
+.dashboard-v3 .ts-risk-high { background: var(--red); }
+.dashboard-v3 .ts-dim-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+  letter-spacing: -0.3px;
+}
+.dashboard-v3 .ts-dim-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  padding: 3px 8px;
+  border-radius: 100px;
+  text-align: center;
+  border: 1px solid;
+}
+.dashboard-v3 .ts-tag-low { color: var(--green); background: var(--green-50); border-color: #bbf7d0; }
+.dashboard-v3 .ts-tag-med { color: var(--amber); background: var(--amber-50); border-color: #fde68a; }
+.dashboard-v3 .ts-tag-high { color: var(--red); background: var(--red-50); border-color: #fecaca; }
+
+/* ═══════════ PLACEHOLDER (commits 04-09 will replace these) ═══════════ */
 .dashboard-v3 .v3-placeholder {
   background: #fff;
   border: 1px dashed var(--line-2);
