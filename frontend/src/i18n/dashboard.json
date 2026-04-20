@@ -190,9 +190,150 @@
       "trust_attorneys": "Avocats agréés BE & US"
     },
     "v3": {
-      "act1": { "eyebrow": "OÙ TU EN ES" },
-      "act2": { "eyebrow": "LE PLAN D'ARCHER" },
-      "act3": { "eyebrow": "TOUT LE DÉTAIL", "expand_all": "TOUT OUVRIR", "collapse_all": "TOUT FERMER" }
+      "act1": {
+        "eyebrow": "OÙ TU EN ES",
+        "title": "Ta situation",
+        "verdict_low": "RISQUE FAIBLE",
+        "verdict_moderate": "RISQUE MODÉRÉ",
+        "verdict_high": "RISQUE ÉLEVÉ",
+        "trend_label": "7J TREND",
+        "kpi_stake": "ENJEU FINANCIER",
+        "kpi_savings": "ÉCONOMIE POT.",
+        "kpi_depth": "PROFONDEUR",
+        "kpi_confidence": "CONFIANCE ARCHER",
+        "dims_title": "4 DIMENSIONS ANALYSÉES",
+        "dims_legend": "Vert ≤30 · Amber 31–60 · Rouge ≥61",
+        "label_low": "FAIBLE",
+        "label_moderate": "MODÉRÉ",
+        "label_high": "ÉLEVÉ",
+        "dim_financial": "Financier",
+        "dim_urgency": "Urgence",
+        "dim_legal": "Juridique",
+        "dim_complexity": "Complexité"
+      },
+      "act2": {
+        "eyebrow": "LE PLAN D'ARCHER",
+        "title": "La stratégie",
+        "recommended_pill": "STRATÉGIE RECOMMANDÉE",
+        "confidence_suffix": "CONFIANCE",
+        "based_on": "Basé sur {count} jurisprudences BE similaires.",
+        "letter_content_label": "CE QUE LA LETTRE VA CONTENIR",
+        "projection_label": "PROJECTION",
+        "projection_sub": "{count} cas similaires",
+        "proj_won": "Gagné",
+        "proj_deal": "Accord",
+        "proj_refused": "Refus",
+        "how_to_send": "Comment tu veux envoyer cette lettre ?",
+        "options_count": "3 OPTIONS",
+        "option_diy": {
+          "title": "Je m'en charge",
+          "tag": "Inclus",
+          "desc": "Archer rédige la lettre, tu la télécharges et l'envoies toi-même.",
+          "bullet_1": "PDF prêt à imprimer",
+          "bullet_2": "Adresse pré-remplie",
+          "bullet_3": "Envoi par tes soins",
+          "cta": "Télécharger la lettre"
+        },
+        "option_erecommande": {
+          "title": "Rejoindre la waitlist eRecommandé",
+          "tag": "BIENTÔT",
+          "desc": "Archer enverra ta lettre en <strong>recommandé électronique</strong> avec valeur juridique.",
+          "bullet_1": "Valeur juridique identique",
+          "bullet_2": "Envoi instantané",
+          "bullet_3": "Preuve horodatée",
+          "cta": "Rejoindre la waitlist",
+          "joined": "Tu es sur la liste ✓"
+        },
+        "option_lawyer": {
+          "badge": "NOTRE CHOIX",
+          "tier_label": "SOLO+",
+          "title": "Un avocat signe et envoie",
+          "desc": "Un avocat BE partenaire relit, signe la lettre et l'envoie en ton nom. <strong>Poids juridique maximum.</strong>",
+          "bullet_1": "Signature avocat BE en-tête",
+          "bullet_2": "Envoi recommandé sous 48h",
+          "bullet_3": "Échange direct avec l'avocat",
+          "cta": "Demander à un avocat"
+        }
+      },
+      "act3": {
+        "eyebrow": "TOUT LE DÉTAIL",
+        "title": "Les preuves",
+        "expand_all": "TOUT OUVRIR",
+        "collapse_all": "TOUT FERMER",
+        "battle": {
+          "title": "Rapport de force tactique",
+          "sub": "Tes arguments vs ceux de l'adversaire · gauge visuelle",
+          "gauge_title": "RAPPORT DE FORCE",
+          "col_you": "TES ARGUMENTS",
+          "col_them": "ADVERSAIRE",
+          "strength_solid": "SOLIDE",
+          "strength_fort": "FORT",
+          "strength_medium": "MOYEN",
+          "strength_weak": "FAIBLE",
+          "archer_verdict_prefix": "Verdict Archer :",
+          "verdict_advantage": "✓ TU ES EN AVANTAGE",
+          "verdict_disadvantage": "⚠ TU ES EN DÉSAVANTAGE",
+          "verdict_balanced": "⚖ FORCES ÉQUILIBRÉES"
+        },
+        "arms": {
+          "title": "Tes armes",
+          "sub": "Chaque argument avec base légale + confiance Archer + jurisprudences",
+          "badge": "{count} ARGUMENTS",
+          "legal_base": "BASE LÉGALE",
+          "jurisprudences": "JURISPRUDENCES APPLIQUÉES"
+        },
+        "critical": {
+          "title": "Point critique",
+          "badge": "1 RISQUE",
+          "refs_label": "RÉFÉRENCES",
+          "action_label": "Action requise :"
+        },
+        "anticipation": {
+          "title": "Anticipation adverse",
+          "sub": "5 attaques probables de l'avocat adverse + réponses préparées",
+          "attacker_label": "ATTAQUE ADVERSE",
+          "defense_label": "RÉPONSE ARCHER",
+          "footer_rejected": "Cette attaque sera rejetée",
+          "probability": "{pct}% probabilité",
+          "threat_low": "MENACE FAIBLE",
+          "threat_mid": "MENACE MOYENNE",
+          "threat_high": "MENACE FORTE",
+          "stats_attacks": "ATTAQUES ANTICIPÉES",
+          "stats_defense": "FORCE MOYENNE DÉFENSE",
+          "stats_verdict": "VERDICT GLOBAL",
+          "verdict_defendable": "DÉFENDABLE"
+        }
+      },
+      "right_rail": {
+        "lawyer": {
+          "live_label": "AVOCATS EN LIGNE",
+          "ready_count": "{count} prêts",
+          "title": "Parle à un avocat spécialisé",
+          "desc": "Consultation vidéo 30 min avec un avocat partenaire. Connect en 2 min.",
+          "available": "{count} avocats BE disponibles",
+          "free_title": "Gratuit. Et le restera.",
+          "free_sub": "Inclus dans ton abonnement Archer",
+          "cta": "Parler à un avocat maintenant",
+          "members_note": "Réservé aux membres · ",
+          "members_link": "S'abonner"
+        },
+        "refine": {
+          "title": "Affine mon analyse",
+          "sub": "Plus tu donnes de contexte, plus l'analyse devient précise.",
+          "placeholder": "Ex : « J'ai un email du propriétaire qui reconnaît que… »",
+          "upload_label": "Ajouter un document",
+          "upload_formats": "PDF · DOCX · IMG · max 10MB",
+          "cta": "Relancer l'analyse",
+          "eta": "Temps estimé : ~45 secondes"
+        },
+        "documents_title": "Documents",
+        "context_title": "Contexte",
+        "similar_title": "Cas similaires",
+        "news_title": "Actualités juridiques",
+        "chat_title": "Pose ta question",
+        "chat_placeholder": "Une question sur ton dossier ?",
+        "new_case": "+ Ouvrir un nouveau dossier"
+      }
     }
   },
   "en": {
@@ -385,9 +526,308 @@
       "trust_attorneys": "Certified BE & US attorneys"
     },
     "v3": {
-      "act1": { "eyebrow": "WHERE YOU STAND" },
-      "act2": { "eyebrow": "ARCHER'S PLAN" },
-      "act3": { "eyebrow": "ALL THE DETAIL", "expand_all": "EXPAND ALL", "collapse_all": "COLLAPSE ALL" }
+      "act1": {
+        "eyebrow": "WHERE YOU STAND",
+        "title": "Your situation",
+        "verdict_low": "LOW RISK",
+        "verdict_moderate": "MODERATE RISK",
+        "verdict_high": "HIGH RISK",
+        "trend_label": "7D TREND",
+        "kpi_stake": "FINANCIAL STAKE",
+        "kpi_savings": "POTENTIAL SAVINGS",
+        "kpi_depth": "ANALYSIS DEPTH",
+        "kpi_confidence": "ARCHER CONFIDENCE",
+        "dims_title": "4 DIMENSIONS ANALYZED",
+        "dims_legend": "Green ≤30 · Amber 31–60 · Red ≥61",
+        "label_low": "LOW",
+        "label_moderate": "MODERATE",
+        "label_high": "HIGH",
+        "dim_financial": "Financial",
+        "dim_urgency": "Urgency",
+        "dim_legal": "Legal",
+        "dim_complexity": "Complexity"
+      },
+      "act2": {
+        "eyebrow": "ARCHER'S PLAN",
+        "title": "The strategy",
+        "recommended_pill": "RECOMMENDED STRATEGY",
+        "confidence_suffix": "CONFIDENCE",
+        "based_on": "Based on {count} similar BE precedents.",
+        "letter_content_label": "WHAT THE LETTER WILL CONTAIN",
+        "projection_label": "PROJECTION",
+        "projection_sub": "{count} similar cases",
+        "proj_won": "Won",
+        "proj_deal": "Settled",
+        "proj_refused": "Refused",
+        "how_to_send": "How do you want to send this letter?",
+        "options_count": "3 OPTIONS",
+        "option_diy": {
+          "title": "I'll handle it",
+          "tag": "Included",
+          "desc": "Archer drafts the letter, you download it and send it yourself.",
+          "bullet_1": "Print-ready PDF",
+          "bullet_2": "Address prefilled",
+          "bullet_3": "You send it",
+          "cta": "Download the letter"
+        },
+        "option_erecommande": {
+          "title": "Join the eRecommandé waitlist",
+          "tag": "SOON",
+          "desc": "Archer will send your letter as an <strong>electronic registered mail</strong> with legal value.",
+          "bullet_1": "Same legal standing",
+          "bullet_2": "Instant delivery",
+          "bullet_3": "Timestamped proof",
+          "cta": "Join the waitlist",
+          "joined": "You're on the list ✓"
+        },
+        "option_lawyer": {
+          "badge": "OUR PICK",
+          "tier_label": "SOLO+",
+          "title": "An attorney signs and sends",
+          "desc": "A partner BE attorney reviews, signs, and sends the letter on your behalf. <strong>Maximum legal weight.</strong>",
+          "bullet_1": "Attorney signature & letterhead",
+          "bullet_2": "Registered delivery within 48h",
+          "bullet_3": "Direct exchange with the attorney",
+          "cta": "Request an attorney"
+        }
+      },
+      "act3": {
+        "eyebrow": "ALL THE DETAIL",
+        "title": "The evidence",
+        "expand_all": "EXPAND ALL",
+        "collapse_all": "COLLAPSE ALL",
+        "battle": {
+          "title": "Tactical balance of power",
+          "sub": "Your arguments vs the other side · visual gauge",
+          "gauge_title": "BALANCE OF POWER",
+          "col_you": "YOUR ARGUMENTS",
+          "col_them": "OTHER SIDE",
+          "strength_solid": "SOLID",
+          "strength_fort": "STRONG",
+          "strength_medium": "MEDIUM",
+          "strength_weak": "WEAK",
+          "archer_verdict_prefix": "Archer verdict:",
+          "verdict_advantage": "✓ YOU HAVE THE ADVANTAGE",
+          "verdict_disadvantage": "⚠ YOU'RE AT A DISADVANTAGE",
+          "verdict_balanced": "⚖ EVENLY MATCHED"
+        },
+        "arms": {
+          "title": "Your weapons",
+          "sub": "Each argument with legal basis + Archer confidence + precedents",
+          "badge": "{count} ARGUMENTS",
+          "legal_base": "LEGAL BASIS",
+          "jurisprudences": "APPLIED PRECEDENTS"
+        },
+        "critical": {
+          "title": "Critical point",
+          "badge": "1 RISK",
+          "refs_label": "REFERENCES",
+          "action_label": "Action required:"
+        },
+        "anticipation": {
+          "title": "Adversarial anticipation",
+          "sub": "5 likely attacks from opposing counsel + prepared responses",
+          "attacker_label": "OPPOSING ATTACK",
+          "defense_label": "ARCHER'S RESPONSE",
+          "footer_rejected": "This attack will be rejected",
+          "probability": "{pct}% probability",
+          "threat_low": "LOW THREAT",
+          "threat_mid": "MEDIUM THREAT",
+          "threat_high": "HIGH THREAT",
+          "stats_attacks": "ANTICIPATED ATTACKS",
+          "stats_defense": "AVG DEFENSE STRENGTH",
+          "stats_verdict": "OVERALL VERDICT",
+          "verdict_defendable": "DEFENDABLE"
+        }
+      },
+      "right_rail": {
+        "lawyer": {
+          "live_label": "LAWYERS ONLINE",
+          "ready_count": "{count} ready",
+          "title": "Talk to a specialist attorney",
+          "desc": "30-min video consultation with a partner attorney. Connect in 2 min.",
+          "available": "{count} BE attorneys available",
+          "free_title": "Free. And staying free.",
+          "free_sub": "Included in your Archer subscription",
+          "cta": "Talk to an attorney now",
+          "members_note": "Members only · ",
+          "members_link": "Subscribe"
+        },
+        "refine": {
+          "title": "Refine my analysis",
+          "sub": "The more context you give Archer, the sharper the analysis.",
+          "placeholder": "E.g. \"I have an email from the landlord acknowledging that…\"",
+          "upload_label": "Add a document",
+          "upload_formats": "PDF · DOCX · IMG · max 10MB",
+          "cta": "Rerun analysis",
+          "eta": "Estimated time: ~45 seconds"
+        },
+        "documents_title": "Documents",
+        "context_title": "Context",
+        "similar_title": "Similar cases",
+        "news_title": "Legal news",
+        "chat_title": "Ask a question",
+        "chat_placeholder": "Question about your case?",
+        "new_case": "+ Open a new case"
+      }
+    }
+  },
+  "nl": {
+    "common": {
+      "back_to_cases": "Terug naar dossiers",
+      "updated_just_now": "Zojuist door Archer bijgewerkt",
+      "opened_on": "Geopend op {date}",
+      "document_count_one": "{count} document",
+      "document_count_many": "{count} documenten",
+      "loading": "Dossier laden…",
+      "error_title": "Laadfout",
+      "error_back": "Terug"
+    },
+    "v3": {
+      "act1": {
+        "eyebrow": "WAAR JE STAAT",
+        "title": "Jouw situatie",
+        "verdict_low": "LAAG RISICO",
+        "verdict_moderate": "GEMIDDELD RISICO",
+        "verdict_high": "HOOG RISICO",
+        "trend_label": "7D TREND",
+        "kpi_stake": "FINANCIEEL BELANG",
+        "kpi_savings": "POTENTIËLE BESPARING",
+        "kpi_depth": "ANALYSEDIEPTE",
+        "kpi_confidence": "ARCHER VERTROUWEN",
+        "dims_title": "4 GEANALYSEERDE DIMENSIES",
+        "dims_legend": "Groen ≤30 · Amber 31–60 · Rood ≥61",
+        "label_low": "LAAG",
+        "label_moderate": "GEMIDDELD",
+        "label_high": "HOOG",
+        "dim_financial": "Financieel",
+        "dim_urgency": "Urgentie",
+        "dim_legal": "Juridisch",
+        "dim_complexity": "Complexiteit"
+      },
+      "act2": {
+        "eyebrow": "HET PLAN VAN ARCHER",
+        "title": "De strategie",
+        "recommended_pill": "AANBEVOLEN STRATEGIE",
+        "confidence_suffix": "VERTROUWEN",
+        "based_on": "Gebaseerd op {count} vergelijkbare BE-precedenten.",
+        "letter_content_label": "WAT DE BRIEF ZAL BEVATTEN",
+        "projection_label": "PROJECTIE",
+        "projection_sub": "{count} vergelijkbare zaken",
+        "proj_won": "Gewonnen",
+        "proj_deal": "Schikking",
+        "proj_refused": "Geweigerd",
+        "how_to_send": "Hoe wil je deze brief versturen?",
+        "options_count": "3 OPTIES",
+        "option_diy": {
+          "title": "Ik doe het zelf",
+          "tag": "Inbegrepen",
+          "desc": "Archer stelt de brief op, jij downloadt en verstuurt zelf.",
+          "bullet_1": "Print-klaar PDF",
+          "bullet_2": "Adres vooraf ingevuld",
+          "bullet_3": "Jij verstuurt",
+          "cta": "Brief downloaden"
+        },
+        "option_erecommande": {
+          "title": "Op de eRecommandé-wachtlijst",
+          "tag": "BINNENKORT",
+          "desc": "Archer verstuurt je brief als <strong>elektronisch aangetekend</strong> met juridische waarde.",
+          "bullet_1": "Dezelfde juridische waarde",
+          "bullet_2": "Direct verzonden",
+          "bullet_3": "Bewijs met tijdstempel",
+          "cta": "Op de wachtlijst",
+          "joined": "Je staat op de lijst ✓"
+        },
+        "option_lawyer": {
+          "badge": "ONZE KEUZE",
+          "tier_label": "SOLO+",
+          "title": "Een advocaat tekent en verstuurt",
+          "desc": "Een BE-partneradvocaat controleert, tekent en verstuurt namens jou. <strong>Maximale juridische waarde.</strong>",
+          "bullet_1": "Advocaat-handtekening",
+          "bullet_2": "Aangetekend binnen 48u",
+          "bullet_3": "Direct contact met de advocaat",
+          "cta": "Vraag een advocaat"
+        }
+      },
+      "act3": {
+        "eyebrow": "HET VOLLEDIGE DETAIL",
+        "title": "De bewijzen",
+        "expand_all": "ALLES OPENEN",
+        "collapse_all": "ALLES SLUITEN",
+        "battle": {
+          "title": "Tactische krachtsverhouding",
+          "sub": "Jouw argumenten vs de tegenpartij · visuele meter",
+          "gauge_title": "KRACHTSVERHOUDING",
+          "col_you": "JOUW ARGUMENTEN",
+          "col_them": "TEGENPARTIJ",
+          "strength_solid": "SOLIDE",
+          "strength_fort": "STERK",
+          "strength_medium": "MATIG",
+          "strength_weak": "ZWAK",
+          "archer_verdict_prefix": "Archer-oordeel:",
+          "verdict_advantage": "✓ JIJ HEBT HET VOORDEEL",
+          "verdict_disadvantage": "⚠ JE STAAT ZWAK",
+          "verdict_balanced": "⚖ GELIJKWAARDIG"
+        },
+        "arms": {
+          "title": "Jouw wapens",
+          "sub": "Elk argument met rechtsbasis + Archer-vertrouwen + rechtspraak",
+          "badge": "{count} ARGUMENTEN",
+          "legal_base": "RECHTSBASIS",
+          "jurisprudences": "TOEGEPASTE RECHTSPRAAK"
+        },
+        "critical": {
+          "title": "Kritiek punt",
+          "badge": "1 RISICO",
+          "refs_label": "REFERENTIES",
+          "action_label": "Vereiste actie:"
+        },
+        "anticipation": {
+          "title": "Anticipatie tegenpartij",
+          "sub": "5 waarschijnlijke aanvallen van de tegenpartij + voorbereide antwoorden",
+          "attacker_label": "AANVAL TEGENPARTIJ",
+          "defense_label": "ANTWOORD ARCHER",
+          "footer_rejected": "Deze aanval wordt verworpen",
+          "probability": "{pct}% waarschijnlijkheid",
+          "threat_low": "LAGE DREIGING",
+          "threat_mid": "MATIGE DREIGING",
+          "threat_high": "HOGE DREIGING",
+          "stats_attacks": "VOORZIENE AANVALLEN",
+          "stats_defense": "GEM. VERDEDIGINGSKRACHT",
+          "stats_verdict": "ALGEMEEN OORDEEL",
+          "verdict_defendable": "VERDEDIGBAAR"
+        }
+      },
+      "right_rail": {
+        "lawyer": {
+          "live_label": "ADVOCATEN ONLINE",
+          "ready_count": "{count} klaar",
+          "title": "Praat met een gespecialiseerde advocaat",
+          "desc": "30 min videoconsult met een partneradvocaat. Connect in 2 min.",
+          "available": "{count} BE-advocaten beschikbaar",
+          "free_title": "Gratis. En blijft gratis.",
+          "free_sub": "Inbegrepen in je Archer-abonnement",
+          "cta": "Praat nu met een advocaat",
+          "members_note": "Alleen voor leden · ",
+          "members_link": "Abonneren"
+        },
+        "refine": {
+          "title": "Mijn analyse verfijnen",
+          "sub": "Hoe meer context je Archer geeft, hoe scherper de analyse.",
+          "placeholder": "Bv.: \"Ik heb een email van de verhuurder die erkent dat…\"",
+          "upload_label": "Document toevoegen",
+          "upload_formats": "PDF · DOCX · IMG · max 10MB",
+          "cta": "Analyse opnieuw starten",
+          "eta": "Geschatte tijd: ~45 seconden"
+        },
+        "documents_title": "Documenten",
+        "context_title": "Context",
+        "similar_title": "Vergelijkbare zaken",
+        "news_title": "Juridisch nieuws",
+        "chat_title": "Stel een vraag",
+        "chat_placeholder": "Vraag over je dossier?",
+        "new_case": "+ Nieuw dossier openen"
+      }
     }
   }
 }
