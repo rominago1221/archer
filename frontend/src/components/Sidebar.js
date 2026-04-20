@@ -35,40 +35,78 @@ function useSidebarCases() {
 }
 
 // Per-type icon (lucide). Rendered at 13px inline with the type label so
-// each case gets a visual cue matching its domain.
+// each case gets a visual cue matching its domain. Includes every type
+// string the backend has ever produced (incl. aliases like "eviction",
+// "criminal", and any capitalised variants).
 const CASE_TYPE_ICON = {
   housing: Home,
+  eviction: Home,
+  logement: Home,
   employment: Briefcase,
+  work: Briefcase,
+  travail: Briefcase,
   debt: CreditCard,
+  dette: CreditCard,
   insurance: Shield,
+  assurance: Shield,
   contract: FileSignature,
+  contrat: FileSignature,
   consumer: ShoppingBag,
+  conso: ShoppingBag,
   family: Users,
+  famille: Users,
   court: Scale,
+  justice: Scale,
   nda: FileSignature,
   penal: Gavel,
+  criminal: Gavel,
   commercial: Building2,
   other: FolderInput,
+  autre: FolderInput,
 };
 
 const CASE_TYPE_LABEL = {
   fr: {
-    housing: 'Logement', employment: 'Travail', debt: 'Dette',
-    insurance: 'Assurance', contract: 'Contrat', consumer: 'Conso',
-    family: 'Famille', court: 'Justice', nda: 'NDA', penal: 'Pénal',
-    commercial: 'Commercial', other: 'Autre',
+    housing: 'Logement', eviction: 'Logement', logement: 'Logement',
+    employment: 'Travail', work: 'Travail', travail: 'Travail',
+    debt: 'Dette', dette: 'Dette',
+    insurance: 'Assurance', assurance: 'Assurance',
+    contract: 'Contrat', contrat: 'Contrat',
+    consumer: 'Conso', conso: 'Conso',
+    family: 'Famille', famille: 'Famille',
+    court: 'Justice', justice: 'Justice',
+    nda: 'NDA',
+    penal: 'Pénal', criminal: 'Pénal',
+    commercial: 'Commercial',
+    other: 'Autre', autre: 'Autre',
   },
   en: {
-    housing: 'Housing', employment: 'Work', debt: 'Debt',
-    insurance: 'Insurance', contract: 'Contract', consumer: 'Consumer',
-    family: 'Family', court: 'Court', nda: 'NDA', penal: 'Criminal',
-    commercial: 'Commercial', other: 'Other',
+    housing: 'Housing', eviction: 'Housing', logement: 'Housing',
+    employment: 'Work', work: 'Work', travail: 'Work',
+    debt: 'Debt', dette: 'Debt',
+    insurance: 'Insurance', assurance: 'Insurance',
+    contract: 'Contract', contrat: 'Contract',
+    consumer: 'Consumer', conso: 'Consumer',
+    family: 'Family', famille: 'Family',
+    court: 'Court', justice: 'Court',
+    nda: 'NDA',
+    penal: 'Criminal', criminal: 'Criminal',
+    commercial: 'Commercial',
+    other: 'Other', autre: 'Other',
   },
   nl: {
-    housing: 'Wonen', employment: 'Werk', debt: 'Schuld',
-    insurance: 'Verz.', contract: 'Contract', consumer: 'Consu.',
-    family: 'Familie', court: 'Recht', nda: 'NDA', penal: 'Straf',
-    commercial: 'Commerc.', other: 'Overig',
+    housing: 'Wonen', eviction: 'Wonen', logement: 'Wonen',
+    employment: 'Werk', work: 'Werk', travail: 'Werk',
+    debt: 'Schuld', dette: 'Schuld',
+    insurance: 'Verz.', assurance: 'Verz.',
+    contract: 'Contract', contrat: 'Contract',
+    consumer: 'Consu.', conso: 'Consu.',
+    family: 'Familie', famille: 'Familie',
+    court: 'Recht', justice: 'Recht',
+    nda: 'NDA',
+    penal: 'Straf', criminal: 'Straf',
+    commercial: 'Commerc.',
+    other: 'Overig', autre: 'Overig',
   },
 };
 
@@ -88,8 +126,15 @@ function daysUntil(iso) {
 
 function MiniCase({ c, active, lang, onClick }) {
   const dotTone = dotToneForScore(c.risk_score);
-  const typeKey = c.type || 'other';
-  const typeLabel = CASE_TYPE_LABEL[lang]?.[typeKey] || CASE_TYPE_LABEL.en[typeKey] || typeKey;
+  // Normalise the type key: lower-case + strip accents so "Autre",
+  // "AUTRE", "autre", "eviction", "Criminal" all land on the same
+  // bucket. Fall back to "other" when the label/icon map doesn't
+  // recognise the backend string.
+  const rawType = String(c.type || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const typeKey = rawType || 'other';
+  const typeLabel = CASE_TYPE_LABEL[lang]?.[typeKey]
+    || CASE_TYPE_LABEL.en[typeKey]
+    || (typeKey.charAt(0).toUpperCase() + typeKey.slice(1));
   const TypeIcon = CASE_TYPE_ICON[typeKey] || CASE_TYPE_ICON.other;
   const days = daysUntil(c.deadline);
   const isWon = String(c.status || '').toLowerCase() === 'won';
@@ -173,9 +218,11 @@ const Sidebar = () => {
   const activeCasesLabel = lang === 'fr' ? 'Dossiers actifs'
     : lang === 'nl' ? 'Actieve dossiers'
     : 'Active cases';
-  const newCaseLabel = lang === 'fr' ? '+ Ouvrir un nouveau dossier'
-    : lang === 'nl' ? '+ Nieuw dossier openen'
-    : '+ Open a new case';
+  // Label without the "+" — the button already renders a <Plus> icon
+  // before the text. Having both was producing "+ + Ouvrir…".
+  const newCaseLabel = lang === 'fr' ? 'Ouvrir un nouveau dossier'
+    : lang === 'nl' ? 'Nieuw dossier openen'
+    : 'Open a new case';
   const signOutLabel = lang === 'fr' ? 'Déconnexion'
     : lang === 'nl' ? 'Afmelden'
     : 'Sign out';
