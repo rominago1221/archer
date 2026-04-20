@@ -38,7 +38,8 @@ import StrCard from '../components/Dashboard/V3/StrCard';
 import AccordionItem from '../components/Dashboard/V3/AccordionItem';
 import BattleBlock from '../components/Dashboard/V3/BattleBlock';
 import ArmsStack from '../components/Dashboard/V3/ArmsStack';
-import { Swords, Sword } from 'lucide-react';
+import CritBox from '../components/Dashboard/V3/CritBox';
+import { Swords, Sword, AlertTriangle } from 'lucide-react';
 import '../styles/dashboard-v3.css';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -441,6 +442,20 @@ export default function CaseDetailV7() {
               onToggle={() => toggleAccordion('arms')}
             >
               <ArmsStack findings={strongFindings} country={country} t={t} />
+            </AccordionItem>
+
+            <AccordionItem
+              id="critical"
+              iconTone="red"
+              Icon={AlertTriangle}
+              title={t('v3.act3.critical.title')}
+              sub={criticalFindings[0]?.title || ''}
+              badgeTone="red"
+              badgeText={criticalFindings.length > 0 ? t('v3.act3.critical.badge') : null}
+              isOpen={openAccordions.has('critical')}
+              onToggle={() => toggleAccordion('critical')}
+            >
+              <CritBox findings={criticalFindings} country={country} t={t} />
             </AccordionItem>
           </div>
 

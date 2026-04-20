@@ -907,7 +907,35 @@
   font-size: 11px; font-weight: 700;
 }
 
-/* ═══════════ PLACEHOLDER (commits 07-09 will replace these) ═══════════ */
+/* ═══════════ CRIT-BOX (act3.3) ═══════════ */
+.dashboard-v3 .crit-box {
+  padding: 14px 16px;
+  background: var(--red-50);
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dashboard-v3 .crit-title {
+  font-weight: 700; font-size: 13.5px;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+}
+.dashboard-v3 .crit-desc {
+  font-size: 12.5px; color: var(--ink-2); line-height: 1.5;
+}
+.dashboard-v3 .crit-desc strong { color: var(--red); font-weight: 700; }
+.dashboard-v3 .crit-refs {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px dashed #fecaca;
+}
+
+/* ═══════════ PLACEHOLDER (commits 08-09 will replace these) ═══════════ */
 .dashboard-v3 .v3-placeholder {
   background: #fff;
   border: 1px dashed var(--line-2);
