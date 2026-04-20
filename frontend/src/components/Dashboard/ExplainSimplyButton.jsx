@@ -7,7 +7,8 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 //   caseId: string
 //   caseDoc: case object (for cached simple_explanation)
 //   language: 'fr' | 'en'
-export default function ExplainSimplyButton({ caseId, caseDoc, language = 'fr' }) {
+//   variant: 'gold' (default, legacy standalone) | 'ghost' (compact, fits the V3 quickbar)
+export default function ExplainSimplyButton({ caseId, caseDoc, language = 'fr', variant = 'gold' }) {
   const [showModal, setShowModal] = useState(false);
   const [explanation, setExplanation] = useState(caseDoc?.simple_explanation || null);
   const [loading, setLoading] = useState(false);
@@ -36,28 +37,44 @@ export default function ExplainSimplyButton({ caseId, caseDoc, language = 'fr' }
   // Don't show if no analysis yet
   if (!caseDoc?.ai_summary && !(caseDoc?.ai_findings?.length > 0)) return null;
 
+  const isGhost = variant === 'ghost';
+  const wrapperStyle = isGhost
+    ? { display: 'inline-flex' }
+    : { marginBottom: 16, display: 'flex', justifyContent: 'flex-end' };
+  const btnStyle = isGhost
+    ? null  // quickbar styles via .quick-btn CSS class
+    : {
+        background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+        color: '#92400e',
+        border: '1px solid #fcd34d',
+        padding: '8px 18px',
+        borderRadius: 20,
+        fontSize: 13,
+        fontWeight: 600,
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        fontFamily: 'inherit',
+      };
+
   return (
     <>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+      <div style={wrapperStyle}>
         <button
           type="button"
           data-testid="explain-simply-btn"
           onClick={() => generate(false)}
-          style={{
-            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-            color: '#92400e',
-            border: '1px solid #fcd34d',
-            padding: '8px 18px',
-            borderRadius: 20,
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            fontFamily: 'inherit',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(252,211,77,0.4)'; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
+          className={isGhost ? 'quick-btn' : undefined}
+          style={btnStyle || undefined}
+          onMouseEnter={isGhost ? undefined : e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(252,211,77,0.4)'; }}
+          onMouseLeave={isGhost ? undefined : e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
         >
+          {isGhost && (
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <circle cx="12" cy="12" r="10" />
+              <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          )}
           {language === 'fr' ? 'Explique-moi simplement' : 'Explain simply'}
         </button>
       </div>

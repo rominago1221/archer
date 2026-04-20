@@ -4,6 +4,8 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useUiLanguage } from '../hooks/useUiLanguage';
 import { useDashboardT } from '../hooks/useDashboardT';
+import V3CaseHeader from '../components/Dashboard/V3/V3CaseHeader';
+import QuickBar from '../components/Dashboard/V3/QuickBar';
 import DocumentsSection from '../components/Dashboard/Sprint2/DocumentsSection';
 import AttorneyStatusBanner from '../components/AttorneyStatusBanner';
 import JurisdictionMismatchBanner from '../components/JurisdictionMismatchBanner';
@@ -247,8 +249,32 @@ export default function CaseDetailV7() {
 
   return (
     <div data-testid="case-detail-v7" className="dashboard-v3">
-      {/* ── Legacy header area: VersionPicker + CaseHeader + banners stay above the acts ── */}
-      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '24px 32px 0' }}>
+      <QuickBar
+        caseId={caseId}
+        caseDoc={displayedCase}
+        language={language}
+        t={t}
+        currentVersion={caseDoc.current_analysis_version || 1}
+        viewingVersion={viewingVersion}
+        onOpenVersionPicker={() => {
+          // The legacy VersionPicker is rendered below the QuickBar; scroll to it.
+          const el = document.querySelector('[data-testid="version-picker"]');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }}
+      />
+
+      <V3CaseHeader
+        caseDoc={displayedCase}
+        country={country}
+        language={language}
+        documentCount={documentCount}
+        letters={letters}
+        userPlan={user?.plan}
+        onLockClick={() => navigate('/plans')}
+      />
+
+      {/* Banners + paid Live Counsel flow — kept as flush-width blocks under the header. */}
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '16px 32px 0' }}>
         <VersionPicker
           caseId={caseId}
           currentVersion={caseDoc.current_analysis_version || 1}
@@ -265,29 +291,17 @@ export default function CaseDetailV7() {
           }}
         />
 
-        <CaseHeader
-          caseDoc={displayedCase}
-          country={country}
-          language={language}
-          documentCount={documentCount}
-        />
-
         <JurisdictionMismatchBanner
           caseDoc={caseDoc}
           language={language}
           onUpdated={(updated) => {
             setCaseDoc(updated);
-            // Always refetch to pick up any derived fields the endpoint didn't echo.
             fetchCase();
           }}
         />
 
         <AttorneyStatusBanner status={caseDoc?.attorney_status} language={language} />
 
-        {/* Sprint E — Live Counsel booking flow is only rendered when the case is
-            paid + active. The V3 "Talk to an attorney" rail CTA handles the
-            pre-purchase funnel; the legacy LiveCounselCTA marketing banner is
-            gone. */}
         {caseDoc?.payment_status === 'paid' && caseDoc?.live_counsel_active && (
           <LiveCounselBookingFlow caseId={caseId} language={language} />
         )}
