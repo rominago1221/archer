@@ -334,7 +334,7 @@
         "news_title": "Actualités juridiques",
         "chat_title": "Pose ta question",
         "chat_placeholder": "Une question sur ton dossier ?",
-        "new_case": "+ Ouvrir un nouveau dossier"
+        "new_case": "Ouvrir un nouveau dossier"
       }
     }
   },
@@ -672,7 +672,7 @@
         "news_title": "Legal news",
         "chat_title": "Ask a question",
         "chat_placeholder": "Question about your case?",
-        "new_case": "+ Open a new case"
+        "new_case": "Open a new case"
       }
     }
   },
@@ -832,7 +832,7 @@
         "news_title": "Juridisch nieuws",
         "chat_title": "Stel een vraag",
         "chat_placeholder": "Vraag over je dossier?",
-        "new_case": "+ Nieuw dossier openen"
+        "new_case": "Nieuw dossier openen"
       }
     }
   }
