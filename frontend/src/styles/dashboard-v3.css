@@ -355,16 +355,22 @@
 .dashboard-v3 .tl-step.locked:focus-visible .tl-lock-overlay { opacity: 1; }
 
 /* ═══════════ LAYOUT — main + right rail ═══════════ */
+/* Mirrors the mockup's .body-wrap + .body pattern: outer container with
+ * horizontal padding, inner grid with main column + 340px sticky rail.
+ * margin-bottom is generous so the content has breathing room above the
+ * page fold. */
 .dashboard-v3 .v3-body {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 24px 32px 64px;
+  padding: 0 32px 48px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
   gap: 20px;
+  align-items: start;
 }
 
-.dashboard-v3 .v3-main { min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+.dashboard-v3 .v3-main { min-width: 0; display: flex; flex-direction: column; }
+.dashboard-v3 .v3-main > * + * { margin-top: 0; }
 
 .dashboard-v3 .v3-rail {
   position: sticky;
@@ -372,7 +378,7 @@
   align-self: start;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   max-height: calc(100vh - 88px);
   overflow-y: auto;
 }
@@ -463,6 +469,7 @@
   border: 1px solid var(--line);
   border-radius: 20px;
   padding: 32px 36px;
+  margin-bottom: 16px;
 }
 .dashboard-v3 .ts-top {
   display: grid;
@@ -672,6 +679,7 @@
 .dashboard-v3 .str-card {
   background: #fff; border: 1px solid var(--line); border-radius: 20px;
   overflow: hidden;
+  margin-bottom: 16px;
 }
 .dashboard-v3 .str-head { padding: 28px 32px 24px; border-bottom: 1px solid var(--line); }
 .dashboard-v3 .str-eyebrow {
