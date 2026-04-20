@@ -385,6 +385,12 @@
   flex-direction: column;
   gap: 14px;
   min-width: 0;
+  /* Align the first rail card (Lawyer CTA) with the top of the
+   * TsCard in the main column. The Act 1 divider above TsCard is
+   * roughly 44 px tall (badge) + 8 px top margin + 20 px bottom
+   * margin = ~72 px. Pad the rail down by the same amount so
+   * Lawyer and Ta situation start on the same horizontal line. */
+  padding-top: 72px;
 }
 /* Only stick when the rail is short enough to fit the viewport.
  * When it's taller (7+ cards on small screens), it scrolls with the
