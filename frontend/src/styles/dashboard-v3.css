@@ -168,12 +168,16 @@
 .dashboard-v3 .version-pill:hover { background: var(--archer-blue-100); }
 
 /* ═══════════ CASE HEADER ═══════════ */
+/* Full-bleed white strip (matches .quickbar full-width) so the banner
+ * extends edge-to-edge against the sidebar with no uncovered gap. The
+ * inner container caps the content at 1440px + 20px padding, aligned
+ * with .v3-body below. */
 .dashboard-v3 .case-header {
   background: #fff;
-  padding: 28px 32px 0;
+  padding: 28px 20px 0;
   border-bottom: 1px solid var(--line);
 }
-.dashboard-v3 .case-header-inner { max-width: 1400px; margin: 0 auto; }
+.dashboard-v3 .case-header-inner { max-width: 1440px; margin: 0 auto; }
 .dashboard-v3 .case-eyebrow-row {
   display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
 }
@@ -359,12 +363,12 @@
  * margin-bottom is generous so the content has breathing room above the
  * page fold. */
 .dashboard-v3 .v3-body {
-  max-width: 1400px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 32px 48px;
+  padding: 0 20px 48px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 14px;
   align-items: start;
 }
 

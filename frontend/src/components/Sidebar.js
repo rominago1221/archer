@@ -3,8 +3,10 @@ import { NavLink, useNavigate, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  LayoutDashboard, FolderOpen, FileText, MessageCircle, Phone, Settings,
+  LayoutGrid, Folder, FileText, MessageSquare, Phone, Settings,
   Search, LogOut, Plus, ShieldCheck,
+  Home, Briefcase, CreditCard, Shield, FileSignature, ShoppingBag,
+  Users, Scale, Gavel, Building2, FolderInput,
 } from 'lucide-react';
 import { useUiLanguage } from '../hooks/useUiLanguage';
 import { useDashboardT } from '../hooks/useDashboardT';
@@ -32,10 +34,21 @@ function useSidebarCases() {
   return { cases, ready };
 }
 
-const CASE_EMOJI = {
-  housing: '🏠', employment: '💼', debt: '💳', insurance: '🛡',
-  contract: '📄', consumer: '🛒', family: '👨‍👩‍👧', court: '⚖',
-  nda: '📄', penal: '⚖', commercial: '🏢', other: '📋',
+// Per-type icon (lucide). Rendered at 13px inline with the type label so
+// each case gets a visual cue matching its domain.
+const CASE_TYPE_ICON = {
+  housing: Home,
+  employment: Briefcase,
+  debt: CreditCard,
+  insurance: Shield,
+  contract: FileSignature,
+  consumer: ShoppingBag,
+  family: Users,
+  court: Scale,
+  nda: FileSignature,
+  penal: Gavel,
+  commercial: Building2,
+  other: FolderInput,
 };
 
 const CASE_TYPE_LABEL = {
@@ -77,7 +90,7 @@ function MiniCase({ c, active, lang, onClick }) {
   const dotTone = dotToneForScore(c.risk_score);
   const typeKey = c.type || 'other';
   const typeLabel = CASE_TYPE_LABEL[lang]?.[typeKey] || CASE_TYPE_LABEL.en[typeKey] || typeKey;
-  const emoji = CASE_EMOJI[typeKey] || CASE_EMOJI.other;
+  const TypeIcon = CASE_TYPE_ICON[typeKey] || CASE_TYPE_ICON.other;
   const days = daysUntil(c.deadline);
   const isWon = String(c.status || '').toLowerCase() === 'won';
   // Status pill tone: won → green, otherwise based on urgency.
@@ -105,7 +118,9 @@ function MiniCase({ c, active, lang, onClick }) {
       <div className="case-mini-row-bottom">
         <span className="case-mini-score">{c.risk_score || '—'}</span>
         <span className="case-mini-sep">·</span>
-        <span className="case-mini-type">{emoji} {typeLabel}</span>
+        <span className="case-mini-type">
+          <TypeIcon size={12} strokeWidth={1.8} aria-hidden /> {typeLabel}
+        </span>
         {pillLabel && (
           <span className={`case-mini-pill ${pillTone}`}>{pillLabel}</span>
         )}
@@ -169,13 +184,18 @@ const Sidebar = () => {
   const activeCount = cases.filter((c) => c.status !== 'closed' && c.status !== 'archived').length;
   const documentsPath = location.pathname.startsWith('/documents');
 
-  // 6 items per mockup — no standalone "Upload" row; the "+ Ouvrir un
-  // nouveau dossier" button at the bottom of the sidebar takes that role.
+  // 6 items per mockup + screenshot. Icon choice:
+  //  - LayoutGrid: 4-square grid that reads "Dashboard"
+  //  - Folder: closed-folder glyph matching "Mes dossiers" pictogram
+  //  - FileText: document/page icon
+  //  - MessageSquare: rounded-square chat bubble
+  //  - Phone: handset
+  //  - Settings: gear
   const navItems = [
-    { path: '/dashboard', label: navLabels.dashboard, icon: LayoutDashboard },
-    { path: '/cases', label: navLabels.cases, icon: FolderOpen, count: activeCount > 0 ? activeCount : null },
+    { path: '/dashboard', label: navLabels.dashboard, icon: LayoutGrid },
+    { path: '/cases', label: navLabels.cases, icon: Folder, count: activeCount > 0 ? activeCount : null },
     { path: '/documents', label: navLabels.documents, icon: FileText, active: documentsPath },
-    { path: '/chat', label: navLabels.chat, icon: MessageCircle },
+    { path: '/chat', label: navLabels.chat, icon: MessageSquare },
     { path: '/lawyers', label: navLabels.lawyers, icon: Phone },
     { path: '/settings', label: navLabels.settings, icon: Settings },
   ];
