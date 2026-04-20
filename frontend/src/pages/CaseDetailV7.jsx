@@ -4,23 +4,17 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useUiLanguage } from '../hooks/useUiLanguage';
 import { useDashboardT } from '../hooks/useDashboardT';
-import CaseHeader from '../components/Dashboard/Sprint1/CaseHeader';
-import ProgressTimeline from '../components/Dashboard/Sprint1/ProgressTimeline';
-import FindingsSection from '../components/Dashboard/Sprint2/FindingsSection';
 import DocumentsSection from '../components/Dashboard/Sprint2/DocumentsSection';
 import AttorneyStatusBanner from '../components/AttorneyStatusBanner';
 import JurisdictionMismatchBanner from '../components/JurisdictionMismatchBanner';
 import RefineAnalysisSection from '../components/RefineAnalysisSection';
 import VersionPicker from '../components/VersionPicker';
-import AdversarialCounterArgsSection from '../components/AdversarialCounterArgsSection';
 import { useCaseBehaviorTracking } from '../hooks/useBehaviorTracking';
-import LiveCounselCTA from '../components/LiveCounselCTA';
 import LiveCounselBookingFlow from '../components/LiveCounselBookingFlow';
 import ArcherQuestionsSection from '../components/Dashboard/Sprint2/ArcherQuestionsSection';
 import LegalNewsSection from '../components/Dashboard/Sprint3/LegalNewsSection';
 import SimilarCasesSection from '../components/Dashboard/Sprint3/SimilarCasesSection';
 import AskArcherCompact from '../components/Dashboard/Sprint3/AskArcherCompact';
-import ExplainSimplyButton from '../components/Dashboard/ExplainSimplyButton';
 import { deriveProgressStep } from '../utils/dashboard/progressStep';
 import { deriveStrategy } from '../utils/dashboard/strategyFallback';
 import { deriveBattle } from '../utils/dashboard/battle';
@@ -288,20 +282,14 @@ export default function CaseDetailV7() {
           }}
         />
 
-        {/* Feature 3 — Explain Simply button */}
-        <ExplainSimplyButton caseId={caseId} caseDoc={caseDoc} language={language} />
-
         <AttorneyStatusBanner status={caseDoc?.attorney_status} language={language} />
 
-        {/* Sprint E — Live Counsel: booking flow if paid, else CTA */}
-        {caseDoc?.payment_status === 'paid' && caseDoc?.live_counsel_active ? (
+        {/* Sprint E — Live Counsel booking flow is only rendered when the case is
+            paid + active. The V3 "Talk to an attorney" rail CTA handles the
+            pre-purchase funnel; the legacy LiveCounselCTA marketing banner is
+            gone. */}
+        {caseDoc?.payment_status === 'paid' && caseDoc?.live_counsel_active && (
           <LiveCounselBookingFlow caseId={caseId} language={language} />
-        ) : (
-          <LiveCounselCTA
-            caseId={caseId}
-            hasExistingLiveCounsel={!!caseDoc?.live_counsel_active}
-            language={language}
-          />
         )}
       </div>
 
@@ -315,8 +303,6 @@ export default function CaseDetailV7() {
             <div className="act-divider-line" />
           </div>
           <TsCard caseDoc={displayedCase} t={t} />
-
-          <ProgressTimeline currentStep={progressStep} language={language} />
 
           {/* ── ACT 2 · LA STRATÉGIE ─────────────────────────────────── */}
           <div className="act-divider" data-testid="act2-divider">
@@ -517,7 +503,7 @@ export default function CaseDetailV7() {
 
         {/* ═══════════ RIGHT RAIL ═══════════ */}
         <aside className="v3-rail" data-testid="v3-rail">
-          <LawyerRailCTA t={t} />
+          <LawyerRailCTA caseId={caseId} t={t} />
 
           <RefineAnalysisSection
             caseDoc={caseDoc}

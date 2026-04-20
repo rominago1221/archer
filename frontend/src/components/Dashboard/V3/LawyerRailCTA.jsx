@@ -1,22 +1,47 @@
-import React from 'react';
-import { Video, Gift } from 'lucide-react';
+import React, { useState } from 'react';
+import axios from 'axios';
+import { Video, Gift, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// Rail CTA card. Marketing-style panel above the rest of the rail. Clicking
-// the CTA jumps to the existing Live Counsel CTA that lives in the header
-// zone — we don't duplicate the Stripe/Calendly flow here.
-export default function LawyerRailCTA({ t }) {
-  const navigate = useNavigate();
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-  const handleClick = () => {
-    // Scroll to the top-of-page LiveCounselCTA so the user lands on the real
-    // booking flow. Fallback: navigate to /lawyers.
-    const el = document.querySelector('[data-testid="live-counsel-cta"]');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
+// Rail CTA card. Marketing-style panel above the rest of the rail.
+// Clicking the CTA opens the Live Counsel Stripe checkout directly —
+// the legacy LiveCounselCTA banner was removed from the header zone, so
+// this is now the canonical pre-purchase entry point.
+// Falls back to /lawyers on any error.
+export default function LawyerRailCTA({ caseId, t }) {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState(null);
+
+  const handleClick = async () => {
+    if (loading) return;
+    if (!caseId) return navigate('/lawyers');
+    setLoading(true);
+    setErr(null);
+    try {
+      const res = await axios.post(
+        `${API}/cases/${caseId}/checkout/live-counsel`,
+        {},
+        { withCredentials: true },
+      );
+      if (res.data?.checkout_url) {
+        window.location.href = res.data.checkout_url;
+        return;
+      }
+      // No URL returned → fall back
+      navigate('/lawyers');
+    } catch (e) {
+      const code = e?.response?.data?.code;
+      if (code === 'NO_ATTORNEY_AVAILABLE_FOR_LIVE_COUNSEL') {
+        setErr(code);
+      } else {
+        navigate('/lawyers');
+      }
+    } finally {
+      setLoading(false);
     }
-    navigate('/lawyers');
   };
 
   return (
@@ -38,9 +63,28 @@ export default function LawyerRailCTA({ t }) {
         </div>
       </div>
 
-      <button type="button" className="lawyer-cta-btn" onClick={handleClick} data-testid="rail-lawyer-cta-btn">
-        <Video size={13} aria-hidden /> {t('v3.right_rail.lawyer.cta')}
+      <button
+        type="button"
+        className="lawyer-cta-btn"
+        onClick={handleClick}
+        disabled={loading}
+        data-testid="rail-lawyer-cta-btn"
+      >
+        {loading
+          ? <><Loader2 size={13} className="animate-spin" aria-hidden /> {t('v3.right_rail.lawyer.cta')}</>
+          : <><Video size={13} aria-hidden /> {t('v3.right_rail.lawyer.cta')}</>}
       </button>
+
+      {err === 'NO_ATTORNEY_AVAILABLE_FOR_LIVE_COUNSEL' && (
+        <div style={{
+          marginTop: 10,
+          fontSize: 11, color: 'var(--amber)',
+          textAlign: 'center',
+        }}>
+          {/* TODO(i18n): add v3.right_rail.lawyer.no_attorney_error */}
+          Aucun avocat disponible pour le moment.
+        </div>
+      )}
     </div>
   );
 }
