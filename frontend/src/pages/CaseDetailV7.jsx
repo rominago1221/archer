@@ -16,7 +16,6 @@ import AdversarialCounterArgsSection from '../components/AdversarialCounterArgsS
 import { useCaseBehaviorTracking } from '../hooks/useBehaviorTracking';
 import LiveCounselCTA from '../components/LiveCounselCTA';
 import LiveCounselBookingFlow from '../components/LiveCounselBookingFlow';
-import ScoreHistoryGraph from '../components/Dashboard/Sprint2/ScoreHistoryGraph';
 import ArcherQuestionsSection from '../components/Dashboard/Sprint2/ArcherQuestionsSection';
 import LegalNewsSection from '../components/Dashboard/Sprint3/LegalNewsSection';
 import SimilarCasesSection from '../components/Dashboard/Sprint3/SimilarCasesSection';
@@ -26,7 +25,6 @@ import { deriveProgressStep } from '../utils/dashboard/progressStep';
 import { deriveStrategy } from '../utils/dashboard/strategyFallback';
 import { deriveBattle } from '../utils/dashboard/battle';
 import { deriveFindings } from '../utils/dashboard/findings';
-import { deriveScoreHistory } from '../utils/dashboard/scoreHistory';
 import { deriveArcherQuestions } from '../utils/dashboard/archerQuestions';
 import { deriveFreemiumExhausted } from '../utils/dashboard/documents';
 import { mapBackendCaseType } from '../utils/dashboard/caseType';
@@ -40,6 +38,7 @@ import BattleBlock from '../components/Dashboard/V3/BattleBlock';
 import ArmsStack from '../components/Dashboard/V3/ArmsStack';
 import CritBox from '../components/Dashboard/V3/CritBox';
 import AtkList from '../components/Dashboard/V3/AtkList';
+import LawyerRailCTA from '../components/Dashboard/V3/LawyerRailCTA';
 import { Swords, Sword, AlertTriangle, Target } from 'lucide-react';
 import '../styles/dashboard-v3.css';
 
@@ -207,7 +206,6 @@ export default function CaseDetailV7() {
   const opponentLabel = getOpponentLabel(caseTypeV7, country, language);
   const battle = deriveBattle(displayedCase);
   const { critical: criticalFindings, strong: strongFindings } = deriveFindings(displayedCase);
-  const scoreHistory = deriveScoreHistory(caseDoc, language); // always live — score_history is a timeline, not versioned
   const archerQuestions = deriveArcherQuestions(displayedCase, caseTypeV7, language);
   const freemiumExhausted = deriveFreemiumExhausted(user, documents);
 
@@ -474,19 +472,6 @@ export default function CaseDetailV7() {
             </AccordionItem>
           </div>
 
-        <DocumentsSection
-          documents={documents}
-          isFreemiumExhausted={freemiumExhausted}
-          onAddDocument={handleAddDocument}
-          onUpgrade={handleUpgrade}
-          language={language}
-        />
-
-        <ScoreHistoryGraph
-          scoreHistory={scoreHistory}
-          language={language}
-        />
-
         {/* Answer feedback toast */}
         {answerFeedback && !answerFeedback.error && (
           <div data-testid="answer-feedback" style={{
@@ -526,45 +511,49 @@ export default function CaseDetailV7() {
           </div>
         )}
 
-        <ArcherQuestionsSection
-          questions={archerQuestions}
-          onAnswer={handleAnswerQuestion}
-          language={language}
-        />
-
-        {/* ── Sprint 3 sections ──────────────────────────────────────── */}
-        <LegalNewsSection news={legalNews} language={language} />
-
-        <SimilarCasesSection
-          caseId={caseId}
-          stats={similarCases}
-          country={country}
-          language={language}
-        />
-
-        <AskArcherCompact onSubmit={handleAskArcher} language={language} />
-
-        {/* Refine-analysis section — post-analysis free-text input, versioned */}
-        <RefineAnalysisSection
-          caseDoc={caseDoc}
-          language={language}
-          onSubmitStart={() => { markInteracted(); trackFire('refinement_started'); }}
-          onRefined={() => {
-            // After a successful refine, drop back to the live view and re-fetch.
-            setViewingVersion(null);
-            setViewedAnalysis(null);
-            fetchCase();
-          }}
-        />
-
         {/* Bottom sentinel for scrolled_to_bottom tracking */}
         <div ref={bottomSentinelRef} data-testid="scroll-sentinel" style={{ height: 1 }} />
         </div>
+
         {/* ═══════════ RIGHT RAIL ═══════════ */}
         <aside className="v3-rail" data-testid="v3-rail">
-          <div className="v3-placeholder" data-testid="rail-placeholder">
-            Right rail — commit 09
-          </div>
+          <LawyerRailCTA t={t} />
+
+          <RefineAnalysisSection
+            caseDoc={caseDoc}
+            language={language}
+            onSubmitStart={() => { markInteracted(); trackFire('refinement_started'); }}
+            onRefined={() => {
+              setViewingVersion(null);
+              setViewedAnalysis(null);
+              fetchCase();
+            }}
+          />
+
+          <DocumentsSection
+            documents={documents}
+            isFreemiumExhausted={freemiumExhausted}
+            onAddDocument={handleAddDocument}
+            onUpgrade={handleUpgrade}
+            language={language}
+          />
+
+          <ArcherQuestionsSection
+            questions={archerQuestions}
+            onAnswer={handleAnswerQuestion}
+            language={language}
+          />
+
+          <SimilarCasesSection
+            caseId={caseId}
+            stats={similarCases}
+            country={country}
+            language={language}
+          />
+
+          <LegalNewsSection news={legalNews} language={language} />
+
+          <AskArcherCompact onSubmit={handleAskArcher} language={language} />
         </aside>
       </div>
     </div>
