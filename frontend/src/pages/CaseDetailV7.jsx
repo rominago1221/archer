@@ -6,7 +6,6 @@ import { useUiLanguage } from '../hooks/useUiLanguage';
 import { useDashboardT } from '../hooks/useDashboardT';
 import CaseHeader from '../components/Dashboard/Sprint1/CaseHeader';
 import ProgressTimeline from '../components/Dashboard/Sprint1/ProgressTimeline';
-import BattleSection from '../components/Dashboard/Sprint2/BattleSection';
 import FindingsSection from '../components/Dashboard/Sprint2/FindingsSection';
 import DocumentsSection from '../components/Dashboard/Sprint2/DocumentsSection';
 import AttorneyStatusBanner from '../components/AttorneyStatusBanner';
@@ -36,6 +35,9 @@ import { deriveLegalNews } from '../utils/dashboard/legalNews';
 import { deriveSimilarCases } from '../utils/dashboard/similarCases';
 import TsCard from '../components/Dashboard/V3/TsCard';
 import StrCard from '../components/Dashboard/V3/StrCard';
+import AccordionItem from '../components/Dashboard/V3/AccordionItem';
+import BattleBlock from '../components/Dashboard/V3/BattleBlock';
+import { Swords } from 'lucide-react';
 import '../styles/dashboard-v3.css';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -62,6 +64,19 @@ export default function CaseDetailV7() {
   // Refinement versioning — null means "view the live current version".
   const [viewingVersion, setViewingVersion] = useState(null);
   const [viewedAnalysis, setViewedAnalysis] = useState(null);
+  // Act 3 accordions — Set of open ids. Closed by default in prod.
+  const [openAccordions, setOpenAccordions] = useState(() => new Set());
+  const ACCORDION_IDS = React.useMemo(() => ['battle', 'arms', 'critical', 'anticipation'], []);
+  const toggleAccordion = (id) => setOpenAccordions((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const allOpen = openAccordions.size === ACCORDION_IDS.length;
+  const toggleAllAccordions = () => setOpenAccordions((prev) => {
+    if (prev.size === ACCORDION_IDS.length) return new Set();
+    return new Set(ACCORDION_IDS);
+  });
 
   // Behavior tracking — fires analysis_viewed, time_spent heartbeat, case_abandoned,
   // and scrolled_to_bottom when the sentinel at the bottom of the page becomes visible.
@@ -390,20 +405,31 @@ export default function CaseDetailV7() {
             <div className="act-num">ACT 3</div>
             <div className="act-eyebrow">{t('v3.act3.eyebrow')}</div>
             <div className="act-divider-line" />
-            <button type="button" className="act-divider-expand" data-testid="act3-expand-all">
-              {t('v3.act3.expand_all')}
+            <button
+              type="button"
+              className="act-divider-expand"
+              data-testid="act3-expand-all"
+              onClick={toggleAllAccordions}
+            >
+              {allOpen ? t('v3.act3.collapse_all') : t('v3.act3.expand_all')}
             </button>
           </div>
-          <div className="v3-placeholder" data-testid="act3-placeholder">
-            4 accordions — commits 05 · 06 · 07 · 08
+
+          <div className="accordion-list">
+            <AccordionItem
+              id="battle"
+              iconTone="blue"
+              Icon={Swords}
+              title={t('v3.act3.battle.title')}
+              sub={t('v3.act3.battle.sub')}
+              isOpen={openAccordions.has('battle')}
+              onToggle={() => toggleAccordion('battle')}
+            >
+              <BattleBlock caseDoc={displayedCase} t={t} />
+            </AccordionItem>
           </div>
 
-        {/* ── Sprint 2 sections ──────────────────────────────────────── */}
-        <BattleSection
-          battle={battle}
-          opponentLabel={opponentLabel}
-          language={language}
-        />
+        {/* ── Sprint 2 legacy (arms/critical/anticipation will be absorbed in 06-08) ─── */}
 
         <AdversarialCounterArgsSection
           adversarial={displayedCase?.adversarial_attack}
