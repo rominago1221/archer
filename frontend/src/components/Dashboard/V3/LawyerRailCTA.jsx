@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Video, Gift, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -55,6 +55,17 @@ export default function LawyerRailCTA({ caseId, t }) {
       <div className="lawyer-h">{t('v3.right_rail.lawyer.title')}</div>
       <div className="lawyer-p">{t('v3.right_rail.lawyer.desc')}</div>
 
+      <div className="lawyer-avatars" aria-hidden>
+        <div className="lawyer-avs">
+          <span className="lawyer-av">PD</span>
+          <span className="lawyer-av">ML</span>
+          <span className="lawyer-av">SA</span>
+        </div>
+        <span className="lawyer-avs-txt">
+          {t('v3.right_rail.lawyer.available', { count: 3 })}
+        </span>
+      </div>
+
       <div className="lawyer-free-banner">
         <div className="lawyer-free-icon"><Gift size={11} aria-hidden /></div>
         <div className="lawyer-free-txt">
@@ -85,6 +96,13 @@ export default function LawyerRailCTA({ caseId, t }) {
           Aucun avocat disponible pour le moment.
         </div>
       )}
+
+      <div className="lawyer-members-note">
+        {t('v3.right_rail.lawyer.members_note')}
+        <Link to="/plans" data-testid="rail-lawyer-members-link">
+          {t('v3.right_rail.lawyer.members_link')}
+        </Link>
+      </div>
     </div>
   );
 }
