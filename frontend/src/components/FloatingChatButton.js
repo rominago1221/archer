@@ -21,7 +21,7 @@ const FloatingChatButton = () => {
   return (
     <div className="fixed bottom-6 right-6 z-40" data-testid="floating-chat-btn">
       {tooltip && (
-        <div className="absolute bottom-16 right-0 bg-[#1e3a5f] text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap shadow-lg">
+        <div className="absolute bottom-16 right-0 bg-[#1a56db] text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap shadow-lg">
           Ask Archer a legal question
         </div>
       )}
@@ -29,9 +29,10 @@ const FloatingChatButton = () => {
         onClick={handleClick}
         onMouseEnter={() => setTooltip(true)}
         onMouseLeave={() => setTooltip(false)}
-        className="w-14 h-14 rounded-full bg-[#1e3a5f] text-white shadow-lg hover:bg-[#162d4a] flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+        className="w-14 h-14 rounded-full bg-[#1a56db] text-white shadow-lg hover:bg-[#1e40af] flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+        aria-label="Ask Archer"
       >
-        <span className="text-lg font-bold">J</span>
+        <span className="text-lg font-bold">A</span>
       </button>
     </div>
   );

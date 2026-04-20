@@ -1,4 +1,5 @@
 import React from 'react';
+import { MessageSquareMore } from 'lucide-react';
 
 // Mirrors the mockup's Contexte card: header with "X/Y répondues" progress
 // strip, then one .q-card per open question (numbered Q.01, text, choice pills).
@@ -51,8 +52,9 @@ export default function V3RailQuestions({ questions = [], onAnswer, language }) 
   const visible = open.slice(0, 3);
   return (
     <div className="rail-card" data-testid="rail-questions">
-      <div className="rail-card-head-row">
-        <span className="rail-card-h blue">{copy.title}</span>
+      <div className="rail-head">
+        <div className="rail-head-icon"><MessageSquareMore size={13} aria-hidden /></div>
+        <div className="rail-head-title">{copy.title}</div>
       </div>
 
       {visible.length === 0 ? (

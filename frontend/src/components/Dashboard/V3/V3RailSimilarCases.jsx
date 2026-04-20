@@ -1,4 +1,5 @@
 import React from 'react';
+import { TrendingUp } from 'lucide-react';
 
 // Mirrors the mockup's Cas similaires card: big gradient card with 64% +
 // contextual headline, 3-col stats strip below (Réduction / Annulation /
@@ -56,9 +57,10 @@ export default function V3RailSimilarCases({ stats, country = 'BE', language }) 
 
   return (
     <div className="rail-card" data-testid="rail-similar">
-      <div className="rail-card-head-row">
-        <span className="rail-card-h">{copy.title}</span>
-        <span className="rail-card-count">{copy.countFmt(totalCount, country)}</span>
+      <div className="rail-head">
+        <div className="rail-head-icon"><TrendingUp size={13} aria-hidden /></div>
+        <div className="rail-head-title">{copy.title}</div>
+        <span className="rail-head-aux">{copy.countFmt(totalCount, country)}</span>
       </div>
 
       <div className="sim-big">

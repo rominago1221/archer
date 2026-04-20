@@ -1472,7 +1472,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
-  gap: 8px;
+  gap: 10px;
 }
 .dashboard-v3 .rail-card-count {
   font-family: 'JetBrains Mono', monospace;
@@ -1480,6 +1480,37 @@
   font-weight: 700;
   color: var(--ink-4);
   letter-spacing: 0.6px;
+}
+
+/* ─── Unified rail header: blue icon tile + title (matches .refine-head) ─── */
+.dashboard-v3 .rail-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.dashboard-v3 .rail-head-icon {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--archer-blue), var(--archer-blue-dark));
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.dashboard-v3 .rail-head-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+  flex: 1;
+  min-width: 0;
+}
+.dashboard-v3 .rail-head-aux {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 0.5px;
 }
 
 /* ─── Refine rail card ─── */

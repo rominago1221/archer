@@ -1,4 +1,5 @@
 import React from 'react';
+import { Newspaper } from 'lucide-react';
 
 // Mirrors the mockup's Actualités juridiques card: blue header + green LIVE
 // pulse badge, then a stack of news items each with a colored tag
@@ -52,8 +53,9 @@ export default function V3RailNews({ news = [], language }) {
 
   return (
     <div className="rail-card" data-testid="rail-news">
-      <div className="rail-card-head-row">
-        <span className="rail-card-h blue">{copy.title}</span>
+      <div className="rail-head">
+        <div className="rail-head-icon"><Newspaper size={13} aria-hidden /></div>
+        <div className="rail-head-title">{copy.title}</div>
         <span className="news-live">
           <span className="news-live-dot" /> {copy.live}
         </span>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Plus } from 'lucide-react';
+import { FileText, Plus, Files } from 'lucide-react';
 import DocumentViewerModal from '../../DocumentViewerModal';
 
 function formatDate(iso, language) {
@@ -34,9 +34,10 @@ export default function V3RailDocuments({ documents = [], onAddDocument, languag
     <div className="rail-card" data-testid="rail-documents">
       {viewing && <DocumentViewerModal doc={viewing} onClose={() => setViewing(null)} />}
 
-      <div className="rail-card-head-row">
-        <span className="rail-card-h">{t('v3.right_rail.documents_title')}</span>
-        <span className="rail-card-count">{count} {countLabel}</span>
+      <div className="rail-head">
+        <div className="rail-head-icon"><Files size={13} aria-hidden /></div>
+        <div className="rail-head-title">{t('v3.right_rail.documents_title')}</div>
+        <span className="rail-head-aux">{count} {countLabel}</span>
       </div>
 
       <div className="doc-list">

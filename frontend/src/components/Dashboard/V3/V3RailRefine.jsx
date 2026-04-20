@@ -72,6 +72,8 @@ export default function V3RailRefine({ caseDoc, language, onSubmitStart, onRefin
         { user_input: value.trim() },
         { withCredentials: true },
       );
+      // off-topic is a "soft" outcome — backend saved nothing, show the
+      // off-topic pill and keep the textarea value.
       if (res.data?.strategy === 'off_topic') {
         setErr(copy.errOffTopic);
         setState('error');
@@ -84,7 +86,21 @@ export default function V3RailRefine({ caseDoc, language, onSubmitStart, onRefin
         setState('idle');
       }, 900);
     } catch (e) {
-      setErr(copy.errGeneric);
+      // Surface the backend's own message when available — legacy errors
+      // like "quota exceeded", "multi-doc not supported", or "refinement
+      // already in progress" were being swallowed behind a generic string.
+      const status = e?.response?.status;
+      const detail = e?.response?.data?.detail
+        || e?.response?.data?.message
+        || e?.message;
+      // 402 / 403 → quota / plan; 409 → lock; 422 → validation; 500 → generic
+      if (status === 402 || status === 403) {
+        setErr(detail || copy.errGeneric);
+      } else if (status === 409) {
+        setErr(detail || copy.errGeneric);
+      } else {
+        setErr(detail || copy.errGeneric);
+      }
       setState('error');
     }
   };

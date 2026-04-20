@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, HelpCircle } from 'lucide-react';
 
 // Mirrors the mockup's "Pose ta question" rail card:
 // blue card-h + right "RÉPONSE 30S" pill, rounded input + arrow button,
@@ -58,8 +58,9 @@ export default function V3RailChat({ onSubmit, language }) {
 
   return (
     <div className="rail-card" data-testid="rail-chat">
-      <div className="rail-card-head-row">
-        <span className="rail-card-h blue">{copy.title}</span>
+      <div className="rail-head">
+        <div className="rail-head-icon"><HelpCircle size={13} aria-hidden /></div>
+        <div className="rail-head-title">{copy.title}</div>
         <span className="chat-badge">{copy.badge}</span>
       </div>
 

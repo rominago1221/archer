@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Video, Gift, Loader2 } from 'lucide-react';
+import { Video, Gift, Loader2, Phone } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -46,10 +46,13 @@ export default function LawyerRailCTA({ caseId, t }) {
 
   return (
     <div className="lawyer-cta-card" data-testid="rail-lawyer-cta">
-      <div className="lawyer-live-row">
-        <span className="lawyer-live-dot" />
-        <span className="lawyer-live-txt">{t('v3.right_rail.lawyer.live_label')}</span>
-        <span className="lawyer-online">{t('v3.right_rail.lawyer.ready_count', { count: 8 })}</span>
+      <div className="rail-head">
+        <div className="rail-head-icon"><Phone size={13} aria-hidden /></div>
+        <div className="rail-head-title">Avocats</div>
+        <span className="rail-head-aux">
+          <span className="lawyer-live-dot" style={{ display: 'inline-block', marginRight: 5, verticalAlign: 'middle' }} />
+          {t('v3.right_rail.lawyer.ready_count', { count: 8 })}
+        </span>
       </div>
 
       <div className="lawyer-h">{t('v3.right_rail.lawyer.title')}</div>
