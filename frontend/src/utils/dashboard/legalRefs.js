@@ -6,6 +6,23 @@ function searchUrl(base, q) {
   return `${base}?q=${encodeURIComponent(q)}`;
 }
 
+const EJUSTICE_SEARCH = 'https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl';
+const JUPORTAL_SEARCH = 'https://juportal.be/content/search';
+const LOYERS_BXL      = 'https://loyers.brussels';
+
+function ejusticeUrl(label) {
+  // Build ejustice search URL with language + query. language=fr, la=F works
+  // for every Moniteur search page including the fallback legislation.pl
+  // endpoint.
+  const qs = new URLSearchParams({
+    language: 'fr',
+    la: 'F',
+    table_name: 'loi',
+    query: label,
+  }).toString();
+  return `${EJUSTICE_SEARCH}?${qs}`;
+}
+
 export function getLegalRefUrl(reference, country = 'BE') {
   if (!reference) return null;
   const label = typeof reference === 'string' ? reference : (reference.label || reference.reference || reference.citation || '');
@@ -17,28 +34,29 @@ export function getLegalRefUrl(reference, country = 'BE') {
   }
 
   const lower = label.toLowerCase();
+  const isUS = String(country || '').toUpperCase() === 'US';
 
-  if (country === 'US') {
-    // Federal circuit / Supreme Court-style citations → Cornell Law
+  if (isUS) {
     if (/\bf\.\s?\d?d\b|\bcir\.\b|\bu\.s\.\b|\bsupreme court\b/i.test(label)) {
       return searchUrl('https://www.law.cornell.edu/search/site', label);
     }
-    // State or generic case law → Justia
     if (/\bv\.\b|\bcourt\b|\bcase\b/i.test(label)) {
       return searchUrl('https://law.justia.com/search', label);
     }
-    // Fallback: CourtListener
     return searchUrl('https://www.courtlistener.com/?type=o', label);
   }
 
-  // Belgium defaults
-  if (lower.includes('cass.') || lower.includes('cassation')) {
-    return searchUrl('https://juportal.be/content/search', label);
+  // Belgium (default). Route to the right official source based on token
+  // inspection — jurisprudences to juportal, legislation to ejustice, the
+  // Brussels rent grid to loyers.brussels. Every route is an ejustice-family
+  // URL so we stop bouncing to courtlistener on BE content.
+  if (lower.includes('cass.') || lower.includes('cassation')
+      || lower.includes('juportal') || /\beclisp\b/.test(lower)) {
+    return searchUrl(JUPORTAL_SEARCH, label);
   }
-  // Loi / AR / Code → Moniteur belge (ejustice.just.fgov.be) search
-  if (/\bloi\b|\bar\b|\bcode\b|\barticle\b|\bart\./i.test(lower)) {
-    return searchUrl('https://www.ejustice.just.fgov.be/cgi_loi/legislation.pl', label);
+  if (lower.includes('loyers.brussels') || /grille\s+(de\s+)?r[ée]f[ée]rence/.test(lower)) {
+    return LOYERS_BXL;
   }
-  // Last-resort legal search
-  return searchUrl('https://www.strada-lex.be/search', label);
+  // Loi / AR / Code / article / ordonnance / arrêté → ejustice
+  return ejusticeUrl(label);
 }

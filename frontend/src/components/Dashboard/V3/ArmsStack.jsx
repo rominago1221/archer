@@ -27,10 +27,52 @@ function ConfDonut({ value }) {
   );
 }
 
-function LawRefPill({ reference, country, variant = '' }) {
-  const url = getLegalRefUrl(reference, country);
-  const label = typeof reference === 'string' ? reference : (reference?.label || reference?.reference || '');
-  const title = typeof reference === 'object' ? (reference?.archer_explanation || reference?.explanation || label) : label;
+// Split one "combo" reference string into multiple short pill labels.
+// Many legacy findings arrive as a single string like
+//   "Ordonnance bruxelloise 27/07/2017 + Ordonnance 28/10/2021; art. 224"
+// which overflows the pill. We split on `+` / `;` / ` · ` / ` | `, trim
+// each, and compact long prefixes (Ordonnance → Ord., Arrêté → AR,
+// Code civil → C. civ., etc.).
+const ABBREV_FR = [
+  [/\bordonnance\s+(bruxelloise|wallonne|flamande)?\s*/i, (_, w) => `Ord.${w ? ' ' + w.slice(0, 3).toLowerCase() + '.' : ''} `],
+  [/\barticle\s+/ig, 'art. '],
+  [/\barr[êe]t[ée]s?\s+royal/gi, 'AR'],
+  [/\barr[êe]t[ée]s?\s+ministeriel/gi, 'AM'],
+  [/\bcode\s+civil\s+(ancien|nouveau)?\s*/gi, (_, w) => `${w ? 'nv ' : ''}C. civ. `],
+  [/\bcode\s+judiciaire/gi, 'C. jud.'],
+  [/\bcode\s+p[ée]nal/gi, 'C. pén.'],
+  [/\bcode\s+du\s+travail/gi, 'C. trav.'],
+  [/\s+(d[eu]?\s+la\s+)?bail\s+d.habitation\b/gi, ''],
+  [/\s+r[ée]sidentiel(s)?\b/gi, ''],
+  [/\bcassation\b/gi, 'Cass.'],
+  [/\s+\([^)]+\)/g, ''], // drop parenthetical clarifiers
+];
+
+function compactLabel(raw) {
+  let s = String(raw).trim();
+  if (!s) return '';
+  for (const [re, repl] of ABBREV_FR) {
+    s = s.replace(re, repl);
+  }
+  s = s.replace(/\s+/g, ' ').trim();
+  if (s.length > 30) s = s.slice(0, 29) + '…';
+  return s;
+}
+
+function splitRef(rawRef) {
+  const label = typeof rawRef === 'string' ? rawRef : (rawRef?.label || rawRef?.reference || '');
+  if (!label) return [];
+  return String(label)
+    .split(/\s*[+;]\s*|\s+\|\s+|\s+·\s+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+function LawRefPill({ label, rawRef, country, variant = '' }) {
+  const url = getLegalRefUrl(label, country);
+  const title = typeof rawRef === 'object'
+    ? (rawRef?.archer_explanation || rawRef?.explanation || label)
+    : label;
   if (!label) return null;
   return (
     <a
@@ -43,6 +85,20 @@ function LawRefPill({ reference, country, variant = '' }) {
       {label}
     </a>
   );
+}
+
+function expandRefs(rawRefs) {
+  const out = [];
+  for (const r of rawRefs) {
+    const parts = splitRef(r);
+    if (parts.length === 0) {
+      const label = typeof r === 'string' ? r : (r?.label || r?.reference || '');
+      if (label) out.push({ label: compactLabel(label), raw: r });
+    } else {
+      for (const p of parts) out.push({ label: compactLabel(p), raw: r });
+    }
+  }
+  return out.filter(p => p.label);
 }
 
 // Normalise a confidence value that may arrive as either 0-1 (ratio) or
@@ -91,7 +147,9 @@ function ArmCard({ num, finding, country, t }) {
               <BookOpen size={11} aria-hidden /> {t('v3.act3.arms.legal_base')}
             </span>
             <div className="law-ref-group">
-              {refs.map((r, i) => <LawRefPill key={i} reference={r} country={country} />)}
+              {expandRefs(refs).map((p, i) => (
+                <LawRefPill key={i} label={p.label} rawRef={p.raw} country={country} />
+              ))}
             </div>
           </div>
         )}
