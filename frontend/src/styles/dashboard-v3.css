@@ -171,15 +171,16 @@
 /* Full-bleed white strip (matches .quickbar full-width) so the banner
  * extends edge-to-edge against the sidebar with no uncovered gap.
  * Horizontal padding matches .v3-body so Act 1 card aligns under the
- * title. No max-width — we use the full available main area. */
+ * title. Vertical padding kept tight (18px top) so the timeline
+ * doesn't push the analysis down the page. */
 .dashboard-v3 .case-header {
   background: #fff;
-  padding: 28px 24px 0;
+  padding: 18px 24px 0;
   border-bottom: 1px solid var(--line);
 }
 .dashboard-v3 .case-header-inner { width: 100%; }
 .dashboard-v3 .case-eyebrow-row {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
 }
 .dashboard-v3 .case-eyebrow {
   display: inline-flex; align-items: center; gap: 6px;
@@ -211,7 +212,7 @@
   animation: v3blink 1.5s ease-in-out infinite;
 }
 .dashboard-v3 .case-title-row {
-  display: flex; align-items: flex-end; gap: 16px; margin-bottom: 20px;
+  display: flex; align-items: flex-end; gap: 16px; margin-bottom: 14px;
 }
 .dashboard-v3 .case-title {
   font-weight: 700; font-size: 28px;
@@ -227,8 +228,8 @@
   white-space: nowrap;
 }
 
-/* Timeline 6 steps */
-.dashboard-v3 .timeline { padding-bottom: 20px; margin-top: 8px; }
+/* Timeline 6 steps — kept compact per mockup image 24. */
+.dashboard-v3 .timeline { padding-bottom: 14px; margin-top: 2px; }
 .dashboard-v3 .timeline-inner {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -236,7 +237,7 @@
 }
 .dashboard-v3 .tl-step {
   position: relative;
-  padding: 12px 10px 10px;
+  padding: 9px 10px 9px;
   background: var(--bg-soft);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -261,7 +262,7 @@
   pointer-events: none;
 }
 @keyframes v3pulse { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 0.1; transform: scale(1.03); } }
-.dashboard-v3 .tl-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.dashboard-v3 .tl-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
 .dashboard-v3 .tl-check {
   width: 16px; height: 16px;
   border-radius: 50%;
