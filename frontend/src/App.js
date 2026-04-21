@@ -25,6 +25,7 @@ import PaymentCancel from './pages/PaymentCancel';
 import LegalChat from './pages/LegalChat';
 import SharedCase from './pages/SharedCase';
 import AnalyzeDocument from './pages/AnalyzeDocument';
+import ContractGuard from './pages/ContractGuard';
 import FloatingChatButton from './components/FloatingChatButton';
 import AttorneyApply from './pages/AttorneyApply';
 import AttorneyDashboard from './pages/AttorneyDashboard';
@@ -199,6 +200,7 @@ const AppRouter = () => {
         <Route path="upload" element={<Upload />} />
         <Route path="lawyers" element={<Lawyers />} />
         <Route path="lawyers/book" element={<LawyerBook />} />
+        <Route path="contract-guard" element={<ContractGuard />} />
         <Route path="settings" element={<Settings />} />
         <Route path="chat" element={<LegalChat />} />
         <Route path="payment/success" element={<PaymentSuccess />} />

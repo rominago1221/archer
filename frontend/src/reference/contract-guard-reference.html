@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archer — Contract Guard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --archer-blue: #1a56db; --archer-blue-dark: #1e40af; --archer-blue-light: #4f7aef;
+  --archer-blue-50: #eff6ff; --archer-blue-100: #dbeafe; --archer-blue-200: #bfdbfe;
+  --ink: #0a0a0f; --ink-2: #2a2a35; --ink-3: #5a5a65; --ink-4: #8a8a95; --ink-5: #b8b8c0;
+  --line: #ececea; --line-2: #e2e2dd; --bg-soft: #f8f8f5;
+  --green: #16a34a; --green-bright: #22c55e; --green-50: #f0fdf4; --green-100: #dcfce7;
+  --red: #dc2626; --red-50: #fef2f2; --red-100: #fee2e2;
+  --amber: #b45309; --amber-bright: #f59e0b; --amber-50: #fffbeb; --amber-100: #fef3c7;
+  --purple: #7c3aed; --purple-50: #faf5ff; --purple-100: #ede9fe;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter Tight', -apple-system, sans-serif; background: var(--bg-soft); color: var(--ink); -webkit-font-smoothing: antialiased; line-height: 1.5; }
+
+.app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+/* Sidebar placeholder */
+.sb { background: white; border-right: 1px solid var(--line); padding: 24px 0; display: flex; flex-direction: column; }
+.sb-logo { padding: 0 20px 20px; border-bottom: 1px solid var(--line); margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+.sb-logo-brand { font-size: 22px; font-weight: 800; color: var(--archer-blue); letter-spacing: -0.8px; }
+.sb-live { font-size: 10px; font-weight: 700; color: var(--green); background: var(--green-50); padding: 3px 7px; border-radius: 100px; display: inline-flex; align-items: center; gap: 5px; }
+.sb-live::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--green-bright); }
+.sb-nav { padding: 0 12px; display: flex; flex-direction: column; gap: 2px; }
+.sb-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; font-size: 13.5px; color: var(--ink-3); cursor: pointer; transition: all 0.15s; }
+.sb-item:hover { background: var(--bg-soft); }
+.sb-item.active { background: var(--purple-50); color: var(--purple); font-weight: 600; border: 1px solid var(--purple-100); }
+.sb-item .badge { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--ink-4); }
+
+/* MAIN */
+.main { padding: 36px 48px; max-width: 1200px; }
+
+/* HERO */
+.hero { margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 40px; align-items: center; }
+.hero-body { min-width: 0; }
+.hero-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 700; color: var(--purple); letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 10px; }
+.hero-eyebrow-icon { width: 28px; height: 28px; background: var(--purple-50); border: 1px solid var(--purple-100); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.hero-title { font-size: 34px; font-weight: 800; color: var(--ink); letter-spacing: -1.4px; line-height: 1.05; margin-bottom: 10px; }
+.hero-title .accent { color: var(--purple); }
+.hero-sub { font-size: 15px; color: var(--ink-3); max-width: 600px; line-height: 1.6; }
+.hero-sub strong { color: var(--ink); font-weight: 600; }
+
+/* SHIELD + COUNTER */
+.hero-right { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.hero-shield {
+  width: 110px; height: 110px;
+  background: linear-gradient(145deg, #7c3aed 0%, #5b21b6 50%, #4c1d95 100%);
+  border-radius: 22px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 12px 36px rgba(124,58,237,0.25), 0 2px 8px rgba(124,58,237,0.1);
+  position: relative;
+}
+.hero-shield::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 19px;
+  border: 1.5px solid rgba(255,255,255,0.15);
+}
+.hero-shield svg {
+  width: 52px; height: 52px;
+  color: white;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+}
+.hero-counter {
+  text-align: center;
+}
+.hero-counter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--purple);
+  letter-spacing: -0.5px;
+  line-height: 1;
+  margin-bottom: 3px;
+}
+.hero-counter-label {
+  font-size: 11px;
+  color: var(--ink-4);
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+.hero-counter-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 0.4px;
+}
+.hero-counter-live::before {
+  content: '';
+  width: 5px; height: 5px;
+  background: var(--green-bright);
+  border-radius: 50%;
+  animation: pulse-counter 1.5s ease-in-out infinite;
+}
+@keyframes pulse-counter { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* UPLOAD ZONE */
+.upload-section { margin-bottom: 36px; }
+.upload-zone {
+  border: 2px dashed var(--purple-100);
+  border-radius: 18px;
+  padding: 48px 32px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--purple-50) 0%, white 60%);
+  transition: all 0.25s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.upload-zone:hover {
+  border-color: var(--purple);
+  box-shadow: 0 8px 28px rgba(124,58,237,0.08);
+  transform: translateY(-2px);
+}
+.upload-zone-icon {
+  width: 64px; height: 64px;
+  margin: 0 auto 16px;
+  background: white;
+  border: 2px solid var(--purple-100);
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.1);
+}
+.upload-zone-title { font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 6px; letter-spacing: -0.3px; }
+.upload-zone-sub { font-size: 13.5px; color: var(--ink-3); margin-bottom: 18px; }
+.upload-zone-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 24px;
+  background: var(--purple);
+  color: white;
+  border: none; border-radius: 10px;
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.3);
+  transition: all 0.15s;
+}
+.upload-zone-btn:hover { background: #6d28d9; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,58,237,0.4); }
+.upload-zone-formats { margin-top: 16px; font-size: 12px; color: var(--ink-4); display: flex; gap: 14px; justify-content: center; }
+.upload-zone-formats span { display: inline-flex; align-items: center; gap: 4px; }
+
+/* WHAT WE CHECK */
+.checks-section { margin-bottom: 36px; }
+.checks-title { font-size: 13px; font-weight: 700; color: var(--ink-4); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+.checks-title::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.checks-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.check-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+  transition: all 0.2s;
+}
+.check-card:hover { border-color: var(--purple-100); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.04); }
+.check-card-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; font-size: 18px; }
+.check-card-icon.red { background: var(--red-50); }
+.check-card-icon.amber { background: var(--amber-50); }
+.check-card-icon.green { background: var(--green-50); }
+.check-card-icon.blue { background: var(--archer-blue-50); }
+.check-card-icon.purple { background: var(--purple-50); }
+.check-card-title { font-size: 14px; font-weight: 700; color: var(--ink); letter-spacing: -0.2px; margin-bottom: 4px; }
+.check-card-desc { font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+
+/* RECENT ANALYSES */
+.recent-section { }
+.recent-title { font-size: 13px; font-weight: 700; color: var(--ink-4); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+.recent-title::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+.recent-list { display: flex; flex-direction: column; gap: 10px; }
+.recent-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 22px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 18px;
+  align-items: center;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.recent-card:hover { border-color: var(--purple-100); box-shadow: 0 6px 18px rgba(0,0,0,0.04); transform: translateY(-1px); }
+
+.recent-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.recent-icon.pdf { background: var(--red-50); }
+.recent-icon.docx { background: var(--archer-blue-50); }
+
+.recent-body { min-width: 0; }
+.recent-name { font-size: 14.5px; font-weight: 600; color: var(--ink); letter-spacing: -0.2px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recent-meta { font-size: 12px; color: var(--ink-4); display: flex; align-items: center; gap: 8px; }
+.recent-meta-dot { width: 3px; height: 3px; background: var(--ink-5); border-radius: 50%; }
+
+.recent-right { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.recent-score {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 12.5px; font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.recent-score.safe { background: var(--green-50); color: var(--green); border: 1px solid var(--green-100); }
+.recent-score.warning { background: var(--amber-50); color: var(--amber); border: 1px solid var(--amber-100); }
+.recent-score.danger { background: var(--red-50); color: var(--red); border: 1px solid var(--red-100); }
+.recent-score::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+.recent-score.safe::before { background: var(--green); }
+.recent-score.warning::before { background: var(--amber-bright); }
+.recent-score.danger::before { background: var(--red); }
+
+.recent-cta {
+  padding: 7px 14px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: inherit; font-size: 12.5px; font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.recent-cta:hover { border-color: var(--purple); color: var(--purple); background: var(--purple-50); }
+
+/* EMPTY STATE */
+.empty-recent {
+  text-align: center;
+  padding: 32px;
+  color: var(--ink-4);
+  font-size: 13.5px;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  background: white;
+}
+.empty-recent strong { color: var(--ink-3); display: block; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar (placeholder — la vraie sidebar est déjà en place) -->
+  <aside class="sb">
+    <div class="sb-logo">
+      <div class="sb-logo-brand">Archer</div>
+      <span class="sb-live">Live</span>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-item">⊞ My desk</div>
+      <div class="sb-item">📁 Mes dossiers <span class="badge">4</span></div>
+      <div class="sb-item">📄 Documents</div>
+      <div class="sb-item">💬 Chat juridique</div>
+      <div class="sb-item">📞 Appels avocats</div>
+      <div class="sb-item active">🛡️ Contract Guard</div>
+      <div class="sb-item">⚙ Paramètres</div>
+    </nav>
+  </aside>
+
+  <main class="main">
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-body">
+        <div class="hero-eyebrow">
+          <span class="hero-eyebrow-icon">🛡️</span>
+          Contract Guard
+        </div>
+        <h1 class="hero-title">Ne signe <span class="accent">jamais</span> à l'aveugle.</h1>
+        <p class="hero-sub">Upload ton contrat — Archer l'analyse en <strong>60 secondes</strong>, détecte les clauses abusives, les risques cachés et te dit <strong>exactement quoi négocier</strong> avant de signer.</p>
+      </div>
+      <div class="hero-right">
+        <div class="hero-shield">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M9 12l2 2 4-4" stroke-width="2"/>
+          </svg>
+        </div>
+        <div class="hero-counter">
+          <div class="hero-counter-num">847,293</div>
+          <div class="hero-counter-label">contrats analysés</div>
+          <div class="hero-counter-live">EN TEMPS RÉEL</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UPLOAD ZONE -->
+    <div class="upload-section">
+      <div class="upload-zone">
+        <div class="upload-zone-icon">📄</div>
+        <div class="upload-zone-title">Dépose ton contrat ici</div>
+        <div class="upload-zone-sub">Notre IA le scanne en profondeur et t'alerte sur tout ce qui cloche.</div>
+        <button class="upload-zone-btn">
+          📎 Choisir un fichier
+        </button>
+        <div class="upload-zone-formats">
+          <span>PDF</span>
+          <span>Word (.docx)</span>
+          <span>Image / Scan</span>
+          <span>Max 20MB</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- WHAT WE CHECK -->
+    <div class="checks-section">
+      <div class="checks-title">Ce qu'on vérifie pour toi</div>
+      <div class="checks-grid">
+        <div class="check-card">
+          <div class="check-card-icon red">⚠️</div>
+          <div class="check-card-title">Clauses abusives</div>
+          <div class="check-card-desc">Pénalités excessives, clauses de non-concurrence disproportionnées, limitations de responsabilité.</div>
+        </div>
+        <div class="check-card">
+          <div class="check-card-icon amber">🔍</div>
+          <div class="check-card-title">Obligations cachées</div>
+          <div class="check-card-desc">Engagements automatiques, renouvellements tacites, frais dissimulés en petits caractères.</div>
+        </div>
+        <div class="check-card">
+          <div class="check-card-icon green">✅</div>
+          <div class="check-card-title">Conformité légale</div>
+          <div class="check-card-desc">Vérification de la conformité avec le droit belge et les protections consommateur.</div>
+        </div>
+        <div class="check-card">
+          <div class="check-card-icon blue">⚖️</div>
+          <div class="check-card-title">Équilibre des parties</div>
+          <div class="check-card-desc">Le contrat est-il juste pour toi ? Rapport de force entre les parties.</div>
+        </div>
+        <div class="check-card">
+          <div class="check-card-icon purple">💬</div>
+          <div class="check-card-title">Points à négocier</div>
+          <div class="check-card-desc">Arguments concrets et formulations alternatives pour renégocier les clauses défavorables.</div>
+        </div>
+        <div class="check-card">
+          <div class="check-card-icon red">🚪</div>
+          <div class="check-card-title">Conditions de sortie</div>
+          <div class="check-card-desc">Résiliation, préavis, indemnités de rupture, clauses de sortie anticipée.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECENT ANALYSES -->
+    <div class="recent-section">
+      <div class="recent-title">Contrats analysés récemment</div>
+      <div class="recent-list">
+
+        <div class="recent-card">
+          <div class="recent-icon pdf">📕</div>
+          <div class="recent-body">
+            <div class="recent-name">Bail résidence principale — Stéphanie 4 corrigé</div>
+            <div class="recent-meta">
+              PDF · 1.9 MB
+              <span class="recent-meta-dot"></span>
+              Analysé il y a 3 jours
+              <span class="recent-meta-dot"></span>
+              3 alertes
+            </div>
+          </div>
+          <div class="recent-right">
+            <span class="recent-score warning">3 risques</span>
+            <button class="recent-cta">Voir l'analyse</button>
+          </div>
+        </div>
+
+        <div class="recent-card">
+          <div class="recent-icon docx">📘</div>
+          <div class="recent-body">
+            <div class="recent-name">Contrat freelance — prestation développement web</div>
+            <div class="recent-meta">
+              DOCX · 245 KB
+              <span class="recent-meta-dot"></span>
+              Analysé il y a 1 semaine
+              <span class="recent-meta-dot"></span>
+              1 alerte
+            </div>
+          </div>
+          <div class="recent-right">
+            <span class="recent-score safe">OK</span>
+            <button class="recent-cta">Voir l'analyse</button>
+          </div>
+        </div>
+
+        <div class="recent-card">
+          <div class="recent-icon pdf">📕</div>
+          <div class="recent-body">
+            <div class="recent-name">NDA — partenariat commercial SaaS</div>
+            <div class="recent-meta">
+              PDF · 520 KB
+              <span class="recent-meta-dot"></span>
+              Analysé il y a 2 semaines
+              <span class="recent-meta-dot"></span>
+              5 alertes
+            </div>
+          </div>
+          <div class="recent-right">
+            <span class="recent-score danger">5 risques</span>
+            <button class="recent-cta">Voir l'analyse</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+<script>
+// Compteur temps réel — s'incrémente aléatoirement
+const counterEl = document.querySelector('.hero-counter-num');
+let count = 847293;
+function formatNum(n) { return n.toLocaleString('fr-FR'); }
+setInterval(() => {
+  count += Math.floor(Math.random() * 3) + 1;
+  counterEl.textContent = formatNum(count);
+}, 4000 + Math.random() * 3000);
+</script>
+</body>
+</html>

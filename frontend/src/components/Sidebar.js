@@ -197,6 +197,7 @@ const Sidebar = () => {
     upload: 'Déposer un document',
     chat: 'Chat juridique',
     lawyers: 'Appels avocats',
+    contract_guard: 'Contract Guard',
     settings: 'Paramètres',
   } : lang === 'nl' ? {
     dashboard: 'Mijn bureau',
@@ -205,6 +206,7 @@ const Sidebar = () => {
     upload: 'Document uploaden',
     chat: 'Juridische chat',
     lawyers: 'Advocaat-gesprekken',
+    contract_guard: 'Contract Guard',
     settings: 'Instellingen',
   } : {
     dashboard: 'My desk',
@@ -213,6 +215,7 @@ const Sidebar = () => {
     upload: 'Upload document',
     chat: 'Legal chat',
     lawyers: 'Lawyer calls',
+    contract_guard: 'Contract Guard',
     settings: 'Settings',
   };
   const activeCasesLabel = lang === 'fr' ? 'Dossiers actifs'
@@ -244,6 +247,7 @@ const Sidebar = () => {
     { path: '/documents', label: navLabels.documents, icon: FileText, active: documentsPath },
     { path: '/chat', label: navLabels.chat, icon: MessageSquare },
     { path: '/lawyers', label: navLabels.lawyers, icon: Phone },
+    { path: '/contract-guard', label: navLabels.contract_guard, icon: Shield },
     { path: '/settings', label: navLabels.settings, icon: Settings },
   ];
 

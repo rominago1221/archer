@@ -1,0 +1,522 @@
+/* =========================================================================
+ * Contract Guard page
+ * Scoped under .contract-guard to avoid leaking into the rest of the app.
+ * Mirrors frontend/src/reference/contract-guard-reference.html
+ * ========================================================================= */
+
+.contract-guard {
+  --archer-blue: #1a56db;
+  --archer-blue-50: #eff6ff;
+  --archer-blue-100: #dbeafe;
+  --ink: #0a0a0f;
+  --ink-2: #2a2a35;
+  --ink-3: #5a5a65;
+  --ink-4: #8a8a95;
+  --ink-5: #b8b8c0;
+  --line: #ececea;
+  --bg-soft: #f8f8f5;
+  --green: #16a34a;
+  --green-bright: #22c55e;
+  --green-50: #f0fdf4;
+  --green-100: #dcfce7;
+  --red: #dc2626;
+  --red-50: #fef2f2;
+  --red-100: #fee2e2;
+  --amber: #b45309;
+  --amber-bright: #f59e0b;
+  --amber-50: #fffbeb;
+  --amber-100: #fef3c7;
+  --purple: #7c3aed;
+  --purple-50: #faf5ff;
+  --purple-100: #ede9fe;
+
+  font-family: 'Inter Tight', -apple-system, sans-serif;
+  color: var(--ink);
+  max-width: 1200px;
+  margin-top: -14px;
+}
+
+/* HERO */
+.contract-guard .hero {
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 40px;
+  align-items: center;
+}
+.contract-guard .hero-body { min-width: 0; }
+.contract-guard .hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--purple);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.contract-guard .hero-eyebrow-icon {
+  width: 28px;
+  height: 28px;
+  background: var(--purple-50);
+  border: 1px solid var(--purple-100);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--purple);
+}
+.contract-guard .hero-eyebrow-icon svg { width: 14px; height: 14px; }
+.contract-guard .hero-title {
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -1.4px;
+  line-height: 1.05;
+  margin-bottom: 10px;
+}
+.contract-guard .hero-title .accent { color: var(--purple); }
+.contract-guard .hero-sub {
+  font-size: 15px;
+  color: var(--ink-3);
+  max-width: 600px;
+  line-height: 1.6;
+}
+.contract-guard .hero-sub strong { color: var(--ink); font-weight: 600; }
+
+.contract-guard .hero-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.contract-guard .hero-shield {
+  width: 110px;
+  height: 110px;
+  background: linear-gradient(145deg, #7c3aed 0%, #5b21b6 50%, #4c1d95 100%);
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 36px rgba(124,58,237,0.25), 0 2px 8px rgba(124,58,237,0.1);
+  position: relative;
+}
+.contract-guard .hero-shield::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 19px;
+  border: 1.5px solid rgba(255,255,255,0.15);
+}
+.contract-guard .hero-shield svg {
+  width: 52px;
+  height: 52px;
+  color: white;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+}
+.contract-guard .hero-counter { text-align: center; }
+.contract-guard .hero-counter-num {
+  font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--purple);
+  letter-spacing: -0.5px;
+  line-height: 1;
+  margin-bottom: 3px;
+}
+.contract-guard .hero-counter-label {
+  font-size: 11px;
+  color: var(--ink-4);
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+.contract-guard .hero-counter-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 0.4px;
+}
+.contract-guard .hero-counter-live::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background: var(--green-bright);
+  border-radius: 50%;
+  animation: cg-pulse-counter 1.5s ease-in-out infinite;
+}
+@keyframes cg-pulse-counter {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* UPLOAD ZONE */
+.contract-guard .upload-section { margin-bottom: 36px; }
+.contract-guard .upload-zone {
+  border: 2px dashed var(--purple-100);
+  border-radius: 18px;
+  padding: 48px 32px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--purple-50) 0%, white 60%);
+  transition: all 0.25s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.contract-guard .upload-zone:hover,
+.contract-guard .upload-zone.dragging {
+  border-color: var(--purple);
+  box-shadow: 0 8px 28px rgba(124,58,237,0.08);
+  transform: translateY(-2px);
+}
+.contract-guard .upload-zone-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  background: white;
+  border: 2px solid var(--purple-100);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--purple);
+  box-shadow: 0 4px 14px rgba(124,58,237,0.1);
+}
+.contract-guard .upload-zone-icon svg { width: 28px; height: 28px; }
+.contract-guard .upload-zone-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+  letter-spacing: -0.3px;
+}
+.contract-guard .upload-zone-sub {
+  font-size: 13.5px;
+  color: var(--ink-3);
+  margin-bottom: 18px;
+}
+.contract-guard .upload-zone-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 24px;
+  background: var(--purple);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.3);
+  transition: all 0.15s;
+}
+.contract-guard .upload-zone-btn:hover:not(:disabled) {
+  background: #6d28d9;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(124,58,237,0.4);
+}
+.contract-guard .upload-zone-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.contract-guard .upload-zone-btn svg { width: 16px; height: 16px; }
+.contract-guard .upload-zone-formats {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--ink-4);
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Staged file */
+.contract-guard .file-staged {
+  margin-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  max-width: 100%;
+  text-align: left;
+}
+.contract-guard .file-staged-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--purple-50);
+  color: var(--purple);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.contract-guard .file-staged-icon svg { width: 18px; height: 18px; }
+.contract-guard .file-staged-body { min-width: 0; flex: 1; }
+.contract-guard .file-staged-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.contract-guard .file-staged-meta {
+  font-size: 11px;
+  color: var(--ink-4);
+  margin-top: 2px;
+}
+.contract-guard .file-staged-remove {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--ink-4);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.contract-guard .file-staged-remove:hover {
+  background: var(--red-50);
+  color: var(--red);
+}
+.contract-guard .file-staged-remove svg { width: 14px; height: 14px; }
+
+.contract-guard .upload-error {
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--red);
+  font-weight: 600;
+}
+
+/* WHAT WE CHECK */
+.contract-guard .checks-section { margin-bottom: 36px; }
+.contract-guard .section-eyebrow {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.contract-guard .section-eyebrow::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.contract-guard .checks-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .contract-guard .checks-grid { grid-template-columns: repeat(2, 1fr); }
+  .contract-guard .hero {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .contract-guard .hero-right { flex-direction: row; justify-content: flex-start; }
+}
+@media (max-width: 620px) {
+  .contract-guard .checks-grid { grid-template-columns: 1fr; }
+}
+.contract-guard .check-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+  transition: all 0.2s;
+}
+.contract-guard .check-card:hover {
+  border-color: var(--purple-100);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+}
+.contract-guard .check-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.contract-guard .check-card-icon svg { width: 18px; height: 18px; }
+.contract-guard .check-card-icon.red { background: var(--red-50); color: var(--red); }
+.contract-guard .check-card-icon.amber { background: var(--amber-50); color: var(--amber-bright); }
+.contract-guard .check-card-icon.green { background: var(--green-50); color: var(--green); }
+.contract-guard .check-card-icon.blue { background: var(--archer-blue-50); color: var(--archer-blue); }
+.contract-guard .check-card-icon.purple { background: var(--purple-50); color: var(--purple); }
+.contract-guard .check-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+  margin-bottom: 4px;
+}
+.contract-guard .check-card-desc {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+/* RECENT */
+.contract-guard .recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.contract-guard .recent-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 22px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 18px;
+  align-items: center;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.contract-guard .recent-card:hover {
+  border-color: var(--purple-100);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+  transform: translateY(-1px);
+}
+.contract-guard .recent-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--ink-3);
+}
+.contract-guard .recent-icon svg { width: 20px; height: 20px; }
+.contract-guard .recent-icon.pdf { background: var(--red-50); color: var(--red); }
+.contract-guard .recent-icon.docx { background: var(--archer-blue-50); color: var(--archer-blue); }
+.contract-guard .recent-icon.img { background: var(--amber-50); color: var(--amber-bright); }
+.contract-guard .recent-body { min-width: 0; }
+.contract-guard .recent-name {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.contract-guard .recent-meta {
+  font-size: 12px;
+  color: var(--ink-4);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.contract-guard .recent-meta-dot {
+  width: 3px;
+  height: 3px;
+  background: var(--ink-5);
+  border-radius: 50%;
+}
+.contract-guard .recent-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+.contract-guard .recent-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.contract-guard .recent-score.safe {
+  background: var(--green-50);
+  color: var(--green);
+  border: 1px solid var(--green-100);
+}
+.contract-guard .recent-score.warning {
+  background: var(--amber-50);
+  color: var(--amber);
+  border: 1px solid var(--amber-100);
+}
+.contract-guard .recent-score.danger {
+  background: var(--red-50);
+  color: var(--red);
+  border: 1px solid var(--red-100);
+}
+.contract-guard .recent-score::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.contract-guard .recent-score.safe::before { background: var(--green); }
+.contract-guard .recent-score.warning::before { background: var(--amber-bright); }
+.contract-guard .recent-score.danger::before { background: var(--red); }
+.contract-guard .recent-cta {
+  padding: 7px 14px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.contract-guard .recent-cta:hover {
+  border-color: var(--purple);
+  color: var(--purple);
+  background: var(--purple-50);
+}
+
+.contract-guard .empty-recent {
+  text-align: center;
+  padding: 32px;
+  color: var(--ink-4);
+  font-size: 13.5px;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  background: white;
+}
+.contract-guard .empty-recent strong {
+  color: var(--ink-3);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.contract-guard .recent-skeleton {
+  height: 80px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  opacity: 0.5;
+}
