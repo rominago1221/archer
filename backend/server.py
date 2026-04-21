@@ -335,6 +335,12 @@ RULE 2 — success_probability: Realistic outcome probabilities. No outcome belo
 
 RULE 3 — next_steps: Each step MUST include a specific legal reference AND a recipient. NEVER suggest writing to the wrong party for the current stage.
 
+RULE 4 — next_steps[].title (CRITICAL FOR UI): Each title MUST be a COMPLETE standalone sentence (max 80 characters). Start with an action verb + concrete object. NEVER cut mid-sentence. NEVER use ":" or "—" to append details — details go in `description`. Examples:
+- GOOD: "Contester la clause pénale à 12% via l'art. 5.74"
+- GOOD: "Mise en demeure d'enregistrer le bail sous 15 jours"
+- BAD: "Le régime légal du préavis de résiliation anticipée par le" (cut mid-sentence)
+- BAD: "Vérifier et figer la preuve du non-enregistrement AVANT toute notification: si le bailleur n'a pas..." (colon + paragraph)
+
 Return ONLY this JSON — no other text:
 {{
   "case_stage": "stage_1_notice|stage_2_negotiation|stage_3_court|stage_4_judgment",
@@ -395,6 +401,8 @@ LEGAL ANALYSIS:
 {analysis_json}
 
 CRITICAL: You MUST generate exactly 4-5 strongest_arguments. NEVER return an empty array. Each argument must reference a specific law, statute, or legal principle. If the user's position seems weak, find procedural arguments, constitutional protections, or burden-of-proof arguments.
+
+CRITICAL UI RULE — strongest_arguments[].argument MUST be a COMPLETE standalone sentence (max 80 characters). Start with an action verb + concrete subject. NEVER cut mid-sentence. NEVER use ":" or "—" to append a long explanation — put details in `how_to_use`. Good: "Invalidation de la clause pénale à 12% via l'art. 5.74". Bad: "Le régime légal du préavis de résiliation anticipée par le".
 
 Return ONLY this JSON:
 {{
@@ -2149,6 +2157,12 @@ INDICES POUR DETECTER LE STADE:
 
 OBLIGATOIRE: Chaque next_step DOIT inclure un champ "recipient" indiquant a QUI la lettre/action est destinee.
 
+REGLE CRITIQUE TITRE (UI): Chaque next_steps[].title DOIT etre une phrase COMPLETE et autonome (max 80 caracteres). Commence par un verbe d'action + objet concret. JAMAIS couper en plein milieu. JAMAIS utiliser ":" ou "—" pour ajouter des details — les details vont dans `description`. Exemples:
+- BON: "Contester la clause pénale à 12% via l'art. 5.74"
+- BON: "Mise en demeure d'enregistrer le bail sous 15 jours"
+- MAUVAIS: "Le régime légal du préavis de résiliation anticipée par le" (coupé au milieu)
+- MAUVAIS: "Vérifier et figer la preuve du non-enregistrement AVANT toute notification: si le bailleur..." (deux-points + paragraphe)
+
 REGLE CRITIQUE ARCHER_QUESTION: Tu DOIS generer une question specifique basee sur les faits du document. La question doit referencer un fait precis du document. JAMAIS de question generique. La question DOIT avoir 2-4 options de reponse cliquables.
 
 Retourne UNIQUEMENT ce JSON:
@@ -2186,6 +2200,8 @@ FAITS: {facts_json}
 ANALYSE: {analysis_json}
 
 OBLIGATOIRE: strongest_arguments DOIT contenir exactement 4-5 elements. JAMAIS moins de 4. Chaque argument doit citer un article de loi belge specifique (CCT 109, Loi contrats travail, Code civil, etc.).
+
+REGLE UI CRITIQUE — strongest_arguments[].argument DOIT etre une phrase COMPLETE et autonome (max 80 caracteres). Commence par un verbe d'action + sujet concret. JAMAIS couper en plein milieu. JAMAIS utiliser ":" ou "—" pour ajouter des explications longues — les details vont dans `how_to_use`. Bon: "Invalidation de la clause pénale à 12% via l'art. 5.74". Mauvais: "Le régime légal du préavis de résiliation anticipée par le".
 
 Retourne UNIQUEMENT ce JSON:
 {{
