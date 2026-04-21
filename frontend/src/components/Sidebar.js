@@ -191,7 +191,7 @@ const Sidebar = () => {
     : lang === 'nl' ? 'Zoeken…'
     : 'Search…';
   const navLabels = lang === 'fr' ? {
-    dashboard: 'Tableau de bord',
+    dashboard: 'Mon bureau',
     cases: 'Mes dossiers',
     documents: 'Documents',
     upload: 'Déposer un document',
@@ -199,7 +199,7 @@ const Sidebar = () => {
     lawyers: 'Appels avocats',
     settings: 'Paramètres',
   } : lang === 'nl' ? {
-    dashboard: 'Dashboard',
+    dashboard: 'Mijn bureau',
     cases: 'Mijn dossiers',
     documents: 'Documenten',
     upload: 'Document uploaden',
@@ -207,7 +207,7 @@ const Sidebar = () => {
     lawyers: 'Advocaat-gesprekken',
     settings: 'Instellingen',
   } : {
-    dashboard: 'Dashboard',
+    dashboard: 'My desk',
     cases: 'My cases',
     documents: 'Documents',
     upload: 'Upload document',

@@ -13,6 +13,7 @@ import CreditHistoryPage from './pages/CreditHistoryPage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
+import MyDesk from './pages/MyDesk';
 import Cases from './pages/Cases';
 import CaseDetailV7 from './pages/CaseDetailV7';
 import Upload from './pages/Upload';
@@ -190,7 +191,8 @@ const AppRouter = () => {
 
       {/* Client protected routes with Layout */}
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="dashboard" element={<MyDesk />} />
+        <Route path="dashboard-legacy" element={<Dashboard />} />
         <Route path="cases" element={<Cases />} />
         <Route path="cases/:caseId" element={<CaseDetailV7 />} />
         <Route path="documents" element={<DocumentLibrary />} />
