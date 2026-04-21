@@ -233,7 +233,7 @@ const LegalChat = () => {
         <div className="bg-white border-b border-[#ebebeb] px-6 py-4" data-testid="archer-header">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 rounded-full bg-[#1e3a5f] flex items-center justify-center flex-shrink-0" data-testid="archer-avatar">
-              <span className="text-white text-lg font-bold">J</span>
+              <span className="text-white text-lg font-bold">A</span>
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -263,7 +263,7 @@ const LegalChat = () => {
           {messages.length === 0 && !sending && (
             <div className="flex flex-col items-center justify-center h-full" data-testid="empty-state">
               <div className="w-16 h-16 rounded-full bg-[#1e3a5f] flex items-center justify-center mb-4">
-                <span className="text-white text-2xl font-bold">J</span>
+                <span className="text-white text-2xl font-bold">A</span>
               </div>
               <h3 className="text-base font-semibold text-[#111827] mb-1">Archer</h3>
               <p className="text-xs text-[#6b7280] mb-6">{ui.credential} · {ui.exp}</p>
@@ -283,7 +283,7 @@ const LegalChat = () => {
             <div key={msg.created_at || `msg-${msgIdx}`} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`} data-testid={`msg-${msgIdx}`}>
               {msg.role === 'assistant' && (
                 <div className="w-7 h-7 rounded-full bg-[#1e3a5f] flex items-center justify-center flex-shrink-0 mr-2 mt-0.5">
-                  <span className="text-white text-xs font-bold">J</span>
+                  <span className="text-white text-xs font-bold">A</span>
                 </div>
               )}
               <div className={`max-w-[70%] ${msg.role === 'user'
@@ -303,7 +303,7 @@ const LegalChat = () => {
           {sending && (
             <div className="flex items-start gap-2" data-testid="typing-indicator">
               <div className="w-7 h-7 rounded-full bg-[#1e3a5f] flex items-center justify-center flex-shrink-0">
-                <span className="text-white text-xs font-bold">J</span>
+                <span className="text-white text-xs font-bold">A</span>
               </div>
               <div className="bg-white border border-[#e5e7eb] rounded-2xl rounded-bl-md px-4 py-3">
                 <div className="flex items-center gap-2 text-xs text-[#6b7280]">
