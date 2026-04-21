@@ -33,17 +33,13 @@ const COPY = {
   },
 };
 
-// Keep question text on one line. If it's too wordy, cut at the first
-// question mark or sentence break, never truncate mid-word.
-function shortenQuestion(raw) {
+// Clean whitespace only — truncation is handled by CSS (-webkit-line-clamp
+// to 2 lines) so long questions get an ellipsis and the full text stays
+// available via the title="..." hover tooltip. Lets the IA ship longer
+// prompts without breaking the rail layout.
+function cleanQuestion(raw) {
   if (!raw) return '';
-  const clean = String(raw).trim().replace(/\s+/g, ' ');
-  if (clean.length <= 80) return clean;
-  const firstQ = clean.indexOf('?');
-  if (firstQ > 20 && firstQ < 100) return clean.slice(0, firstQ + 1);
-  const firstStop = clean.search(/[.!]\s/);
-  if (firstStop > 20 && firstStop < 100) return clean.slice(0, firstStop + 1);
-  return clean;
+  return String(raw).trim().replace(/\s+/g, ' ');
 }
 
 export default function V3RailQuestions({ questions = [], onAnswer, language }) {
@@ -67,7 +63,12 @@ export default function V3RailQuestions({ questions = [], onAnswer, language }) 
           {visible.map((q, idx) => (
             <div key={q.id || idx} className="q-card" data-testid={`rail-question-${q.id || idx}`}>
               <div className="q-num">{copy.questionFmt(idx + 1, visible.length)}</div>
-              <div className="q-text">{shortenQuestion(q.question_text || q.text || q.question)}</div>
+              <div
+                className="q-text"
+                title={q.question_text || q.text || q.question}
+              >
+                {cleanQuestion(q.question_text || q.text || q.question)}
+              </div>
               <div className="q-btns">
                 {(q.choices || q.options || []).slice(0, 5).map((c, j) => {
                   const label = typeof c === 'string' ? c : (c?.label || c?.value || '');
