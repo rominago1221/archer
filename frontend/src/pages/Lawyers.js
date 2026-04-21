@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -54,6 +54,8 @@ const Lawyers = () => {
   const [lawyers, setLawyers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [specialtyOpen, setSpecialtyOpen] = useState(false);
+  const specialtyRef = useRef(null);
 
   const isBelgian = user?.jurisdiction === 'BE' || user?.country === 'BE';
   const lang = isBelgian ? 'fr' : 'en';
@@ -83,16 +85,30 @@ const Lawyers = () => {
   const onlineCount = useMemo(() => lawyers.filter(l => l.is_live).length, [lawyers]);
 
   const specialtyFilters = useMemo(() => {
-    const seen = new Set();
-    const out = [];
+    const counts = new Map();
     for (const l of lawyers) {
-      if (l.specialty && !seen.has(l.specialty)) {
-        seen.add(l.specialty);
-        out.push(l.specialty);
+      if (!l.specialty) continue;
+      counts.set(l.specialty, (counts.get(l.specialty) || 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [lawyers]);
+
+  const selectedSpecialty = useMemo(() => {
+    if (filter === 'all' || filter === 'now') return null;
+    return specialtyFilters.find(s => s.name.toLowerCase() === filter.toLowerCase())?.name || filter;
+  }, [filter, specialtyFilters]);
+
+  useEffect(() => {
+    function onClick(e) {
+      if (specialtyRef.current && !specialtyRef.current.contains(e.target)) {
+        setSpecialtyOpen(false);
       }
     }
-    return out;
-  }, [lawyers]);
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
 
   const filteredLawyers = useMemo(() => {
     if (filter === 'all') return lawyers;
@@ -131,15 +147,16 @@ const Lawyers = () => {
     );
   }
 
-  const filters = isBelgian ? [
+  const primaryFilters = isBelgian ? [
     { key: 'all', label: 'Tous', count: lawyers.length },
     { key: 'now', label: 'Online maintenant', count: onlineCount },
-    ...specialtyFilters.map(s => ({ key: s, label: s })),
   ] : [
     { key: 'all', label: 'All', count: lawyers.length },
     { key: 'now', label: 'Online now', count: onlineCount },
-    ...specialtyFilters.map(s => ({ key: s, label: s })),
   ];
+  const specialtyTriggerLabel = selectedSpecialty
+    ? selectedSpecialty
+    : (isBelgian ? 'Spécialité' : 'Specialty');
 
   return (
     <div className="lawyers-v2" data-testid="lawyers-page">
@@ -216,7 +233,7 @@ const Lawyers = () => {
 
       {/* FILTERS */}
       <div className="filters" data-testid="filters">
-        {filters.map(f => (
+        {primaryFilters.map(f => (
           <button
             key={f.key}
             type="button"
@@ -228,6 +245,54 @@ const Lawyers = () => {
             {typeof f.count === 'number' && <span className="count">{f.count}</span>}
           </button>
         ))}
+        {specialtyFilters.length > 0 && (
+          <div
+            className={`specialty-dd${specialtyOpen ? ' open' : ''}`}
+            ref={specialtyRef}
+            data-testid="specialty-dd"
+          >
+            <button
+              type="button"
+              className={`filter-chip${selectedSpecialty ? ' active' : ''}`}
+              onClick={() => setSpecialtyOpen(v => !v)}
+              data-testid="specialty-trigger"
+            >
+              {specialtyTriggerLabel}
+              {selectedSpecialty ? (
+                <span
+                  className="clear-x"
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); setFilter('all'); setSpecialtyOpen(false); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setFilter('all'); setSpecialtyOpen(false); } }}
+                  aria-label={isBelgian ? 'Effacer la spécialité' : 'Clear specialty'}
+                >×</span>
+              ) : (
+                <svg className="specialty-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              )}
+            </button>
+            {specialtyOpen && (
+              <div className="specialty-panel" role="listbox">
+                {specialtyFilters.map(s => (
+                  <button
+                    key={s.name}
+                    type="button"
+                    role="option"
+                    aria-selected={filter === s.name}
+                    className={`specialty-option${filter === s.name ? ' selected' : ''}`}
+                    onClick={() => { setFilter(s.name); setSpecialtyOpen(false); }}
+                    data-testid={`specialty-opt-${s.name}`}
+                  >
+                    <span>{s.name}</span>
+                    <span className="opt-count">{s.count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ONLINE SECTION */}
