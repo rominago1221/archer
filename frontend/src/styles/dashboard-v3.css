@@ -1785,7 +1785,11 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  cursor: help;
+  /* `cursor: help` was showing a question-mark cursor on hover, which
+   * the user read as "? tooltip" instead of the full question text.
+   * Default cursor — the title attribute still triggers the native
+   * tooltip after the OS hover delay. */
+  cursor: default;
 }
 .dashboard-v3 .q-btns { display: flex; gap: 4px; flex-wrap: wrap; }
 .dashboard-v3 .q-btn {
@@ -1804,6 +1808,19 @@
   color: var(--archer-blue);
   transform: translateY(-1px);
 }
+.dashboard-v3 .q-btn.selected {
+  border-color: var(--archer-blue);
+  background: #dbeafe;
+  color: var(--archer-blue);
+  font-weight: 600;
+}
+.dashboard-v3 .q-btn.confirmed {
+  border-color: var(--green);
+  background: var(--green-50);
+  color: var(--green);
+  font-weight: 600;
+}
+.dashboard-v3 .q-btn:disabled { cursor: default; opacity: 0.8; }
 
 /* ─── Similar cases rail ─── */
 .dashboard-v3 .sim-big {

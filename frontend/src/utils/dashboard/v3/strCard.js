@@ -28,6 +28,28 @@ function compactRefPill(raw) {
   return s;
 }
 
+// Strings like "Le régime légal du préavis de résiliation anticipée par le"
+// are older backend outputs that got cut mid-sentence (before the prompt
+// update). If the title ends on a loose preposition/article we strip the
+// trailing word so the phrase reads cleanly, and we can fall back to the
+// source's `description` / `how_to_use` for the continuation.
+const LOOSE_TAIL = new Set([
+  'le', 'la', 'les', 'de', 'du', 'des', 'd', 'au', 'aux',
+  'par', 'pour', 'sur', 'en', 'un', 'une', 'et', 'ou',
+  'l', 'ce', 'cet', 'cette', 'son', 'sa', 'ses', 'leur', 'leurs',
+]);
+
+function stripLooseTail(s) {
+  const clean = String(s || '').trim().replace(/\s+/g, ' ');
+  if (!clean) return clean;
+  const lastWord = clean.split(' ').pop().toLowerCase().replace(/[.,;:]$/, '');
+  if (LOOSE_TAIL.has(lastWord)) {
+    const parts = clean.split(' ');
+    return parts.slice(0, -1).join(' ').replace(/[,;]$/, '').trim();
+  }
+  return clean;
+}
+
 // Split a checklist source into { bold, rest, ref } so the UI can render
 // a short bold action + short continuation + green ref pill — matching
 // the mockup pattern:
@@ -39,7 +61,8 @@ function compactRefPill(raw) {
 // otherwise bold takes everything up to the first break and rest is
 // dropped. No ellipsis — the user sees a complete short phrase.
 function splitChecklistItem(rawTitle, rawRef) {
-  const clean = String(rawTitle || '').trim().replace(/\s+/g, ' ');
+  const raw = stripLooseTail(rawTitle);
+  const clean = String(raw || '').trim().replace(/\s+/g, ' ');
   if (!clean) return { bold: '', rest: '', ref: compactRefPill(rawRef) };
 
   // Colon / em-dash / parenthesis = primary split points
@@ -121,16 +144,28 @@ export function deriveStrCard(caseDoc, strategy) {
   // "attorney letter" CTA until the user confirms (brief §2, Type A/B).
   let checklist = [];
   const args = Array.isArray(strategy?.arguments) ? strategy.arguments : [];
+  // For each source: we try `title` first, then fall back to
+  // `description` / `how_to_use` / `angle` / `argument` if title looks
+  // truncated (ends on a loose preposition). That catches legacy cached
+  // cases analysed before the strict-title prompt shipped.
+  const pickTitleWithFallback = (item) => {
+    const title = item.title || '';
+    const cleanTitle = stripLooseTail(title);
+    if (cleanTitle.length > 15) return cleanTitle;
+    // Title was too short or got trimmed — fall back to another field.
+    return item.description || item.how_to_use || item.argument || item.angle || title;
+  };
+
   if (args.length > 0) {
     checklist = args.slice(0, 3).map((a) => ({
-      ...splitChecklistItem(a.title || a.argument || '', pickFirstRef(a)),
+      ...splitChecklistItem(pickTitleWithFallback(a), pickFirstRef(a)),
       action_type: a.action_type || 'direct',
       verification_question: a.verification_question || null,
     }));
   } else {
     const steps = Array.isArray(caseDoc?.ai_next_steps) ? caseDoc.ai_next_steps : [];
     checklist = steps.slice(0, 3).map((s) => ({
-      ...splitChecklistItem(s.title || s.description || '', pickFirstRef(s)),
+      ...splitChecklistItem(pickTitleWithFallback(s), pickFirstRef(s)),
       action_type: s.action_type || 'direct',
       verification_question: s.verification_question || null,
     }));

@@ -157,18 +157,15 @@ async def patch_live_status(
 # Returns up to 12 live attorneys with whitelisted fields + photo_url.
 # =========================================================================
 
-@router.get("/live")
-async def list_live_attorneys(limit: int = 12):
-    cursor = db.attorneys.find(
-        {"is_live": True, "status": {"$ne": "suspended"}},
-        {
-            "_id": 0, "id": 1, "first_name": 1, "last_name": 1,
-            "photo_storage_path": 1, "jurisdiction": 1, "specialties": 1,
-        },
-    ).limit(max(1, min(24, int(limit or 12))))
-    docs = []
+async def _find_attorneys_projection(query, limit):
+    projection = {
+        "_id": 0, "id": 1, "first_name": 1, "last_name": 1,
+        "photo_storage_path": 1, "jurisdiction": 1, "specialties": 1,
+    }
+    cursor = db.attorneys.find(query, projection).limit(max(1, min(24, int(limit or 12))))
+    out = []
     async for a in cursor:
-        docs.append({
+        out.append({
             "id": a["id"],
             "first_name": a.get("first_name") or "",
             "last_name": a.get("last_name") or "",
@@ -177,6 +174,35 @@ async def list_live_attorneys(limit: int = 12):
             "jurisdiction": a.get("jurisdiction"),
             "specialties": a.get("specialties") or [],
         })
+    return out
+
+
+@router.get("/live")
+async def list_live_attorneys(limit: int = 12):
+    """Rail card needs up to `limit` attorneys with avatars. Priority ladder:
+      1. is_live = True (opted-in to live flag)
+      2. available_for_cases = True + non-suspended (assignment-ready)
+      3. Any non-suspended attorney with a photo
+    We prefer attorneys who *have* a photo so the rail never shows
+    placeholder initials when real avatars are a DB flip away.
+    """
+    lim = max(1, min(24, int(limit or 12)))
+    # Step 1 — opted-in live attorneys.
+    docs = await _find_attorneys_projection(
+        {"is_live": True, "status": {"$ne": "suspended"}}, lim,
+    )
+    # Step 2 — fallback to available_for_cases if the live pool is empty
+    # (is_live is a new field; most attorneys haven't flipped it yet).
+    if not docs:
+        docs = await _find_attorneys_projection(
+            {"available_for_cases": True, "status": {"$ne": "suspended"}}, lim,
+        )
+    # Step 3 — last-resort fallback so the rail always has faces: any
+    # non-suspended attorney who actually has a photo on file.
+    if not docs:
+        docs = await _find_attorneys_projection(
+            {"status": {"$ne": "suspended"}, "photo_storage_path": {"$ne": None}}, lim,
+        )
     return {"total": len(docs), "attorneys": docs}
 
 
