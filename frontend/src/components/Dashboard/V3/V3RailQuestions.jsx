@@ -59,6 +59,14 @@ export default function V3RailQuestions({ questions = [], onAnswer, onAllAnswere
   // Local state for click feedback. Keys by question id; value =
   // { choice, phase }. phase: 'pending' (POST in-flight), 'saved', 'error'.
   const [clicks, setClicks] = useState({});
+  // Which question index is currently being hovered — drives the React
+  // tooltip. The old CSS ::after tooltip kept getting clipped by
+  // ancestor overflow / max-height, so we render the full-text chip
+  // conditionally.
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+  // Locks to "reanalysing" UI once we've fired onAllAnswered. Resets
+  // when the parent refetches and the questions array changes.
+  const [reanalysing, setReanalysing] = useState(false);
 
   const handleClick = (q, value) => {
     const qid = q.id || q.question_id || q.question_text || String(value);
@@ -85,8 +93,14 @@ export default function V3RailQuestions({ questions = [], onAnswer, onAllAnswere
       const vqid = vq.id || vq.question_id || vq.question_text;
       return nextClicks[vqid]?.phase === 'saved';
     });
-    if (allSaved && typeof onAllAnswered === 'function') {
-      onAllAnswered();
+    if (allSaved && typeof onAllAnswered === 'function' && !reanalysing) {
+      setReanalysing(true);
+      Promise.resolve(onAllAnswered()).finally(() => {
+        // Parent refetch will feed us a fresh questions list → remount
+        // this component and reset state. Clear defensively in case the
+        // parent doesn't refetch.
+        setTimeout(() => setReanalysing(false), 1500);
+      });
     }
   };
 
@@ -101,21 +115,40 @@ export default function V3RailQuestions({ questions = [], onAnswer, onAllAnswere
         <div style={{ fontSize: 11.5, color: 'var(--ink-4)', padding: '4px 0' }}>{copy.none}</div>
       ) : (
         <>
-          <div className="q-progress">
-            <strong>{copy.progressHeadStrong(visible.length)}</strong>{copy.progressHead}
-          </div>
+          {reanalysing ? (
+            <div
+              className="q-progress"
+              style={{ background: 'var(--green-50)', color: 'var(--green)', display: 'flex', alignItems: 'center', gap: 8 }}
+              data-testid="rail-questions-reanalysing"
+            >
+              <Loader2 size={12} className="animate-spin" aria-hidden />
+              <strong>{copy.allAnswered}</strong>
+            </div>
+          ) : (
+            <div className="q-progress">
+              <strong>{copy.progressHeadStrong(visible.length)}</strong>{copy.progressHead}
+            </div>
+          )}
           {visible.map((q, idx) => {
             const qid = q.id || q.question_id || q.question_text || String(idx);
             const state = clicks[qid];
             return (
               <div key={qid} className="q-card" data-testid={`rail-question-${q.id || idx}`}>
                 <div className="q-num">{copy.questionFmt(idx + 1, visible.length)}</div>
-                <div
-                  className="q-text"
-                  data-fulltext={cleanQuestion(q.question_text || q.text || q.question)}
-                  title={cleanQuestion(q.question_text || q.text || q.question)}
-                >
-                  {cleanQuestion(q.question_text || q.text || q.question)}
+                <div className="q-text-wrap">
+                  <div
+                    className="q-text"
+                    title={cleanQuestion(q.question_text || q.text || q.question)}
+                    onMouseEnter={() => setHoveredIdx(idx)}
+                    onMouseLeave={() => setHoveredIdx(null)}
+                  >
+                    {cleanQuestion(q.question_text || q.text || q.question)}
+                  </div>
+                  {hoveredIdx === idx && (
+                    <div className="q-tooltip">
+                      {cleanQuestion(q.question_text || q.text || q.question)}
+                    </div>
+                  )}
                 </div>
                 <div className="q-btns">
                   {(q.choices || q.options || []).slice(0, 5).map((c, j) => {

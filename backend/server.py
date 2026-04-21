@@ -335,11 +335,24 @@ RULE 2 — success_probability: Realistic outcome probabilities. No outcome belo
 
 RULE 3 — next_steps: Each step MUST include a specific legal reference AND a recipient. NEVER suggest writing to the wrong party for the current stage.
 
-RULE 4 — next_steps[].title (CRITICAL FOR UI): Each title MUST be a COMPLETE standalone sentence (max 80 characters). Start with an action verb + concrete object. NEVER cut mid-sentence. NEVER use ":" or "—" to append details — details go in `description`. Examples:
-- GOOD: "Contester la clause pénale à 12% via l'art. 5.74"
-- GOOD: "Mise en demeure d'enregistrer le bail sous 15 jours"
-- BAD: "Le régime légal du préavis de résiliation anticipée par le" (cut mid-sentence)
-- BAD: "Vérifier et figer la preuve du non-enregistrement AVANT toute notification: si le bailleur n'a pas..." (colon + paragraph)
+RULE 4 — next_steps[].title (CRITICAL FOR UI, HARD REQUIREMENT):
+Each `title` MUST be a COMPLETE ACTION SENTENCE. Structure = [INFINITIVE VERB] + [direct object] + optional [short legal basis in parentheses].
+The title MUST START with one of these infinitive verbs (or a close synonym in English/French):
+  Invalidate, Require, Contest, Demand, Claim, Send a formal notice, Invoke, Remind,
+  Flag, Denounce, Request, Challenge, Apply for, Notify, Obtain, Reject, Block, Withhold.
+Hard length cap = 90 characters. NEVER cut mid-sentence. NEVER start with an article ("The", "A"), a noun phrase, or a standalone legal citation.
+
+CORRECT:
+- "Invalidate the 12% penalty clause (art. 5.74 C. civ.)"
+- "Demand the rent reduction to the Brussels reference price"
+- "Send formal notice to register the lease within 15 days"
+- "Contest the absence of contradictory inventory (art. 1730 C. civ.)"
+
+REJECTED (these exact patterns MUST NOT appear):
+- "The legal regime of public-order article 3 §5 of the Law" — starts with an article, no verb.
+- "The legal form of early termination notice by the" — cut mid-sentence.
+- "The 12% late-interest clause per year by operation of law" — no action verb.
+- "Article 5.74 of the Civil Code" — plain citation, not an action.
 
 RULE 5 — action_type classification (BLOCKING UI STATE): For EACH next_step, set `action_type` AND one of these two companion fields:
   • action_type = "direct"                → letter can be sent as-is; no extra field needed.
@@ -2178,11 +2191,24 @@ INDICES POUR DETECTER LE STADE:
 
 OBLIGATOIRE: Chaque next_step DOIT inclure un champ "recipient" indiquant a QUI la lettre/action est destinee.
 
-REGLE CRITIQUE TITRE (UI): Chaque next_steps[].title DOIT etre une phrase COMPLETE et autonome (max 80 caracteres). Commence par un verbe d'action + objet concret. JAMAIS couper en plein milieu. JAMAIS utiliser ":" ou "—" pour ajouter des details — les details vont dans `description`. Exemples:
-- BON: "Contester la clause pénale à 12% via l'art. 5.74"
-- BON: "Mise en demeure d'enregistrer le bail sous 15 jours"
-- MAUVAIS: "Le régime légal du préavis de résiliation anticipée par le" (coupé au milieu)
-- MAUVAIS: "Vérifier et figer la preuve du non-enregistrement AVANT toute notification: si le bailleur..." (deux-points + paragraphe)
+REGLE CRITIQUE TITRE (UI, OBLIGATION STRICTE):
+Chaque `title` DOIT etre une phrase d'action COMPLETE. Structure = [VERBE A L'INFINITIF] + [complement d'objet direct] + optionnellement [base legale courte entre parentheses].
+Le title DOIT commencer par un de ces verbes a l'infinitif (ou un synonyme proche):
+  Invalider, Exiger, Contester, Demander, Reclamer, Mettre en demeure, Invoquer, Rappeler,
+  Signaler, Denoncer, Solliciter, Obtenir, Refuser, Bloquer, Retenir, Notifier.
+Longueur max = 90 caracteres. JAMAIS couper en plein milieu. JAMAIS commencer par un article ("Le", "La", "Les", "L'", "Un", "Une"), par un groupe nominal, ou par une citation legale seule.
+
+CORRECT:
+- "Invalider la clause penale de 12% (art. 5.74 C. civ.)"
+- "Exiger la reduction du loyer au prix de reference bruxellois"
+- "Mettre en demeure d'enregistrer le bail sous 15 jours"
+- "Contester l'absence d'etat des lieux contradictoire (art. 1730 C. civ.)"
+
+REJETE (ces patterns NE DOIVENT PAS apparaitre):
+- "Le régime légal d'ordre public de l'article 3 §5 de la Loi" — commence par un article, pas de verbe.
+- "La forme légale du préavis de résiliation anticipée par le" — coupe au milieu.
+- "La clause d'intérêts de retard de 12% l'an de plein droit" — pas de verbe d'action.
+- "Article 5.74 du Code civil" — citation seule, pas une action.
 
 REGLE CLASSIFICATION ACTION (BLOQUE UI): Pour CHAQUE next_step, ajoute `action_type` (deux valeurs possibles) et son champ compagnon :
   • action_type = "direct"                → la lettre peut partir telle quelle. Aucun champ supplementaire.

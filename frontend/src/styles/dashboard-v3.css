@@ -1789,11 +1789,11 @@
   position: relative;
 }
 
-/* Instant CSS tooltip — no OS delay, no question-mark cursor. Hovering
- * the clamped question reveals the full text in a tooltip positioned
- * above the line with a caret. Reads data-fulltext on the <div>. */
-.dashboard-v3 .q-text[data-fulltext]:hover::after {
-  content: attr(data-fulltext);
+/* Tooltip handled via a React-rendered .q-tooltip element — the CSS
+ * ::after version was getting clipped by the rail's parent overflow.
+ * This rule only styles the React tooltip; no pseudo-element. */
+.dashboard-v3 .q-text-wrap { position: relative; }
+.dashboard-v3 .q-tooltip {
   position: absolute;
   bottom: calc(100% + 6px);
   left: 0;
@@ -1806,20 +1806,17 @@
   line-height: 1.45;
   white-space: normal;
   font-weight: 500;
-  z-index: 30;
+  z-index: 9999;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
   pointer-events: none;
-  max-width: 280px;
 }
-.dashboard-v3 .q-text[data-fulltext]:hover::before {
+.dashboard-v3 .q-tooltip::after {
   content: '';
   position: absolute;
-  bottom: 100%;
+  top: 100%;
   left: 14px;
   border: 5px solid transparent;
   border-top-color: #0a0a0f;
-  z-index: 30;
-  pointer-events: none;
 }
 .dashboard-v3 .q-btns { display: flex; gap: 4px; flex-wrap: wrap; }
 .dashboard-v3 .q-btn {
