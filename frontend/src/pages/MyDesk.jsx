@@ -330,8 +330,6 @@ export default function MyDesk() {
 
   const today = useMemo(() => new Date(), []);
   const firstName = getFirstName(user);
-  const userCountry = user?.jurisdiction === 'BE' ? '🇧🇪 Belgique' : '🇬🇧 UK / US';
-  const userLang = (user?.language || 'fr').slice(0, 2).toUpperCase();
 
   const activeCases = useMemo(
     () => cases.filter((c) => String(c.status || '').toLowerCase() !== 'archived'),
@@ -469,22 +467,6 @@ export default function MyDesk() {
 
   return (
     <div className="my-desk" data-testid="my-desk">
-      {/* ── TOP BAR ────────────────────────────── */}
-      <div className="top-bar">
-        <div className="top-bar-search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-          <input type="text" placeholder="Rechercher un dossier, un article, un avocat…" />
-        </div>
-        <div className="top-bar-right">
-          <button type="button" className="top-bar-chip active">{userCountry}</button>
-          <button type="button" className="top-bar-chip">🌐 {userLang}</button>
-          <button type="button" className="top-bar-notif" aria-label="Notifications">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" /></svg>
-            <span className="top-bar-notif-dot" />
-          </button>
-        </div>
-      </div>
-
       {/* ── HERO HEADER ────────────────────────── */}
       <div className="hero-header">
         <div className="hero-body">
