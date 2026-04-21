@@ -227,7 +227,7 @@ const Sidebar = () => {
     : lang === 'nl' ? 'Afmelden'
     : 'Sign out';
 
-  const topCases = cases.slice(0, 5);
+  const topCases = cases.slice(0, 2);
   const activeCount = cases.filter((c) => c.status !== 'closed' && c.status !== 'archived').length;
   const documentsPath = location.pathname.startsWith('/documents');
 
