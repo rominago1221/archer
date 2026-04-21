@@ -1,25 +1,72 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Star, User } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import '../styles/lawyers-v2.css';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+// Map the existing /api/lawyers payload (lawyer_id/specialty/bar_state/...)
+// onto the fields the new UI wants (is_live, available_in_minutes, ...).
+function normalizeLawyer(raw) {
+  const status = raw.availability_status || 'later';
+  const mins = raw.availability_minutes || 0;
+  return {
+    ...raw,
+    is_live: status === 'now',
+    available_in_minutes: status === 'soon' ? mins : null,
+    available_label: status === 'later' ? (raw.availability_label || 'Demain matin') : null,
+  };
+}
+
+function getStatusClass(lawyer) {
+  if (lawyer.is_live) return 'now';
+  if (lawyer.available_in_minutes) return 'soon';
+  return 'later';
+}
+
+function getStatusLabel(lawyer, lang) {
+  if (lawyer.is_live) return 'ONLINE';
+  if (lawyer.available_in_minutes) {
+    return lang === 'fr' ? `Dans ${lawyer.available_in_minutes} min` : `In ${lawyer.available_in_minutes} min`;
+  }
+  return lawyer.available_label || (lang === 'fr' ? 'Bientôt' : 'Later');
+}
+
+function getInitials(name) {
+  if (!name) return '?';
+  const clean = name.replace(/^Me\.?\s+/i, '').trim();
+  const parts = clean.split(/\s+/);
+  const first = parts[0]?.[0] || '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (first + last).toUpperCase();
+}
+
+function displayName(lawyer, isBelgian) {
+  if (!lawyer.name) return '';
+  if (isBelgian && !/^Me\b/i.test(lawyer.name)) return `Me ${lawyer.name}`;
+  return lawyer.name;
+}
 
 const Lawyers = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [searchParams] = useSearchParams();
   const [lawyers, setLawyers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+
+  const isBelgian = user?.jurisdiction === 'BE' || user?.country === 'BE';
+  const lang = isBelgian ? 'fr' : 'en';
+
+  const plan = (user?.plan || 'free').toLowerCase();
+  const canBookCall = plan !== 'free';
 
   const fetchLawyers = useCallback(async () => {
     try {
       const params = {};
       if (user?.jurisdiction) params.country = user.jurisdiction;
       const res = await axios.get(`${API}/lawyers`, { params });
-      setLawyers(res.data);
+      setLawyers((res.data || []).map(normalizeLawyer));
     } catch (error) {
       console.error('Lawyers fetch error:', error);
     } finally {
@@ -29,157 +76,310 @@ const Lawyers = () => {
 
   useEffect(() => {
     fetchLawyers();
-    // Refresh every 60 seconds
     const interval = setInterval(fetchLawyers, 60000);
     return () => clearInterval(interval);
   }, [fetchLawyers]);
 
-  const getAvailabilityDisplay = (status, minutes) => {
-    if (status === 'now') return { text: 'Available now', color: '#16a34a', dotColor: '#22c55e' };
-    if (status === 'soon') return { text: `${minutes} min wait`, color: '#16a34a', dotColor: '#22c55e' };
-    return { text: 'Tomorrow AM', color: '#9ca3af', dotColor: '#e0e0e0' };
+  const onlineCount = useMemo(() => lawyers.filter(l => l.is_live).length, [lawyers]);
+
+  const specialtyFilters = useMemo(() => {
+    const seen = new Set();
+    const out = [];
+    for (const l of lawyers) {
+      if (l.specialty && !seen.has(l.specialty)) {
+        seen.add(l.specialty);
+        out.push(l.specialty);
+      }
+    }
+    return out;
+  }, [lawyers]);
+
+  const filteredLawyers = useMemo(() => {
+    if (filter === 'all') return lawyers;
+    if (filter === 'now') return lawyers.filter(l => l.is_live);
+    return lawyers.filter(l => (l.specialty || '').toLowerCase() === filter.toLowerCase());
+  }, [lawyers, filter]);
+
+  const onlineLawyers = filteredLawyers.filter(l => l.is_live);
+  const laterLawyers = filteredLawyers.filter(l => !l.is_live);
+
+  const handleBook = (lawyer) => {
+    if (!canBookCall) {
+      navigate('/pricing');
+      return;
+    }
+    navigate(`/lawyers/book?lawyer=${lawyer.lawyer_id}`);
   };
-
-  const filteredLawyers = lawyers.filter(l => {
-    if (filter === 'all') return true;
-    if (filter === 'now') return l.availability_status === 'now';
-    return l.specialty.toLowerCase().includes(filter.toLowerCase());
-  });
-
-  const isBelgian = user?.jurisdiction === 'BE' || user?.country === 'BE';
-
-  const filters = isBelgian ? [
-    { key: 'all', label: 'Tous' },
-    { key: 'now', label: 'Disponible maintenant' },
-    { key: 'travail', label: 'Droit du travail' },
-    { key: 'bail', label: 'Droit du bail' },
-    { key: 'consommation', label: 'Consommation' },
-    { key: 'contrat', label: 'Contrats' },
-    { key: 'famille', label: 'Famille' }
-  ] : [
-    { key: 'all', label: 'All' },
-    { key: 'now', label: 'Available now' },
-    { key: 'employment', label: 'Employment law' },
-    { key: 'contract', label: 'Contract law' },
-    { key: 'tenant', label: 'Housing' },
-    { key: 'immigration', label: 'Immigration' }
-  ];
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <div className="skeleton h-8 w-32"></div>
-        <div className="skeleton h-5 w-64"></div>
-        <div className="flex gap-2 mt-4">
-          {[1, 2, 3, 4].map(i => <div key={i} className="skeleton h-10 w-24 rounded-full"></div>)}
+      <div className="lawyers-v2" data-testid="lawyers-page">
+        <div className="hero">
+          <div>
+            <div className="hero-eyebrow">{isBelgian ? 'Appels avocat' : 'Lawyer calls'}</div>
+            <h1 className="hero-title">
+              {isBelgian ? 'Parlez à un avocat dans la minute' : 'Talk to a lawyer in under a minute'}
+            </h1>
+          </div>
         </div>
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="skeleton h-64 rounded-[14px]"></div>)}
+        <div className="lawyers-grid">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="lawyer-card" style={{ minHeight: 220, opacity: 0.5 }} />
+          ))}
         </div>
       </div>
     );
   }
 
+  const filters = isBelgian ? [
+    { key: 'all', label: 'Tous', count: lawyers.length },
+    { key: 'now', label: 'Online maintenant', count: onlineCount },
+    ...specialtyFilters.map(s => ({ key: s, label: s })),
+  ] : [
+    { key: 'all', label: 'All', count: lawyers.length },
+    { key: 'now', label: 'Online now', count: onlineCount },
+    ...specialtyFilters.map(s => ({ key: s, label: s })),
+  ];
+
   return (
-    <div data-testid="lawyers-page">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="page-title">{isBelgian ? 'Appels avocat' : 'Lawyer calls'}</h1>
-        <p className="page-sub">{isBelgian
-          ? 'Avocats belges agrees, disponibles a la demande · 149 EUR pour 30 minutes'
-          : 'Licensed US attorneys, available on demand · $149 for 30 minutes'
-        }</p>
+    <div className="lawyers-v2" data-testid="lawyers-page">
+      {/* HERO */}
+      <div className="hero">
+        <div className="hero-body">
+          <div className="hero-eyebrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
+            </svg>
+            {isBelgian ? 'Appels avocat' : 'Lawyer calls'}
+          </div>
+          <h1 className="hero-title">
+            {isBelgian ? 'Parlez à un avocat dans la minute' : 'Talk to a lawyer in under a minute'}
+          </h1>
+          <p className="hero-sub">
+            {isBelgian ? (
+              <>Avocats belges agréés, disponibles à la demande. <strong>Sessions illimitées</strong> de 30 minutes — déjà incluses dans ton abonnement.</>
+            ) : (
+              <>Licensed attorneys, available on demand. <strong>Unlimited sessions</strong> of 30 minutes — included in your plan.</>
+            )}
+          </p>
+        </div>
+        <div className="plan-badge">
+          {canBookCall ? (
+            <>
+              <span className="plan-pill">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                  <path d="M8 12l2 2 4-4" />
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+                {isBelgian ? 'Unlimited · Book for free' : 'Unlimited · Book for free'}
+              </span>
+              <span className="plan-sub">
+                {isBelgian ? <><strong>Inclus</strong> dans ton plan {plan}</> : <><strong>Included</strong> in your {plan} plan</>}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="plan-pill locked" onClick={() => navigate('/pricing')} role="button" style={{ cursor: 'pointer' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2" />
+                  <path d="M7 11V7a5 5 0 0110 0v4" />
+                </svg>
+                {isBelgian ? "S'abonner pour débloquer" : 'Subscribe to unlock'}
+              </span>
+              <span className="plan-sub">
+                {isBelgian ? <>Plan <strong>Free</strong> actif</> : <>Plan <strong>Free</strong> active</>}
+              </span>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2 mb-6 flex-wrap">
-        {filters.map((f) => (
-          <div
+      {/* ONLINE BANNER — hidden if nobody online */}
+      {onlineCount > 0 && (
+        <div className="online-banner" data-testid="online-banner">
+          <div className="online-banner-icon" />
+          <div className="online-banner-body">
+            <div className="online-banner-title">
+              {isBelgian ? (
+                <><strong>{onlineCount} {onlineCount > 1 ? 'avocats sont en ligne' : 'avocat est en ligne'}</strong> et {onlineCount > 1 ? 'prêts' : 'prêt'} à te répondre maintenant</>
+              ) : (
+                <><strong>{onlineCount} {onlineCount > 1 ? 'lawyers are online' : 'lawyer is online'}</strong> and ready to help you now</>
+              )}
+            </div>
+            <div className="online-banner-sub">
+              {isBelgian ? 'Connection en moins de 2 minutes — direct video ou chat' : 'Connect in under 2 minutes — video or chat'}
+            </div>
+          </div>
+          <span className="online-banner-count">LIVE · {onlineCount}</span>
+        </div>
+      )}
+
+      {/* FILTERS */}
+      <div className="filters" data-testid="filters">
+        {filters.map(f => (
+          <button
             key={f.key}
-            className={`filter-pill ${filter === f.key ? 'active' : ''}`}
+            type="button"
+            className={`filter-chip ${filter === f.key ? 'active' : ''}`}
             onClick={() => setFilter(f.key)}
             data-testid={`filter-${f.key}`}
           >
             {f.label}
-          </div>
+            {typeof f.count === 'number' && <span className="count">{f.count}</span>}
+          </button>
         ))}
       </div>
 
-      {/* Lawyers Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredLawyers.map((lawyer) => {
-          const avail = getAvailabilityDisplay(lawyer.availability_status, lawyer.availability_minutes);
-          return (
-            <div 
-              key={lawyer.lawyer_id} 
-              className="card overflow-hidden hover:shadow-md transition-shadow"
-              data-testid={`lawyer-card-${lawyer.lawyer_id}`}
-            >
-              {/* Photo header */}
-              <div className="h-32 bg-gradient-to-br from-[#eff6ff] to-[#dbeafe] flex items-center justify-center relative">
-                {lawyer.photo_url ? (
-                  <img 
-                    src={lawyer.photo_url} 
-                    alt={lawyer.name} 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-[#1a56db] flex items-center justify-center">
-                    <User size={28} className="text-white" />
-                  </div>
-                )}
-                {/* Availability pill */}
-                <div className="absolute bottom-3 left-3 px-3 py-1.5 bg-white rounded-full shadow-sm flex items-center gap-1.5 text-xs">
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: avail.dotColor }}></span>
-                  <span style={{ color: avail.color }} className="font-medium">{avail.text}</span>
-                </div>
-              </div>
+      {/* ONLINE SECTION */}
+      {onlineLawyers.length > 0 && (
+        <>
+          <div className="section-title-break online">
+            <span>⚡ <strong>{isBelgian ? 'Online maintenant' : 'Online now'}</strong> · {onlineLawyers.length} {isBelgian ? (onlineLawyers.length > 1 ? 'avocats prêts à te répondre' : 'avocat prêt à te répondre') : (onlineLawyers.length > 1 ? 'lawyers ready to help' : 'lawyer ready to help')}</span>
+          </div>
+          <div className="lawyers-grid">
+            {onlineLawyers.map(lawyer => (
+              <LawyerCard
+                key={lawyer.lawyer_id}
+                lawyer={lawyer}
+                isBelgian={isBelgian}
+                lang={lang}
+                canBookCall={canBookCall}
+                onBook={handleBook}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
-              {/* Info */}
-              <div className="p-4">
-                <div className="text-sm font-semibold text-[#111827] mb-1">{lawyer.name}</div>
-                <div className="text-xs text-[#6b7280] mb-3">
-                  {lawyer.specialty} · {lawyer.bar_state} Bar · {lawyer.years_experience} yrs
-                </div>
-
-                {/* Tags */}
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {lawyer.tags.slice(0, 3).map((tag, i) => (
-                    <span key={i} className="badge badge-blue text-[10px]">{tag}</span>
-                  ))}
-                </div>
-
-                {/* Rating */}
-                <div className="flex items-center gap-1 text-xs text-[#6b7280] mb-4">
-                  <div className="flex text-[#f59e0b]">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={12} fill={i < Math.floor(lawyer.rating) ? '#f59e0b' : 'none'} />
-                    ))}
-                  </div>
-                  <span>{lawyer.rating} · {lawyer.sessions_count} sessions</span>
-                </div>
-
-                {/* Book button */}
-                <button
-                  onClick={() => navigate(`/lawyers/book?lawyer=${lawyer.lawyer_id}`)}
-                  className="w-full btn-pill btn-blue py-2.5"
-                  data-testid={`book-lawyer-${lawyer.lawyer_id}-btn`}
-                >
-                  Book a call — {isBelgian ? '149 EUR' : '$149'}
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* LATER SECTION */}
+      {laterLawyers.length > 0 && (
+        <>
+          <div className="section-title-break">
+            <span>{isBelgian ? 'Disponibles plus tard' : 'Available later'} · {laterLawyers.length}</span>
+          </div>
+          <div className="lawyers-grid">
+            {laterLawyers.map(lawyer => (
+              <LawyerCard
+                key={lawyer.lawyer_id}
+                lawyer={lawyer}
+                isBelgian={isBelgian}
+                lang={lang}
+                canBookCall={canBookCall}
+                onBook={handleBook}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
       {filteredLawyers.length === 0 && (
-        <div className="card p-8 text-center">
-          <p className="text-[#6b7280]">No lawyers match this filter. Try a different selection.</p>
+        <div className="empty-state">
+          {isBelgian ? 'Aucun avocat ne correspond à ce filtre.' : 'No lawyer matches this filter.'}
         </div>
       )}
     </div>
   );
 };
+
+function LawyerCard({ lawyer, isBelgian, lang, canBookCall, onBook }) {
+  const statusClass = getStatusClass(lawyer);
+  const statusLabel = getStatusLabel(lawyer, lang);
+  const name = displayName(lawyer, isBelgian);
+  const cardClass = lawyer.is_live ? 'lawyer-card premium' : 'lawyer-card';
+  const tags = Array.isArray(lawyer.tags) ? lawyer.tags.slice(0, 3) : [];
+
+  return (
+    <div
+      className={cardClass}
+      onClick={() => onBook(lawyer)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter') onBook(lawyer); }}
+      data-testid={`lawyer-card-${lawyer.lawyer_id}`}
+    >
+      <div className="lawyer-photo-wrap">
+        <div className="lawyer-photo">
+          {lawyer.photo_url ? (
+            <img src={lawyer.photo_url} alt={name} />
+          ) : (
+            <span aria-hidden="true">{getInitials(name)}</span>
+          )}
+        </div>
+        <div className={`lawyer-status ${statusClass}`}>{statusLabel}</div>
+      </div>
+
+      <div className="lawyer-body">
+        <div className="lawyer-head">
+          <div>
+            <div className="lawyer-name">{name}</div>
+          </div>
+          <div className="lawyer-rating">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+            {Number(lawyer.rating || 0).toFixed(1)}
+            <span className="sessions">· {lawyer.sessions_count || 0}</span>
+          </div>
+        </div>
+
+        <div className="lawyer-meta">
+          {lawyer.specialty && <span>{lawyer.specialty}</span>}
+          {lawyer.specialty && lawyer.bar_state && <span className="lawyer-meta-dot" />}
+          {lawyer.bar_state && <span>{lawyer.bar_state}</span>}
+          {lawyer.years_experience > 0 && <span className="lawyer-meta-dot" />}
+          {lawyer.years_experience > 0 && (
+            <span className="years">
+              {lawyer.years_experience} {isBelgian ? 'ans' : 'yrs'}
+            </span>
+          )}
+        </div>
+
+        {tags.length > 0 && (
+          <div className="lawyer-tags">
+            {tags.map((tag, i) => (
+              <span key={i} className="lawyer-tag">{tag}</span>
+            ))}
+          </div>
+        )}
+
+        <div className="lawyer-footer">
+          <div className="lawyer-free-block">
+            <div className="lawyer-free-main">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span className="lawyer-free-text">
+                {isBelgian ? (
+                  <>Book a call — <strong>for free</strong></>
+                ) : (
+                  <>Book a call — <strong>for free</strong></>
+                )}
+              </span>
+            </div>
+            <span className="lawyer-free-sub">
+              {canBookCall
+                ? (isBelgian ? 'Unlimited avec ton plan' : 'Unlimited with your plan')
+                : (isBelgian ? 'Débloqué avec Solo+' : 'Unlocked with Solo+')}
+            </span>
+          </div>
+          <button
+            type="button"
+            className={`lawyer-cta${canBookCall ? '' : ' locked'}`}
+            onClick={(e) => { e.stopPropagation(); onBook(lawyer); }}
+            data-testid={`book-lawyer-${lawyer.lawyer_id}-btn`}
+          >
+            {canBookCall
+              ? (isBelgian ? 'Réserver' : 'Book')
+              : (isBelgian ? "S'abonner" : 'Subscribe')}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default Lawyers;
