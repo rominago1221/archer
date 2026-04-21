@@ -24,7 +24,7 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancel from './pages/PaymentCancel';
 import LegalChat from './pages/LegalChat';
 import SharedCase from './pages/SharedCase';
-import DocumentLibrary from './pages/DocumentLibrary';
+import AnalyzeDocument from './pages/AnalyzeDocument';
 import FloatingChatButton from './components/FloatingChatButton';
 import AttorneyApply from './pages/AttorneyApply';
 import AttorneyDashboard from './pages/AttorneyDashboard';
@@ -195,7 +195,7 @@ const AppRouter = () => {
         <Route path="dashboard-legacy" element={<Dashboard />} />
         <Route path="cases" element={<Cases />} />
         <Route path="cases/:caseId" element={<CaseDetailV7 />} />
-        <Route path="documents" element={<DocumentLibrary />} />
+        <Route path="documents" element={<AnalyzeDocument />} />
         <Route path="upload" element={<Upload />} />
         <Route path="lawyers" element={<Lawyers />} />
         <Route path="lawyers/book" element={<LawyerBook />} />

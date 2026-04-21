@@ -193,7 +193,7 @@ const Sidebar = () => {
   const navLabels = lang === 'fr' ? {
     dashboard: 'Mon bureau',
     cases: 'Mes dossiers',
-    documents: 'Documents',
+    documents: 'Analyser mon document',
     upload: 'Déposer un document',
     chat: 'Chat juridique',
     lawyers: 'Appels avocats',
