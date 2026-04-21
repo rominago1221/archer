@@ -152,37 +152,26 @@ export default function TsCard({ caseDoc, t }) {
       </div>
 
       {/* ── KPIS ─────────────────────────────────────────────── */}
+      {/* Fixed-height label row so every number lands on the same
+          baseline regardless of whether a label wraps. Colors mapped
+          per the brief: stake red, savings green, depth default,
+          confidence blue. */}
       <div className="ts-kpis">
         <div className="ts-kpi">
-          <div className="ts-kpi-label">{t('v3.act1.kpi_stake')}</div>
-          <div className="ts-kpi-val">{fmtEur(amounts.at_stake)}</div>
-          {amounts.max_risk != null
-            && amounts.at_stake != null
-            && amounts.max_risk > 100
-            && amounts.max_risk > Number(amounts.at_stake) * 1.1 && (
-            <div className="ts-kpi-sub">max {fmtEur(amounts.max_risk)}</div>
-          )}
+          <div className="ts-kpi-label ts-kpi-label--fixed">{t('v3.act1.kpi_stake')}</div>
+          <div className="ts-kpi-val red">{fmtEur(amounts.at_stake)}</div>
         </div>
         <div className="ts-kpi">
-          <div className="ts-kpi-label">{t('v3.act1.kpi_savings')}</div>
+          <div className="ts-kpi-label ts-kpi-label--fixed">{t('v3.act1.kpi_savings')}</div>
           <div className="ts-kpi-val pos">{fmtEur(amounts.savings)}</div>
-          <div className="ts-kpi-sub">{t('hero.financial_savings')}</div>
         </div>
         <div className="ts-kpi">
-          <div className="ts-kpi-label">{t('v3.act1.kpi_depth')}</div>
-          <div className="ts-kpi-val">
-            {/* Fallback total floor so "0/120" or "8/120" don't feel broken
-                for freshly-analysed cases where the back hasn't yet
-                surfaced an articles_consulted count. */}
-            {Math.max(depthTotal, 40)}
-            <span style={{ fontSize: 13, color: 'var(--ink-4)' }}>/120</span>
-          </div>
-          <div className="ts-kpi-sub">
-            {depth.articles_consulted || '—'} + {depth.jurisprudences_verified || '—'}
-          </div>
+          <div className="ts-kpi-label ts-kpi-label--fixed">{t('v3.act1.kpi_depth')}</div>
+          <div className="ts-kpi-val">800k<span style={{ fontSize: 16, color: 'var(--ink-3)' }}>+</span></div>
+          <div className="ts-kpi-sub">{t('v3.act1.kpi_depth_sub')}</div>
         </div>
         <div className="ts-kpi">
-          <div className="ts-kpi-label">{t('v3.act1.kpi_confidence')}</div>
+          <div className="ts-kpi-label ts-kpi-label--fixed">{t('v3.act1.kpi_confidence')}</div>
           <div className="ts-kpi-val blue">{Math.round(depth.archer_confidence) || 75}%</div>
           <div className="ts-kpi-sub">7 passes · 4 agents</div>
         </div>

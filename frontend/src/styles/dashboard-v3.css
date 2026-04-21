@@ -601,6 +601,15 @@
   letter-spacing: 1.1px;
   margin-bottom: 6px;
 }
+/* Fixed label box so every KPI value lands on the same baseline —
+ * "ENJEU FINANCIER" is one line but "PROFONDEUR D'ANALYSE" + "ÉCONOMIE
+ * POTENTIELLE" can wrap into two. 30 px holds two rows at 9.5 px
+ * monospace without forcing single-line truncation. */
+.dashboard-v3 .ts-kpi-label--fixed {
+  min-height: 30px;
+  display: flex;
+  align-items: flex-start;
+}
 .dashboard-v3 .ts-kpi-val {
   font-weight: 800;
   font-size: 22px;
@@ -609,8 +618,9 @@
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
-.dashboard-v3 .ts-kpi-val.pos { color: var(--green); }
-.dashboard-v3 .ts-kpi-val.blue { color: var(--archer-blue); }
+.dashboard-v3 .ts-kpi-val.pos { color: #1D9E75; }
+.dashboard-v3 .ts-kpi-val.blue { color: #378ADD; }
+.dashboard-v3 .ts-kpi-val.red { color: #E24B4A; }
 .dashboard-v3 .ts-kpi-sub { font-size: 11px; color: var(--ink-4); margin-top: 3px; }
 
 .dashboard-v3 .ts-dims {
