@@ -570,6 +570,35 @@
   border-radius: 100px;
   width: fit-content;
 }
+
+/* Trend pill — replaces the legacy .ts-sparkline. Same horizontal
+ * position (inside .ts-verdict), three colour variants matching the
+ * brief. */
+.dashboard-v3 .ts-trend-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  width: fit-content;
+  font-size: 13px;
+  font-weight: 500;
+}
+.dashboard-v3 .ts-trend-pill svg { flex-shrink: 0; }
+.dashboard-v3 .ts-trend-pill--negative {
+  background: #FCEBEB;
+  color: #A32D2D;
+}
+.dashboard-v3 .ts-trend-pill--positive {
+  background: #EAF3DE;
+  color: #3B6D11;
+}
+.dashboard-v3 .ts-trend-pill--stable {
+  background: #fff;
+  border: 0.5px solid #D3D1C7;
+  color: #5F5E5A;
+}
 .dashboard-v3 .ts-sparkline-label {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9.5px;

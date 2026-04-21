@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, DollarSign, Grid3x3, Shield, TrendingDown, TrendingUp } from 'lucide-react';
+import { Clock, DollarSign, Grid3x3, Shield } from 'lucide-react';
 import { deriveTsCard, fmtEur } from '../../../utils/dashboard/v3/tsCard';
 
 const ICON_BY_ID = {
@@ -52,36 +52,58 @@ function ScoreRing({ score, band }) {
   );
 }
 
-// Sparkline: 60×14 polyline over 8 points. Delta pill positive = trending
-// away from risk (down) so shown in green.
-function Sparkline({ points, delta, t }) {
-  if (!points || points.length < 2) return null;
-  const W = 60;
-  const H = 14;
-  const min = Math.min(...points);
-  const max = Math.max(...points);
-  const span = max - min || 1;
-  const step = W / (points.length - 1);
-  const coords = points.map((p, i) => {
-    const x = i * step;
-    const y = H - 2 - ((p - min) / span) * (H - 4);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  const last = coords[coords.length - 1].split(',').map(Number);
-  const isDown = delta < 0;
-  const color = isDown ? '#16a34a' : delta > 0 ? '#dc2626' : '#8a8a95';
-  const Icon = isDown ? TrendingDown : TrendingUp;
-  const deltaText = `${delta > 0 ? '+' : ''}${Math.round(delta)} pts`;
+// Trend pill — replaces the former sparkline. Compares the current score
+// to the oldest point in the 7-day window and renders a colour-coded
+// arrow-prefixed sentence:
+//   negative: "Score de risque : -X% sur 7 jours" (red)   — score went up
+//   positive: "Score de risque : +X% sur 7 jours" (green) — score went down
+//   stable:   "Score de risque : stable sur 7 jours" (neutral)
+// Stable threshold: less than 2% relative change.
+function TrendPill({ points, t, language }) {
+  if (!points || points.length < 2) {
+    return (
+      <div className="ts-trend-pill ts-trend-pill--stable" data-testid="act1-trend-pill">
+        <span>{t('v3.act1.trend_stable')}</span>
+      </div>
+    );
+  }
+  const first = Number(points[0]) || 0;
+  const last = Number(points[points.length - 1]) || 0;
+  const baseline = first || 50;
+  const relPct = Math.round(((last - first) / baseline) * 100);
+  const absPct = Math.abs(relPct);
+
+  if (absPct < 2) {
+    return (
+      <div className="ts-trend-pill ts-trend-pill--stable" data-testid="act1-trend-pill">
+        <span>{t('v3.act1.trend_stable')}</span>
+      </div>
+    );
+  }
+
+  // Score went UP = risk increased = negative outcome → red.
+  // Score went DOWN = risk decreased = positive outcome → green.
+  const worsened = relPct > 0;
+  const variant = worsened ? 'negative' : 'positive';
+  const sign = worsened ? '+' : '-';
+  const label = worsened
+    ? t('v3.act1.trend_up', { pct: absPct })
+    : t('v3.act1.trend_down', { pct: absPct });
+
   return (
-    <div className="ts-sparkline" data-testid="act1-sparkline">
-      <span className="ts-sparkline-label">{t('v3.act1.trend_label')}</span>
-      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
-        <polyline points={coords.join(' ')} fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx={last[0]} cy={last[1]} r="2" fill={color} />
+    <div className={`ts-trend-pill ts-trend-pill--${variant}`} data-testid="act1-trend-pill">
+      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+        {worsened ? (
+          <path d="M7 11V3M7 3L3.5 6.5M7 3L10.5 6.5"
+            stroke="currentColor" strokeWidth="1.5" fill="none"
+            strokeLinecap="round" strokeLinejoin="round" />
+        ) : (
+          <path d="M7 3V11M7 11L3.5 7.5M7 11L10.5 7.5"
+            stroke="currentColor" strokeWidth="1.5" fill="none"
+            strokeLinecap="round" strokeLinejoin="round" />
+        )}
       </svg>
-      <span className="ts-sparkline-val" style={{ color }}>
-        {deltaText} <Icon size={10} style={{ verticalAlign: 'middle' }} aria-hidden />
-      </span>
+      <span>{label}</span>
     </div>
   );
 }
@@ -147,7 +169,7 @@ export default function TsCard({ caseDoc, t }) {
           {caseDoc?.ai_summary && (
             <p className="ts-verdict-p">{shortTagline(caseDoc.ai_summary)}</p>
           )}
-          <Sparkline points={sparkline.points} delta={sparkline.delta} t={t} />
+          <TrendPill points={sparkline.points} t={t} />
         </div>
       </div>
 
