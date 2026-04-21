@@ -547,6 +547,18 @@ export default function CaseDetailV7() {
           <V3RailQuestions
             questions={archerQuestions}
             onAnswer={handleAnswerQuestion}
+            onAllAnswered={async () => {
+              // All visible Archer questions answered → fire a full
+              // re-analysis so the score / strategy reflects the new
+              // context. Silent on failure — the per-answer POST
+              // already stored each answer individually.
+              try {
+                await axios.post(`${API}/cases/${caseId}/reanalyze`, {}, { withCredentials: true });
+                await fetchCase();
+              } catch {
+                /* no-op — per-answer data is already persisted */
+              }
+            }}
             language={language}
           />
 

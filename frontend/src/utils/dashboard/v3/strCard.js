@@ -37,17 +37,41 @@ const LOOSE_TAIL = new Set([
   'le', 'la', 'les', 'de', 'du', 'des', 'd', 'au', 'aux',
   'par', 'pour', 'sur', 'en', 'un', 'une', 'et', 'ou',
   'l', 'ce', 'cet', 'cette', 'son', 'sa', 'ses', 'leur', 'leurs',
+  'à', 'avec', 'sans', 'dans', 'the', 'a', 'an', 'of', 'to', 'by',
 ]);
 
+// Noun-phrase openers ("Le / La / Les / L'") are also a hint the backend
+// produced a title WITHOUT a verb — that's the whole "La clause d'intérêts
+// de retard de 12%" bug. We keep the string but prepend an implicit action
+// verb so the checklist reads as an action.
+const NOUN_PHRASE_STARTS = /^(le |la |les |l'|l’|une |un |ce |cette |ces |des |du )/i;
+
+// Strip loose tails iteratively (e.g. "par le" → strip "le" → "par" → strip
+// "par" → clean stem). Caps at 4 iterations so we never nibble a real
+// title to nothing.
 function stripLooseTail(s) {
-  const clean = String(s || '').trim().replace(/\s+/g, ' ');
-  if (!clean) return clean;
-  const lastWord = clean.split(' ').pop().toLowerCase().replace(/[.,;:]$/, '');
-  if (LOOSE_TAIL.has(lastWord)) {
+  let clean = String(s || '').trim().replace(/\s+/g, ' ');
+  for (let i = 0; i < 4; i++) {
+    if (!clean) break;
+    const lastWord = clean.split(' ').pop().toLowerCase().replace(/[.,;:]$/, '');
+    if (!LOOSE_TAIL.has(lastWord)) break;
     const parts = clean.split(' ');
-    return parts.slice(0, -1).join(' ').replace(/[,;]$/, '').trim();
+    if (parts.length <= 1) break; // would empty the string
+    clean = parts.slice(0, -1).join(' ').replace(/[,;]$/, '').trim();
   }
   return clean;
+}
+
+// Heuristic: backend produced a noun phrase without a leading verb.
+// Turn "La clause d'intérêts de retard de 12%" into "Contester la clause
+// d'intérêts de retard de 12%". Keeps new-prompt verb-led titles untouched.
+function ensureActionVerb(s, language) {
+  const clean = String(s || '').trim();
+  if (!clean) return clean;
+  if (!NOUN_PHRASE_STARTS.test(clean)) return clean; // already starts with a verb / acronym / number
+  const verb = String(language || 'fr').startsWith('en') ? 'Address ' : 'Invoquer ';
+  // lowercase the first letter so "La clause" → "Invoquer la clause"
+  return verb + clean.charAt(0).toLowerCase() + clean.slice(1);
 }
 
 // Split a checklist source into { bold, rest, ref } so the UI can render
@@ -148,12 +172,15 @@ export function deriveStrCard(caseDoc, strategy) {
   // `description` / `how_to_use` / `angle` / `argument` if title looks
   // truncated (ends on a loose preposition). That catches legacy cached
   // cases analysed before the strict-title prompt shipped.
+  // Finally ensureActionVerb() prepends "Invoquer / Address" when the
+  // backend produced a noun phrase ("La clause d'intérêts…").
   const pickTitleWithFallback = (item) => {
     const title = item.title || '';
     const cleanTitle = stripLooseTail(title);
-    if (cleanTitle.length > 15) return cleanTitle;
-    // Title was too short or got trimmed — fall back to another field.
-    return item.description || item.how_to_use || item.argument || item.angle || title;
+    const chosen = cleanTitle.length > 15
+      ? cleanTitle
+      : (item.description || item.how_to_use || item.argument || item.angle || title);
+    return ensureActionVerb(stripLooseTail(chosen), /* language */ undefined);
   };
 
   if (args.length > 0) {

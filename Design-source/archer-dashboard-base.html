@@ -1,0 +1,3921 @@
+<!DOCTYPE html>
+<!-- saved from url=(0077)file:///Users/romaindebecq/Downloads/Dashboard/archer-dashboard-v3%20(1).html -->
+<html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archer — Dashboard v3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --archer-blue: #1a56db;
+  --archer-blue-dark: #1e40af;
+  --archer-blue-light: #4f7aef;
+  --archer-blue-50: #eff6ff;
+  --archer-blue-100: #dbeafe;
+  --bg: #ffffff;
+  --bg-warm: #fafafa;
+  --bg-soft: #f8f8f5;
+  --ink: #0a0a0f;
+  --ink-2: #2a2a35;
+  --ink-3: #5a5a65;
+  --ink-4: #8a8a95;
+  --line: #ececea;
+  --line-2: #e2e2dd;
+  --green: #16a34a;
+  --green-bright: #22c55e;
+  --green-50: #f0fdf4;
+  --red: #dc2626;
+  --red-50: #fef2f2;
+  --amber: #b45309;
+  --amber-50: #fffbeb;
+  --amber-bright: #f59e0b;
+  --purple: #7c3aed;
+  --purple-50: #faf5ff;
+  /* aliases pour sidebar référence */
+  --primary: #1a56db;
+  --primary-soft: #eff6ff;
+  --text: #0a0a0f;
+  --text-muted: #5a5a65;
+  --text-light: #8a8a95;
+  --border: #ececea;
+  --border-soft: #e2e2dd;
+  --green-soft: #f0fdf4;
+  --amber-soft: #fffbeb;
+  --red-soft: #fef2f2;
+  /* tokens strategy block v1 */
+  --green-100: #dcfce7;
+  --amber-100: #fef3c7;
+  --stone-50: #fafaf9;
+  --stone-100: #f5f5f4;
+  --stone-200: #e7e5e4;
+  --stone-500: #78716c;
+  --stone-600: #57534e;
+  --stone-700: #44403c;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  font-family: 'Inter Tight', -apple-system, sans-serif;
+  background: var(--bg-soft);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+/* ═══════════ SIDEBAR ═══════════ */
+.sidebar {
+  background: white;
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  padding: 18px 12px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.brand {
+  padding: 4px 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand-logo {
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--archer-blue);
+  letter-spacing: -1px;
+}
+.brand-status {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 0.6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  background: var(--green-50);
+  border-radius: 100px;
+}
+.brand-status::before {
+  content: ''; width: 5px; height: 5px;
+  background: var(--green-bright);
+  border-radius: 50%;
+  animation: blink 1.5s ease-in-out infinite;
+}
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.sidebar-search {
+  position: relative;
+  margin-bottom: 12px;
+}
+.sidebar-search input {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  background: var(--bg-soft);
+  outline: none;
+  transition: all 0.15s;
+}
+.sidebar-search input::placeholder { color: var(--ink-4); }
+.sidebar-search input:focus { border-color: var(--archer-blue); background: white; box-shadow: 0 0 0 3px var(--archer-blue-50); }
+.sidebar-search > svg {
+  position: absolute;
+  left: 10px; top: 50%; transform: translateY(-50%);
+  width: 14px; height: 14px; color: var(--ink-4);
+  pointer-events: none;
+}
+.sidebar-search kbd {
+  position: absolute;
+  right: 8px; top: 50%; transform: translateY(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-4);
+  background: white;
+  padding: 2px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  pointer-events: none;
+}
+
+.nav {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.nav-item:hover { background: var(--bg-soft); transform: translateX(2px); }
+.nav-item.active {
+  background: var(--archer-blue-50);
+  color: var(--archer-blue);
+  font-weight: 600;
+}
+.nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+.nav-item .count {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ink-4);
+  background: var(--bg-soft);
+  padding: 1px 6px;
+  border-radius: 100px;
+}
+.nav-item.active .count { background: white; color: var(--archer-blue); }
+
+.nav-section-h {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 1px;
+  padding: 16px 10px 6px;
+}
+
+.cases-mini { list-style: none; display: flex; flex-direction: column; gap: 1px; }
+.case-mini {
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s;
+}
+.case-mini:hover { background: var(--bg-soft); }
+.case-mini.active { background: var(--archer-blue-50); }
+.case-mini-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--amber);
+  flex-shrink: 0;
+  position: relative;
+}
+.case-mini.active .case-mini-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid var(--amber);
+  opacity: 0.3;
+  animation: pulse 2s ease-in-out infinite;
+}
+.case-mini-dot.green { background: var(--green); }
+.case-mini-dot.red { background: var(--red); }
+@keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 0.1; transform: scale(1.2); } }
+.case-mini-txt { flex: 1; min-width: 0; }
+.case-mini-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.case-mini-meta {
+  font-size: 10.5px;
+  color: var(--ink-4);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 1px;
+}
+
+.trust-card {
+  margin-top: auto;
+  padding: 12px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.trust-card-h {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+}
+.trust-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.trust-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--ink-2);
+  line-height: 1.3;
+}
+.trust-list li svg { width: 10px; height: 10px; color: var(--green); flex-shrink: 0; }
+
+.user-card {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.user-card:hover { background: var(--bg-soft); }
+.user-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--archer-blue), var(--archer-blue-dark));
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.user-name { font-size: 12.5px; font-weight: 600; color: var(--ink); }
+.user-email {
+  font-size: 10.5px;
+  color: var(--ink-4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+/* ═══════════ MAIN ═══════════ */
+.main { display: flex; flex-direction: column; min-width: 0; }
+
+.quickbar {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  padding: 10px 32px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.breadcrumb a { color: var(--ink-4); text-decoration: none; transition: color 0.15s; }
+.breadcrumb a:hover { color: var(--archer-blue); }
+.breadcrumb-sep { color: var(--ink-4); }
+.breadcrumb-current { color: var(--ink); font-weight: 600; }
+
+.quick-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.quick-btn:hover { border-color: var(--archer-blue); color: var(--archer-blue); transform: translateY(-1px); }
+.quick-btn svg { width: 12px; height: 12px; }
+.quick-btn.primary {
+  background: var(--archer-blue);
+  color: white;
+  border-color: var(--archer-blue);
+  box-shadow: 0 4px 12px rgba(26, 86, 219, 0.25);
+}
+.quick-btn.primary:hover {
+  background: var(--archer-blue-dark);
+  border-color: var(--archer-blue-dark);
+  color: white;
+  box-shadow: 0 8px 20px rgba(26, 86, 219, 0.35);
+}
+.version-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--archer-blue-50);
+  color: var(--archer-blue);
+  border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.4px;
+  transition: background 0.15s;
+}
+.version-pill:hover { background: var(--archer-blue-100); }
+.version-pill svg { width: 10px; height: 10px; }
+
+/* CASE HEADER */
+.case-header {
+  background: white;
+  padding: 28px 32px 0;
+  border-bottom: 1px solid var(--line);
+}
+.case-header-inner { max-width: 1400px; margin: 0 auto; }
+.case-eyebrow-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.case-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--archer-blue);
+  letter-spacing: 1.2px;
+  padding: 4px 10px;
+  background: var(--archer-blue-50);
+  border-radius: 100px;
+}
+.case-eyebrow::before {
+  content: '';
+  width: 5px; height: 5px;
+  background: var(--archer-blue);
+  border-radius: 50%;
+}
+.case-meta-live {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green);
+  padding: 3px 9px;
+  background: var(--green-50);
+  border-radius: 100px;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.case-meta-live::before {
+  content: ''; width: 5px; height: 5px;
+  background: var(--green-bright);
+  border-radius: 50%;
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+.case-title-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.case-title {
+  font-weight: 700;
+  font-size: 28px;
+  color: var(--ink);
+  letter-spacing: -0.8px;
+  line-height: 1.15;
+  flex: 1;
+}
+.case-meta {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  font-family: 'JetBrains Mono', monospace;
+  padding-bottom: 4px;
+  letter-spacing: 0.3px;
+}
+
+/* TIMELINE */
+.timeline { padding-bottom: 20px; margin-top: 8px; }
+.timeline-inner {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  position: relative;
+}
+.tl-step {
+  position: relative;
+  padding: 12px 10px 10px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.tl-step:hover { border-color: var(--archer-blue-100); transform: translateY(-2px); }
+.tl-step.done { background: white; border-color: var(--line); }
+.tl-step.current {
+  background: var(--archer-blue);
+  border-color: var(--archer-blue);
+  color: white;
+}
+.tl-step.current::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 10px;
+  border: 2px solid var(--archer-blue);
+  opacity: 0.3;
+  animation: pulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+.tl-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.tl-check {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--green);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tl-check svg { width: 10px; height: 10px; }
+.tl-dot {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid white;
+  flex-shrink: 0;
+}
+.tl-step.current .tl-dot { background: white; border-color: var(--archer-blue); position: relative; }
+.tl-step.current .tl-dot::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  background: var(--archer-blue);
+  border-radius: 50%;
+}
+.tl-step:not(.done):not(.current) .tl-dot { background: transparent; border-color: var(--line-2); }
+.tl-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 0.8px;
+}
+.tl-step.done .tl-num { color: var(--green); }
+.tl-step.current .tl-num { color: rgba(255,255,255,0.85); }
+.tl-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  line-height: 1.25;
+}
+.tl-step.current .tl-label { color: white; }
+
+/* ===== STEP LOCKED (paywall) ===== */
+.tl-step.locked {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(180, 83, 9, 0.04) 0,
+      rgba(180, 83, 9, 0.04) 5px,
+      transparent 5px,
+      transparent 11px
+    ),
+    var(--bg-soft);
+  border: 1px dashed var(--archer-blue-100);
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+}
+.tl-step.locked:hover { transform: translateY(-2px); }
+.tl-step.locked .tl-num { color: var(--ink-4); }
+.tl-step.locked .tl-label { color: var(--ink-3); opacity: 0.7; }
+
+.tl-locked-badge {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fde68a 0%, #fbbf24 50%, #d97706 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #78350f;
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.4), inset 0 1px 0 rgba(255,255,255,0.5);
+  z-index: 2;
+}
+.tl-locked-badge svg { width: 10px; height: 10px; display: block; }
+
+.tl-lock {
+  width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  background: linear-gradient(135deg, var(--archer-blue), var(--archer-blue-dark));
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(26,86,219,0.3);
+}
+.tl-lock svg { width: 11px; height: 11px; }
+
+.tl-lock-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--archer-blue) 0%, var(--archer-blue-dark) 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  box-shadow: 0 8px 20px rgba(26,86,219,0.4);
+  pointer-events: none;
+  text-align: center;
+  padding: 4px 8px;
+}
+.tl-lock-overlay svg { width: 13px; height: 13px; flex-shrink: 0; }
+.tl-step.locked:hover .tl-lock-overlay,
+.tl-step.locked:focus-visible .tl-lock-overlay { opacity: 1; }
+
+/* ═══════════ BODY ═══════════ */
+.body-wrap { padding: 0 32px 48px; }
+
+/* ACT DIVIDER (nouveau — entête visuelle forte par acte) */
+.act-divider {
+  max-width: 1400px;
+  margin: 40px auto 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.act-divider:first-child { margin-top: 28px; }
+.act-divider-num {
+  flex-shrink: 0;
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.5px;
+  position: relative;
+  transition: all 0.2s;
+}
+.act-divider-num.a1 {
+  background: linear-gradient(135deg, var(--archer-blue) 0%, var(--archer-blue-dark) 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(26, 86, 219, 0.3);
+}
+.act-divider-num.a2 {
+  background: linear-gradient(135deg, var(--archer-blue) 0%, var(--archer-blue-light) 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(26, 86, 219, 0.35);
+}
+.act-divider-num.a3 {
+  background: linear-gradient(135deg, var(--archer-blue-light) 0%, var(--archer-blue) 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(26, 86, 219, 0.3);
+}
+.act-divider-txt { flex: 1; }
+.act-divider-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 1.2px;
+  margin-bottom: 2px;
+}
+.act-divider-title {
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+}
+.act-divider-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.act-divider-expand {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.act-divider-expand:hover { color: var(--archer-blue); }
+.act-divider-expand svg { width: 11px; height: 11px; }
+
+.body {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ═════ ACT 1 — SCORE HERO (dark) ═════ */
+.score-hero {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 32px 36px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.score-hero > * { position: relative; z-index: 2; }
+
+.score-hero-top {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 28px;
+  align-items: stretch;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.score-left { display: flex; align-items: center; gap: 24px; }
+.score-circle-big {
+  width: 132px; height: 132px;
+  position: relative;
+  flex-shrink: 0;
+}
+.score-big-num-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.score-big-num {
+  font-weight: 800;
+  font-size: 48px;
+  color: var(--ink);
+  letter-spacing: -2.5px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  animation: countUp 1s ease-out forwards;
+}
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.score-big-total {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-4);
+  font-weight: 600;
+  margin-top: 2px;
+  letter-spacing: 0.8px;
+}
+
+.score-verdict-h {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--amber);
+  letter-spacing: 1.2px;
+  margin-bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  background: var(--amber-50);
+  border-radius: 100px;
+}
+.score-verdict-h::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--amber);
+  border-radius: 50%;
+}
+.score-verdict-title {
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--ink);
+  letter-spacing: -0.6px;
+  margin-bottom: 4px;
+  line-height: 1.15;
+}
+.score-verdict-p {
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+.score-sparkline-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.score-sparkline-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-4);
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+.score-sparkline-val {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--green);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.score-stake {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+  position: relative;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.score-stake:hover {
+  background: white;
+  border-color: var(--archer-blue-100);
+  transform: translateY(-2px);
+}
+.score-stake-h {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.score-stake-val {
+  font-weight: 800;
+  font-size: 30px;
+  color: var(--ink);
+  letter-spacing: -1.2px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 4px;
+}
+.score-stake-sub {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  line-height: 1.3;
+}
+.score-stake-saved {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.score-stake-saved-label {
+  font-size: 10px;
+  color: var(--ink-4);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.4px;
+}
+.score-stake-saved-val {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--green);
+  font-variant-numeric: tabular-nums;
+}
+.score-stake-saved-val.blue { color: var(--archer-blue); }
+
+/* Radar + breakdown */
+.score-breakdown {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 28px;
+  align-items: center;
+}
+.score-radar {
+  width: 260px; height: 260px;
+  position: relative;
+  margin: 0 auto;
+}
+.score-factors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sf-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  transition: all 0.18s;
+  cursor: pointer;
+}
+.sf-row:hover {
+  background: white;
+  border-color: var(--archer-blue-100);
+  transform: translateX(3px);
+}
+.sf-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sf-row.urgence .sf-dot { background: var(--archer-blue); }
+.sf-row.fin .sf-dot { background: var(--amber); }
+.sf-row.comp .sf-dot { background: var(--purple); }
+.sf-row.jur .sf-dot { background: #0891b2; }
+.sf-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-2);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  min-width: 98px;
+}
+.sf-bar {
+  flex: 1;
+  height: 5px;
+  background: var(--line);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.sf-bar-fill {
+  height: 100%;
+  border-radius: 100px;
+  animation: growBar 1.2s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  transform-origin: left;
+}
+.sf-row.urgence .sf-bar-fill { background: var(--archer-blue); }
+.sf-row.fin .sf-bar-fill { background: var(--amber); }
+.sf-row.comp .sf-bar-fill { background: var(--purple); }
+.sf-row.jur .sf-bar-fill { background: #0891b2; }
+@keyframes growBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.sf-val {
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+  min-width: 26px;
+  text-align: right;
+}
+
+/* ═════ ACT 2 — STRATEGY (v1 refined) ═════ */
+.str-card { background: white; border: 1px solid var(--line); border-radius: 20px; overflow: hidden; margin-bottom: 16px; }
+
+.str-head { padding: 28px 32px 24px; border-bottom: 1px solid var(--line); }
+.str-eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 700;
+  color: var(--archer-blue);
+  background: var(--archer-blue-50);
+  border: 1px solid var(--archer-blue-100);
+  letter-spacing: 1.2px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  margin-bottom: 12px;
+}
+.str-eyebrow::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--archer-blue); }
+.str-title { font-weight: 700; font-size: 28px; color: var(--ink); letter-spacing: -0.9px; line-height: 1.15; margin-bottom: 6px; }
+.str-sub { font-size: 14px; color: var(--ink-3); line-height: 1.5; }
+
+.str-content { padding: 22px 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 32px; border-bottom: 1px solid var(--line); }
+
+.str-col-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 1.1px;
+  margin-bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.str-col-label.green { color: var(--green); }
+.str-col-label.green::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 3px var(--green-100);
+}
+.str-col-label.neutral { color: var(--ink-4); }
+
+.str-checklist { display: flex; flex-direction: column; gap: 10px; }
+.str-check { display: flex; align-items: flex-start; gap: 10px; }
+.str-check-icon {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--green);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+  box-shadow: 0 1px 3px rgba(22,163,74,0.25);
+}
+.str-check-icon svg { width: 11px; height: 11px; }
+.str-check-txt { font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
+.str-check-txt strong { font-weight: 600; color: var(--ink); }
+.str-check-ref {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--green);
+  background: var(--green-50);
+  border: 1px solid var(--green-100);
+  padding: 1px 6px;
+  border-radius: 100px;
+  margin-left: 6px;
+  letter-spacing: 0.3px;
+}
+
+.str-proj { display: flex; flex-direction: column; gap: 10px; }
+.str-proj-bar-wrap { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; display: flex; }
+.str-proj-seg-win { flex: 64; background: var(--green); }
+.str-proj-seg-deal { flex: 19; background: var(--amber-bright); }
+.str-proj-seg-loss { flex: 17; background: var(--red); }
+.str-proj-legend { display: flex; gap: 18px; flex-wrap: wrap; }
+.str-proj-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.str-proj-dot { width: 7px; height: 7px; border-radius: 50%; }
+.str-proj-item-label { color: var(--ink-3); font-weight: 500; }
+.str-proj-item-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--ink); letter-spacing: -0.3px; }
+
+.str-actions { padding: 24px 32px 28px; }
+.str-actions-h { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+.str-actions-title { font-weight: 700; font-size: 15px; color: var(--ink); letter-spacing: -0.3px; }
+.str-actions-sub { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-4); letter-spacing: 0.8px; }
+
+.v1-options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.v1-opt {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  transition: all 0.15s;
+  cursor: pointer;
+  min-height: 300px;
+}
+.v1-opt:hover:not(.reco) { border-color: var(--archer-blue-100); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(26,86,219,0.08); }
+.v1-opt.reco { background: linear-gradient(180deg, var(--archer-blue-50) 0%, white 100%); border-color: var(--archer-blue); box-shadow: 0 6px 18px rgba(26,86,219,0.12); }
+.v1-opt.reco:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(26,86,219,0.18); }
+.v1-opt-reco-badge {
+  position: absolute; top: -8px; left: 16px;
+  background: linear-gradient(135deg, var(--archer-blue), var(--archer-blue-dark));
+  color: white;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.8px;
+  padding: 3px 9px;
+  border-radius: 100px;
+  box-shadow: 0 2px 6px rgba(26,86,219,0.35);
+  display: flex; align-items: center; gap: 4px;
+}
+.v1-opt-header { display: flex; align-items: center; justify-content: space-between; min-height: 38px; }
+.v1-opt-icon-wrap { position: relative; }
+.v1-opt-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid;
+}
+.v1-opt-icon svg { width: 17px; height: 17px; }
+.v1-opt.diy .v1-opt-icon { background: var(--green-50); color: var(--green); border-color: var(--green-100); }
+.v1-opt.mail .v1-opt-icon { background: var(--stone-100); color: var(--stone-700); border-color: var(--stone-200); }
+.v1-opt.reco .v1-opt-icon {
+  background: linear-gradient(135deg, var(--archer-blue), var(--archer-blue-dark));
+  color: white; border-color: transparent;
+  box-shadow: 0 3px 8px rgba(26,86,219,0.3);
+}
+.v1-opt-lock-badge {
+  position: absolute; bottom: -5px; right: -5px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.v1-opt-lock-badge svg { width: 9px; height: 9px; }
+.v1-opt-price { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; line-height: 1; }
+.v1-opt-price-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px; font-weight: 700;
+  color: var(--ink); letter-spacing: -0.5px;
+  line-height: 1;
+}
+.v1-opt-price-val.included { color: var(--green); font-size: 14px; letter-spacing: 0; display: inline-flex; align-items: center; gap: 3px; }
+.v1-opt-price-val.included svg { width: 11px; height: 11px; }
+.v1-opt-price-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; color: var(--ink-4);
+  letter-spacing: 0.5px; margin-top: 2px;
+}
+.v1-opt-price-sub.tier {
+  color: var(--archer-blue); font-weight: 700;
+  background: var(--archer-blue-50);
+  border: 1px solid var(--archer-blue-100);
+  padding: 2px 6px;
+  border-radius: 100px;
+  display: inline-flex; align-items: center; gap: 3px;
+}
+.v1-opt-price-sub.tier svg { width: 8px; height: 8px; }
+.v1-opt-title { font-weight: 700; font-size: 15px; color: var(--ink); letter-spacing: -0.3px; line-height: 1.25; }
+.v1-opt-desc { font-size: 12.5px; color: var(--ink-3); line-height: 1.5; flex: 1; }
+.v1-opt-desc strong { color: var(--ink-2); font-weight: 600; }
+.v1-opt-bullets { display: flex; flex-direction: column; gap: 5px; margin: 4px 0 2px; }
+.v1-opt-bullet { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--ink-3); }
+.v1-opt-bullet-dot { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
+.v1-opt.diy .v1-opt-bullet-dot { background: var(--green); }
+.v1-opt.mail .v1-opt-bullet-dot { background: var(--stone-500); }
+.v1-opt.reco .v1-opt-bullet-dot { background: var(--archer-blue); }
+.v1-opt-cta {
+  margin-top: auto;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+  text-decoration: none;
+}
+.v1-opt-cta.ghost { background: white; border-color: var(--line); color: var(--ink-2); }
+.v1-opt-cta.ghost:hover { background: var(--bg-soft); color: var(--ink); border-color: var(--archer-blue-100); }
+.v1-opt-cta.primary { background: var(--archer-blue); color: white; box-shadow: 0 2px 8px rgba(26,86,219,0.25); }
+.v1-opt-cta.primary:hover { background: var(--archer-blue-dark); box-shadow: 0 4px 14px rgba(26,86,219,0.4); transform: translateY(-1px); }
+.v1-opt-cta svg { width: 13px; height: 13px; }
+
+/* ═════ LAW REFS (cliquable pills) ═════ */
+.law-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 9px;
+  background: var(--archer-blue-50);
+  border: 1px solid var(--archer-blue-100);
+  border-radius: 100px;
+  color: var(--archer-blue);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s;
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.law-ref:hover {
+  background: var(--archer-blue-100);
+  border-color: var(--archer-blue);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(26,86,219,0.15);
+}
+.law-ref svg { width: 9px; height: 9px; opacity: 0.65; flex-shrink: 0; }
+.law-ref:hover svg { opacity: 1; }
+.law-ref.red { background: var(--red-50); border-color: #fecaca; color: var(--red); }
+.law-ref.red:hover { background: #fecaca; border-color: var(--red); box-shadow: 0 2px 6px rgba(220,38,38,0.15); }
+.law-ref.green { background: var(--green-50); border-color: var(--green-100); color: var(--green); }
+.law-ref.green:hover { background: var(--green-100); border-color: var(--green); box-shadow: 0 2px 6px rgba(22,163,74,0.15); }
+.law-ref.juris { background: var(--stone-100); border-color: var(--stone-200); color: var(--stone-700); }
+.law-ref.juris:hover { background: var(--stone-200); border-color: var(--stone-500); }
+
+.law-ref-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+.law-ref-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 0.8px;
+  margin-right: 4px;
+}
+
+/* ═════ ARM card enrichie ═════ */
+.arm-meta {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.arm-meta-row { display: flex; flex-direction: column; gap: 5px; }
+.arm-legal-desc {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  line-height: 1.45;
+  font-style: italic;
+}
+.arm-legal-desc strong { color: var(--ink-2); font-weight: 600; font-style: normal; }
+
+/* ═════ ACT 3 — DETAILS (accordions) ═════ */
+.details-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.accordion-item {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+.accordion-item:hover { border-color: var(--archer-blue-100); }
+.accordion-item.open { border-color: var(--archer-blue-100); box-shadow: 0 4px 16px rgba(26, 86, 219, 0.04); }
+.accordion-head {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.accordion-head:hover { background: var(--bg-soft); }
+.accordion-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.accordion-icon.blue { background: var(--archer-blue-50); color: var(--archer-blue); }
+.accordion-icon.green { background: var(--green-50); color: var(--green); }
+.accordion-icon.red { background: var(--red-50); color: var(--red); }
+.accordion-icon.amber { background: var(--amber-50); color: var(--amber); }
+.accordion-icon svg { width: 18px; height: 18px; }
+.accordion-title-wrap { flex: 1; }
+.accordion-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+  margin-bottom: 2px;
+}
+.accordion-sub {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.accordion-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 100px;
+  letter-spacing: 0.4px;
+}
+.accordion-badge.red { background: var(--red-50); color: var(--red); }
+.accordion-badge.amber { background: var(--amber-50); color: var(--amber); }
+.accordion-badge.green { background: var(--green-50); color: var(--green); }
+.accordion-badge.blue { background: var(--archer-blue-50); color: var(--archer-blue); }
+.accordion-chevron {
+  color: var(--ink-4);
+  transition: transform 0.2s;
+}
+.accordion-chevron svg { width: 14px; height: 14px; display: block; }
+.accordion-item.open .accordion-chevron { transform: rotate(90deg); }
+
+.accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+.accordion-item.open .accordion-body {
+  max-height: 3000px;
+  transition: max-height 0.5s ease-in;
+}
+.accordion-body-inner { padding: 0 20px 22px 72px; }
+
+/* BATTLE contents */
+.battle-gauge {
+  margin: 0 0 24px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, var(--bg-soft) 0%, white 100%);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.battle-gauge-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.battle-gauge-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 1.2px;
+}
+.battle-gauge-verdict-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--amber);
+  background: var(--amber-50);
+  border: 1px solid var(--amber-100);
+  padding: 3px 9px;
+  border-radius: 100px;
+  letter-spacing: 0.6px;
+}
+.battle-gauge-bar {
+  height: 10px;
+  background: var(--line);
+  border-radius: 5px;
+  overflow: hidden;
+  display: flex;
+  position: relative;
+  margin-bottom: 10px;
+}
+.battle-gauge-you-seg {
+  background: linear-gradient(90deg, var(--archer-blue), var(--archer-blue-light));
+}
+.battle-gauge-them-seg {
+  background: linear-gradient(90deg, #fca5a5, var(--red));
+  margin-left: auto;
+}
+.battle-gauge-row-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.battle-gauge-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.battle-gauge-stat.them { align-items: flex-end; }
+.battle-gauge-stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+.battle-gauge-stat.you .battle-gauge-stat-label { color: var(--archer-blue); }
+.battle-gauge-stat.them .battle-gauge-stat-label { color: var(--red); }
+.battle-gauge-stat-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  line-height: 1;
+}
+.battle-gauge-stat.you .battle-gauge-stat-val { color: var(--archer-blue); }
+.battle-gauge-stat.them .battle-gauge-stat-val { color: var(--red); }
+
+.battle-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.battle-col { display: flex; flex-direction: column; gap: 8px; }
+.battle-col-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  padding: 0 2px 4px;
+}
+.battle-col-label-icon {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.battle-col-label-icon svg { width: 10px; height: 10px; }
+.battle-col-label.you .battle-col-label-icon { background: var(--archer-blue-50); color: var(--archer-blue); border: 1px solid var(--archer-blue-100); }
+.battle-col-label.them .battle-col-label-icon { background: var(--red-50); color: var(--red); border: 1px solid #fecaca; }
+.battle-col-label.you .battle-col-label-txt { color: var(--archer-blue); }
+.battle-col-label.them .battle-col-label-txt { color: var(--red); }
+.battle-col-label-count {
+  margin-left: auto;
+  padding: 2px 7px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  color: var(--ink-3);
+  font-size: 9.5px;
+}
+
+.arg-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.arg-card {
+  padding: 10px 12px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.arg-card:hover { border-color: var(--archer-blue-100); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.04); }
+.arg-card.you { border-left: 3px solid var(--archer-blue); }
+.arg-card.them { border-left: 3px solid var(--red); }
+.arg-card-num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-3);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.arg-card.you .arg-card-num { color: var(--archer-blue); border-color: var(--archer-blue-100); background: var(--archer-blue-50); }
+.arg-card.them .arg-card-num { color: var(--red); border-color: #fecaca; background: var(--red-50); }
+.arg-card-title {
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  line-height: 1.35;
+  letter-spacing: -0.1px;
+}
+.arg-strength {
+  flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  padding: 3px 7px;
+  border-radius: 100px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.arg-strength.solid { background: var(--green-50); color: var(--green); border-color: var(--green-100); }
+.arg-strength.fort { background: var(--red-50); color: var(--red); border-color: #fecaca; }
+.arg-strength.medium { background: var(--amber-50); color: var(--amber); border-color: var(--amber-100); }
+.arg-strength.weak { background: var(--bg-soft); color: var(--ink-4); border-color: var(--line); }
+
+.battle-verdict {
+  padding: 14px 16px;
+  background: linear-gradient(135deg, var(--archer-blue-50) 0%, white 100%);
+  border: 1px solid var(--archer-blue-100);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.battle-verdict-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--archer-blue), var(--archer-blue-dark));
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 3px 8px rgba(26,86,219,0.3);
+}
+.battle-verdict-icon svg { width: 18px; height: 18px; }
+.battle-verdict-txt {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  flex: 1;
+}
+.battle-verdict-txt strong { color: var(--archer-blue); font-weight: 700; }
+.battle-verdict-txt em { font-style: normal; color: var(--ink); font-weight: 600; }
+
+/* ═════ TES ARMES — stack vertical ═════ */
+.arms-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.arm-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  transition: all 0.2s;
+  display: grid;
+  grid-template-columns: 36px 1fr 48px;
+  gap: 14px;
+  align-items: flex-start;
+  cursor: default;
+}
+.arm-card:hover { border-color: var(--archer-blue-100); box-shadow: 0 4px 14px rgba(26,86,219,0.05); }
+.arm-num {
+  width: 32px; height: 32px;
+  border-radius: 10px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  color: var(--ink-3);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  letter-spacing: -0.3px;
+}
+.arm-body { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.arm-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+  line-height: 1.3;
+}
+.arm-legal-desc {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  padding: 9px 11px;
+  background: var(--bg-soft);
+  border-radius: 8px;
+  border-left: 3px solid var(--green);
+}
+.arm-legal-desc strong { color: var(--ink); font-weight: 700; }
+.arm-legal-desc em { font-style: italic; color: var(--ink-2); }
+
+.arm-refs-row { display: flex; flex-direction: column; gap: 5px; }
+.arm-refs-row .law-ref-label { margin-bottom: 2px; display: block; }
+.arm-refs-row .law-ref-label svg { width: 11px; height: 11px; vertical-align: -2px; margin-right: 4px; }
+
+.arm-conf-circ {
+  width: 44px; height: 44px;
+  flex-shrink: 0;
+  position: relative;
+}
+.arm-conf-val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+/* ═════ ATTAQUE ADVERSE — vrai design face-à-face ═════ */
+.atk-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--bg-soft) 0%, white 100%);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+.atk-stat { display: flex; flex-direction: column; gap: 3px; padding: 0 8px; }
+.atk-stat + .atk-stat { border-left: 1px solid var(--line); }
+.atk-stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 0.7px;
+}
+.atk-stat-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.6px;
+  line-height: 1.1;
+}
+.atk-stat-val.green { color: var(--green); }
+.atk-stat-val.amber { color: var(--amber); }
+.atk-stat-sub {
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+
+.atk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.atk-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+.atk-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.04); border-color: var(--archer-blue-100); }
+.atk-card-head {
+  padding: 12px 16px;
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.atk-card-num {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: white;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: -0.3px;
+}
+.atk-card-head-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.atk-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 1px;
+}
+.atk-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+  line-height: 1.3;
+}
+.atk-threat-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 100px;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.atk-threat-badge.low { color: var(--green); background: var(--green-50); border-color: var(--green-100); }
+.atk-threat-badge.mid { color: var(--amber); background: var(--amber-50); border-color: var(--amber-100); }
+.atk-threat-badge.high { color: var(--red); background: var(--red-50); border-color: #fecaca; }
+
+/* Face-à-face split */
+.atk-duel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+}
+.atk-duel::before {
+  content: '';
+  position: absolute;
+  top: 16px; bottom: 16px;
+  left: 50%;
+  width: 1px;
+  background: var(--line);
+}
+.atk-duel-side {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.atk-duel-side.attack { background: linear-gradient(180deg, var(--red-50) 0%, rgba(254,242,242,0.2) 100%); }
+.atk-duel-side.defense { background: linear-gradient(180deg, var(--green-50) 0%, rgba(240,253,244,0.2) 100%); }
+.atk-duel-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  width: fit-content;
+}
+.atk-duel-label.attack { color: var(--red); }
+.atk-duel-label.defense { color: var(--green); }
+.atk-duel-label svg { width: 12px; height: 12px; }
+.atk-quote {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  font-style: italic;
+  padding-left: 10px;
+  border-left: 2px solid #fca5a5;
+}
+.atk-quote::before { content: '« '; color: var(--red); font-weight: 700; font-style: normal; opacity: 0.7; }
+.atk-quote::after { content: ' »'; color: var(--red); font-weight: 700; font-style: normal; opacity: 0.7; }
+.atk-response {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  padding-left: 10px;
+  border-left: 2px solid #86efac;
+}
+.atk-response strong { color: var(--ink); font-weight: 700; }
+.atk-response em { font-style: italic; color: var(--ink-2); }
+.atk-refs { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: auto; }
+
+/* footer verdict : force de la défense */
+.atk-footer {
+  padding: 10px 16px;
+  background: white;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.atk-footer-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.atk-footer-left strong { color: var(--green); font-weight: 700; }
+.atk-footer-left svg { width: 14px; height: 14px; color: var(--green); flex-shrink: 0; }
+.atk-footer-force {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.atk-force-bar {
+  width: 80px; height: 5px;
+  background: var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.atk-force-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green-bright), var(--green));
+  border-radius: 3px;
+}
+.atk-force-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: -0.3px;
+  min-width: 34px;
+  text-align: right;
+}
+
+/* Point critique enrichi */
+.crit-box {
+  padding: 14px 16px;
+  background: var(--red-50);
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.crit-title {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+}
+.crit-desc {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+.crit-desc strong { color: var(--red); font-weight: 700; }
+.crit-refs {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px dashed #fecaca;
+}
+
+/* ═════ RIGHT COLUMN ═════ */
+.right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 72px;
+}
+
+.card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+  transition: all 0.2s;
+}
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  gap: 10px;
+}
+.card-h {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 1.2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.card-h::before {
+  content: '';
+  width: 4px; height: 4px;
+  background: var(--ink-4);
+  border-radius: 50%;
+}
+.card-h.blue { color: var(--archer-blue); }
+.card-h.blue::before { background: var(--archer-blue); }
+
+.lawyer-cta-card {
+  background: white;
+  border: 1px solid var(--archer-blue-100);
+  border-radius: 14px;
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.lawyer-cta-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--archer-blue), var(--archer-blue-light));
+}
+.lawyer-cta-card > * { position: relative; z-index: 2; }
+.lawyer-live-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.lawyer-live-dot {
+  width: 7px; height: 7px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: blink 1.5s ease-in-out infinite;
+}
+.lawyer-live-txt {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 0.6px;
+}
+.lawyer-online {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-4);
+}
+.lawyer-h {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.lawyer-p {
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.4;
+  margin-bottom: 14px;
+}
+.lawyer-avatars {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.lawyer-avs { display: flex; }
+.lawyer-av {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 2px solid white;
+  background: var(--archer-blue);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 9.5px;
+  margin-left: -6px;
+}
+.lawyer-av:first-child { margin-left: 0; }
+.lawyer-avs-txt { font-size: 11px; color: var(--ink-3); }
+.lawyer-free-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  background: var(--green-50);
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+}
+.lawyer-free-icon {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--green);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.3);
+}
+.lawyer-free-icon svg { width: 11px; height: 11px; }
+.lawyer-free-txt { flex: 1; min-width: 0; }
+.lawyer-free-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+.lawyer-free-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-3);
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  margin-top: 2px;
+}
+.lawyer-cta-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px;
+  background: var(--archer-blue);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  width: 100%;
+  transition: all 0.15s;
+}
+.lawyer-cta-btn:hover { background: var(--archer-blue-dark); transform: translateY(-1px); box-shadow: 0 8px 16px rgba(26, 86, 219, 0.25); }
+.lawyer-cta-btn svg { width: 13px; height: 13px; }
+.lawyer-members-note {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--ink-4);
+  font-weight: 500;
+}
+.lawyer-members-note svg { width: 11px; height: 11px; color: var(--ink-4); flex-shrink: 0; }
+.lawyer-members-link {
+  color: var(--archer-blue);
+  font-weight: 600;
+  text-decoration: none;
+}
+.lawyer-members-link:hover { text-decoration: underline; }
+
+.doc-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.doc-item:hover { border-color: var(--archer-blue-100); transform: translateX(2px); }
+.doc-icon {
+  width: 30px; height: 30px;
+  background: var(--red-50);
+  color: var(--red);
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.doc-icon svg { width: 13px; height: 13px; }
+.doc-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.doc-meta {
+  font-size: 10.5px;
+  color: var(--ink-4);
+  margin-top: 1px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.doc-badge {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--green);
+  padding: 2px 6px;
+  background: var(--green-50);
+  border-radius: 100px;
+  letter-spacing: 0.4px;
+  flex-shrink: 0;
+}
+.doc-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border: 1px dashed var(--line-2);
+  background: white;
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  font-weight: 600;
+  width: 100%;
+}
+.doc-add:hover { border-color: var(--archer-blue); color: var(--archer-blue); background: var(--archer-blue-50); }
+.doc-add svg { width: 12px; height: 12px; }
+
+.q-progress {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--archer-blue-50);
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: var(--archer-blue-dark);
+  line-height: 1.4;
+}
+.q-card {
+  border-top: 1px solid var(--line);
+  padding: 12px 0;
+}
+.q-card:first-of-type { padding-top: 0; border-top: 0; }
+.q-card:last-of-type { padding-bottom: 0; }
+.q-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--archer-blue);
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.q-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.q-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+.q-btn {
+  padding: 5px 10px;
+  border: 1px solid var(--line-2);
+  background: white;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.q-btn:hover { border-color: var(--archer-blue); color: var(--archer-blue); transform: translateY(-1px); }
+
+.sim-big {
+  padding: 16px 16px;
+  background: linear-gradient(135deg, var(--archer-blue-50) 0%, #f5f8ff 100%);
+  border: 1px solid var(--archer-blue-100);
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.sim-big::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 100%, rgba(26, 86, 219, 0.08), transparent 60%);
+}
+.sim-big > * { position: relative; }
+.sim-big-num {
+  font-weight: 800;
+  font-size: 38px;
+  color: var(--archer-blue);
+  letter-spacing: -1.2px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 4px;
+}
+.sim-big-text {
+  font-size: 11.5px;
+  color: var(--archer-blue-dark);
+  line-height: 1.3;
+  font-weight: 500;
+}
+.sim-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+.sim-stat {
+  text-align: center;
+  padding: 9px 4px;
+  background: var(--bg-soft);
+  border-radius: 8px;
+  transition: all 0.15s;
+}
+.sim-stat:hover { background: var(--archer-blue-50); }
+.sim-stat-num {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+  line-height: 1;
+  margin-bottom: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.sim-stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  color: var(--ink-4);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.news-item {
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+.news-item:last-child { border-bottom: none; padding-bottom: 0; }
+.news-item:first-child { padding-top: 0; }
+.news-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+}
+.news-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 100px;
+  letter-spacing: 0.4px;
+}
+.news-tag.juris { background: var(--purple-50); color: var(--purple); }
+.news-tag.law { background: var(--archer-blue-50); color: var(--archer-blue); }
+.news-time {
+  font-size: 10px;
+  color: var(--ink-4);
+  font-family: 'JetBrains Mono', monospace;
+}
+.news-text {
+  font-size: 12px;
+  color: var(--ink-2);
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+.news-impact {
+  font-size: 11px;
+  color: var(--archer-blue);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chat-input-row { display: flex; gap: 6px; margin-top: 8px; }
+.chat-input {
+  flex: 1;
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  font-family: inherit;
+  font-size: 12.5px;
+  outline: none;
+  transition: all 0.15s;
+}
+.chat-input:focus { border-color: var(--archer-blue); box-shadow: 0 0 0 3px var(--archer-blue-50); }
+.chat-send {
+  padding: 9px 14px;
+  background: var(--archer-blue);
+  color: white;
+  border: none;
+  border-radius: 100px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.chat-send:hover { background: var(--archer-blue-dark); }
+.chat-suggestions {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.chat-sug {
+  padding: 5px 9px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--ink-2);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.chat-sug:hover { border-color: var(--archer-blue); color: var(--archer-blue); transform: translateY(-1px); }
+
+.refine-box {
+  background: white;
+  border: 1px dashed var(--line-2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: all 0.15s;
+}
+.refine-box:hover { border-color: var(--archer-blue); border-style: solid; }
+.refine-h-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.refine-h-icon {
+  width: 22px; height: 22px;
+  background: var(--archer-blue-50);
+  color: var(--archer-blue);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.refine-h-icon svg { width: 12px; height: 12px; }
+.refine-title { font-weight: 600; font-size: 12.5px; color: var(--ink); }
+.refine-sub {
+  font-size: 11px;
+  color: var(--ink-3);
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+.refine-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line-2);
+  background: white;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+}
+.refine-btn:hover { border-color: var(--archer-blue); color: var(--archer-blue); background: var(--archer-blue-50); }
+.refine-btn svg { width: 11px; height: 11px; }
+.refine-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--ink-4);
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  letter-spacing: 0.3px;
+}
+
+@media (max-width: 1200px) {
+  .body { grid-template-columns: 1fr; }
+  .right-col { position: static; }
+  .score-hero-top { grid-template-columns: 1fr; gap: 20px; }
+  .score-breakdown { grid-template-columns: 1fr; }
+  .score-radar { width: 220px; height: 220px; }
+  .story-blocks { grid-template-columns: 1fr; }
+  .arms-grid { grid-template-columns: 1fr; }
+  .battle-cols { grid-template-columns: 1fr; }
+  .send-cta { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .timeline-inner { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+}
+
+/* ============================================================
+   SIDEBAR — copie exacte du fichier référence v7
+   ============================================================ */
+.sidebar { background: white; border-right: 1px solid var(--border); padding: 24px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+.sb-logo-row { padding: 0 24px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-soft); margin-bottom: 20px; }
+.sb-logo { font-family: 'Inter Tight', sans-serif; font-weight: 700; font-size: 22px; color: var(--archer-blue); letter-spacing: -1px; line-height: 1; }
+.sb-live { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--green); font-weight: 700; }
+.sb-live-dot { width: 6px; height: 6px; background: var(--green-bright); border-radius: 50%; position: relative; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); animation: sb-live-pulse 1.4s ease-out infinite; }
+@keyframes sb-live-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); opacity: 1; }
+  70%  { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);  opacity: 1; }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);    opacity: 1; }
+}
+
+.sb-search { margin: 0 16px 20px; padding: 8px 12px; background: var(--bg-soft); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-light); }
+.sb-search-key { margin-left: auto; padding: 2px 6px; background: white; border: 1px solid var(--border); border-radius: 4px; font-size: 11px; color: var(--text-muted); }
+
+.sb-nav { padding: 0 16px; }
+.sb-nav-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; font-size: 14px; color: var(--text-muted); cursor: pointer; transition: all .15s; margin-bottom: 2px; }
+.sb-nav-item:hover { background: var(--bg-soft); color: var(--text); }
+.sb-nav-item.active { background: var(--primary-soft); color: var(--primary); font-weight: 500; }
+.sb-nav-item .icon { width: 16px; flex-shrink: 0; }
+.sb-nav-item .count { margin-left: auto; font-size: 11px; color: var(--text-light); background: var(--bg-soft); padding: 2px 6px; border-radius: 4px; }
+
+.sb-section-title { padding: 24px 24px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-light); font-weight: 700; }
+.sb-cases { padding: 0 12px; }
+.sb-case { display: flex; gap: 12px; padding: 12px; border-radius: 10px; cursor: pointer; transition: all .15s; margin-bottom: 4px; border: 1px solid transparent; }
+.sb-case:hover { background: var(--bg-soft); }
+.sb-case.active { background: var(--primary-soft); border-color: rgba(26,86,219,0.15); }
+.sb-case-dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; }
+.sb-case-dot.amber { background: var(--amber); }
+.sb-case-dot.red { background: var(--red); }
+.sb-case-dot.green { background: var(--green); }
+.sb-case-body { flex: 1; min-width: 0; }
+.sb-case-title { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.3; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-case-meta { font-size: 11px; color: var(--text-light); display: flex; gap: 8px; align-items: center; }
+.sb-case-score { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+.sb-case-deadline { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+.sb-case-deadline.amber { background: var(--amber-soft); color: var(--amber); }
+.sb-case-deadline.red { background: var(--red-soft); color: var(--red); }
+.sb-case-deadline.green { background: var(--green-soft); color: var(--green); }
+
+.sb-new-case { margin: 16px; padding: 10px 12px; background: white; color: var(--archer-blue); border: 1px solid var(--archer-blue-100); border-radius: 10px; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all .15s; }
+.sb-new-case:hover { background: var(--archer-blue-50); border-color: var(--archer-blue); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(26,86,219,0.1); }
+
+.sb-footer { margin-top: auto; padding: 16px; border-top: 1px solid var(--border-soft); }
+.sb-trust { display: flex; flex-direction: column; gap: 6px; padding: 12px; background: var(--bg-soft); border-radius: 10px; margin-bottom: 12px; font-size: 11px; color: var(--text-muted); }
+.sb-trust-row { display: flex; align-items: center; gap: 6px; }
+.sb-trust-check { color: var(--green); font-weight: 700; }
+.sb-user { display: flex; align-items: center; gap: 10px; padding: 8px 4px; }
+.sb-user-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #1a56db, #6ea8fe); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; }
+.sb-user-info { font-size: 12px; flex: 1; min-width: 0; }
+.sb-user-name { color: var(--text); font-weight: 500; }
+.sb-user-email { color: var(--text-light); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="sb-logo-row">
+      <div class="sb-logo">Archer</div>
+      <span class="sb-live"><span class="sb-live-dot"></span>Live</span>
+    </div>
+
+    <div class="sb-search">
+      <span>🔍</span>
+      <span>Rechercher…</span>
+      <span class="sb-search-key">⌘K</span>
+    </div>
+
+    <nav class="sb-nav">
+      <a class="sb-nav-item"><span class="icon">⊞</span> Tableau de bord</a>
+      <a class="sb-nav-item active"><span class="icon">📁</span> Mes dossiers <span class="count">3</span></a>
+      <a class="sb-nav-item"><span class="icon">📄</span> Documents <span class="count">14</span></a>
+      <a class="sb-nav-item"><span class="icon">💬</span> Chat juridique</a>
+      <a class="sb-nav-item"><span class="icon">📞</span> Appels avocats</a>
+      <a class="sb-nav-item"><span class="icon">⚙</span> Paramètres</a>
+    </nav>
+
+    <div class="sb-section-title">Dossiers actifs</div>
+    <div class="sb-cases">
+      <div class="sb-case active">
+        <div class="sb-case-dot amber"></div>
+        <div class="sb-case-body">
+          <div class="sb-case-title">Bail 9 ans Bruxelles</div>
+          <div class="sb-case-meta">
+            <span class="sb-case-score">42</span>
+            <span>·</span>
+            <span>🏠 Logement</span>
+            <span class="sb-case-deadline amber">8j</span>
+          </div>
+        </div>
+      </div>
+      <div class="sb-case">
+        <div class="sb-case-dot green"></div>
+        <div class="sb-case-body">
+          <div class="sb-case-title">PV radar contestation</div>
+          <div class="sb-case-meta">
+            <span class="sb-case-score">82</span>
+            <span>·</span>
+            <span>🚗 Routier</span>
+            <span class="sb-case-deadline green">Gagné</span>
+          </div>
+        </div>
+      </div>
+      <div class="sb-case">
+        <div class="sb-case-dot red"></div>
+        <div class="sb-case-body">
+          <div class="sb-case-title">Facture Proximus</div>
+          <div class="sb-case-meta">
+            <span class="sb-case-score">68</span>
+            <span>·</span>
+            <span>📡 Conso</span>
+            <span class="sb-case-deadline red">2j</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-new-case">+ Ouvrir un nouveau dossier</div>
+
+    <div class="sb-footer">
+      <div class="sb-trust">
+        <div class="sb-trust-row"><span class="sb-trust-check">✓</span> Conforme RGPD</div>
+        <div class="sb-trust-row"><span class="sb-trust-check">✓</span> Chiffré AES-256</div>
+        <div class="sb-trust-row"><span class="sb-trust-check">✓</span> Avocats inscrits BE & US</div>
+      </div>
+      <div class="sb-user">
+        <div class="sb-user-avatar">RD</div>
+        <div class="sb-user-info">
+          <div class="sb-user-name">Romain Debde</div>
+          <div class="sb-user-email">romain@archer.law</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+
+  <main class="main">
+
+    <div class="quickbar">
+      <div class="breadcrumb">
+        <a href="file:///Users/romaindebecq/Downloads/Dashboard/archer-dashboard-v3%20(1).html#">My cases</a>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current">Bail 9 ans Bruxelles — Loyer au-dessus référence</span>
+      </div>
+      <div class="quick-actions">
+        <div class="version-pill">
+          V3 LATEST
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+        <a href="file:///Users/romaindebecq/Downloads/Dashboard/archer-dashboard-v3%20(1).html#" class="quick-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          Explain simply
+        </a>
+        <a href="file:///Users/romaindebecq/Downloads/Dashboard/archer-dashboard-v3%20(1).html#" class="quick-btn primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          Envoyer ma lettre
+        </a>
+      </div>
+    </div>
+
+
+    <div class="case-header">
+      <div class="case-header-inner">
+        <div class="case-eyebrow-row">
+          <div class="case-eyebrow">DOSSIER LOGEMENT · BELGIQUE</div>
+          <div class="case-meta-live">UPDATED JUST NOW</div>
+        </div>
+
+        <div class="case-title-row">
+          <h1 class="case-title">Bail 9 ans Bruxelles — Loyer au-dessus référence</h1>
+          <div class="case-meta">OPENED 17 APR 2026 · 1 DOC</div>
+        </div>
+
+        <div class="timeline">
+          <div class="timeline-inner">
+            <div class="tl-step done">
+              <div class="tl-row"><div class="tl-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg></div><div class="tl-num">STEP 1</div></div>
+              <div class="tl-label">Analyser le dossier</div>
+            </div>
+            <div class="tl-step done">
+              <div class="tl-row"><div class="tl-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg></div><div class="tl-num">STEP 2</div></div>
+              <div class="tl-label">Bâtir la stratégie</div>
+            </div>
+            <div class="tl-step current">
+              <div class="tl-row"><div class="tl-dot"></div><div class="tl-num">STEP 3 · NOW</div></div>
+              <div class="tl-label">Rédiger la réponse</div>
+            </div>
+            <div class="tl-step locked" role="button" tabindex="0" aria-label="Étape réservée aux abonnés — S'abonner pour débloquer">
+              <div class="tl-row">
+                <div class="tl-lock">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+                </div>
+                <div class="tl-num">STEP 4</div>
+              </div>
+              <div class="tl-label">Rencontrer un avocat</div>
+              <div class="tl-lock-overlay">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 11V7a5 5 0 019.9-1"/><rect x="5" y="11" width="14" height="10" rx="2"/></svg>
+                <span>S'abonner pour débloquer</span>
+              </div>
+            </div>
+            <div class="tl-step locked" role="button" tabindex="0" aria-label="Étape réservée aux abonnés — S'abonner pour débloquer">
+              <div class="tl-row">
+                <div class="tl-lock">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+                </div>
+                <div class="tl-num">STEP 5</div>
+              </div>
+              <div class="tl-label">Planifier la visio</div>
+              <div class="tl-lock-overlay">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 11V7a5 5 0 019.9-1"/><rect x="5" y="11" width="14" height="10" rx="2"/></svg>
+                <span>S'abonner pour débloquer</span>
+              </div>
+            </div>
+            <div class="tl-step">
+              <div class="tl-row"><div class="tl-dot"></div><div class="tl-num">STEP 6</div></div>
+              <div class="tl-label">Clôturer le dossier</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="body-wrap">
+
+      <div class="act-divider">
+        <div class="act-divider-num a1">01</div>
+        <div class="act-divider-txt">
+          <div class="act-divider-eyebrow">OÙ TU EN ES</div>
+          <div class="act-divider-title">Ta situation</div>
+        </div>
+        <div class="act-divider-rule"></div>
+      </div>
+
+      <div class="body">
+        <div class="main-col">
+
+          <div class="ts-card">
+            <div class="ts-top">
+              <div class="ts-score">
+                <svg viewBox="0 0 132 132" style="width:100%;height:100%;">
+                  <defs>
+                    <linearGradient id="tsScoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#fbbf24"/>
+                      <stop offset="100%" stop-color="#f59e0b"/>
+                    </linearGradient>
+                  </defs>
+                  <circle cx="66" cy="66" r="56" fill="none" stroke="var(--bg-soft)" stroke-width="10"/>
+                  <circle cx="66" cy="66" r="56" fill="none" stroke="url(#tsScoreGrad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="351.86" stroke-dashoffset="204.08" transform="rotate(-90 66 66)" style="transition: stroke-dashoffset 1.5s cubic-bezier(0.23, 1, 0.32, 1);"/>
+                </svg>
+                <div class="ts-score-center">
+                  <div class="ts-score-num">42</div>
+                  <div class="ts-score-total">/ 100</div>
+                </div>
+              </div>
+              <div class="ts-verdict">
+                <div class="ts-verdict-head"><span class="ts-risk-pill">RISQUE MODÉRÉ</span></div>
+                <h3 class="ts-verdict-title">Sérieux, mais contestable.</h3>
+                <p class="ts-verdict-p">Tu as de vraies armes juridiques sur 3 clauses du bail. Le score reste élevé à cause du montant en jeu.</p>
+                <div class="ts-sparkline">
+                  <span class="ts-sparkline-label">7J TREND</span>
+                  <svg width="60" height="14" viewBox="0 0 60 14"><polyline points="2,11 10,10 18,11 26,7 34,8 42,5 50,6 58,3" fill="none" stroke="#16a34a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="58" cy="3" r="2" fill="#16a34a"/></svg>
+                  <span class="ts-sparkline-val">−14 pts ↓</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="ts-kpis">
+              <div class="ts-kpi">
+                <div class="ts-kpi-label">ENJEU FINANCIER</div>
+                <div class="ts-kpi-val">€6 200</div>
+                <div class="ts-kpi-sub">Sur 9 ans de bail</div>
+              </div>
+              <div class="ts-kpi">
+                <div class="ts-kpi-label">ÉCONOMIE POT.</div>
+                <div class="ts-kpi-val pos">−€2 000</div>
+                <div class="ts-kpi-sub">Si stratégie suivie</div>
+              </div>
+              <div class="ts-kpi">
+                <div class="ts-kpi-label">PROFONDEUR</div>
+                <div class="ts-kpi-val">108<span style="font-size:13px;color:var(--ink-4);">/120</span></div>
+                <div class="ts-kpi-sub">Articles + jurisprudences</div>
+              </div>
+              <div class="ts-kpi">
+                <div class="ts-kpi-label">CONFIANCE ARCHER</div>
+                <div class="ts-kpi-val blue">75%</div>
+                <div class="ts-kpi-sub">7 passes · 4 agents IA</div>
+              </div>
+            </div>
+
+            <div class="ts-dims">
+              <div class="ts-dims-h">
+                <span class="ts-dims-h-l">4 DIMENSIONS ANALYSÉES</span>
+                <span class="ts-dims-h-r">Vert ≤30 · Amber 31–60 · Rouge ≥61</span>
+              </div>
+              <div class="ts-dim-row">
+                <div class="ts-dim-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                <div class="ts-dim-label">Urgence</div>
+                <div class="ts-dim-bar"><div class="ts-dim-bar-fill ts-risk-low" style="width:25%;"></div></div>
+                <div class="ts-dim-val">25</div>
+                <div class="ts-dim-tag ts-tag-low">FAIBLE</div>
+              </div>
+              <div class="ts-dim-row">
+                <div class="ts-dim-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+                <div class="ts-dim-label">Financier</div>
+                <div class="ts-dim-bar"><div class="ts-dim-bar-fill ts-risk-med" style="width:55%;"></div></div>
+                <div class="ts-dim-val">55</div>
+                <div class="ts-dim-tag ts-tag-med">MODÉRÉ</div>
+              </div>
+              <div class="ts-dim-row">
+                <div class="ts-dim-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg></div>
+                <div class="ts-dim-label">Complexité</div>
+                <div class="ts-dim-bar"><div class="ts-dim-bar-fill ts-risk-med" style="width:45%;"></div></div>
+                <div class="ts-dim-val">45</div>
+                <div class="ts-dim-tag ts-tag-med">MODÉRÉ</div>
+              </div>
+              <div class="ts-dim-row">
+                <div class="ts-dim-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 5v7l-9 6-9-6V8l9-5z"/></svg></div>
+                <div class="ts-dim-label">Juridique</div>
+                <div class="ts-dim-bar"><div class="ts-dim-bar-fill ts-risk-med" style="width:35%;"></div></div>
+                <div class="ts-dim-val">35</div>
+                <div class="ts-dim-tag ts-tag-med">MODÉRÉ</div>
+              </div>
+            </div>
+          </div>
+
+
+          <div class="act-divider" style="margin-top: 44px;">
+            <div class="act-divider-num a2">02</div>
+            <div class="act-divider-txt">
+              <div class="act-divider-eyebrow">LE PLAN D'ARCHER</div>
+              <div class="act-divider-title">La stratégie</div>
+            </div>
+            <div class="act-divider-rule"></div>
+          </div>
+
+          <div class="str-card">
+
+            <!-- HEADER -->
+            <div class="str-head">
+              <span class="str-eyebrow">STRATÉGIE RECOMMANDÉE · 94% CONFIANCE</span>
+              <h2 class="str-title">Contester 3 clauses du bail pour réduire ton loyer.</h2>
+              <p class="str-sub">Basé sur 120 jurisprudences BE similaires. Rapport de force en ta faveur sur les 3 points.</p>
+            </div>
+
+            <!-- Letter content + projection -->
+            <div class="str-content">
+              <div>
+                <div class="str-col-label green">CE QUE LA LETTRE VA CONTENIR</div>
+                <div class="str-checklist">
+                  <div class="str-check">
+                    <div class="str-check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+                    <div class="str-check-txt"><strong>Invalidation de la clause pénale à 12%</strong><span class="str-check-ref">art. 5.74</span></div>
+                  </div>
+                  <div class="str-check">
+                    <div class="str-check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+                    <div class="str-check-txt"><strong>Demande de réduction du loyer</strong> au prix de référence bruxellois</div>
+                  </div>
+                  <div class="str-check">
+                    <div class="str-check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+                    <div class="str-check-txt"><strong>Mise en demeure d'enregistrer le bail</strong><span class="str-check-ref">15 jours max</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="str-proj">
+                <div class="str-col-label neutral">PROJECTION · 120 CAS SIMILAIRES</div>
+                <div class="str-proj-bar-wrap">
+                  <div class="str-proj-seg-win"></div>
+                  <div class="str-proj-seg-deal"></div>
+                  <div class="str-proj-seg-loss"></div>
+                </div>
+                <div class="str-proj-legend">
+                  <div class="str-proj-item"><div class="str-proj-dot" style="background: var(--green);"></div><span class="str-proj-item-label">Gagné</span><span class="str-proj-item-val">64%</span></div>
+                  <div class="str-proj-item"><div class="str-proj-dot" style="background: var(--amber-bright);"></div><span class="str-proj-item-label">Accord</span><span class="str-proj-item-val">19%</span></div>
+                  <div class="str-proj-item"><div class="str-proj-dot" style="background: var(--red);"></div><span class="str-proj-item-label">Refus</span><span class="str-proj-item-val">17%</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3 OPTIONS -->
+            <div class="str-actions">
+              <div class="str-actions-h">
+                <span class="str-actions-title">Comment tu veux envoyer cette lettre ?</span>
+                <span class="str-actions-sub">3 OPTIONS</span>
+              </div>
+              <div class="v1-options">
+
+                <!-- OPTION 1 — DIY -->
+                <div class="v1-opt diy">
+                  <div class="v1-opt-header">
+                    <div class="v1-opt-icon-wrap">
+                      <div class="v1-opt-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                      </div>
+                    </div>
+                    <div class="v1-opt-price">
+                      <span class="v1-opt-price-val included">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                        Inclus
+                      </span>
+                    </div>
+                  </div>
+                  <div class="v1-opt-title">Je m'en charge</div>
+                  <div class="v1-opt-desc">Archer rédige la lettre, tu la télécharges et l'envoies toi-même par tes propres moyens.</div>
+                  <div class="v1-opt-bullets">
+                    <div class="v1-opt-bullet"><div class="v1-opt-bullet-dot"></div>PDF prêt à imprimer</div>
+                    <div class="v1-opt-bullet"><div class="v1-opt-bullet-dot"></div>Adresse pré-remplie</div>
+                    <div class="v1-opt-bullet"><div class="v1-opt-bullet-dot"></div>Envoi par tes soins</div>
+                  </div>
+                  <button class="v1-opt-cta ghost">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    Télécharger la lettre
+                  </button>
+                </div>
+
+                <!-- OPTION 2 — ARCHER ENVOIE EN RECOMMANDÉ (stone) -->
+                <div class="v1-opt mail">
+                  <div class="v1-opt-header">
+                    <div class="v1-opt-icon-wrap">
+                      <div class="v1-opt-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 7l10 7 10-7"/></svg>
+                      </div>
+                    </div>
+                    <div class="v1-opt-price">
+                      <span class="v1-opt-price-val">9€</span>
+                    </div>
+                  </div>
+                  <div class="v1-opt-title">Archer envoie en recommandé</div>
+                  <div class="v1-opt-desc">Archer imprime la lettre et l'<strong>expédie en courrier postal recommandé avec accusé de réception</strong>.</div>
+                  <div class="v1-opt-bullets">
+                    <div class="v1-opt-bullet"><div class="v1-opt-bullet-dot"></div>Preuve légale d'envoi (AR)</div>
+                    <div class="v1-opt-bullet"><div class="v1-opt-bullet-dot"></div>Expédition sous 24h</div>
+                    <div class="v1-opt-bullet"><div class="v1-opt-bullet-dot"></div>Suivi temps réel</div>
+                  </div>
+                  <button class="v1-opt-cta ghost">
+                    Envoyer le courrier
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  </button>
+                </div>
+
+                <!-- OPTION 3 — AVOCAT (RECO + LOCKED) -->
+                <div class="v1-opt reco">
+                  <span class="v1-opt-reco-badge">
+                    <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="9" height="9"><polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9"/></svg>
+                    NOTRE CHOIX
+                  </span>
+                  <div class="v1-opt-header">
+                    <div class="v1-opt-icon-wrap">
+                      <div class="v1-opt-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 7h18M7 21l-4-4h18l-4 4M5 7l2 10M19 7l-2 10"/></svg>
+                      </div>
+                      <div class="v1-opt-lock-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                      </div>
+                    </div>
+                    <div class="v1-opt-price">
+                      <span class="v1-opt-price-sub tier">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                        SOLO+
+                      </span>
+                    </div>
+                  </div>
+                  <div class="v1-opt-title">Un avocat signe et envoie</div>
+                  <div class="v1-opt-desc">Un avocat BE partenaire relit, signe la lettre et l'envoie en ton nom. <strong>Poids juridique maximum.</strong></div>
+                  <div class="v1-opt-bullets">
+                    <div class="v1-opt-bullet"><div class="v1-opt-bullet-dot"></div>Signature avocat BE en-tête</div>
+                    <div class="v1-opt-bullet"><div class="v1-opt-bullet-dot"></div>Envoi recommandé sous 48h</div>
+                    <div class="v1-opt-bullet"><div class="v1-opt-bullet-dot"></div>Échange direct avec l'avocat</div>
+                  </div>
+                  <button class="v1-opt-cta primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                    Débloquer avec Solo
+                  </button>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+
+          <div class="act-divider" style="margin-top: 44px;">
+            <div class="act-divider-num a3">03</div>
+            <div class="act-divider-txt">
+              <div class="act-divider-eyebrow">TOUT LE DÉTAIL</div>
+              <div class="act-divider-title">Les preuves</div>
+            </div>
+            <div class="act-divider-rule"></div>
+            <div class="act-divider-expand" onclick="document.querySelectorAll(&#39;.accordion-item&#39;).forEach(a =&gt; a.classList.toggle(&#39;open&#39;))">
+              TOUT OUVRIR
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+          </div>
+
+          <div class="details-section">
+
+            <div class="accordion-item open">
+              <div class="accordion-head" onclick="this.parentElement.classList.toggle(&#39;open&#39;)">
+                <div class="accordion-icon blue">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 17.5L3 6V3h18v3l-11.5 11.5"></path><polygon points="13 19 16 22 12 22 9 19"></polygon></svg>
+                </div>
+                <div class="accordion-title-wrap">
+                  <div class="accordion-title">Rapport de force tactique</div>
+                  <div class="accordion-sub">Tes arguments vs ceux du bailleur · gauge visuelle</div>
+                </div>
+                <span class="accordion-badge amber">TU ES À 35%</span>
+                <div class="accordion-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+              </div>
+              <div class="accordion-body">
+                <div class="accordion-body-inner">
+                  <div class="battle-gauge">
+                    <div class="battle-gauge-head">
+                      <div class="battle-gauge-title">RAPPORT DE FORCE · BASÉ SUR TES 5 ARGUMENTS VS 5 DU BAILLEUR</div>
+                      <div class="battle-gauge-verdict-pill">⚠ TU ES EN DÉSAVANTAGE</div>
+                    </div>
+                    <div class="battle-gauge-bar">
+                      <div class="battle-gauge-you-seg" style="width:35%;"></div>
+                      <div class="battle-gauge-them-seg" style="width:65%;"></div>
+                    </div>
+                    <div class="battle-gauge-row-stats">
+                      <div class="battle-gauge-stat you">
+                        <div class="battle-gauge-stat-label">TOI</div>
+                        <div class="battle-gauge-stat-val">35%</div>
+                      </div>
+                      <div class="battle-gauge-stat them">
+                        <div class="battle-gauge-stat-label">BAILLEUR</div>
+                        <div class="battle-gauge-stat-val">65%</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="battle-cols">
+                    <div class="battle-col">
+                      <div class="battle-col-label you">
+                        <div class="battle-col-label-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                        <span class="battle-col-label-txt">TES ARGUMENTS</span>
+                        <span class="battle-col-label-count">5</span>
+                      </div>
+                      <ul class="arg-list">
+                        <li class="arg-card you">
+                          <div class="arg-card-num">1</div>
+                          <div class="arg-card-title">Défaut d'enregistrement du bail par le bailleur</div>
+                          <span class="arg-strength solid">SOLIDE</span>
+                        </li>
+                        <li class="arg-card you">
+                          <div class="arg-card-num">2</div>
+                          <div class="arg-card-title">Loyer manifestement excessif (2× prix de référence)</div>
+                          <span class="arg-strength solid">SOLIDE</span>
+                        </li>
+                        <li class="arg-card you">
+                          <div class="arg-card-num">3</div>
+                          <div class="arg-card-title">Clause pénale abusive à 12%</div>
+                          <span class="arg-strength solid">SOLIDE</span>
+                        </li>
+                        <li class="arg-card you">
+                          <div class="arg-card-num">4</div>
+                          <div class="arg-card-title">Absence d'état des lieux contradictoire</div>
+                          <span class="arg-strength medium">MOYEN</span>
+                        </li>
+                        <li class="arg-card you">
+                          <div class="arg-card-num">5</div>
+                          <div class="arg-card-title">Résiliation anticipée pour loyer excessif</div>
+                          <span class="arg-strength medium">MOYEN</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <div class="battle-col">
+                      <div class="battle-col-label them">
+                        <div class="battle-col-label-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+                        <span class="battle-col-label-txt">BAILLEUR</span>
+                        <span class="battle-col-label-count">5</span>
+                      </div>
+                      <ul class="arg-list">
+                        <li class="arg-card them">
+                          <div class="arg-card-num">1</div>
+                          <div class="arg-card-title">Bail de 9 ans librement signé par le locataire</div>
+                          <span class="arg-strength fort">FORT</span>
+                        </li>
+                        <li class="arg-card them">
+                          <div class="arg-card-num">2</div>
+                          <div class="arg-card-title">Loyer de 3,100€ accepté sans réserve</div>
+                          <span class="arg-strength fort">FORT</span>
+                        </li>
+                        <li class="arg-card them">
+                          <div class="arg-card-num">3</div>
+                          <div class="arg-card-title">Préavis par recommandé obligatoire (art. 237)</div>
+                          <span class="arg-strength medium">MOYEN</span>
+                        </li>
+                        <li class="arg-card them">
+                          <div class="arg-card-num">4</div>
+                          <div class="arg-card-title">Obligations du locataire maintenues</div>
+                          <span class="arg-strength medium">MOYEN</span>
+                        </li>
+                        <li class="arg-card them">
+                          <div class="arg-card-num">5</div>
+                          <div class="arg-card-title">Enregistrement tardif ne libère pas le locataire</div>
+                          <span class="arg-strength weak">FAIBLE</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div class="battle-verdict">
+                    <div class="battle-verdict-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+                    </div>
+                    <div class="battle-verdict-txt">
+                      <strong>Verdict Archer :</strong> au tribunal, <em>5% de chances</em> de gagner pleinement. Stratégie recommandée : <em>négociation amiable</em> avec lettre attorney-signée — <strong>64% de succès historique</strong>.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+            <div class="accordion-item open">
+              <div class="accordion-head" onclick="this.parentElement.classList.toggle(&#39;open&#39;)">
+                <div class="accordion-icon green">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                </div>
+                <div class="accordion-title-wrap">
+                  <div class="accordion-title">Tes armes · 5 points forts</div>
+                  <div class="accordion-sub">Chaque argument avec base légale + confiance Archer + jurisprudences</div>
+                </div>
+                <span class="accordion-badge green">5 ARGUMENTS</span>
+                <div class="accordion-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+              </div>
+              <div class="accordion-body">
+                <div class="accordion-body-inner">
+                  <div class="arms-stack">
+
+                    <!-- ARME 1 -->
+                    <div class="arm-card">
+                      <div class="arm-num">01</div>
+                      <div class="arm-body">
+                        <div class="arm-title">Loyer 2× supérieur au loyer de référence bruxellois</div>
+                        <div class="arm-legal-desc"><strong>Art. 224 §1 Ord. bxl 27/07/2017</strong> — Le juge peut réduire le loyer à la valeur du loyer de référence lorsqu'il est <em>manifestement supérieur</em> (≥ 20%). Règle d'ordre public.</div>
+                        <div class="arm-refs-row">
+                          <span class="law-ref-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> BASE LÉGALE</span>
+                          <div class="law-ref-group">
+                            <a href="https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=2017072707&table_name=loi" target="_blank" rel="noopener" class="law-ref" title="Ordonnance de la Région de Bruxelles-Capitale du 27 juillet 2017 — Régionalisation du bail d'habitation">Ord. bxl 27/07/2017<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                            <a href="https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=2021102810" target="_blank" rel="noopener" class="law-ref" title="Ordonnance du 28 octobre 2021 — Grille indicative des loyers de référence">Ord. bxl 28/10/2021<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                            <a href="https://loyers.brussels" target="_blank" rel="noopener" class="law-ref" title="Grille officielle loyer de référence bruxelloise">Grille loyers.brussels<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                        <div class="arm-refs-row">
+                          <span class="law-ref-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 7h18M7 21l-4-4h18l-4 4M5 7l2 10M19 7l-2 10"/></svg> JURISPRUDENCES APPLIQUÉES</span>
+                          <div class="law-ref-group">
+                            <a href="https://juportal.be" target="_blank" rel="noopener" class="law-ref juris" title="35 décisions de Justice de paix Bruxelles appliquant le seuil 20%">35 cas · JP Bxl<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                            <a href="https://juportal.be" target="_blank" rel="noopener" class="law-ref juris" title="Cassation 12/03/2019 — Confirmation du principe de révision">Cass. 12/03/2019<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="arm-conf-circ">
+                        <svg viewBox="0 0 36 36" style="width:100%;height:100%;">
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="var(--line)" stroke-width="3"></circle>
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-dasharray="87.96" stroke-dashoffset="19.35" transform="rotate(-90 18 18)"></circle>
+                        </svg>
+                        <div class="arm-conf-val">78%</div>
+                      </div>
+                    </div>
+
+                    <!-- ARME 2 -->
+                    <div class="arm-card">
+                      <div class="arm-num">02</div>
+                      <div class="arm-body">
+                        <div class="arm-title">Clause d'intérêt de retard à 12% probablement abusive</div>
+                        <div class="arm-legal-desc"><strong>Art. 5.74 nouveau Code civil</strong> — Le juge peut, d'office, <em>modérer toute clause pénale manifestement excessive</em>. 12% = 4× le taux légal (6%) et 4× l'Euribor. Règle d'ordre public.</div>
+                        <div class="arm-refs-row">
+                          <span class="law-ref-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> BASE LÉGALE</span>
+                          <div class="law-ref-group">
+                            <a href="https://www.ejustice.just.fgov.be/eli/loi/2022/04/28/2022041261/justel" target="_blank" rel="noopener" class="law-ref" title="Art. 5.74 nouveau Code civil — Pouvoir de modération">Art. 5.74 nv C. civ.<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                            <a href="https://www.ejustice.just.fgov.be/eli/loi/2013/02/28/2013011134/justel" target="_blank" rel="noopener" class="law-ref" title="Art. VI.82-84 Code de droit économique — Clauses abusives B2C">Art. VI.82-84 CDE<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                        <div class="arm-refs-row">
+                          <span class="law-ref-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 7h18M7 21l-4-4h18l-4 4M5 7l2 10M19 7l-2 10"/></svg> JURISPRUDENCES APPLIQUÉES</span>
+                          <div class="law-ref-group">
+                            <a href="https://juportal.be" target="_blank" rel="noopener" class="law-ref juris" title="60 décisions ayant modéré une clause pénale bail">60 cas · JP/TPI<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                            <a href="https://juportal.be" target="_blank" rel="noopener" class="law-ref juris" title="Cass. 17/06/2021 — Modération d'une clause 15%">Cass. 17/06/2021<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="arm-conf-circ">
+                        <svg viewBox="0 0 36 36" style="width:100%;height:100%;">
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="var(--line)" stroke-width="3"></circle>
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-dasharray="87.96" stroke-dashoffset="13.19" transform="rotate(-90 18 18)"></circle>
+                        </svg>
+                        <div class="arm-conf-val">85%</div>
+                      </div>
+                    </div>
+
+                    <!-- ARME 3 -->
+                    <div class="arm-card">
+                      <div class="arm-num">03</div>
+                      <div class="arm-body">
+                        <div class="arm-title">Enregistrement du bail — obligation du bailleur non respectée</div>
+                        <div class="arm-legal-desc"><strong>Art. 227 §1 Ord. bxl</strong> — Le bailleur doit enregistrer le bail dans les <em>2 mois</em>. À défaut, le preneur peut <em>quitter les lieux sans préavis ni indemnité</em>. Sanction civile automatique.</div>
+                        <div class="arm-refs-row">
+                          <span class="law-ref-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> BASE LÉGALE</span>
+                          <div class="law-ref-group">
+                            <a href="https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=2017072707&table_name=loi" target="_blank" rel="noopener" class="law-ref" title="Art. 227 Ord. bxl 27/07/2017 — Obligation d'enregistrement">Ord. bxl art. 227<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                            <a href="https://finances.belgium.be/fr/particuliers/logement/location/enregistrement" target="_blank" rel="noopener" class="law-ref" title="Art. 32 Code des droits d'enregistrement">Code enreg. art. 32<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                        <div class="arm-refs-row">
+                          <span class="law-ref-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 7h18M7 21l-4-4h18l-4 4M5 7l2 10M19 7l-2 10"/></svg> JURISPRUDENCES APPLIQUÉES</span>
+                          <div class="law-ref-group">
+                            <a href="https://juportal.be" target="_blank" rel="noopener" class="law-ref juris" title="80 décisions JP confirmant le droit au départ sans préavis">80 cas · JP Bxl<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                            <a href="https://juportal.be" target="_blank" rel="noopener" class="law-ref juris" title="Cass. 05/09/2022 — Jurisprudence de principe">Cass. 05/09/2022<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="arm-conf-circ">
+                        <svg viewBox="0 0 36 36" style="width:100%;height:100%;">
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="var(--line)" stroke-width="3"></circle>
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-dasharray="87.96" stroke-dashoffset="4.4" transform="rotate(-90 18 18)"></circle>
+                        </svg>
+                        <div class="arm-conf-val">95%</div>
+                      </div>
+                    </div>
+
+                    <!-- ARME 4 -->
+                    <div class="arm-card">
+                      <div class="arm-num">04</div>
+                      <div class="arm-body">
+                        <div class="arm-title">État des lieux d'entrée absent — obligation stricte du bailleur</div>
+                        <div class="arm-legal-desc"><strong>Art. 1730 C. civ.</strong> — État des lieux <em>détaillé et contradictoire</em> obligatoire à l'entrée. À défaut, le preneur est présumé avoir reçu le bien en bon état. Charge de la preuve sur le bailleur.</div>
+                        <div class="arm-refs-row">
+                          <span class="law-ref-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> BASE LÉGALE</span>
+                          <div class="law-ref-group">
+                            <a href="https://www.ejustice.just.fgov.be/eli/loi/1804/03/21/1804032151/justel" target="_blank" rel="noopener" class="law-ref" title="Art. 1730 Code civil — État des lieux contradictoire">Art. 1730 C. civ.<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                            <a href="https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=2017072707&table_name=loi" target="_blank" rel="noopener" class="law-ref" title="Art. 218-219 Ord. bxl — Application baux habitation">Ord. bxl art. 218<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                        <div class="arm-refs-row">
+                          <span class="law-ref-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 7h18M7 21l-4-4h18l-4 4M5 7l2 10M19 7l-2 10"/></svg> JURISPRUDENCES APPLIQUÉES</span>
+                          <div class="law-ref-group">
+                            <a href="https://juportal.be" target="_blank" rel="noopener" class="law-ref juris" title="100 décisions JP favorables au locataire sans état des lieux">100 cas · JP/TPI<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                            <a href="https://juportal.be" target="_blank" rel="noopener" class="law-ref juris" title="Cass. 22/11/2018 — Charge de la preuve sur le bailleur">Cass. 22/11/2018<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="arm-conf-circ">
+                        <svg viewBox="0 0 36 36" style="width:100%;height:100%;">
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="var(--line)" stroke-width="3"></circle>
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-dasharray="87.96" stroke-dashoffset="8.8" transform="rotate(-90 18 18)"></circle>
+                        </svg>
+                        <div class="arm-conf-val">90%</div>
+                      </div>
+                    </div>
+
+                    <!-- ARME 5 -->
+                    <div class="arm-card">
+                      <div class="arm-num">05</div>
+                      <div class="arm-body">
+                        <div class="arm-title">Résiliation anticipée pour loyer manifestement excessif</div>
+                        <div class="arm-legal-desc"><strong>Art. 237 §3 Ord. bxl 27/07/2017</strong> — Le preneur peut résilier le bail <em>à tout moment</em>, avec préavis de 3 mois (réduit à 0 en cas de faute grave du bailleur comme le loyer excessif cumulé au défaut d'enregistrement).</div>
+                        <div class="arm-refs-row">
+                          <span class="law-ref-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> BASE LÉGALE</span>
+                          <div class="law-ref-group">
+                            <a href="https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=2017072707&table_name=loi" target="_blank" rel="noopener" class="law-ref" title="Art. 237 §3 Ord. bxl — Résiliation anticipée">Ord. bxl art. 237<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                            <a href="https://www.ejustice.just.fgov.be/eli/loi/1804/03/21/1804032151/justel" target="_blank" rel="noopener" class="law-ref" title="Art. 1184 C. civ. — Résolution pour inexécution">Art. 1184 C. civ.<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                        <div class="arm-refs-row">
+                          <span class="law-ref-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 7h18M7 21l-4-4h18l-4 4M5 7l2 10M19 7l-2 10"/></svg> JURISPRUDENCES APPLIQUÉES</span>
+                          <div class="law-ref-group">
+                            <a href="https://juportal.be" target="_blank" rel="noopener" class="law-ref juris" title="25 décisions ayant accepté résiliation pour faute grave du bailleur">25 cas · JP Bxl<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                            <a href="https://juportal.be" target="_blank" rel="noopener" class="law-ref juris" title="Cass. 14/02/2020 — Résiliation sans préavis">Cass. 14/02/2020<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="arm-conf-circ">
+                        <svg viewBox="0 0 36 36" style="width:100%;height:100%;">
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="var(--line)" stroke-width="3"></circle>
+                          <circle cx="18" cy="18" r="14" fill="none" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" stroke-dasharray="87.96" stroke-dashoffset="24.63" transform="rotate(-90 18 18)"></circle>
+                        </svg>
+                        <div class="arm-conf-val" style="color:var(--amber);">72%</div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+            <div class="accordion-item open">
+              <div class="accordion-head" onclick="this.parentElement.classList.toggle(&#39;open&#39;)">
+                <div class="accordion-icon red">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                </div>
+                <div class="accordion-title-wrap">
+                  <div class="accordion-title">Point critique</div>
+                  <div class="accordion-sub">Indemnité de rupture limitée dans le temps · 10,000€+ en jeu</div>
+                </div>
+                <span class="accordion-badge red">1 RISQUE</span>
+                <div class="accordion-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+              </div>
+              <div class="accordion-body">
+                <div class="accordion-body-inner">
+                  <div class="crit-box">
+                    <div class="crit-title">⚠️ Ton préavis doit être formalisé correctement</div>
+                    <div class="crit-desc">Un préavis mal formalisé (non-recommandé, délai trop court, motivation absente) peut te forcer à payer <strong>3 mois d'indemnité</strong> au bailleur, soit potentiellement <strong>10,000€+</strong>. La jurisprudence de la Cour de cassation est stricte sur la forme.</div>
+                    <div class="crit-desc"><strong style="color:var(--ink);font-weight:700;">Action requise :</strong> envoyer ta lettre de préavis <strong style="color:var(--ink);font-weight:700;">par recommandé avec AR dans les 15 jours</strong> + motivation légale explicite.</div>
+                    <div class="crit-refs">
+                      <span class="law-ref-label">RÉFÉRENCES</span>
+                      <a href="https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=2017072707&table_name=loi" target="_blank" rel="noopener" class="law-ref red" title="Art. 237 §3 Ord. bxl 27/07/2017 — Formalités du préavis">Ord. bxl art. 237 §3<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                      <a href="https://www.ejustice.just.fgov.be/eli/loi/1804/03/21/1804032151/justel" target="_blank" rel="noopener" class="law-ref red" title="Art. 1774 C. civ. — Indemnité de rupture anticipée">Art. 1774 C. civ.<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                      <a href="https://juportal.be" target="_blank" rel="noopener" class="law-ref juris" title="Cass. 23/05/2023 — Préavis par email invalide">Cass. 23/05/2023<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+            <div class="accordion-item open">
+              <div class="accordion-head" onclick="this.parentElement.classList.toggle(&#39;open&#39;)">
+                <div class="accordion-icon amber">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="4"></circle></svg>
+                </div>
+                <div class="accordion-title-wrap">
+                  <div class="accordion-title">Anticipation adverse</div>
+                  <div class="accordion-sub">5 attaques probables de Me David Selinger + réponses préparées</div>
+                </div>
+                <span class="accordion-badge amber">MENACE MOYENNE</span>
+                <div class="accordion-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+              </div>
+              <div class="accordion-body">
+                <div class="accordion-body-inner">
+                  <div style="font-size:13px;color:var(--ink-3);line-height:1.5;margin-bottom:16px;">Simulation des contre-arguments que <strong style="color:var(--ink-2);font-weight:600;">Me David Selinger</strong> (avocat du bailleur) pourrait utiliser en justice de paix, avec la <strong style="color:var(--ink-2);font-weight:600;">réponse juridique</strong> que Archer prépare pour chacun.</div>
+
+                  <!-- Stats overview -->
+                  <div class="atk-stats">
+                    <div class="atk-stat">
+                      <div class="atk-stat-label">ATTAQUES ANTICIPÉES</div>
+                      <div class="atk-stat-val">5</div>
+                      <div class="atk-stat-sub">simulations IA · Me Selinger</div>
+                    </div>
+                    <div class="atk-stat">
+                      <div class="atk-stat-label">FORCE MOYENNE DÉFENSE</div>
+                      <div class="atk-stat-val green">88%</div>
+                      <div class="atk-stat-sub">toutes réponses solides</div>
+                    </div>
+                    <div class="atk-stat">
+                      <div class="atk-stat-label">VERDICT GLOBAL</div>
+                      <div class="atk-stat-val amber">DÉFENDABLE</div>
+                      <div class="atk-stat-sub">3 fortes · 1 moyenne · 1 faible</div>
+                    </div>
+                  </div>
+
+                  <div class="atk-list">
+
+                    <!-- ATTAQUE 1 -->
+                    <div class="atk-card">
+                      <div class="atk-card-head">
+                        <div class="atk-card-num">01</div>
+                        <div class="atk-card-head-body">
+                          <div class="atk-eyebrow">CONSENTEMENT · PACTA SUNT SERVANDA</div>
+                          <div class="atk-title">Le locataire a signé le bail en connaissance de cause</div>
+                        </div>
+                        <span class="atk-threat-badge high">MENACE FORTE</span>
+                      </div>
+                      <div class="atk-duel">
+                        <div class="atk-duel-side attack">
+                          <span class="atk-duel-label attack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/></svg> ATTAQUE DU BAILLEUR</span>
+                          <div class="atk-quote">Mon client a librement accepté le loyer de 3,100€ au moment de la signature. Le principe pacta sunt servanda (art. 1134 anc. C. civ.) impose le respect des conventions. Le locataire ne peut plus contester a posteriori.</div>
+                          <div class="atk-refs">
+                            <a href="https://www.ejustice.just.fgov.be/eli/loi/1804/03/21/1804032151/justel" target="_blank" rel="noopener" class="law-ref red" title="Art. 1134 C. civ. (devenu 5.69) — Force obligatoire des conventions">Art. 1134 C. civ.<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                        <div class="atk-duel-side defense">
+                          <span class="atk-duel-label defense"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> RÉPONSE ARCHER</span>
+                          <div class="atk-response"><strong>Le consentement ne valide pas un loyer manifestement excessif.</strong> L'art. 224 §1 de l'Ord. bxl 27/07/2017 permet expressément au juge de réviser le loyer à tout moment, <em>indépendamment de l'accord initial</em>. Règle d'ordre public — ne peut être écartée contractuellement.</div>
+                          <div class="atk-refs">
+                            <a href="https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=2017072707&table_name=loi" target="_blank" rel="noopener" class="law-ref green" title="Art. 224 §1 Ord. bxl 27/07/2017">Ord. bxl art. 224<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                            <a href="https://juportal.be" target="_blank" rel="noopener" class="law-ref juris" title="Cass. 14/11/2019">Cass. 14/11/2019<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="atk-footer">
+                        <div class="atk-footer-left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> <span><strong>Cette attaque sera rejetée</strong> · 85% probabilité</span></div>
+                        <div class="atk-footer-force">
+                          <div class="atk-force-bar"><div class="atk-force-bar-fill" style="width:85%;"></div></div>
+                          <span class="atk-force-val">85%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- ATTAQUE 2 -->
+                    <div class="atk-card">
+                      <div class="atk-card-head">
+                        <div class="atk-card-num">02</div>
+                        <div class="atk-card-head-body">
+                          <div class="atk-eyebrow">PRIX DE MARCHÉ · VALEUR INDICATIVE</div>
+                          <div class="atk-title">Le loyer correspond au marché bruxellois actuel</div>
+                        </div>
+                        <span class="atk-threat-badge mid">MENACE MOYENNE</span>
+                      </div>
+                      <div class="atk-duel">
+                        <div class="atk-duel-side attack">
+                          <span class="atk-duel-label attack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/></svg> ATTAQUE DU BAILLEUR</span>
+                          <div class="atk-quote">Les prix ont fortement augmenté depuis 2017. Un loyer de 3,100€ pour un 2-chambres à Ixelles reflète la réalité du marché. L'Ord. 28/10/2021 n'a qu'une valeur indicative, pas contraignante.</div>
+                          <div class="atk-refs">
+                            <a href="https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=2021102810" target="_blank" rel="noopener" class="law-ref red" title="Ord. 28/10/2021 — Grille indicative">Ord. bxl 28/10/2021<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                        <div class="atk-duel-side defense">
+                          <span class="atk-duel-label defense"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> RÉPONSE ARCHER</span>
+                          <div class="atk-response">La grille est <strong>indicative mais juridiquement opposable</strong> comme benchmark (Cass. 12/03/2019). Un écart de <strong>+100%</strong> (3,100€ vs ~1,600€) dépasse largement le seuil des 20% toléré. L'argument "marché" ne tient pas face à un écart objectivé.</div>
+                          <div class="atk-refs">
+                            <a href="https://juportal.be" target="_blank" rel="noopener" class="law-ref juris" title="Cassation 12/03/2019">Cass. 12/03/2019<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                            <a href="https://loyers.brussels" target="_blank" rel="noopener" class="law-ref green" title="Grille officielle loyers.brussels">Grille loyers.brussels<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="atk-footer">
+                        <div class="atk-footer-left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> <span><strong>Cette attaque sera rejetée</strong> · 78% probabilité</span></div>
+                        <div class="atk-footer-force">
+                          <div class="atk-force-bar"><div class="atk-force-bar-fill" style="width:78%;"></div></div>
+                          <span class="atk-force-val">78%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- ATTAQUE 3 -->
+                    <div class="atk-card">
+                      <div class="atk-card-head">
+                        <div class="atk-card-num">03</div>
+                        <div class="atk-card-head-body">
+                          <div class="atk-eyebrow">ÉTAT DES LIEUX · ACCEPTATION TACITE</div>
+                          <div class="atk-title">Absence d'état des lieux = acceptation du bien par le locataire</div>
+                        </div>
+                        <span class="atk-threat-badge mid">MENACE MOYENNE</span>
+                      </div>
+                      <div class="atk-duel">
+                        <div class="atk-duel-side attack">
+                          <span class="atk-duel-label attack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/></svg> ATTAQUE DU BAILLEUR</span>
+                          <div class="atk-quote">Le locataire n'a jamais demandé d'état des lieux contradictoire. Il a accepté le bien en l'état et ne peut invoquer aujourd'hui ce défaut pour en tirer avantage.</div>
+                          <div class="atk-refs">
+                            <a href="https://www.ejustice.just.fgov.be/eli/loi/1804/03/21/1804032151/justel" target="_blank" rel="noopener" class="law-ref red" title="Art. 1731 anc. C. civ.">Art. 1731 anc. C. civ.<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                        <div class="atk-duel-side defense">
+                          <span class="atk-duel-label defense"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> RÉPONSE ARCHER</span>
+                          <div class="atk-response">L'art. 1730 C. civ. impose <strong>au bailleur</strong> d'établir l'état des lieux détaillé et contradictoire. La Cour de cassation (22/11/2018) fait peser la <strong>charge de la preuve sur le bailleur</strong>. À défaut, présomption favorable au locataire.</div>
+                          <div class="atk-refs">
+                            <a href="https://www.ejustice.just.fgov.be/eli/loi/1804/03/21/1804032151/justel" target="_blank" rel="noopener" class="law-ref green" title="Art. 1730 C. civ.">Art. 1730 C. civ.<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                            <a href="https://juportal.be" target="_blank" rel="noopener" class="law-ref juris" title="Cass. 22/11/2018">Cass. 22/11/2018<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="atk-footer">
+                        <div class="atk-footer-left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> <span><strong>Cette attaque sera rejetée</strong> · 92% probabilité</span></div>
+                        <div class="atk-footer-force">
+                          <div class="atk-force-bar"><div class="atk-force-bar-fill" style="width:92%;"></div></div>
+                          <span class="atk-force-val">92%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- ATTAQUE 4 -->
+                    <div class="atk-card">
+                      <div class="atk-card-head">
+                        <div class="atk-card-num">04</div>
+                        <div class="atk-card-head-body">
+                          <div class="atk-eyebrow">ENREGISTREMENT · FORMALITÉ FISCALE</div>
+                          <div class="atk-title">Le défaut d'enregistrement est une simple formalité fiscale</div>
+                        </div>
+                        <span class="atk-threat-badge low">MENACE FAIBLE</span>
+                      </div>
+                      <div class="atk-duel">
+                        <div class="atk-duel-side attack">
+                          <span class="atk-duel-label attack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/></svg> ATTAQUE DU BAILLEUR</span>
+                          <div class="atk-quote">L'enregistrement du bail n'est qu'une obligation fiscale. Il n'affecte ni la validité du contrat ni les obligations du locataire. Le bailleur peut régulariser à tout moment.</div>
+                          <div class="atk-refs">
+                            <a href="https://finances.belgium.be/fr/particuliers/logement/location/enregistrement" target="_blank" rel="noopener" class="law-ref red" title="Code enreg. art. 32">Code enreg. art. 32<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                        <div class="atk-duel-side defense">
+                          <span class="atk-duel-label defense"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> RÉPONSE ARCHER</span>
+                          <div class="atk-response">Argument <strong>juridiquement infondé</strong>. L'art. 227 §1 Ord. bxl est clair : à défaut d'enregistrement dans les 2 mois, le preneur peut <strong>quitter sans préavis ni indemnité</strong>. Sanction civile, pas fiscale. Jurisprudence Cass. 05/09/2022.</div>
+                          <div class="atk-refs">
+                            <a href="https://www.ejustice.just.fgov.be/cgi_loi/change_lg.pl?language=fr&la=F&cn=2017072707&table_name=loi" target="_blank" rel="noopener" class="law-ref green" title="Art. 227 §1 Ord. bxl 27/07/2017">Ord. bxl art. 227<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                            <a href="https://juportal.be" target="_blank" rel="noopener" class="law-ref juris" title="Cass. 05/09/2022 — Jurisprudence de principe">Cass. 05/09/2022<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="atk-footer">
+                        <div class="atk-footer-left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> <span><strong>Cette attaque sera rejetée</strong> · 95% probabilité</span></div>
+                        <div class="atk-footer-force">
+                          <div class="atk-force-bar"><div class="atk-force-bar-fill" style="width:95%;"></div></div>
+                          <span class="atk-force-val">95%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- ATTAQUE 5 -->
+                    <div class="atk-card">
+                      <div class="atk-card-head">
+                        <div class="atk-card-num">05</div>
+                        <div class="atk-card-head-body">
+                          <div class="atk-eyebrow">CLAUSE PÉNALE · LIBERTÉ CONTRACTUELLE</div>
+                          <div class="atk-title">La clause pénale à 12% est librement négociée et contractuelle</div>
+                        </div>
+                        <span class="atk-threat-badge mid">MENACE MOYENNE</span>
+                      </div>
+                      <div class="atk-duel">
+                        <div class="atk-duel-side attack">
+                          <span class="atk-duel-label attack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/></svg> ATTAQUE DU BAILLEUR</span>
+                          <div class="atk-quote">La clause d'intérêts à 12% figure à l'art. 8 du contrat. Le locataire l'a acceptée. Elle couvre le préjudice forfaitaire en cas de retard et ne peut être remise en cause.</div>
+                          <div class="atk-refs">
+                            <a href="https://www.ejustice.just.fgov.be/eli/loi/1804/03/21/1804032151/justel" target="_blank" rel="noopener" class="law-ref red" title="Art. 1134 anc. C. civ. — Force obligatoire">Art. 1134 anc. C. civ.<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                        <div class="atk-duel-side defense">
+                          <span class="atk-duel-label defense"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> RÉPONSE ARCHER</span>
+                          <div class="atk-response">L'art. 5.74 nv C. civ. donne au juge un <strong>pouvoir de modération d'ordre public</strong>. 12% = 4× le taux légal (6%). La Cour de cassation a modéré des clauses similaires dans <strong>60+ affaires</strong>.</div>
+                          <div class="atk-refs">
+                            <a href="https://www.ejustice.just.fgov.be/eli/loi/2022/04/28/2022041261/justel" target="_blank" rel="noopener" class="law-ref green" title="Art. 5.74 nouveau C. civ.">Art. 5.74 nv C. civ.<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                            <a href="https://juportal.be" target="_blank" rel="noopener" class="law-ref juris" title="Cass. 17/06/2021">Cass. 17/06/2021<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="atk-footer">
+                        <div class="atk-footer-left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> <span><strong>Cette attaque sera rejetée</strong> · 88% probabilité</span></div>
+                        <div class="atk-footer-force">
+                          <div class="atk-force-bar"><div class="atk-force-bar-fill" style="width:88%;"></div></div>
+                          <span class="atk-force-val">88%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="right-col">
+
+          <div class="lawyer-cta-card">
+            <div class="lawyer-live-row">
+              <div class="lawyer-live-dot"></div>
+              <div class="lawyer-live-txt">LAWYERS ONLINE</div>
+              <div class="lawyer-online">12 ready</div>
+            </div>
+            <div class="lawyer-h">Parle à un avocat spécialisé en baux bruxellois</div>
+            <div class="lawyer-p">Consultation vidéo 30 min avec un avocat partenaire. Connect en 2 min.</div>
+            <div class="lawyer-avatars">
+              <div class="lawyer-avs">
+                <div class="lawyer-av">MD</div>
+                <div class="lawyer-av" style="background:#a855f7;">SL</div>
+                <div class="lawyer-av" style="background:#16a34a;">JP</div>
+              </div>
+              <div class="lawyer-avs-txt">3 avocats BE dispo</div>
+            </div>
+            <div class="lawyer-free-banner">
+              <div class="lawyer-free-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg>
+              </div>
+              <div class="lawyer-free-txt">
+                <div class="lawyer-free-title">Gratuit. Et le restera.</div>
+                <div class="lawyer-free-sub">Inclus dans ton abonnement Archer</div>
+              </div>
+            </div>
+            <a href="#" class="lawyer-cta-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg>
+              Parler à un avocat maintenant
+            </a>
+            <div class="lawyer-members-note">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+              <span>Réservé aux membres · <a href="#" class="lawyer-members-link">S'abonner</a></span>
+            </div>
+          </div>
+
+          <div class="refine-card">
+            <div class="refine-head">
+              <div class="refine-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
+              </div>
+              <div class="refine-title">Affine mon analyse</div>
+            </div>
+            <p class="refine-sub">Plus tu donnes de contexte à Archer, plus l'analyse devient précise. Ajoute une info manquante ou un document complémentaire.</p>
+
+            <textarea class="refine-textarea" placeholder="Ex : « J'ai un email du propriétaire qui reconnait que le PEB n'a pas été fourni » — toute info utile."></textarea>
+
+            <div class="refine-upload">
+              <div class="refine-upload-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7-7 7 7"/></svg>
+              </div>
+              <div class="refine-upload-txt">
+                <div class="refine-upload-title">Ajouter un document</div>
+                <div class="refine-upload-sub">PDF · DOCX · IMG · max 10MB</div>
+              </div>
+            </div>
+
+            <button class="refine-btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+              Relancer l'analyse
+            </button>
+            <div class="refine-footnote">Temps estimé : ~45 secondes</div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <span class="card-h">DOCUMENTS</span>
+              <span style="font-size:10.5px;color:var(--ink-4);font-family:&#39;JetBrains Mono&#39;,monospace;letter-spacing:0.3px;">1 ANALYSÉ</span>
+            </div>
+            <div class="doc-item">
+              <div class="doc-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div class="doc-name">Bail Stéphanie 4 corrigé.pdf</div>
+                <div class="doc-meta">17 APR 2026 · PDF</div>
+              </div>
+              <span class="doc-badge">✓</span>
+            </div>
+            <button class="doc-add">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Ajouter un document
+            </button>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <span class="card-h blue">AFFINE TON DOSSIER</span>
+            </div>
+            <div class="q-progress"><strong>3 questions.</strong> Chaque réponse affine ton score.</div>
+            <div class="q-card">
+              <div class="q-num">QUESTION 1 / 3</div>
+              <div class="q-text">Quand prévois-tu de notifier ton départ ?</div>
+              <div class="q-btns">
+                <button class="q-btn">Avant 31/10/24</button>
+                <button class="q-btn">11/24 — 10/25</button>
+                <button class="q-btn">Après 01/11/25</button>
+              </div>
+            </div>
+            <div class="q-card">
+              <div class="q-num">QUESTION 2 / 3</div>
+              <div class="q-text">Le bail est-il toujours en cours ?</div>
+              <div class="q-btns">
+                <button class="q-btn">Oui</button>
+                <button class="q-btn">Non</button>
+                <button class="q-btn">Je ne sais pas</button>
+              </div>
+            </div>
+            <div class="q-card">
+              <div class="q-num">QUESTION 3 / 3</div>
+              <div class="q-text">As-tu signalé des problèmes au bailleur ?</div>
+              <div class="q-btns">
+                <button class="q-btn">Écrit</button>
+                <button class="q-btn">Oral</button>
+                <button class="q-btn">Non</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <span class="card-h">CAS SIMILAIRES</span>
+              <span style="font-size:10px;color:var(--ink-4);font-family:&#39;JetBrains Mono&#39;,monospace;letter-spacing:0.3px;">BE · 318 CAS</span>
+            </div>
+            <div class="sim-big">
+              <div class="sim-big-num">64%</div>
+              <div class="sim-big-text">des cas similaires ont gagné ce mois-ci</div>
+            </div>
+            <div class="sim-stats">
+              <div class="sim-stat">
+                <div class="sim-stat-num">64%</div>
+                <div class="sim-stat-label">RÉDUCTION</div>
+              </div>
+              <div class="sim-stat">
+                <div class="sim-stat-num">19%</div>
+                <div class="sim-stat-label">ANNULATION</div>
+              </div>
+              <div class="sim-stat">
+                <div class="sim-stat-num">21j</div>
+                <div class="sim-stat-label">DÉLAI</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <span class="card-h blue">ACTUALITÉS JURIDIQUES</span>
+              <span class="case-meta-live" style="font-size:9px;padding:2px 6px;">LIVE</span>
+            </div>
+            <div class="news-item">
+              <div class="news-meta-row">
+                <span class="news-tag juris">JURISPRUDENCE</span>
+                <span class="news-time">IL Y A 5J</span>
+              </div>
+              <div class="news-text">C. civ. Bruxelles 2 avril 2026 : bailleur ne peut invoquer congé pour travaux sans devis préalable.</div>
+              <div class="news-impact">→ Appui supplémentaire si congé pour travaux</div>
+            </div>
+            <div class="news-item">
+              <div class="news-meta-row">
+                <span class="news-tag law">NOUVELLE LOI</span>
+                <span class="news-time">IL Y A 3SEM</span>
+              </div>
+              <div class="news-text">Décret bruxellois : extension de la trêve hivernale d'expulsion jusqu'au 15 mars.</div>
+              <div class="news-impact">→ Aucune expulsion jusqu'au printemps</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <span class="card-h blue">POSE TA QUESTION</span>
+              <span style="font-size:10px;color:var(--ink-4);font-family:&#39;JetBrains Mono&#39;,monospace;">RÉPONSE 30S</span>
+            </div>
+            <div class="chat-input-row">
+              <input type="text" class="chat-input" placeholder="Ex: Que se passe-t-il si...">
+              <button class="chat-send">→</button>
+            </div>
+            <div class="chat-suggestions">
+              <span class="chat-sug">Si je refuse de payer ?</span>
+              <span class="chat-sug">Délai de réponse ?</span>
+              <span class="chat-sug">Justice de paix ?</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<style>
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TA SITUATION — V1 Executive (refonte premium)
+   ═══════════════════════════════════════════════════════════ */
+.ts-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 32px 36px;
+  margin-bottom: 16px;
+}
+.ts-top {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 28px;
+  align-items: center;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.ts-score { width: 132px; height: 132px; position: relative; flex-shrink: 0; }
+.ts-score-center {
+  position: absolute;
+  inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.ts-score-num {
+  font-weight: 800;
+  font-size: 48px;
+  color: var(--ink);
+  letter-spacing: -2.5px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  animation: countUp 1s ease-out forwards;
+}
+.ts-score-total {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-4);
+  font-weight: 600;
+  margin-top: 2px;
+  letter-spacing: 0.8px;
+}
+.ts-verdict { display: flex; flex-direction: column; gap: 8px; }
+.ts-verdict-head { display: flex; align-items: center; gap: 10px; }
+.ts-risk-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 1.2px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  color: var(--amber);
+  background: var(--amber-50);
+  border: 1px solid #fde68a;
+}
+.ts-risk-pill::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--amber-bright);
+}
+.ts-verdict-title {
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.6px;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.ts-verdict-p {
+  font-size: 13.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+  max-width: 560px;
+}
+.ts-sparkline {
+  display: inline-flex; align-items: center; gap: 10px;
+  margin-top: 6px;
+  padding: 6px 12px;
+  background: var(--green-50);
+  border: 1px solid #bbf7d0;
+  border-radius: 100px;
+  width: fit-content;
+}
+.ts-sparkline-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--ink-3);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.ts-sparkline-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--green);
+}
+.ts-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ts-kpi { padding: 0 20px; border-right: 1px solid var(--line); }
+.ts-kpi:first-child { padding-left: 0; }
+.ts-kpi:last-child { border-right: none; padding-right: 0; }
+.ts-kpi-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 1.1px;
+  margin-bottom: 6px;
+}
+.ts-kpi-val {
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--ink);
+  letter-spacing: -0.8px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.ts-kpi-val.pos { color: var(--green); }
+.ts-kpi-val.blue { color: var(--archer-blue); }
+.ts-kpi-sub { font-size: 11px; color: var(--ink-4); margin-top: 3px; }
+
+.ts-dims {
+  padding-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ts-dims-h {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.ts-dims-h-l {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 1.2px;
+}
+.ts-dims-h-r {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-4);
+  letter-spacing: 0.5px;
+}
+.ts-dim-row {
+  display: grid;
+  grid-template-columns: 24px 110px 1fr 40px 80px;
+  gap: 14px;
+  align-items: center;
+  padding: 6px 0;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.ts-dim-row:hover { opacity: 0.75; }
+.ts-dim-icon {
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+.ts-dim-icon svg { width: 15px; height: 15px; }
+.ts-dim-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.ts-dim-bar {
+  height: 6px;
+  background: var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.ts-dim-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s;
+}
+.ts-risk-low { background: var(--green); }
+.ts-risk-med { background: var(--amber-bright); }
+.ts-risk-high { background: var(--red); }
+.ts-dim-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+  letter-spacing: -0.3px;
+}
+.ts-dim-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  padding: 3px 8px;
+  border-radius: 100px;
+  text-align: center;
+  border: 1px solid;
+}
+.ts-tag-low { color: var(--green); background: var(--green-50); border-color: #bbf7d0; }
+.ts-tag-med { color: var(--amber); background: var(--amber-50); border-color: #fde68a; }
+.ts-tag-high { color: var(--red); background: var(--red-50); border-color: #fecaca; }
+
+/* ═══════════════════════════════════════════════════════════
+   AFFINER MON ANALYSE — encart right rail sous lawyer CTA
+   ═══════════════════════════════════════════════════════════ */
+.refine-card {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  margin-top: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.refine-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--archer-blue), var(--archer-blue-light));
+  opacity: 0.85;
+}
+.refine-head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.refine-icon {
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--archer-blue), var(--archer-blue-dark));
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(26,86,219,0.25);
+}
+.refine-icon svg { width: 13px; height: 13px; }
+.refine-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+}
+.refine-sub {
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.45;
+  margin-bottom: 14px;
+}
+.refine-textarea {
+  width: 100%;
+  min-height: 74px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  resize: vertical;
+  line-height: 1.5;
+  transition: all 0.15s;
+}
+.refine-textarea::placeholder { color: var(--ink-4); }
+.refine-textarea:focus {
+  border-color: var(--archer-blue);
+  background: white;
+  box-shadow: 0 0 0 3px var(--archer-blue-50);
+}
+.refine-upload {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px dashed var(--archer-blue-100);
+  background: var(--archer-blue-50);
+  border-radius: 10px;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.refine-upload:hover {
+  border-color: var(--archer-blue);
+  background: var(--archer-blue-100);
+}
+.refine-upload-icon {
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  background: white;
+  color: var(--archer-blue);
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--archer-blue-100);
+  flex-shrink: 0;
+}
+.refine-upload-icon svg { width: 13px; height: 13px; }
+.refine-upload-txt { flex: 1; }
+.refine-upload-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--archer-blue-dark);
+  letter-spacing: -0.1px;
+}
+.refine-upload-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--ink-4);
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  margin-top: 1px;
+}
+.refine-btn-primary {
+  width: 100%;
+  padding: 10px;
+  background: var(--archer-blue);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s;
+  box-shadow: 0 2px 6px rgba(26,86,219,0.2);
+  margin-top: 14px;
+}
+.refine-btn-primary:hover {
+  background: var(--archer-blue-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(26,86,219,0.3);
+}
+.refine-btn-primary svg { width: 12px; height: 12px; }
+.refine-footnote {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--ink-4);
+  letter-spacing: 0.3px;
+  margin-top: 10px;
+  text-align: center;
+}
+</style>
+
+
+
+</body></html>

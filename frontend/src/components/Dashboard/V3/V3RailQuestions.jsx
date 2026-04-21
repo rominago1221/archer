@@ -16,7 +16,9 @@ const COPY = {
     progressHead: ' Chaque réponse affine ton score.',
     questionFmt: (n, total) => `QUESTION ${n} / ${total}`,
     none: 'Aucune question en attente.',
-    confirmed: 'Réponse enregistrée',
+    sending: 'Envoi…',
+    confirmed: 'Réponse enregistrée ✓',
+    allAnswered: 'Archer réanalyse ton dossier…',
   },
   en: {
     title: 'REFINE YOUR CASE',
@@ -24,7 +26,9 @@ const COPY = {
     progressHead: ' Each answer sharpens your score.',
     questionFmt: (n, total) => `QUESTION ${n} / ${total}`,
     none: 'No pending questions.',
-    confirmed: 'Answer saved',
+    sending: 'Saving…',
+    confirmed: 'Answer saved ✓',
+    allAnswered: 'Archer is re-analysing your case…',
   },
   nl: {
     title: 'VERFIJN JE DOSSIER',
@@ -32,7 +36,9 @@ const COPY = {
     progressHead: ' Elke antwoord scherpt je score aan.',
     questionFmt: (n, total) => `VRAAG ${n} / ${total}`,
     none: 'Geen openstaande vragen.',
-    confirmed: 'Antwoord opgeslagen',
+    sending: 'Versturen…',
+    confirmed: 'Antwoord opgeslagen ✓',
+    allAnswered: 'Archer analyseert je dossier opnieuw…',
   },
 };
 
@@ -45,7 +51,7 @@ function cleanQuestion(raw) {
   return String(raw).trim().replace(/\s+/g, ' ');
 }
 
-export default function V3RailQuestions({ questions = [], onAnswer, language }) {
+export default function V3RailQuestions({ questions = [], onAnswer, onAllAnswered, language }) {
   const copy = COPY[resolveLang(language)];
   const open = questions.filter((q) => !q.answered);
   const visible = open.slice(0, 3);
@@ -54,19 +60,33 @@ export default function V3RailQuestions({ questions = [], onAnswer, language }) 
   // { choice, phase }. phase: 'pending' (POST in-flight), 'saved', 'error'.
   const [clicks, setClicks] = useState({});
 
-  const handleClick = async (q, value) => {
+  const handleClick = (q, value) => {
     const qid = q.id || q.question_id || q.question_text || String(value);
-    if (clicks[qid] && clicks[qid].phase === 'pending') return;
-    setClicks((prev) => ({ ...prev, [qid]: { choice: value, phase: 'pending' } }));
-    try {
-      await onAnswer?.({
+    // INSTANT visual feedback — flip to `saved` (green + check) on the
+    // very next paint, BEFORE awaiting the API. Previously the user
+    // stared at an unresponsive button for ~10 s while the backend
+    // processed the answer; the button now commits locally first.
+    const nextClicks = { ...clicks, [qid]: { choice: value, phase: 'saved' } };
+    setClicks(nextClicks);
+    // Fire-and-forget the API call. Errors flip to 'error' state but
+    // never block the UI.
+    Promise.resolve()
+      .then(() => onAnswer?.({
         question_id: q.id,
         question_text: q.question_text || q.text,
         choice_selected: value,
+      }))
+      .catch(() => {
+        setClicks((prev) => ({ ...prev, [qid]: { choice: value, phase: 'error' } }));
       });
-      setClicks((prev) => ({ ...prev, [qid]: { choice: value, phase: 'saved' } }));
-    } catch {
-      setClicks((prev) => ({ ...prev, [qid]: { choice: value, phase: 'error' } }));
+    // If ALL visible questions are now answered locally, ping the
+    // parent so it can trigger a re-analyse (handled in CaseDetailV7).
+    const allSaved = visible.every((vq) => {
+      const vqid = vq.id || vq.question_id || vq.question_text;
+      return nextClicks[vqid]?.phase === 'saved';
+    });
+    if (allSaved && typeof onAllAnswered === 'function') {
+      onAllAnswered();
     }
   };
 
@@ -92,7 +112,8 @@ export default function V3RailQuestions({ questions = [], onAnswer, language }) 
                 <div className="q-num">{copy.questionFmt(idx + 1, visible.length)}</div>
                 <div
                   className="q-text"
-                  title={q.question_text || q.text || q.question}
+                  data-fulltext={cleanQuestion(q.question_text || q.text || q.question)}
+                  title={cleanQuestion(q.question_text || q.text || q.question)}
                 >
                   {cleanQuestion(q.question_text || q.text || q.question)}
                 </div>

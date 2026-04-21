@@ -9,6 +9,28 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 // looking alive even when all we have is initials.
 const AVATAR_BG = ['#1a56db', '#a855f7', '#16a34a'];
 
+// Demo attorney avatars used when the backend returns zero live
+// attorneys (fresh install, DB not seeded, is_live flag never flipped).
+// Matches the mockup visual — three professional portraits from the
+// design-system asset pool (already used on /attorneys).
+const DEMO_ATTORNEYS = [
+  {
+    id: 'demo-pd',
+    initials: 'PD',
+    photo_url: 'https://images.unsplash.com/photo-1585240975858-7264fd020798?w=96&h=96&q=80&auto=format&fit=crop',
+  },
+  {
+    id: 'demo-ml',
+    initials: 'ML',
+    photo_url: 'https://images.unsplash.com/photo-1644268756851-3f69ffb9553f?w=96&h=96&q=80&auto=format&fit=crop',
+  },
+  {
+    id: 'demo-sa',
+    initials: 'SA',
+    photo_url: 'https://images.unsplash.com/photo-1685760259914-ee8d2c92d2e0?w=96&h=96&q=80&auto=format&fit=crop',
+  },
+];
+
 // Rail CTA card. Marketing-style panel above the rest of the rail.
 // Clicking the CTA opens the Live Counsel Stripe checkout directly —
 // the legacy LiveCounselCTA banner was removed from the header zone, so
@@ -76,39 +98,46 @@ export default function LawyerRailCTA({ caseId, t }) {
 
       <div className="lawyer-avatars" aria-hidden>
         <div className="lawyer-avs">
-          {(liveList.attorneys || []).slice(0, 3).map((a, i) => (
-            a.photo_url ? (
-              <img
-                key={a.id || i}
-                className="lawyer-av"
-                src={a.photo_url.startsWith('http') ? a.photo_url : `${process.env.REACT_APP_BACKEND_URL || ''}${a.photo_url}`}
-                alt={a.initials || ''}
-                onError={(e) => {
-                  // Fallback to initials span if the image fails
-                  const span = document.createElement('span');
-                  span.className = 'lawyer-av';
-                  span.style.background = AVATAR_BG[i % AVATAR_BG.length];
-                  span.textContent = a.initials || '??';
-                  e.currentTarget.replaceWith(span);
-                }}
-              />
-            ) : (
-              <span
-                key={a.id || i}
-                className="lawyer-av"
-                style={{ background: AVATAR_BG[i % AVATAR_BG.length] }}
-              >
-                {a.initials || '??'}
-              </span>
-            )
-          ))}
-          {(!liveList.attorneys || liveList.attorneys.length === 0) && (
-            <>
-              <span className="lawyer-av" style={{ background: AVATAR_BG[0] }}>PD</span>
-              <span className="lawyer-av" style={{ background: AVATAR_BG[1] }}>ML</span>
-              <span className="lawyer-av" style={{ background: AVATAR_BG[2] }}>SA</span>
-            </>
-          )}
+          {(() => {
+            // Use backend data when we have it, else the demo photo set.
+            // Never ship placeholder initials as the primary visual —
+            // that was the whole bug the user kept flagging.
+            const source = (liveList.attorneys && liveList.attorneys.length > 0)
+              ? liveList.attorneys
+              : DEMO_ATTORNEYS;
+            return source.slice(0, 3).map((a, i) => {
+              const url = a.photo_url && a.photo_url.startsWith('http')
+                ? a.photo_url
+                : a.photo_url ? `${process.env.REACT_APP_BACKEND_URL || ''}${a.photo_url}` : null;
+              if (url) {
+                return (
+                  <img
+                    key={a.id || i}
+                    className="lawyer-av"
+                    src={url}
+                    alt={a.initials || ''}
+                    onError={(e) => {
+                      // If the image fails, swap to a coloured initials span
+                      const span = document.createElement('span');
+                      span.className = 'lawyer-av';
+                      span.style.background = AVATAR_BG[i % AVATAR_BG.length];
+                      span.textContent = a.initials || '??';
+                      e.currentTarget.replaceWith(span);
+                    }}
+                  />
+                );
+              }
+              return (
+                <span
+                  key={a.id || i}
+                  className="lawyer-av"
+                  style={{ background: AVATAR_BG[i % AVATAR_BG.length] }}
+                >
+                  {a.initials || '??'}
+                </span>
+              );
+            });
+          })()}
         </div>
         <span className="lawyer-avs-txt">
           {t('v3.right_rail.lawyer.available', { count: liveList.total || 3 })}

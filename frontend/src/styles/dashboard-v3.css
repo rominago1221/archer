@@ -1785,11 +1785,41 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  /* `cursor: help` was showing a question-mark cursor on hover, which
-   * the user read as "? tooltip" instead of the full question text.
-   * Default cursor — the title attribute still triggers the native
-   * tooltip after the OS hover delay. */
   cursor: default;
+  position: relative;
+}
+
+/* Instant CSS tooltip — no OS delay, no question-mark cursor. Hovering
+ * the clamped question reveals the full text in a tooltip positioned
+ * above the line with a caret. Reads data-fulltext on the <div>. */
+.dashboard-v3 .q-text[data-fulltext]:hover::after {
+  content: attr(data-fulltext);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #0a0a0f;
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  white-space: normal;
+  font-weight: 500;
+  z-index: 30;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+  max-width: 280px;
+}
+.dashboard-v3 .q-text[data-fulltext]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 14px;
+  border: 5px solid transparent;
+  border-top-color: #0a0a0f;
+  z-index: 30;
+  pointer-events: none;
 }
 .dashboard-v3 .q-btns { display: flex; gap: 4px; flex-wrap: wrap; }
 .dashboard-v3 .q-btn {
