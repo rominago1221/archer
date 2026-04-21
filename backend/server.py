@@ -341,6 +341,27 @@ RULE 4 — next_steps[].title (CRITICAL FOR UI): Each title MUST be a COMPLETE s
 - BAD: "Le régime légal du préavis de résiliation anticipée par le" (cut mid-sentence)
 - BAD: "Vérifier et figer la preuve du non-enregistrement AVANT toute notification: si le bailleur n'a pas..." (colon + paragraph)
 
+RULE 5 — action_type classification (BLOCKING UI STATE): For EACH next_step, set `action_type` AND one of these two companion fields:
+  • action_type = "direct"                → letter can be sent as-is; no extra field needed.
+  • action_type = "verification_required" → the user must FIRST confirm a fact before the letter makes sense. Add `verification_question` with the exact question to put to the user (1-2 short sentences, starts with a question mark).
+
+Examples of "verification_required":
+  - "Vérifier que le bail a bien été enregistré"
+  - "Confirmer la date d'envoi du préavis"
+  - "Confirmer la présence d'une clause de médiation"
+Examples of "direct":
+  - "Envoyer une mise en demeure"
+  - "Contester l'amende devant le juge de police"
+  - "Demander le paiement des arriérés"
+
+Shape per next_step:
+  {
+    "title": "…",
+    "description": "…",
+    "action_type": "direct" | "verification_required",
+    "verification_question": "..." (only if verification_required)
+  }
+
 Return ONLY this JSON — no other text:
 {{
   "case_stage": "stage_1_notice|stage_2_negotiation|stage_3_court|stage_4_judgment",
@@ -2162,6 +2183,27 @@ REGLE CRITIQUE TITRE (UI): Chaque next_steps[].title DOIT etre une phrase COMPLE
 - BON: "Mise en demeure d'enregistrer le bail sous 15 jours"
 - MAUVAIS: "Le régime légal du préavis de résiliation anticipée par le" (coupé au milieu)
 - MAUVAIS: "Vérifier et figer la preuve du non-enregistrement AVANT toute notification: si le bailleur..." (deux-points + paragraphe)
+
+REGLE CLASSIFICATION ACTION (BLOQUE UI): Pour CHAQUE next_step, ajoute `action_type` (deux valeurs possibles) et son champ compagnon :
+  • action_type = "direct"                → la lettre peut partir telle quelle. Aucun champ supplementaire.
+  • action_type = "verification_required" → l'utilisateur doit d'abord CONFIRMER un fait. Ajoute `verification_question` : la question exacte a poser (1-2 phrases courtes, finit par "?").
+
+Exemples "verification_required" :
+  - "Vérifier que le bail a bien été enregistré"
+  - "Confirmer la date d'envoi du préavis"
+  - "Confirmer la présence d'une clause de médiation"
+Exemples "direct" :
+  - "Envoyer une mise en demeure"
+  - "Contester l'amende devant le juge de police"
+  - "Demander le paiement des arriérés"
+
+Forme de chaque next_step :
+  {
+    "title": "…",
+    "description": "…",
+    "action_type": "direct" | "verification_required",
+    "verification_question": "..." (uniquement si verification_required)
+  }
 
 REGLE CRITIQUE ARCHER_QUESTION: Tu DOIS generer une question specifique basee sur les faits du document. La question doit referencer un fait precis du document. JAMAIS de question generique. La question DOIT avoir 2-4 options de reponse cliquables.
 

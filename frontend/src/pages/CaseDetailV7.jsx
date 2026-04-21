@@ -332,6 +332,10 @@ export default function CaseDetailV7() {
             t={t}
             onDiy={() => handleChoiceSelect('basic')}
             onAttorney={() => handleChoiceSelect('signed')}
+            onOpenChat={(prefilledQuestion) => {
+              const q = prefilledQuestion ? `?q=${encodeURIComponent(prefilledQuestion)}&` : '?';
+              navigate(`/chat${q}case_id=${caseId}`);
+            }}
           />
 
         {/* Generated letter display */}

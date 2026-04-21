@@ -115,16 +115,30 @@ export function deriveStrCard(caseDoc, strategy) {
   const jurisCount = depth.jurisprudences_verified || 0;
 
   // ── Checklist items (3 max) ───────────────────────────────────────────
+  // Checklist source priority: strategy.arguments → ai_next_steps. Each
+  // item is split into { bold, rest, ref, action_type, verification_question }.
+  // When ANY item is verification_required, the StrCard blocks the
+  // "attorney letter" CTA until the user confirms (brief §2, Type A/B).
   let checklist = [];
   const args = Array.isArray(strategy?.arguments) ? strategy.arguments : [];
   if (args.length > 0) {
-    checklist = args.slice(0, 3).map((a) =>
-      splitChecklistItem(a.title || a.argument || '', pickFirstRef(a)));
+    checklist = args.slice(0, 3).map((a) => ({
+      ...splitChecklistItem(a.title || a.argument || '', pickFirstRef(a)),
+      action_type: a.action_type || 'direct',
+      verification_question: a.verification_question || null,
+    }));
   } else {
     const steps = Array.isArray(caseDoc?.ai_next_steps) ? caseDoc.ai_next_steps : [];
-    checklist = steps.slice(0, 3).map((s) =>
-      splitChecklistItem(s.title || s.description || '', pickFirstRef(s)));
+    checklist = steps.slice(0, 3).map((s) => ({
+      ...splitChecklistItem(s.title || s.description || '', pickFirstRef(s)),
+      action_type: s.action_type || 'direct',
+      verification_question: s.verification_question || null,
+    }));
   }
+
+  // Aggregate: the whole strategy is "verification_required" if ANY step is.
+  const needsVerification = checklist.some((c) => c.action_type === 'verification_required');
+  const firstVerificationQuestion = checklist.find((c) => c.action_type === 'verification_required')?.verification_question || null;
 
   // ── Projection (stacked bar) ──────────────────────────────────────────
   const sp = caseDoc?.success_probability || {};
@@ -156,5 +170,7 @@ export function deriveStrCard(caseDoc, strategy) {
     checklist,
     proj,
     projPlaceholder,
+    needsVerification,
+    firstVerificationQuestion,
   };
 }

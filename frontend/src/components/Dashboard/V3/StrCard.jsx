@@ -24,9 +24,12 @@ function Opt({ tone, children }) {
 
 export default function StrCard({
   caseDoc, strategy, userPlan, language, t,
-  onDiy, onAttorney,
+  onDiy, onAttorney, onOpenChat,
 }) {
-  const { confidence, title, jurisCount, checklist, proj, projPlaceholder } = deriveStrCard(caseDoc, strategy);
+  const {
+    confidence, title, jurisCount, checklist, proj, projPlaceholder,
+    needsVerification, firstVerificationQuestion,
+  } = deriveStrCard(caseDoc, strategy);
   const [waitlistState, setWaitlistState] = useState({ submitting: false, joined: false, error: null });
 
   const isFree = userPlan === 'free';
@@ -233,13 +236,59 @@ export default function StrCard({
               type="button"
               className="v1-opt-cta primary"
               data-testid="act2-option-lawyer-cta"
-              onClick={onAttorney}
+              onClick={needsVerification ? undefined : onAttorney}
+              disabled={needsVerification}
+              aria-disabled={needsVerification}
+              style={needsVerification ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
             >
               {isFree && <Lock size={13} strokeWidth={2.5} aria-hidden />}
               {t('v3.act2.option_lawyer.cta')}
             </button>
           </Opt>
         </div>
+
+        {/* Type A/B: when ANY checklist item needs user verification first,
+            show the orange banner under the options and keep the attorney
+            CTA disabled. Clicking "Répondre" opens the chat/Archer Q&A
+            flow with the pre-filled question. */}
+        {needsVerification && (
+          <div
+            data-testid="act2-verification-banner"
+            style={{
+              background: '#FFF7ED',
+              borderLeft: '3px solid #BA7517',
+              padding: '12px 16px',
+              borderRadius: '0 8px 8px 0',
+              marginTop: 14,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}
+          >
+            <span style={{ fontSize: 13, color: '#854F0B', lineHeight: 1.45 }}>
+              ⚠️ {t('v3.act2.verification_banner')}
+            </span>
+            <button
+              type="button"
+              style={{
+                background: '#BA7517',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                padding: '6px 16px',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+              onClick={() => onOpenChat && onOpenChat(firstVerificationQuestion)}
+              data-testid="act2-verification-reply"
+            >
+              {t('v3.act2.verification_cta')}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
