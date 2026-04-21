@@ -126,7 +126,64 @@ async def get_profile(attorney: dict = Depends(attorney_required)):
             "avg_rating": None,  # No ratings system yet — see SPRINT_F.md
             "avg_response_seconds": attorney.get("avg_response_seconds"),
         },
+        "is_live": bool(attorney.get("is_live", False)),
     }
+
+
+# =========================================================================
+# PATCH /attorneys/profile/live-status
+# Toggle the attorney's visibility in the client-side "Avocats en ligne"
+# rail card. Separate from `available_for_cases` (matching/assignment).
+# =========================================================================
+
+class LiveStatusPatch(BaseModel):
+    is_live: bool
+
+
+@router.patch("/profile/live-status")
+async def patch_live_status(
+    payload: LiveStatusPatch,
+    attorney: dict = Depends(attorney_required),
+):
+    await db.attorneys.update_one(
+        {"id": attorney["id"]},
+        {"$set": {"is_live": bool(payload.is_live), "updated_at": _now_iso()}},
+    )
+    return {"is_live": bool(payload.is_live)}
+
+
+# =========================================================================
+# GET /attorneys/live — public snapshot used by the client rail card
+# Returns up to 12 live attorneys with whitelisted fields + photo_url.
+# =========================================================================
+
+@router.get("/live")
+async def list_live_attorneys(limit: int = 12):
+    cursor = db.attorneys.find(
+        {"is_live": True, "status": {"$ne": "suspended"}},
+        {
+            "_id": 0, "id": 1, "first_name": 1, "last_name": 1,
+            "photo_storage_path": 1, "jurisdiction": 1, "specialties": 1,
+        },
+    ).limit(max(1, min(24, int(limit or 12))))
+    docs = []
+    async for a in cursor:
+        docs.append({
+            "id": a["id"],
+            "first_name": a.get("first_name") or "",
+            "last_name": a.get("last_name") or "",
+            "initials": _initials(a.get("first_name"), a.get("last_name")),
+            "photo_url": _photo_url_for(a),
+            "jurisdiction": a.get("jurisdiction"),
+            "specialties": a.get("specialties") or [],
+        })
+    return {"total": len(docs), "attorneys": docs}
+
+
+def _initials(first: Optional[str], last: Optional[str]) -> str:
+    f = (first or "").strip()[:1].upper()
+    l = (last or "").strip()[:1].upper()
+    return (f + l) or "??"
 
 
 # =========================================================================

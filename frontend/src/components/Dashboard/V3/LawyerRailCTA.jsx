@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Video, Gift, Loader2, Phone } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+// Colors cycled through when rendering avatar fallbacks. Keeps the rail
+// looking alive even when all we have is initials.
+const AVATAR_BG = ['#1a56db', '#a855f7', '#16a34a'];
 
 // Rail CTA card. Marketing-style panel above the rest of the rail.
 // Clicking the CTA opens the Live Counsel Stripe checkout directly —
@@ -14,6 +18,18 @@ export default function LawyerRailCTA({ caseId, t }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
+  const [liveList, setLiveList] = useState({ total: 0, attorneys: [] });
+
+  // Fetch the live attorney snapshot on mount. Fail silent — the card
+  // falls back to the static 3-avatar demo set if the endpoint 404s
+  // (backend rollout in progress on Emergent preview, etc.).
+  useEffect(() => {
+    let alive = true;
+    axios.get(`${API}/attorneys/live?limit=6`, { withCredentials: true })
+      .then((res) => { if (alive) setLiveList(res.data || { total: 0, attorneys: [] }); })
+      .catch(() => { /* silent */ });
+    return () => { alive = false; };
+  }, []);
 
   const handleClick = async () => {
     if (loading) return;
@@ -51,7 +67,7 @@ export default function LawyerRailCTA({ caseId, t }) {
         <div className="rail-head-title">Avocats</div>
         <span className="rail-head-aux">
           <span className="lawyer-live-dot" style={{ display: 'inline-block', marginRight: 5, verticalAlign: 'middle' }} />
-          {t('v3.right_rail.lawyer.ready_count', { count: 8 })}
+          {t('v3.right_rail.lawyer.ready_count', { count: liveList.total || 8 })}
         </span>
       </div>
 
@@ -60,12 +76,42 @@ export default function LawyerRailCTA({ caseId, t }) {
 
       <div className="lawyer-avatars" aria-hidden>
         <div className="lawyer-avs">
-          <span className="lawyer-av">PD</span>
-          <span className="lawyer-av">ML</span>
-          <span className="lawyer-av">SA</span>
+          {(liveList.attorneys || []).slice(0, 3).map((a, i) => (
+            a.photo_url ? (
+              <img
+                key={a.id || i}
+                className="lawyer-av"
+                src={a.photo_url.startsWith('http') ? a.photo_url : `${process.env.REACT_APP_BACKEND_URL || ''}${a.photo_url}`}
+                alt={a.initials || ''}
+                onError={(e) => {
+                  // Fallback to initials span if the image fails
+                  const span = document.createElement('span');
+                  span.className = 'lawyer-av';
+                  span.style.background = AVATAR_BG[i % AVATAR_BG.length];
+                  span.textContent = a.initials || '??';
+                  e.currentTarget.replaceWith(span);
+                }}
+              />
+            ) : (
+              <span
+                key={a.id || i}
+                className="lawyer-av"
+                style={{ background: AVATAR_BG[i % AVATAR_BG.length] }}
+              >
+                {a.initials || '??'}
+              </span>
+            )
+          ))}
+          {(!liveList.attorneys || liveList.attorneys.length === 0) && (
+            <>
+              <span className="lawyer-av" style={{ background: AVATAR_BG[0] }}>PD</span>
+              <span className="lawyer-av" style={{ background: AVATAR_BG[1] }}>ML</span>
+              <span className="lawyer-av" style={{ background: AVATAR_BG[2] }}>SA</span>
+            </>
+          )}
         </div>
         <span className="lawyer-avs-txt">
-          {t('v3.right_rail.lawyer.available', { count: 3 })}
+          {t('v3.right_rail.lawyer.available', { count: liveList.total || 3 })}
         </span>
       </div>
 

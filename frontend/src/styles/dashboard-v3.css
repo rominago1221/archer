@@ -2103,7 +2103,11 @@
   display: flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: 9.5px;
   margin-left: -6px;
+  object-fit: cover;   /* image variant: cover avatar circle */
+  overflow: hidden;
+  flex-shrink: 0;
 }
+.dashboard-v3 img.lawyer-av { object-fit: cover; }
 .dashboard-v3 .lawyer-av:first-child { margin-left: 0; }
 .dashboard-v3 .lawyer-avs-txt { font-size: 11px; color: var(--ink-3); }
 
