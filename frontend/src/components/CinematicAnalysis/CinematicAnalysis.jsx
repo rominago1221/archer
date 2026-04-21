@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAnalysisStream } from './hooks/useAnalysisStream';
 import Scene00_Opening from './scenes/Scene00_Opening';
@@ -78,26 +79,24 @@ export default function CinematicAnalysis() {
     }
   }, [data.already_complete, isComplete, caseId, navigate]);
 
-  if (error) {
-    return (
-      <div style={{
-        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: '#fafaf8', flexDirection: 'column', gap: 16,
-      }}>
-        <div style={{ fontSize: 20, fontWeight: 700, color: '#b91c1c' }}>
-          {language?.startsWith('fr') ? 'Erreur d\'analyse' : 'Analysis Error'}
-        </div>
-        <div style={{ fontSize: 14, color: '#555' }}>{error}</div>
-        <button
-          onClick={() => navigate('/dashboard')}
-          data-testid="error-back-btn"
-          style={{ padding: '12px 24px', borderRadius: 30, background: '#1a56db', color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-        >
-          {language?.startsWith('fr') ? 'Retour au dashboard' : 'Back to dashboard'}
-        </button>
-      </div>
-    );
-  }
+  // Non-blocking error banner: keeps the cinematic visible so the user isn't
+  // stranded on a white error page when Opus fails mid-pipeline. Retry re-
+  // triggers the background analysis; the poll inside useAnalysisStream picks
+  // up the next status change on its own.
+  const [retrying, setRetrying] = useState(false);
+  const handleRetry = useCallback(async () => {
+    if (retrying || !caseId) return;
+    setRetrying(true);
+    try {
+      const API = process.env.REACT_APP_BACKEND_URL || '';
+      await axios.post(`${API}/api/analyze/trigger?case_id=${caseId}`, null, { withCredentials: true });
+      // Force the page to reload the hook with a clean state. Simpler than
+      // exposing a re-arm method from the hook and avoids stale timers.
+      window.location.reload();
+    } catch (_) {
+      setRetrying(false);
+    }
+  }, [retrying, caseId]);
 
   const scenes = [
     <Scene00_Opening key={0} data={data} language={language} jurisdiction={jurisdiction} />,
@@ -158,6 +157,58 @@ export default function CinematicAnalysis() {
           animation: 'fadeIn 0.5s ease',
         }}>
           {deepAnalysisMsg}
+        </div>
+      )}
+
+      {/* Inline, non-blocking error banner. When the backend pipeline fails
+          we used to replace the whole page with a red error screen, killing
+          the cinematic mid-flight. Now the current scene keeps playing and
+          the user gets a Retry / Back action at the top. */}
+      {error && (
+        <div
+          data-testid="cinematic-error-banner"
+          style={{
+            position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)',
+            zIndex: 200, padding: '12px 18px',
+            background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12,
+            display: 'flex', alignItems: 'center', gap: 14,
+            fontSize: 13, color: '#991b1b', fontWeight: 500,
+            boxShadow: '0 10px 30px rgba(220,38,38,0.15)',
+          }}
+        >
+          <span style={{ fontWeight: 700 }}>
+            {language?.startsWith('fr') ? 'Analyse interrompue' : 'Analysis interrupted'}
+          </span>
+          <span style={{ color: '#7f1d1d' }}>{error}</span>
+          <button
+            type="button"
+            onClick={handleRetry}
+            disabled={retrying}
+            data-testid="cinematic-error-retry"
+            style={{
+              padding: '6px 14px', borderRadius: 8,
+              background: retrying ? '#94a3b8' : '#1a56db', color: '#fff',
+              border: 'none', fontSize: 12, fontWeight: 600,
+              cursor: retrying ? 'default' : 'pointer',
+            }}
+          >
+            {retrying
+              ? (language?.startsWith('fr') ? 'Relance…' : 'Retrying…')
+              : (language?.startsWith('fr') ? 'Réessayer' : 'Retry')}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard')}
+            data-testid="cinematic-error-back"
+            style={{
+              padding: '6px 14px', borderRadius: 8,
+              background: 'transparent', color: '#991b1b',
+              border: '1px solid #fecaca', fontSize: 12, fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            {language?.startsWith('fr') ? 'Dashboard' : 'Dashboard'}
+          </button>
         </div>
       )}
 

@@ -5,22 +5,21 @@ const STAGE_TO_SCENE = {
   findings_ready: 4, battle_ready: 5, strategy_ready: 6, complete: 7,
 };
 
-// Minimum duration each scene stays visible. Applies when we transition OUT of
-// that scene. Scenes 0-2 are time-based (independent of backend). Scenes 3+
-// fire sequentially once the backend has produced real data.
-// Bug 3 — Scene 0 (intro "Analyzing your document...") now holds 10s so users
-// can actually read it. Scene 1 (document highlight scan) needs ~12s to play
-// the per-line highlight animation through.
+// Minimum duration each scene stays visible. Scene 0 used to hold 10s which
+// made the cinematic feel "dead" for 20+ seconds before the first motion hit.
+// Scene 0 is a fade-in card — 3s is enough for it to land before the document
+// scan in Scene 1 takes over. Scene 1 keeps its full per-line highlight
+// animation (~12s), but we enter it sooner so the user sees motion fast.
 const MIN_SCENE_DURATION = {
-  0: 10000, 1: 12000, 2: 6000, 3: 10000,
+  0: 3000, 1: 12000, 2: 6000, 3: 10000,
   4: 10000, 5: 7000, 6: 5000, 7: 2000,
 };
 
 // Auto-advance timers for the first 3 scenes.
-// Bug 3 — push Scene 1 entry to 10s so the intro has time to land.
-// Scene 2 fires at 22s = 10s intro + 12s scan animation.
-const SCENE1_AT_MS = 10000;
-const SCENE2_AT_MS = 22000;
+// Scene 1 now enters at 3s (was 10s) so the document-scan animation starts
+// almost immediately. Scene 2 enters after Scene 1's scan has played through.
+const SCENE1_AT_MS = 3000;
+const SCENE2_AT_MS = 15000;
 
 // Post-real-data cadence for scenes 3-7 (offsets from the moment we detect
 // completion). Tuned so the full reveal takes ~35-40s and feels cinematic.
