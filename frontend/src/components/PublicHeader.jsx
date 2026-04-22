@@ -34,13 +34,13 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 // 'de' and 'es', but those are dropped from the v2 header per brief.
 const LANG_OPTIONS = ['FR', 'NL', 'EN'];
 
-// Nav link labels per language — kept inline because landingTranslations doesn't
-// have a `nav.blog` key and the 4-link label set differs from the previous 6.
+// Nav link labels per language — 5 public sections + auth copy.
 const NAV_COPY = {
   fr: {
     howItWorks: 'Comment ça marche',
     pricing: 'Tarifs',
     engine: 'Notre IA',
+    attorneys: 'Avocats',
     blog: 'Blog',
     signIn: 'Se connecter',
     cta: 'Commencer gratuitement',
@@ -50,6 +50,7 @@ const NAV_COPY = {
     howItWorks: 'Hoe het werkt',
     pricing: 'Prijzen',
     engine: 'Onze AI',
+    attorneys: 'Advocaten',
     blog: 'Blog',
     signIn: 'Inloggen',
     cta: 'Gratis beginnen',
@@ -59,6 +60,7 @@ const NAV_COPY = {
     howItWorks: 'How it works',
     pricing: 'Pricing',
     engine: 'Our AI',
+    attorneys: 'Attorneys',
     blog: 'Blog',
     signIn: 'Sign in',
     cta: 'Get started free',
@@ -255,6 +257,11 @@ export default function PublicHeader({ onLanguageChange, onJurisdictionChange })
              onKeyDown={(e) => { if (e.key === 'Enter') handleNav('/engine'); }}
              data-testid="public-header-engine">
             {navCopy.engine}
+          </a>
+          <a onClick={() => handleNav('/attorneys')} role="button" tabIndex={0}
+             onKeyDown={(e) => { if (e.key === 'Enter') handleNav('/attorneys'); }}
+             data-testid="public-header-attorneys">
+            {navCopy.attorneys}
           </a>
           <a onClick={() => handleNav('/blog')} role="button" tabIndex={0}
              onKeyDown={(e) => { if (e.key === 'Enter') handleNav('/blog'); }}

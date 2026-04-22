@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import PageHead from '../components/seo/PageHead';
 import JsonLd, { LEGAL_SERVICE_SCHEMA, createFaqSchema, createBreadcrumbSchema } from '../components/seo/JsonLd';
 import { PAGE_METADATA, SITE_URL, generateMetadata } from '../lib/seo/metadata';
-import PublicNavbar from '../components/PublicNavbar';
+import PublicHeader from '../components/PublicHeader';
 import { PILLAR_CONTENT } from '../content/pillarPages';
 import { STATE_CONTENT } from '../content/statePages';
 
@@ -34,7 +34,7 @@ export default function PillarPage() {
       <JsonLd data={LEGAL_SERVICE_SCHEMA} />
       {pillar.faqs?.length > 0 && <JsonLd data={createFaqSchema(pillar.faqs)} />}
       <JsonLd data={createBreadcrumbSchema([{ name: 'Home', url: SITE_URL }, { name: pillar.title }])} />
-      <PublicNavbar />
+      <PublicHeader />
 
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '60px 24px' }}>
         {/* Hero */}
@@ -163,7 +163,7 @@ function StatePage({ pillarSlug, state }) {
         { name: pillar.title, url: `${SITE_URL}/${pillarSlug}` },
         { name: stateName },
       ])} />
-      <PublicNavbar />
+      <PublicHeader />
 
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '60px 24px' }}>
         <nav style={{ fontSize: 12, color: '#9ca3af', marginBottom: 24, display: 'flex', gap: 6 }}>

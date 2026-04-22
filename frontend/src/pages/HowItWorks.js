@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import PublicNavbar from '../components/PublicNavbar';
+import PublicHeader from '../components/PublicHeader';
 import PageHead from '../components/seo/PageHead';
 import { PAGE_METADATA } from '../lib/seo/metadata';
 
@@ -267,7 +267,7 @@ export default function HowItWorks() {
     <div className="hiw">
       <PageHead metadata={PAGE_METADATA.howItWorks} />
       <style>{CSS}</style>
-      <PublicNavbar />
+      <PublicHeader />
 
       {/* 1. HERO */}
       <div className="hero-w">

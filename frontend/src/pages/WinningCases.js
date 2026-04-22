@@ -1,6 +1,6 @@
 import React from 'react';
 import WinWallSection from '../components/WinWallSection';
-import PublicNavbar from '../components/PublicNavbar';
+import PublicHeader from '../components/PublicHeader';
 import { getStoredLocale } from '../data/landingTranslations';
 
 export default function WinningCases() {
@@ -10,7 +10,7 @@ export default function WinningCases() {
 
   return (
     <div>
-      <PublicNavbar />
+      <PublicHeader />
       <div style={{ paddingTop: 72 }}>
         <WinWallSection jurisdiction={jurisdiction} language={language} />
       </div>

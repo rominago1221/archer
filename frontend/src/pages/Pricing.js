@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import PublicNavbar from '../components/PublicNavbar';
+import PublicHeader from '../components/PublicHeader';
 import PageHead from '../components/seo/PageHead';
 import JsonLd, { LEGAL_SERVICE_SCHEMA } from '../components/seo/JsonLd';
 import { PAGE_METADATA } from '../lib/seo/metadata';
@@ -280,7 +280,7 @@ export default function Pricing() {
       <PageHead metadata={PAGE_METADATA.pricing} />
       <JsonLd data={LEGAL_SERVICE_SCHEMA} />
       <style>{CSS}</style>
-      <PublicNavbar />
+      <PublicHeader />
 
       {/* HERO */}
       <div className="hero"><div className="hero-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>{t.heroBadge}</span></div><h1>{t.heroTitle[0]}<br />{t.heroTitle[1]}<span className="ac">{t.heroTitle[2]}</span></h1><p className="tag">{t.heroTag}</p></div>
