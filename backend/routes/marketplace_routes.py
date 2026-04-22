@@ -622,3 +622,137 @@ async def handle_marketplace_checkout_session(session: Any) -> None:
         f"marketplace: listing {listing_id} → attorney {attorney_id} "
         f"(case {case_id}, €{amount_total // 100})"
     )
+
+    # 4. Fire-and-forget notifications (non-blocking).
+    asyncio.create_task(_notify_unlock(case_id, attorney_id, amount_total))
+
+
+async def _notify_unlock(case_id: str, attorney_id: str, amount_total_cents: int) -> None:
+    """Send confirmation emails to both client and attorney after an unlock.
+    Runs in the background — failures are logged, never raised back to Stripe."""
+    try:
+        # Lazy import to avoid circular dependency with attorney_routes.
+        from routes.attorney_routes import send_email, APP_URL
+    except Exception as e:
+        logger.error(f"marketplace notify: cannot import send_email ({e})")
+        return
+
+    try:
+        case = await db.cases.find_one({"case_id": case_id}, {"_id": 0})
+        attorney = await db.attorneys.find_one({"id": attorney_id}, {"_id": 0})
+        if not case or not attorney:
+            logger.warning(
+                f"marketplace notify: missing case ({bool(case)}) / attorney "
+                f"({bool(attorney)}) for case {case_id}"
+            )
+            return
+        user = await db.users.find_one({"user_id": case.get("user_id")}, {"_id": 0}) or {}
+    except Exception as e:
+        logger.error(f"marketplace notify: lookup failed ({e})")
+        return
+
+    attorney_name = (
+        f"Me {attorney.get('last_name') or attorney.get('first_name') or ''}".strip()
+        or attorney.get("email") or "Votre avocat"
+    )
+    attorney_full = (
+        f"{attorney.get('first_name', '')} {attorney.get('last_name', '')}".strip()
+        or attorney.get("email")
+    )
+    bar = attorney.get("bar_association") or attorney.get("jurisdiction") or "Barreau de Belgique"
+
+    case_title = case.get("title") or "Votre dossier"
+    case_short_id = (case_id or "")[-6:]
+    dashboard_url = f"{APP_URL.rstrip('/')}/cases/{case_id}"
+    attorney_case_url = f"{APP_URL.rstrip('/')}/attorneys/cases/{case_id}"
+
+    # ── Email client ─────────────────────────────────────────────────
+    client_email = case.get("user_email") or user.get("email")
+    if client_email:
+        client_html = f"""
+        <div style="max-width:600px;margin:0 auto;font-family:-apple-system,Segoe UI,sans-serif;color:#222a38;line-height:1.55">
+          <div style="padding:28px 0 18px;border-bottom:2px solid #222a38">
+            <span style="font-size:22px;font-weight:800;color:#222a38">Archer</span>
+          </div>
+          <div style="padding:28px 0">
+            <h1 style="font-size:22px;font-weight:700;color:#222a38;margin:0 0 12px">Un avocat a pris en charge votre dossier</h1>
+            <p style="font-size:15px;color:#5c6478;margin:0 0 16px">
+              Bonne nouvelle — <strong style="color:#222a38">{attorney_full}</strong>
+              ({bar}) a pris en charge votre dossier
+              <em>« {case_title} »</em> (#{case_short_id}).
+            </p>
+            <p style="font-size:15px;color:#5c6478;margin:0 0 16px">
+              Il prendra contact avec vous prochainement. Vous pouvez
+              aussi suivre l'avancement depuis votre dashboard Archer.
+            </p>
+            <div style="margin-top:24px">
+              <a href="{dashboard_url}" style="display:inline-block;padding:14px 28px;background:#1a56db;color:white;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">
+                Voir mon dossier
+              </a>
+            </div>
+          </div>
+          <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e4e6eb;text-align:center">
+            <p style="font-size:11px;color:#8b93a5;margin:0">
+              Archer — votre partenaire juridique en Belgique.
+            </p>
+          </div>
+        </div>
+        """
+        try:
+            await send_email(
+                to=client_email,
+                subject="Un avocat a pris en charge votre dossier",
+                html_body=client_html,
+            )
+        except Exception as e:
+            logger.error(f"marketplace notify: client email failed ({e})")
+
+    # ── Email avocat ─────────────────────────────────────────────────
+    attorney_email = attorney.get("email")
+    if attorney_email:
+        client_name = (user.get("name") or "").strip() or case.get("user_name") or "Client"
+        client_contact_email = client_email or "—"
+        client_contact_phone = user.get("phone") or case.get("user_phone") or "—"
+        amount_eur = amount_total_cents // 100
+        attorney_html = f"""
+        <div style="max-width:600px;margin:0 auto;font-family:-apple-system,Segoe UI,sans-serif;color:#222a38;line-height:1.55">
+          <div style="padding:28px 0 18px;border-bottom:2px solid #222a38">
+            <span style="font-size:22px;font-weight:800;color:#222a38">Archer</span>
+            <span style="font-size:11px;color:#9a7b4f;font-weight:700;letter-spacing:1px;margin-left:8px">PORTAIL AVOCAT</span>
+          </div>
+          <div style="padding:28px 0">
+            <h1 style="font-size:22px;font-weight:700;color:#222a38;margin:0 0 8px">Dossier débloqué</h1>
+            <p style="font-size:15px;color:#5c6478;margin:0 0 16px">
+              Vous avez maintenant accès au dossier complet (paiement <strong>€{amount_eur}</strong> confirmé).
+            </p>
+            <table style="width:100%;border-collapse:collapse;margin:18px 0;border:1px solid #e4e6eb;border-radius:8px;overflow:hidden">
+              <tr><td style="padding:10px 14px;background:#f5f6f8;font-size:12px;color:#8b93a5;width:120px">Dossier</td><td style="padding:10px 14px;font-size:14px;font-weight:600">{case_title}</td></tr>
+              <tr><td style="padding:10px 14px;background:#f5f6f8;font-size:12px;color:#8b93a5;border-top:1px solid #e4e6eb">Client</td><td style="padding:10px 14px;font-size:14px;border-top:1px solid #e4e6eb">{client_name}</td></tr>
+              <tr><td style="padding:10px 14px;background:#f5f6f8;font-size:12px;color:#8b93a5;border-top:1px solid #e4e6eb">Email</td><td style="padding:10px 14px;font-size:14px;border-top:1px solid #e4e6eb"><a href="mailto:{client_contact_email}" style="color:#1a56db;text-decoration:none">{client_contact_email}</a></td></tr>
+              <tr><td style="padding:10px 14px;background:#f5f6f8;font-size:12px;color:#8b93a5;border-top:1px solid #e4e6eb">Téléphone</td><td style="padding:10px 14px;font-size:14px;border-top:1px solid #e4e6eb">{client_contact_phone}</td></tr>
+            </table>
+            <p style="font-size:14px;color:#5c6478;margin:0 0 20px">
+              L'analyse IA complète (7 passes), les documents du dossier
+              et l'historique du chat sont disponibles dans votre portail.
+            </p>
+            <div>
+              <a href="{attorney_case_url}" style="display:inline-block;padding:14px 28px;background:#222a38;color:white;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none">
+                Ouvrir le dossier
+              </a>
+            </div>
+          </div>
+          <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e4e6eb;text-align:center">
+            <p style="font-size:11px;color:#8b93a5;margin:0">
+              Archer — Portail Avocat · <a href="{APP_URL.rstrip('/')}/attorneys/profile" style="color:#9a7b4f">Mes paramètres</a>
+            </p>
+          </div>
+        </div>
+        """
+        try:
+            await send_email(
+                to=attorney_email,
+                subject=f"Dossier débloqué — {case_title}",
+                html_body=attorney_html,
+            )
+        except Exception as e:
+            logger.error(f"marketplace notify: attorney email failed ({e})")
