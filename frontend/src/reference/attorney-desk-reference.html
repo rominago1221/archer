@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archer — Portail Avocat</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --dark: #2a3345; --dark-2: #334052; --dark-3: #435060; --dark-4: #576878; --dark-5: #728494;
+  --slate: #8b93a5; --slate-light: #b0b8c9;
+  --bg: #f5f6f8; --bg-card: #ffffff;
+  --line: #e4e6eb; --line-soft: #eef0f3;
+  --gold: #9a7b4f; --gold-light: #c4a46e; --gold-50: #faf6ef; --gold-100: #f0e8d5; --gold-border: #dfd1b5;
+  --green: #1a7a3e; --green-bright: #22c55e; --green-50: #eef8f1; --green-100: #d4edda;
+  --red: #a82828; --red-50: #fdf0f0; --red-100: #f5d5d5;
+  --amber: #8b6914; --amber-50: #fdf8ed;
+  --blue: #1a56db; --blue-50: #eff6ff;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter Tight', -apple-system, sans-serif; background: var(--bg); color: var(--dark); -webkit-font-smoothing: antialiased; line-height: 1.55; }
+.app { display: grid; grid-template-columns: 270px 1fr; min-height: 100vh; }
+
+/* ═══════════ SIDEBAR ═══════════ */
+.sb {
+  background: var(--bg-card);
+  border-right: 1px solid var(--line);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.sb-header { padding: 28px 24px 20px; border-bottom: 1px solid var(--line); }
+.sb-logo { font-size: 23px; font-weight: 800; color: var(--dark); letter-spacing: -0.8px; margin-bottom: 2px; }
+.sb-logo span { color: var(--gold); }
+.sb-subtitle { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; }
+
+.sb-status {
+  margin: 20px 16px 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer; transition: all 0.15s;
+  background: var(--green-50); border: 1px solid var(--green-100);
+}
+.sb-status-dot { width: 8px; height: 8px; background: var(--green-bright); border-radius: 50%; animation: pulse 1.5s ease-in-out infinite; flex-shrink: 0; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.sb-status-text { font-size: 13.5px; font-weight: 600; color: var(--green); flex: 1; }
+.sb-status-switch { width: 38px; height: 22px; background: var(--green); border-radius: 11px; position: relative; flex-shrink: 0; }
+.sb-status-switch::after { content: ''; position: absolute; top: 3px; right: 3px; width: 16px; height: 16px; background: white; border-radius: 50%; }
+
+.sb-nav { padding: 8px 12px; flex: 1; }
+.sb-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: 8px;
+  font-size: 14px; color: var(--dark-5); cursor: pointer;
+  transition: all 0.15s; margin-bottom: 2px;
+}
+.sb-item:hover { background: var(--bg); color: var(--dark-3); }
+.sb-item.active { background: var(--gold-50); color: var(--gold); font-weight: 600; border: 1px solid var(--gold-100); }
+.sb-badge { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 100px; }
+.sb-badge.alert { background: var(--red-50); color: var(--red); }
+.sb-badge.muted { background: var(--line-soft); color: var(--slate); }
+.sb-sep { height: 1px; background: var(--line); margin: 10px 20px; }
+
+.sb-footer { padding: 16px 20px; border-top: 1px solid var(--line); }
+.sb-profile { display: flex; align-items: center; gap: 12px; }
+.sb-avatar { width: 40px; height: 40px; border-radius: 10px; background: var(--dark); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; letter-spacing: -0.3px; }
+.sb-name { font-size: 13.5px; font-weight: 600; color: var(--dark); }
+.sb-bar { font-size: 11.5px; color: var(--slate); }
+
+/* ═══════════ MAIN ═══════════ */
+.main { padding: 32px 48px 60px; max-width: 1100px; }
+
+/* TOP */
+.top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+.top-date { font-size: 13px; color: var(--slate); font-weight: 500; }
+.top-actions { display: flex; gap: 8px; }
+.top-btn { padding: 8px 14px; background: var(--bg-card); border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 13px; color: var(--dark-4); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.top-btn:hover { border-color: var(--gold-border); }
+
+/* HERO */
+.hero {
+  padding: 36px 40px;
+  background: var(--dark);
+  border-radius: 16px;
+  margin-bottom: 32px;
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 40px; align-items: center;
+}
+.hero-greeting { font-family: 'Instrument Serif', serif; font-size: 34px; color: white; line-height: 1.1; margin-bottom: 10px; }
+.hero-greeting .hl { color: var(--gold-light); }
+.hero-sub { font-size: 15px; color: var(--slate-light); line-height: 1.55; max-width: 500px; }
+.hero-sub strong { color: white; font-weight: 600; }
+
+.hero-kpis { display: flex; gap: 14px; }
+.hero-kpi { padding: 18px 24px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; text-align: center; min-width: 120px; }
+.hero-kpi-num { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 800; line-height: 1; margin-bottom: 4px; letter-spacing: -0.5px; }
+.hero-kpi-num.gold { color: var(--gold-light); }
+.hero-kpi-num.white { color: white; }
+.hero-kpi-num.green { color: var(--green-bright); }
+.hero-kpi-label { font-size: 11.5px; color: var(--slate); }
+
+/* SECTION TITLES */
+.sec { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.sec-title { font-size: 15px; font-weight: 700; color: var(--dark); letter-spacing: -0.2px; white-space: nowrap; }
+.sec-line { flex: 1; height: 1px; background: var(--line); }
+.sec-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--slate); padding: 3px 10px; background: var(--line-soft); border-radius: 100px; }
+
+/* FILTERS */
+.filters { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+.fchip { padding: 7px 14px; background: var(--bg-card); border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 500; color: var(--dark-4); cursor: pointer; transition: all 0.15s; }
+.fchip:hover { border-color: var(--dark-4); }
+.fchip.active { background: var(--dark); color: white; border-color: var(--dark); }
+
+/* ═══════════ LEAD CARDS ═══════════ */
+.leads { display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px; }
+
+.lead {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid; grid-template-columns: 1fr 190px;
+  overflow: hidden; transition: all 0.2s;
+}
+.lead:hover { border-color: var(--gold-border); box-shadow: 0 4px 16px rgba(0,0,0,0.05); }
+.lead.fresh { border-left: 3px solid var(--gold); }
+.lead.taken { opacity: 0.4; pointer-events: none; }
+
+.lead-body { padding: 20px 24px; }
+.lead-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.lead-cat {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase;
+  color: var(--dark-4); padding: 3px 10px; border-radius: 4px;
+  background: var(--line-soft); display: inline-flex; align-items: center; gap: 5px;
+}
+.lead-when { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--slate); }
+.lead-when.now { color: var(--red); font-weight: 600; }
+.lead-where { font-size: 11px; color: var(--slate); padding: 2px 8px; background: var(--line-soft); border-radius: 4px; }
+
+.lead-title { font-family: 'Instrument Serif', serif; font-size: 19px; color: var(--dark); line-height: 1.3; margin-bottom: 8px; }
+.lead-desc { font-size: 13.5px; color: var(--dark-5); line-height: 1.55; margin-bottom: 12px; }
+
+.lead-facts { display: flex; gap: 20px; flex-wrap: wrap; }
+.lead-fact { font-size: 12.5px; color: var(--slate); display: inline-flex; align-items: center; gap: 5px; }
+.lead-fact strong { color: var(--dark-3); font-weight: 700; }
+.lead-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.lead-dot.low { background: var(--green); }
+.lead-dot.mid { background: var(--gold); }
+.lead-dot.high { background: var(--red); }
+
+/* Price panel */
+.lead-panel {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px 20px; gap: 10px;
+  background: var(--gold-50);
+  border-left: 1px solid var(--gold-100);
+}
+.lead-panel-label { font-size: 10.5px; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
+.lead-panel-price { font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 800; color: var(--dark); letter-spacing: -1px; }
+.lead-panel-cta {
+  width: 100%; padding: 10px 16px;
+  background: var(--dark); color: white;
+  border: none; border-radius: 8px;
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px;
+  transition: all 0.15s;
+}
+.lead-panel-cta:hover { background: var(--dark-2); }
+.lead-panel-cta svg { width: 14px; height: 14px; }
+.lead-panel-watchers { font-size: 12.5px; color: var(--slate); font-weight: 500; display: flex; align-items: center; gap: 5px; }
+.lead-panel-watchers-dot { width: 6px; height: 6px; background: var(--red); border-radius: 50%; animation: pulse 1.2s ease-in-out infinite; }
+
+.lead.taken .lead-panel { background: var(--line-soft); border-left-color: var(--line); }
+.lead.taken .lead-panel-cta { background: var(--slate); }
+
+/* ═══════════ MES DOSSIERS ═══════════ */
+.mycases { display: flex; flex-direction: column; gap: 6px; }
+.mycase {
+  background: var(--bg-card); border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px 20px;
+  display: grid; grid-template-columns: auto 1fr auto auto;
+  gap: 14px; align-items: center;
+  cursor: pointer; transition: all 0.15s;
+}
+.mycase:hover { border-color: var(--gold-border); }
+.mycase-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--line-soft); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.mycase-name { font-size: 13.5px; font-weight: 600; color: var(--dark); margin-bottom: 1px; }
+.mycase-meta { font-size: 11.5px; color: var(--slate); display: flex; gap: 6px; align-items: center; }
+.mycase-meta-dot { width: 3px; height: 3px; background: var(--slate); border-radius: 50%; }
+.mycase-amount { font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 700; color: var(--dark); }
+.mycase-status { font-size: 10.5px; font-weight: 700; padding: 4px 10px; border-radius: 6px; letter-spacing: 0.2px; }
+.mycase-status.active { background: var(--green-50); color: var(--green); }
+.mycase-status.pending { background: var(--amber-50); color: var(--amber); }
+.mycase-status.done { background: var(--line-soft); color: var(--slate); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sb">
+    <div class="sb-header">
+      <div class="sb-logo">Archer<span>.</span></div>
+      <div class="sb-subtitle">Portail avocat</div>
+    </div>
+
+    <div class="sb-status">
+      <span class="sb-status-dot"></span>
+      <span class="sb-status-text">Disponible</span>
+      <div class="sb-status-switch"></div>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="sb-item active">⊞ Mon desk <span class="sb-badge alert">7</span></div>
+      <div class="sb-item">📁 Mes dossiers <span class="sb-badge muted">12</span></div>
+      <div class="sb-item">📞 Appels <span class="sb-badge muted">3</span></div>
+      <div class="sb-sep"></div>
+      <div class="sb-item">💰 Revenus</div>
+      <div class="sb-item">👤 Profil</div>
+      <div class="sb-item">⚙ Paramètres</div>
+    </nav>
+
+    <div class="sb-footer">
+      <div class="sb-profile">
+        <div class="sb-avatar">JL</div>
+        <div>
+          <div class="sb-name">Me Jean-Luc Dubois</div>
+          <div class="sb-bar">Barreau de Bruxelles · 11 ans</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <div class="top">
+      <div class="top-date">Mardi 22 avril 2026</div>
+      <div class="top-actions">
+        <button class="top-btn">🔍 Rechercher</button>
+        <button class="top-btn">🔔 Notifications</button>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div>
+        <div class="hero-greeting">Bonjour, <span class="hl">Me Dubois</span>.</div>
+        <p class="hero-sub"><strong>7 dossiers qualifiés</strong> attendent votre expertise. Chaque dossier a été pré-analysé par notre IA. Premier arrivé, premier servi.</p>
+      </div>
+      <div class="hero-kpis">
+        <div class="hero-kpi">
+          <div class="hero-kpi-num gold">7</div>
+          <div class="hero-kpi-label">Disponibles</div>
+        </div>
+        <div class="hero-kpi">
+          <div class="hero-kpi-num white">12</div>
+          <div class="hero-kpi-label">Acquis ce mois</div>
+        </div>
+        <div class="hero-kpi">
+          <div class="hero-kpi-num green">€41k</div>
+          <div class="hero-kpi-label">Enjeux en cours</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AVAILABLE -->
+    <div class="sec">
+      <div class="sec-title">Dossiers disponibles</div>
+      <div class="sec-line"></div>
+      <div class="sec-badge">7 dossiers</div>
+    </div>
+
+    <div class="filters">
+      <button class="fchip active">Tous</button>
+      <button class="fchip">Nouveaux</button>
+      <button class="fchip">🏠 Bail</button>
+      <button class="fchip">🚗 Routier</button>
+      <button class="fchip">💼 Travail</button>
+      <button class="fchip">📝 Contrats</button>
+    </div>
+
+    <div class="leads">
+
+      <div class="lead fresh">
+        <div class="lead-body">
+          <div class="lead-top">
+            <span class="lead-cat">🏠 Bail · Immobilier</span>
+            <span class="lead-when now">Il y a 4 min</span>
+            <span class="lead-where">Bruxelles</span>
+          </div>
+          <div class="lead-title">Contestation loyer excessif — bail 9 ans résidence principale</div>
+          <div class="lead-desc">Locataire conteste un loyer 2× supérieur au référentiel bruxellois. Clause pénale à 12%. Bail non enregistré. 3 arguments juridiques identifiés.</div>
+          <div class="lead-facts">
+            <span class="lead-fact">Enjeu : <strong>€6,200</strong></span>
+            <span class="lead-fact">Score : <strong>65/100</strong></span>
+            <span class="lead-fact"><span class="lead-dot mid"></span> Modéré</span>
+            <span class="lead-fact">1 pièce</span>
+          </div>
+        </div>
+        <div class="lead-panel">
+          <span class="lead-panel-label">Acquérir</span>
+          <span class="lead-panel-price">€80</span>
+          <button class="lead-panel-cta">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            Débloquer
+          </button>
+          <span class="lead-panel-watchers"><span class="lead-panel-watchers-dot"></span> 4 confrères consultent</span>
+        </div>
+      </div>
+
+      <div class="lead fresh">
+        <div class="lead-body">
+          <div class="lead-top">
+            <span class="lead-cat">🚗 Routier</span>
+            <span class="lead-when now">Il y a 12 min</span>
+            <span class="lead-where">Brabant wallon</span>
+          </div>
+          <div class="lead-title">Excès de vitesse 4ème degré — 121 km/h en zone 50</div>
+          <div class="lead-desc">Contestation PV radar. Vice de forme potentiel sur la signalisation. Requête à déposer au parquet de Nivelles.</div>
+          <div class="lead-facts">
+            <span class="lead-fact">Enjeu : <strong>€1,200</strong></span>
+            <span class="lead-fact">Score : <strong>72/100</strong></span>
+            <span class="lead-fact"><span class="lead-dot high"></span> Élevé</span>
+            <span class="lead-fact">2 pièces</span>
+          </div>
+        </div>
+        <div class="lead-panel">
+          <span class="lead-panel-label">Acquérir</span>
+          <span class="lead-panel-price">€50</span>
+          <button class="lead-panel-cta">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            Débloquer
+          </button>
+          <span class="lead-panel-watchers"><span class="lead-panel-watchers-dot"></span> 2 confrères consultent</span>
+        </div>
+      </div>
+
+      <div class="lead">
+        <div class="lead-body">
+          <div class="lead-top">
+            <span class="lead-cat">💼 Droit du travail</span>
+            <span class="lead-when">Il y a 1h</span>
+            <span class="lead-where">Liège</span>
+          </div>
+          <div class="lead-title">Licenciement pour motif grave contesté — 8 ans d'ancienneté</div>
+          <div class="lead-desc">Employé licencié pour retards répétés. Absence de procédure d'avertissement documentée. Indemnité de préavis potentiellement due.</div>
+          <div class="lead-facts">
+            <span class="lead-fact">Enjeu : <strong>€18,500</strong></span>
+            <span class="lead-fact">Score : <strong>45/100</strong></span>
+            <span class="lead-fact"><span class="lead-dot mid"></span> Modéré</span>
+            <span class="lead-fact">4 pièces</span>
+          </div>
+        </div>
+        <div class="lead-panel">
+          <span class="lead-panel-label">Acquérir</span>
+          <span class="lead-panel-price">€120</span>
+          <button class="lead-panel-cta">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            Débloquer
+          </button>
+          <span class="lead-panel-watchers"><span class="lead-panel-watchers-dot"></span> 6 confrères consultent</span>
+        </div>
+      </div>
+
+      <div class="lead taken">
+        <div class="lead-body">
+          <div class="lead-top">
+            <span class="lead-cat">🛒 Consommation</span>
+            <span class="lead-when">Acquis il y a 20 min</span>
+          </div>
+          <div class="lead-title">Surfacturation opérateur télécom — services non souscrits</div>
+          <div class="lead-desc">Mise en demeure nécessaire. Dossier solide avec preuves documentées.</div>
+          <div class="lead-facts">
+            <span class="lead-fact">Enjeu : <strong>€450</strong></span>
+            <span class="lead-fact"><span class="lead-dot low"></span> Faible</span>
+          </div>
+        </div>
+        <div class="lead-panel">
+          <span class="lead-panel-label">Acquis</span>
+          <span class="lead-panel-price">€60</span>
+          <button class="lead-panel-cta">Pris</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MY CASES -->
+    <div class="sec">
+      <div class="sec-title">Mes dossiers en cours</div>
+      <div class="sec-line"></div>
+      <div class="sec-badge">12</div>
+    </div>
+
+    <div class="mycases">
+      <div class="mycase">
+        <div class="mycase-icon">🏠</div>
+        <div>
+          <div class="mycase-name">Résiliation bail — M. Dupont, Jean-Pierre</div>
+          <div class="mycase-meta">Acquis le 20 avr. <span class="mycase-meta-dot"></span> Ixelles <span class="mycase-meta-dot"></span> Lettre envoyée</div>
+        </div>
+        <div class="mycase-amount">€4,800</div>
+        <span class="mycase-status active">En cours</span>
+      </div>
+      <div class="mycase">
+        <div class="mycase-icon">🚗</div>
+        <div>
+          <div class="mycase-name">Contestation PV — Mme Leroy, Catherine</div>
+          <div class="mycase-meta">Acquis le 17 avr. <span class="mycase-meta-dot"></span> Namur <span class="mycase-meta-dot"></span> Requête déposée</div>
+        </div>
+        <div class="mycase-amount">€800</div>
+        <span class="mycase-status active">En cours</span>
+      </div>
+      <div class="mycase">
+        <div class="mycase-icon">💼</div>
+        <div>
+          <div class="mycase-name">Indemnité licenciement — M. Van den Berg, Pieter</div>
+          <div class="mycase-meta">Acquis le 15 avr. <span class="mycase-meta-dot"></span> Gand <span class="mycase-meta-dot"></span> Attente employeur</div>
+        </div>
+        <div class="mycase-amount">€12,000</div>
+        <span class="mycase-status pending">En attente</span>
+      </div>
+      <div class="mycase">
+        <div class="mycase-icon">📝</div>
+        <div>
+          <div class="mycase-name">Rupture contrat — SPRL TechFlow</div>
+          <div class="mycase-meta">Acquis le 10 avr. <span class="mycase-meta-dot"></span> Bruxelles <span class="mycase-meta-dot"></span> Accord trouvé</div>
+        </div>
+        <div class="mycase-amount">€3,200</div>
+        <span class="mycase-status done">Résolu</span>
+      </div>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>
