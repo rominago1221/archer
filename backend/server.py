@@ -1715,6 +1715,14 @@ async def _save_stream_result_to_case(case_id: str, analysis: dict, filename: st
     })
     logger.info(f"Stream analysis saved for case {case_id} (score={new_score})")
 
+    # Marketplace: publish an anonymized listing for paying clients' BE cases.
+    # No-op for Free users / US cases / cg_ contract-guard flows.
+    try:
+        from routes.marketplace_routes import publish_to_marketplace
+        await publish_to_marketplace(case_id)
+    except Exception as e:
+        logger.error(f"publish_to_marketplace failed for {case_id}: {e}")
+
 
 @api_router.get("/analyze/stream")
 async def analyze_stream_endpoint(
