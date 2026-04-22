@@ -26,6 +26,7 @@ import LegalChat from './pages/LegalChat';
 import SharedCase from './pages/SharedCase';
 import AnalyzeDocument from './pages/AnalyzeDocument';
 import ContractGuard from './pages/ContractGuard';
+import MobileScan from './pages/MobileScan';
 import FloatingChatButton from './components/FloatingChatButton';
 import AttorneyApply from './pages/AttorneyApply';
 import AttorneyDashboard from './pages/AttorneyDashboard';
@@ -118,6 +119,9 @@ const AppRouter = () => {
       <Route path="/signup" element={<Signup />} />
       <Route path="/shared/:token" element={<SharedCase />} />
       <Route path="/attorney/apply" element={<AttorneyApply />} />
+      {/* Mobile-only: landing page for the QR-scan cross-device upload flow.
+          Desktop creates a token, shows a QR; phone opens /m/scan/:token, uploads. */}
+      <Route path="/m/scan/:token" element={<MobileScan />} />
 
       {/* SEO: Blog + Pillar pages + State pages */}
       <Route path="/blog" element={<Blog />} />

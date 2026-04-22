@@ -6,6 +6,7 @@ import {
   Scale, MessageSquare, DoorOpen, File as FileIcon, Image as ImageIcon, X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import QrScanModal from '../components/QrScanModal';
 import '../styles/contract-guard.css';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -536,6 +537,20 @@ export default function ContractGuard() {
           </div>
         )}
       </div>
+
+      <QrScanModal
+        open={qrModalOpen}
+        onClose={() => setQrModalOpen(false)}
+        onFileReceived={(f) => handleFileSelect(f)}
+        copy={{
+          qrModalTitle: t.qrModalTitle,
+          qrModalSub: t.qrModalSub,
+          qrModalWaiting: t.qrModalWaiting,
+          qrModalReceived: t.qrModalReceived,
+          qrModalClose: t.qrModalClose,
+          qrModalError: t.qrModalError,
+        }}
+      />
     </div>
   );
 }

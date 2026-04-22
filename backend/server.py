@@ -9499,6 +9499,125 @@ async def get_contract_guard_reviews(current_user: User = Depends(get_current_us
     return reviews
 
 
+# ================== Scan with phone (cross-device photo upload) ==================
+# Desktop user shows a QR code pointing to /m/scan/:token on their phone.
+# Phone user opens the URL (no auth — the token is the secret), uploads a photo,
+# backend stores it in scan_sessions. Desktop polls and retrieves the file.
+# Sessions expire after 10 minutes. Max 8 MB raw (fits in Mongo 16 MB doc
+# after base64 encoding ~11 MB).
+
+SCAN_SESSION_TTL_SECONDS = 600  # 10 min
+SCAN_MAX_BYTES = 8 * 1024 * 1024  # 8 MB raw
+
+
+def _public_app_url() -> str:
+    """Resolve the public-facing frontend URL used to build mobile scan links."""
+    url = os.environ.get("PUBLIC_APP_URL") or os.environ.get("REACT_APP_BACKEND_URL") or os.environ.get("APP_URL")
+    if not url:
+        return "https://archer.legal"
+    return url.rstrip("/")
+
+
+@api_router.post("/scan-sessions")
+async def create_scan_session(current_user: User = Depends(get_current_user)):
+    """Desktop creates a short-lived scan session and gets the mobile URL + token.
+    The frontend encodes the mobile URL into a QR code the user scans with their phone."""
+    token = f"sc_{uuid.uuid4().hex[:20]}"
+    now = datetime.now(timezone.utc)
+    expires = now + timedelta(seconds=SCAN_SESSION_TTL_SECONDS)
+    await db.scan_sessions.insert_one({
+        "token": token,
+        "user_id": current_user.user_id,
+        "status": "pending",
+        "file_b64": None,
+        "file_name": None,
+        "file_mime": None,
+        "uploaded_at": None,
+        "created_at": now.isoformat(),
+        "expires_at": expires.isoformat(),
+    })
+    mobile_url = f"{_public_app_url()}/m/scan/{token}"
+    return {"token": token, "mobile_url": mobile_url, "expires_at": expires.isoformat()}
+
+
+@api_router.get("/scan-sessions/{token}")
+async def get_scan_session(token: str, current_user: User = Depends(get_current_user)):
+    """Desktop polls this endpoint to check whether the phone has uploaded.
+    Only the session owner (desktop user) can read."""
+    session = await db.scan_sessions.find_one({"token": token, "user_id": current_user.user_id}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=404, detail="Scan session not found")
+    # Expiry check.
+    try:
+        exp = datetime.fromisoformat(session["expires_at"].replace("Z", "+00:00")) if session.get("expires_at") else None
+    except Exception:
+        exp = None
+    expired = exp is not None and datetime.now(timezone.utc) > exp
+    return {
+        "token": token,
+        "status": session.get("status", "pending"),
+        "expired": expired,
+        "file_b64": session.get("file_b64"),
+        "file_name": session.get("file_name"),
+        "file_mime": session.get("file_mime"),
+        "uploaded_at": session.get("uploaded_at"),
+    }
+
+
+@api_router.get("/scan-sessions/{token}/public-check")
+async def public_check_scan_session(token: str):
+    """Lightweight unauthenticated check: is this token still valid? Used by
+    the mobile landing page to show 'session expired' without exposing user data."""
+    session = await db.scan_sessions.find_one({"token": token}, {"_id": 0, "expires_at": 1, "status": 1})
+    if not session:
+        return {"valid": False, "reason": "not_found"}
+    try:
+        exp = datetime.fromisoformat(session["expires_at"].replace("Z", "+00:00")) if session.get("expires_at") else None
+    except Exception:
+        exp = None
+    expired = exp is not None and datetime.now(timezone.utc) > exp
+    if expired:
+        return {"valid": False, "reason": "expired"}
+    if session.get("status") == "uploaded":
+        return {"valid": False, "reason": "already_uploaded"}
+    return {"valid": True}
+
+
+@api_router.post("/scan-sessions/{token}/upload")
+async def upload_scan_session(token: str, file: UploadFile = File(...)):
+    """Mobile uploads a photo. No auth — the token IS the credential.
+    The uploaded file gets stored in the session doc as base64 so the
+    desktop poll picks it up."""
+    session = await db.scan_sessions.find_one({"token": token}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=404, detail="Scan session not found")
+    try:
+        exp = datetime.fromisoformat(session["expires_at"].replace("Z", "+00:00")) if session.get("expires_at") else None
+    except Exception:
+        exp = None
+    if exp is not None and datetime.now(timezone.utc) > exp:
+        raise HTTPException(status_code=410, detail="Scan session expired")
+    if session.get("status") == "uploaded":
+        raise HTTPException(status_code=409, detail="Scan session already used")
+
+    raw = await file.read()
+    if len(raw) > SCAN_MAX_BYTES:
+        raise HTTPException(status_code=413, detail=f"File too large (max {SCAN_MAX_BYTES // (1024 * 1024)} MB)")
+    b64 = base64.b64encode(raw).decode("ascii")
+
+    await db.scan_sessions.update_one(
+        {"token": token},
+        {"$set": {
+            "status": "uploaded",
+            "file_b64": b64,
+            "file_name": file.filename or "scan.jpg",
+            "file_mime": file.content_type or "image/jpeg",
+            "uploaded_at": datetime.now(timezone.utc).isoformat(),
+        }}
+    )
+    return {"ok": True}
+
+
 @api_router.get("/user/country-config")
 async def get_country_config(current_user: User = Depends(get_current_user)):
     """Get country-specific configuration for the current user"""

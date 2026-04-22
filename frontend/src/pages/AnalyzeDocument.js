@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { CASE_TYPE_FAMILIES } from '../constants/caseTypes';
+import QrScanModal from '../components/QrScanModal';
 import '../styles/analyze-document.css';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -837,6 +838,20 @@ export default function AnalyzeDocument() {
       {error && !Object.keys(fieldErrors).length && (
         <div className="field-error" style={{ marginTop: 12 }} data-testid="error">{error}</div>
       )}
+
+      <QrScanModal
+        open={qrModalOpen}
+        onClose={() => setQrModalOpen(false)}
+        onFileReceived={(f) => handleFileSelect(f)}
+        copy={{
+          qrModalTitle: t.qrModalTitle,
+          qrModalSub: t.qrModalSub,
+          qrModalWaiting: t.qrModalWaiting,
+          qrModalReceived: t.qrModalReceived,
+          qrModalClose: t.qrModalClose,
+          qrModalError: t.qrModalError,
+        }}
+      />
     </div>
   );
 }
