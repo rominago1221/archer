@@ -514,9 +514,27 @@ def load_jurisprudence(case_type: str, document_type: str) -> str:
     return ""
 
 
-async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4000, use_web_search: bool = False) -> dict:
-    """Direct Anthropic API — Opus 4.6 for analysis pipeline.
+async def call_claude(
+    system_prompt: str,
+    user_message: str,
+    max_tokens: int = 4000,
+    use_web_search: bool = False,
+    model: str = "claude-opus-4-7",
+    cached_user_prefix: Optional[str] = None,
+) -> dict:
+    """Direct Anthropic API — Opus 4.7 by default for deep reasoning passes.
+
     System prompt is cached (ephemeral) for cross-pass efficiency.
+
+    Optional parameters:
+      - `model`: override to use Sonnet 4.6 for cheap/fast calls (self-critique
+        critique, reformulations, classifications). Default stays Opus for all
+        passes that require heavy reasoning.
+      - `cached_user_prefix`: when provided, sent as a separate user content
+        block with its own `cache_control: ephemeral` — ideal for the shared
+        facts+analysis block that Pass 3/4A/4B/5/6 all consume. First call
+        pays full price; subsequent calls within 5 minutes cache-hit the
+        prefix. Can save ~5-10s per full analysis.
 
     Two-level retry:
       - OUTER loop (3 attempts): retries on JSON parse errors or API errors
@@ -524,6 +542,17 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4
     Returns {} on total failure instead of raising (pipeline continues with partial data).
     """
     current_max = max_tokens
+    # Build user content: if caller provided a cached_user_prefix, split the
+    # user message into two content blocks so the prefix can be cache-hit by
+    # sibling calls (Pass 3/4A/4B/5/6 all share the same facts+analysis).
+    def _build_user_content(msg: str) -> Any:
+        suffix = "\n\nRespond with valid JSON only. No markdown, no code blocks, just raw JSON."
+        if cached_user_prefix:
+            return [
+                {"type": "text", "text": cached_user_prefix, "cache_control": {"type": "ephemeral"}},
+                {"type": "text", "text": msg + suffix},
+            ]
+        return msg + suffix
 
     for attempt in range(3):  # Outer: JSON parse / API error retries
         try:
@@ -541,13 +570,13 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4
                             "content-type": "application/json",
                         },
                         json={
-                            "model": "claude-opus-4-7",
+                            "model": model,
                             "max_tokens": current_max,
                             "system": [
                                 {"type": "text", "text": system_prompt, "cache_control": {"type": "ephemeral"}},
                             ],
                             "messages": [
-                                {"role": "user", "content": user_message + "\n\nRespond with valid JSON only. No markdown, no code blocks, just raw JSON."},
+                                {"role": "user", "content": _build_user_content(user_message)},
                             ],
                         },
                     )
@@ -893,7 +922,9 @@ async def self_critique_pass(
     )
 
     try:
-        critique_result = await call_claude(critique_system, critique_user, max_tokens=2000)
+        # Audit fix: critique = "juger un JSON" est mécanique, Sonnet 4.6 suffit largement.
+        # Le rewrite plus bas reste sur Opus (par défaut) car il génère du contenu juridique.
+        critique_result = await call_claude(critique_system, critique_user, max_tokens=2000, model="claude-sonnet-4-6")
     except Exception as e:
         logger.error(f"self_critique_pass critique call failed for {pass_name}: {e}")
         return analysis_output
@@ -931,7 +962,9 @@ async def self_critique_pass(
             "Return the improved analysis JSON only. Same schema, no extra prose."
         )
         try:
-            rewritten = await call_claude(rewrite_system, rewrite_user, max_tokens=8000)
+            # Audit fix: rewrite = "appliquer des critiques au JSON" → Sonnet suffit.
+            # Gain ~5-8s quand rewrite declenche (~30-50% des analyses).
+            rewritten = await call_claude(rewrite_system, rewrite_user, max_tokens=6000, model="claude-sonnet-4-6")
             if isinstance(rewritten, dict) and rewritten:
                 # Basic schema sanity: rewrite must carry at least the same top-level keys.
                 missing = [k for k in analysis_output.keys() if k not in rewritten]
@@ -1249,7 +1282,7 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
             persona,
             PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2), jurisprudence_section=jurisprudence_text + realtime_law_context)
             + "\n\nIMPORTANT: Use the provided recent court decisions and jurisprudence to inform your analysis. Cite any relevant rulings in your findings.",
-            max_tokens=8000
+            max_tokens=6000  # audit: 8000 was excessive for structured JSON output, -3-5s
         )
 
         # PASS 2 self-critique — senior-attorney review, rewrite if severity > 5.
@@ -1486,7 +1519,7 @@ async def analyze_document_stream(
             call_claude(persona_with_lang, p2_prompt.format(
                 facts_json=json.dumps(facts, indent=2, ensure_ascii=False),
                 jurisprudence_section=jurisprudence_text
-            ), max_tokens=8000)
+            ), max_tokens=6000)  # audit: 8000 -> 6000, -3-5s
         )
         # No CourtListener for Belgian cases
         cl_opinions = []
@@ -1504,7 +1537,7 @@ async def analyze_document_stream(
                     facts_json=json.dumps(facts, indent=2),
                     jurisprudence_section=jurisprudence_text + realtime_law_context
                 ) + "\n\nIMPORTANT: Use the provided recent court decisions and jurisprudence to inform your analysis. Cite any relevant rulings in your findings.",
-                max_tokens=8000
+                max_tokens=6000  # audit: 8000 -> 6000, -3-5s
             )
         )
 
@@ -2454,7 +2487,7 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
 
         # PASS 2: Legal analysis
         logger.info("Belgian analysis: Passe 2 — Analyse juridique")
-        legal_analysis = await call_claude(persona_with_lang, BE_PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2, ensure_ascii=False), jurisprudence_section=jurisprudence_text), max_tokens=8000)
+        legal_analysis = await call_claude(persona_with_lang, BE_PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2, ensure_ascii=False), jurisprudence_section=jurisprudence_text), max_tokens=6000)  # audit: 8000 -> 6000
 
         # PASS 2 self-critique (BE).
         legal_analysis = await self_critique_pass(
@@ -3033,7 +3066,8 @@ def get_letter_tone_instruction(tone: str, language: str) -> str:
 
 
 async def generate_letter_with_claude(letter_data: dict, belgian: bool = False, language: str = "en", tone: str = "citizen") -> dict:
-    """Generate a response letter using Claude API"""
+    """Generate a response letter using Claude API (Opus 4.7, with prompt caching on the
+    static system prompt so repeated letter generations within 5 min reuse the cached block)."""
     try:
         system_prompt = BELGIAN_LETTER_SYSTEM if belgian else LETTER_SYSTEM_PROMPT
         system_prompt += get_language_instruction(language)
@@ -3044,12 +3078,15 @@ async def generate_letter_with_claude(letter_data: dict, belgian: bool = False, 
                 headers={
                     "Content-Type": "application/json",
                     "x-api-key": get_anthropic_key(),
-                    "anthropic-version": "2023-06-01"
+                    "anthropic-version": "2023-06-01",
+                    "anthropic-beta": "prompt-caching-2024-07-31",  # audit fix: letter gen manquait le cache
                 },
                 json={
                     "model": "claude-opus-4-7",
                     "max_tokens": 3000,
-                    "system": system_prompt,
+                    "system": [
+                        {"type": "text", "text": system_prompt, "cache_control": {"type": "ephemeral"}},
+                    ],
                     "messages": [{
                         "role": "user",
                         "content": f"Generate a professional response letter based on this case data. Return JSON only:\n\n{json.dumps(letter_data, indent=2)}"
@@ -3431,7 +3468,7 @@ async def _run_counter_strategy(original_strategy: dict, adversarial_attack: dic
             "Return the upgraded strategy JSON only. Same schema. No extra prose."
         )
 
-        rewritten = await call_claude(system, user_prompt, max_tokens=7000)
+        rewritten = await call_claude(system, user_prompt, max_tokens=5000)  # audit: 7000 -> 5000, -2s
         if not isinstance(rewritten, dict) or not rewritten:
             logger.warning("PASS6 counter-strategy: non-dict rewrite, keeping original")
             return original_strategy
@@ -6151,7 +6188,7 @@ async def predict_outcome(case_id: str, current_user: User = Depends(get_current
                     "anthropic-version": "2023-06-01"
                 },
                 json={
-                    "model": "claude-opus-4-7",
+                    "model": "claude-sonnet-4-6",  # audit: Opus 4.7 -> Sonnet 4.6 (projection outcome basée sur analyse déjà faite, Sonnet suffit)
                     "max_tokens": 2000,
                     "system": (BELGIAN_OUTCOME_SYSTEM if current_user.jurisdiction == "BE" else OUTCOME_SYSTEM_PROMPT) + get_language_instruction(getattr(current_user, 'language', 'en') or 'en'),
                     "messages": [{
@@ -8053,7 +8090,7 @@ Titre du dossier : {case_doc.get('title', '')}"""
                     "content-type": "application/json",
                 },
                 json={
-                    "model": "claude-opus-4-7",
+                    "model": "claude-sonnet-4-6",  # audit: Opus 4.7 -> Sonnet 4.6 (reformulation simple, Sonnet largement suffisant)
                     "max_tokens": 600,
                     "system": system,
                     "messages": [{"role": "user", "content": user_msg}],
