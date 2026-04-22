@@ -19,22 +19,36 @@ Collections:
 """
 from __future__ import annotations
 
+import asyncio
 import logging
+import os
+import random
 import re
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
+
+import stripe
+from fastapi import APIRouter, Depends, HTTPException
 
 from db import db
 from config.case_pricing import (
     get_case_price,
     risk_level_for_score,
 )
+from utils.attorney_auth import attorney_required
 
 logger = logging.getLogger(__name__)
 
+router = APIRouter()
+stripe.api_key = os.environ.get("STRIPE_API_KEY")
+
 # Listings auto-expire after this many hours if no attorney unlocks them.
 LISTING_TTL_HOURS = 72
+
+
+def _app_url() -> str:
+    return os.environ.get("APP_URL", "https://archer.legal").rstrip("/")
 
 
 # ────────────────────────────────────────────────────────────────────────
@@ -318,3 +332,293 @@ async def expire_old_listings() -> dict:
     except Exception as e:
         logger.error(f"marketplace: expire_old_listings failed — {e}")
         return {"expired_count": 0, "error": str(e)}
+
+
+# ════════════════════════════════════════════════════════════════════════
+# Endpoints — attorney-facing marketplace browse/buy
+# ════════════════════════════════════════════════════════════════════════
+
+def _sanitize_listing(listing: dict, viewer_attorney_id: str | None = None) -> dict:
+    """Strip internals before shipping a listing to the client. Adds a FOMO
+    `viewers_count` without exposing the raw viewer IDs."""
+    if not isinstance(listing, dict):
+        return {}
+    out = {k: v for k, v in listing.items() if k != "_id"}
+    viewers = out.pop("current_viewers", []) or []
+    # Add a small noise offset so 1 attorney doesn't see "0 confrères".
+    jitter = random.randint(1, 4)
+    out["viewers_count"] = len([v for v in viewers if v != viewer_attorney_id]) + jitter
+    # Hide the locked_by attorney_id from the response — only the viewer's own
+    # acquisition list needs to know it, and that lives in `/my-cases`.
+    if viewer_attorney_id and out.get("locked_by") and out["locked_by"] != viewer_attorney_id:
+        out["locked_by"] = "other"
+    return out
+
+
+@router.get("/attorney/marketplace")
+async def get_marketplace(
+    case_type: str | None = None,
+    current_attorney: dict = Depends(attorney_required),
+):
+    """List available cases for the logged-in attorney.
+    Filters: case_type (optional). Country is BE-only (freeze US)."""
+    query: dict[str, Any] = {"status": "available", "country": "BE"}
+    if case_type:
+        query["case_type"] = case_type.lower()
+
+    cursor = db.case_marketplace.find(query, {"_id": 0}).sort("created_at", -1).limit(80)
+    listings = await cursor.to_list(80)
+
+    # Track view (FOMO) — add attorney_id to current_viewers, bump view_count.
+    aid = current_attorney.get("id")
+    if listings and aid:
+        ids = [l["listing_id"] for l in listings]
+        try:
+            await db.case_marketplace.update_many(
+                {"listing_id": {"$in": ids}},
+                {
+                    "$addToSet": {"current_viewers": aid},
+                    "$inc": {"view_count": 1},
+                },
+            )
+        except Exception as e:
+            logger.debug(f"marketplace view tracking failed: {e}")
+
+    return [_sanitize_listing(l, aid) for l in listings]
+
+
+@router.get("/attorney/marketplace/stats")
+async def get_marketplace_stats(current_attorney: dict = Depends(attorney_required)):
+    """KPIs for the attorney desk hero: available count, acquired this
+    month, total financial stakes on their active cases."""
+    available = await db.case_marketplace.count_documents({
+        "status": "available", "country": "BE",
+    })
+    acquired_this_month = int(current_attorney.get("cases_acquired_this_month") or 0)
+
+    total_stakes = 0
+    acquired_ids = current_attorney.get("acquired_cases") or []
+    if acquired_ids:
+        pipeline = [
+            {"$match": {
+                "case_id": {"$in": acquired_ids},
+                "status": {"$nin": ["resolved", "closed", "archived"]},
+            }},
+            {"$group": {"_id": None, "total": {"$sum": "$financial_exposure"}}},
+        ]
+        try:
+            agg = await db.cases.aggregate(pipeline).to_list(1)
+            if agg:
+                val = agg[0].get("total") or 0
+                total_stakes = int(val) if isinstance(val, (int, float)) else 0
+        except Exception as e:
+            logger.debug(f"marketplace stats aggregate failed: {e}")
+
+    return {
+        "available": available,
+        "acquired_this_month": acquired_this_month,
+        "total_stakes": total_stakes,
+    }
+
+
+@router.get("/attorney/marketplace/my-cases")
+async def get_my_acquired_cases(current_attorney: dict = Depends(attorney_required)):
+    """Cases the attorney has already unlocked. Returns the FULL case docs
+    (attorneys who paid get full client PII + documents)."""
+    acquired_ids = current_attorney.get("acquired_cases") or []
+    if not acquired_ids:
+        return []
+    cursor = db.cases.find({"case_id": {"$in": acquired_ids}}, {"_id": 0}).sort("acquired_at", -1).limit(100)
+    cases = await cursor.to_list(100)
+    return cases
+
+
+@router.get("/attorney/marketplace/{listing_id}")
+async def get_marketplace_listing(
+    listing_id: str,
+    current_attorney: dict = Depends(attorney_required),
+):
+    """Single-listing fetch. If the listing is `locked` AND the current
+    attorney is the one who locked it, we DO return full case data. Otherwise
+    we return the anonymized listing only (409 when locked by someone else)."""
+    listing = await db.case_marketplace.find_one({"listing_id": listing_id}, {"_id": 0})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+
+    aid = current_attorney.get("id")
+    if listing.get("status") == "locked" and listing.get("locked_by") == aid:
+        full_case = await db.cases.find_one({"case_id": listing["case_id"]}, {"_id": 0})
+        return {
+            "listing": _sanitize_listing(listing, aid),
+            "case": full_case,
+            "access": "full",
+        }
+    if listing.get("status") != "available":
+        return {
+            "listing": _sanitize_listing(listing, aid),
+            "access": "locked_by_other" if listing.get("status") == "locked" else listing.get("status"),
+        }
+    return {
+        "listing": _sanitize_listing(listing, aid),
+        "access": "preview",
+    }
+
+
+@router.post("/attorney/marketplace/{listing_id}/checkout")
+async def create_marketplace_checkout(
+    listing_id: str,
+    current_attorney: dict = Depends(attorney_required),
+):
+    """Create a Stripe Checkout session to unlock the listing. The session's
+    metadata is the source of truth — the webhook (`checkout.session.completed`)
+    atomically flips status→locked and refunds losers on race."""
+    listing = await db.case_marketplace.find_one({"listing_id": listing_id}, {"_id": 0})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    if listing.get("status") != "available":
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "error": "case_taken",
+                "message": "Ce dossier a deja ete acquis par un confrere.",
+            },
+        )
+
+    if not stripe.api_key:
+        raise HTTPException(status_code=500, detail="Stripe not configured")
+
+    attorney_email = current_attorney.get("email") or ""
+    price_cents = int(listing.get("price_cents") or 0)
+    if price_cents <= 0:
+        raise HTTPException(status_code=500, detail="Invalid listing price")
+
+    def _create():
+        return stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            customer_email=attorney_email or None,
+            line_items=[{
+                "price_data": {
+                    "currency": "eur",
+                    "product_data": {
+                        "name": f"Dossier Archer — {listing.get('case_type_label', 'Dossier')}",
+                        "description": (listing.get("title") or "Dossier qualifie")[:300],
+                    },
+                    "unit_amount": price_cents,
+                },
+                "quantity": 1,
+            }],
+            mode="payment",
+            success_url=f"{_app_url()}/attorneys/desk?payment=success&listing={listing_id}",
+            cancel_url=f"{_app_url()}/attorneys/desk?payment=cancelled",
+            metadata={
+                "type": "marketplace_unlock",
+                "listing_id": listing_id,
+                "case_id": str(listing["case_id"]),
+                "attorney_id": current_attorney.get("id") or "",
+            },
+            payment_intent_data={
+                "metadata": {
+                    "type": "marketplace_unlock",
+                    "listing_id": listing_id,
+                    "case_id": str(listing["case_id"]),
+                    "attorney_id": current_attorney.get("id") or "",
+                },
+            },
+        )
+
+    try:
+        session = await asyncio.to_thread(_create)
+    except Exception as e:
+        logger.exception("marketplace checkout failed")
+        raise HTTPException(status_code=502, detail=f"Stripe error: {e}")
+
+    return {
+        "checkout_url": session.url,
+        "session_id": session.id,
+        "amount_cents": price_cents,
+        "currency": "eur",
+    }
+
+
+# ════════════════════════════════════════════════════════════════════════
+# Stripe webhook handler — called from stripe_webhooks.py dispatcher
+# ════════════════════════════════════════════════════════════════════════
+
+async def handle_marketplace_checkout_session(session: Any) -> None:
+    """Runs on `checkout.session.completed` when metadata.type == "marketplace_unlock".
+
+    Atomicity: we use `update_one({status:"available"}, {status:"locked"})`
+    as the only gate. `modified_count == 0` means another attorney won the
+    race → refund this payment automatically.
+    """
+    def _get(obj, key, default=None):
+        if isinstance(obj, dict):
+            return obj.get(key, default)
+        return getattr(obj, key, default)
+
+    metadata = _get(session, "metadata") or {}
+    if _get(metadata, "type") != "marketplace_unlock":
+        return
+    listing_id = _get(metadata, "listing_id")
+    case_id = _get(metadata, "case_id")
+    attorney_id = _get(metadata, "attorney_id")
+    payment_intent_id = _get(session, "payment_intent")
+    amount_total = int(_get(session, "amount_total") or 0)
+
+    if not (listing_id and case_id and attorney_id):
+        logger.warning("marketplace webhook: missing metadata fields")
+        return
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    # 1. Atomic lock — only succeeds if status is still "available".
+    result = await db.case_marketplace.update_one(
+        {"listing_id": listing_id, "status": "available"},
+        {"$set": {
+            "status": "locked",
+            "locked_by": attorney_id,
+            "locked_at": now_iso,
+            "stripe_payment_id": payment_intent_id,
+        }},
+    )
+
+    if getattr(result, "modified_count", 0) == 0:
+        # Someone else locked it first — auto-refund the loser.
+        logger.warning(
+            f"marketplace: race loser on listing {listing_id}, attorney {attorney_id} "
+            f"— refunding {payment_intent_id}"
+        )
+        if payment_intent_id:
+            try:
+                await asyncio.to_thread(stripe.Refund.create, payment_intent=payment_intent_id)
+            except Exception as e:
+                logger.error(f"marketplace: refund failed for {payment_intent_id}: {e}")
+        return
+
+    # 2. Reflect ownership on the case document.
+    await db.cases.update_one(
+        {"case_id": case_id},
+        {"$set": {
+            "marketplace_status": "acquired",
+            "acquired_by_attorney_id": attorney_id,
+            "acquired_at": now_iso,
+            "attorney_payment_id": payment_intent_id,
+        }},
+    )
+
+    # 3. Update attorney profile (push to acquired list + spend tracking).
+    await db.attorneys.update_one(
+        {"id": attorney_id},
+        {
+            "$addToSet": {"acquired_cases": case_id},
+            "$inc": {
+                "total_spent_cents": amount_total,
+                "cases_acquired_this_month": 1,
+            },
+        },
+    )
+
+    logger.info(
+        f"marketplace: listing {listing_id} → attorney {attorney_id} "
+        f"(case {case_id}, €{amount_total // 100})"
+    )

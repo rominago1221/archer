@@ -146,12 +146,26 @@ async def handle_transfer_failed(transfer):
     logger.error(f"transfer.failed {tid}: {failure}")
 
 
+async def handle_checkout_session_completed(session):
+    """Routes checkout.session.completed events by metadata.type.
+    Currently handles `marketplace_unlock`; falls through silently otherwise
+    (other checkout sessions are tracked via payment_intent.succeeded)."""
+    metadata = session.get("metadata") if isinstance(session, dict) else (session.metadata or {})
+    session_type = metadata.get("type") if metadata else None
+    if session_type == "marketplace_unlock":
+        from routes.marketplace_routes import handle_marketplace_checkout_session
+        await handle_marketplace_checkout_session(session)
+        return
+    logger.info(f"checkout.session.completed: no routing for type={session_type}")
+
+
 EVENT_HANDLERS = {
     "account.updated": handle_account_updated,
     "payment_intent.succeeded": handle_payment_intent_succeeded,
     "payout.paid": handle_payout_paid,
     "payout.failed": handle_payout_failed,
     "transfer.failed": handle_transfer_failed,
+    "checkout.session.completed": handle_checkout_session_completed,
 }
 
 

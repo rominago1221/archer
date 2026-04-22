@@ -9732,10 +9732,12 @@ from routes.credits_routes import router as credits_router
 from routes.stripe_subscriptions_webhook import router as stripe_subs_webhook_router
 from routes.lawyer_subscription_routes import router as lawyer_subscription_router
 from routes.admin_migrations_routes import router as admin_migrations_router
+from routes.marketplace_routes import router as marketplace_router
 api_router.include_router(credits_router)
 api_router.include_router(stripe_subs_webhook_router)
 api_router.include_router(lawyer_subscription_router)
 api_router.include_router(admin_migrations_router)
+api_router.include_router(marketplace_router)
 
 from utils.attorney_auth import (
     migrate_sprint_c_fields, migrate_sprint_d_fields,
