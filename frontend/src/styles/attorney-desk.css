@@ -1,0 +1,433 @@
+/* =========================================================================
+ * Attorney Desk (marketplace) — scoped under .attorney-desk
+ * Mirrors frontend/src/reference/attorney-desk-reference.html
+ * Sidebar styling NOT copied — the app uses the existing AttorneySidebar.
+ * ========================================================================= */
+
+.attorney-desk {
+  --ad-dark: #2a3345;
+  --ad-dark-2: #334052;
+  --ad-dark-3: #435060;
+  --ad-dark-4: #576878;
+  --ad-dark-5: #728494;
+  --ad-slate: #8b93a5;
+  --ad-slate-light: #b0b8c9;
+  --ad-bg: #f5f6f8;
+  --ad-bg-card: #ffffff;
+  --ad-line: #e4e6eb;
+  --ad-line-soft: #eef0f3;
+  --ad-gold: #9a7b4f;
+  --ad-gold-light: #c4a46e;
+  --ad-gold-50: #faf6ef;
+  --ad-gold-100: #f0e8d5;
+  --ad-gold-border: #dfd1b5;
+  --ad-green: #1a7a3e;
+  --ad-green-bright: #22c55e;
+  --ad-green-50: #eef8f1;
+  --ad-green-100: #d4edda;
+  --ad-red: #a82828;
+  --ad-red-50: #fdf0f0;
+  --ad-amber: #8b6914;
+  --ad-amber-50: #fdf8ed;
+
+  font-family: 'Inter Tight', -apple-system, sans-serif;
+  color: var(--ad-dark);
+  padding: 32px 48px 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Top bar */
+.attorney-desk .ad-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+.attorney-desk .ad-top-date {
+  font-size: 13px;
+  color: var(--ad-slate);
+  font-weight: 500;
+}
+
+/* Hero */
+.attorney-desk .ad-hero {
+  padding: 36px 40px;
+  background: var(--ad-dark);
+  border-radius: 16px;
+  margin-bottom: 32px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 40px;
+  align-items: center;
+}
+@media (max-width: 860px) {
+  .attorney-desk .ad-hero { grid-template-columns: 1fr; }
+  .attorney-desk { padding: 24px 20px 48px; }
+}
+.attorney-desk .ad-hero-greeting {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 32px;
+  color: white;
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+.attorney-desk .ad-hero-greeting .hl { color: var(--ad-gold-light); }
+.attorney-desk .ad-hero-sub {
+  font-size: 14.5px;
+  color: var(--ad-slate-light);
+  line-height: 1.55;
+  max-width: 500px;
+}
+.attorney-desk .ad-hero-sub strong { color: white; font-weight: 600; }
+
+.attorney-desk .ad-hero-kpis {
+  display: flex;
+  gap: 12px;
+}
+.attorney-desk .ad-hero-kpi {
+  padding: 16px 22px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  text-align: center;
+  min-width: 110px;
+}
+.attorney-desk .ad-hero-kpi-num {
+  font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+  letter-spacing: -0.5px;
+}
+.attorney-desk .ad-hero-kpi-num.gold { color: var(--ad-gold-light); }
+.attorney-desk .ad-hero-kpi-num.white { color: white; }
+.attorney-desk .ad-hero-kpi-num.green { color: var(--ad-green-bright); }
+.attorney-desk .ad-hero-kpi-label { font-size: 11px; color: var(--ad-slate); }
+
+/* Section header */
+.attorney-desk .ad-sec {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.attorney-desk .ad-sec-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ad-dark);
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+.attorney-desk .ad-sec-line { flex: 1; height: 1px; background: var(--ad-line); }
+.attorney-desk .ad-sec-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ad-slate);
+  padding: 3px 10px;
+  background: var(--ad-line-soft);
+  border-radius: 100px;
+}
+
+/* Filters */
+.attorney-desk .ad-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.attorney-desk .ad-fchip {
+  padding: 7px 14px;
+  background: var(--ad-bg-card);
+  border: 1px solid var(--ad-line);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ad-dark-4);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.attorney-desk .ad-fchip:hover { border-color: var(--ad-dark-4); }
+.attorney-desk .ad-fchip.active {
+  background: var(--ad-dark);
+  color: white;
+  border-color: var(--ad-dark);
+}
+
+/* Lead cards */
+.attorney-desk .ad-leads {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+.attorney-desk .ad-lead {
+  background: var(--ad-bg-card);
+  border: 1px solid var(--ad-line);
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: 1fr 190px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+@media (max-width: 720px) {
+  .attorney-desk .ad-lead { grid-template-columns: 1fr; }
+}
+.attorney-desk .ad-lead:hover {
+  border-color: var(--ad-gold-border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+.attorney-desk .ad-lead.fresh { border-left: 3px solid var(--ad-gold); }
+.attorney-desk .ad-lead.taken { opacity: 0.45; pointer-events: none; }
+
+.attorney-desk .ad-lead-body { padding: 20px 24px; }
+.attorney-desk .ad-lead-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.attorney-desk .ad-lead-cat {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--ad-dark-4);
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: var(--ad-line-soft);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.attorney-desk .ad-lead-where {
+  font-size: 11px;
+  color: var(--ad-slate);
+  padding: 2px 8px;
+  background: var(--ad-line-soft);
+  border-radius: 4px;
+}
+.attorney-desk .ad-lead-when {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ad-slate);
+}
+.attorney-desk .ad-lead-when.urgent { color: var(--ad-red); font-weight: 600; }
+
+.attorney-desk .ad-lead-title {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 19px;
+  color: var(--ad-dark);
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+.attorney-desk .ad-lead-desc {
+  font-size: 13px;
+  color: var(--ad-dark-5);
+  line-height: 1.55;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.attorney-desk .ad-lead-facts {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.attorney-desk .ad-lead-fact {
+  font-size: 12.5px;
+  color: var(--ad-slate);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.attorney-desk .ad-lead-fact strong { color: var(--ad-dark-3); font-weight: 700; }
+.attorney-desk .ad-lead-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.attorney-desk .ad-lead-dot.low { background: var(--ad-green); }
+.attorney-desk .ad-lead-dot.mid { background: var(--ad-gold); }
+.attorney-desk .ad-lead-dot.high { background: var(--ad-red); }
+
+/* Price panel */
+.attorney-desk .ad-lead-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+  gap: 10px;
+  background: var(--ad-gold-50);
+  border-left: 1px solid var(--ad-gold-100);
+}
+@media (max-width: 720px) {
+  .attorney-desk .ad-lead-panel {
+    border-left: 0;
+    border-top: 1px solid var(--ad-gold-100);
+  }
+}
+.attorney-desk .ad-lead-panel-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ad-gold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.attorney-desk .ad-lead-panel-price {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ad-dark);
+  letter-spacing: -1px;
+}
+.attorney-desk .ad-lead-panel-cta {
+  width: 100%;
+  padding: 10px 16px;
+  background: var(--ad-dark);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: all 0.15s;
+}
+.attorney-desk .ad-lead-panel-cta:hover:not(:disabled) { background: var(--ad-dark-2); }
+.attorney-desk .ad-lead-panel-cta:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.attorney-desk .ad-lead-panel-watchers {
+  font-size: 12px;
+  color: var(--ad-slate);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.attorney-desk .ad-lead-panel-watchers-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--ad-red);
+  border-radius: 50%;
+  animation: ad-pulse 1.2s ease-in-out infinite;
+}
+@keyframes ad-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.attorney-desk .ad-lead.taken .ad-lead-panel {
+  background: var(--ad-line-soft);
+  border-left-color: var(--ad-line);
+}
+.attorney-desk .ad-lead.taken .ad-lead-panel-cta { background: var(--ad-slate); }
+
+/* My cases */
+.attorney-desk .ad-mycases {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.attorney-desk .ad-mycase {
+  background: var(--ad-bg-card);
+  border: 1px solid var(--ad-line);
+  border-radius: 10px;
+  padding: 14px 20px;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 14px;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.attorney-desk .ad-mycase:hover { border-color: var(--ad-gold-border); }
+.attorney-desk .ad-mycase-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--ad-line-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+.attorney-desk .ad-mycase-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ad-dark);
+  margin-bottom: 1px;
+}
+.attorney-desk .ad-mycase-meta {
+  font-size: 11.5px;
+  color: var(--ad-slate);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.attorney-desk .ad-mycase-amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ad-dark);
+}
+.attorney-desk .ad-mycase-status {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.2px;
+}
+.attorney-desk .ad-mycase-status.active { background: var(--ad-green-50); color: var(--ad-green); }
+.attorney-desk .ad-mycase-status.pending { background: var(--ad-amber-50); color: var(--ad-amber); }
+.attorney-desk .ad-mycase-status.done { background: var(--ad-line-soft); color: var(--ad-slate); }
+
+/* Empty / loading states */
+.attorney-desk .ad-empty {
+  padding: 48px 24px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--ad-slate);
+  background: var(--ad-bg-card);
+  border: 1px dashed var(--ad-line);
+  border-radius: 12px;
+}
+.attorney-desk .ad-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 1000;
+  padding: 14px 20px;
+  border-radius: 10px;
+  background: var(--ad-dark);
+  color: white;
+  font-size: 13.5px;
+  font-weight: 500;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  max-width: 360px;
+}
+.attorney-desk .ad-toast.warning { background: var(--ad-amber); }
+.attorney-desk .ad-toast.error { background: var(--ad-red); }
+
+/* Loading skeleton */
+.attorney-desk .ad-skeleton {
+  height: 110px;
+  background: var(--ad-bg-card);
+  border: 1px solid var(--ad-line);
+  border-radius: 12px;
+  animation: ad-shimmer 2s ease-in-out infinite;
+}
+@keyframes ad-shimmer { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }

@@ -63,6 +63,7 @@ export default function AttorneySidebar({ attorney, onLogout }) {
 
       <nav className="flex-1 px-2 py-4 overflow-y-auto">
         <Group label={t.sidebar.cases}>
+          <Item to="/attorneys/desk">{t.sidebar.desk || 'Desk'}</Item>
           <Item to="/attorneys/inbox">{t.sidebar.inbox}</Item>
           <Item to="/attorneys/my-cases">{t.sidebar.myCases}</Item>
           <Item to="/attorneys/completed">{t.sidebar.completed}</Item>

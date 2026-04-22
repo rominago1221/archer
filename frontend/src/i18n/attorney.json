@@ -62,6 +62,7 @@
     },
     "sidebar": {
       "cases": "CASES",
+      "desk": "Desk",
       "inbox": "Inbox",
       "myCases": "My Cases",
       "completed": "Completed",
@@ -350,6 +351,7 @@
     },
     "sidebar": {
       "cases": "CASES",
+      "desk": "Desk",
       "inbox": "Inbox",
       "myCases": "My Cases",
       "completed": "Completed",

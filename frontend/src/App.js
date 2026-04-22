@@ -51,6 +51,7 @@ import AttorneyPortalLogin from './pages/Attorneys/AttorneyLogin';
 import AttorneyPortalMagicVerify from './pages/Attorneys/AttorneyMagicVerify';
 import AttorneyPortalDashboard from './pages/Attorneys/AttorneyDashboard';
 import AttorneyPortalInbox from './pages/Attorneys/Inbox';
+import AttorneyPortalDesk from './pages/Attorneys/AttorneyDesk';
 import AttorneyPortalMyCases from './pages/Attorneys/MyCases';
 import AttorneyPortalCompleted from './pages/Attorneys/Completed';
 import AttorneyPortalCaseDetail from './pages/Attorneys/CaseDetail';
@@ -142,6 +143,7 @@ const AppRouter = () => {
       <Route path="/attorneys/login" element={<AttorneyPortalLogin />} />
       <Route path="/attorneys/login/verify" element={<AttorneyPortalMagicVerify />} />
       <Route path="/attorneys/dashboard" element={<RequireAttorneyAuth><AttorneyPortalDashboard /></RequireAttorneyAuth>} />
+      <Route path="/attorneys/desk" element={<RequireAttorneyAuth><AttorneyPortalDesk /></RequireAttorneyAuth>} />
       <Route path="/attorneys/inbox" element={<RequireAttorneyAuth><AttorneyPortalInbox /></RequireAttorneyAuth>} />
       <Route path="/attorneys/my-cases" element={<RequireAttorneyAuth><AttorneyPortalMyCases /></RequireAttorneyAuth>} />
       <Route path="/attorneys/completed" element={<RequireAttorneyAuth><AttorneyPortalCompleted /></RequireAttorneyAuth>} />
