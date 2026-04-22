@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archer — Header with Language + Jurisdiction</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --archer-blue: #1a56db; --archer-blue-dark: #1e40af;
+  --archer-blue-50: #eff6ff; --archer-blue-100: #dbeafe;
+  --ink: #0a0a0f; --ink-2: #2a2a35; --ink-3: #5a5a65; --ink-4: #8a8a95;
+  --line: #ececea; --bg-soft: #f8f8f5;
+  --green: #16a34a; --green-50: #f0fdf4; --green-bright: #22c55e;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter Tight', -apple-system, sans-serif; background: var(--bg-soft); color: var(--ink); -webkit-font-smoothing: antialiased; }
+
+.page { max-width: 1100px; margin: 40px auto; padding: 0 24px; }
+.label { font-size: 11px; font-weight: 700; color: var(--ink-4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px; }
+.spacer { height: 56px; }
+
+/* ═══════════ HEADER ═══════════ */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.header-left { display: flex; align-items: center; gap: 32px; }
+.header-logo { font-size: 22px; font-weight: 800; color: var(--archer-blue); letter-spacing: -1px; }
+.header-nav { display: flex; align-items: center; gap: 22px; }
+.header-nav a { font-size: 15px; font-weight: 500; color: var(--ink-3); text-decoration: none; transition: color 0.15s; }
+.header-nav a:hover { color: var(--ink); }
+
+.header-right { display: flex; align-items: center; gap: 10px; }
+
+/* ═══ LANGUE (simple, discret) ═══ */
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.lang-opt {
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-4);
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+}
+.lang-opt:hover { color: var(--ink-2); }
+.lang-opt.active {
+  background: white;
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* ═══ SÉPARATEUR ═══ */
+.header-sep {
+  width: 1px;
+  height: 28px;
+  background: var(--line);
+  margin: 0 4px;
+}
+
+/* ═══ JURIDICTION (visible, avec balance) ═══ */
+.jurisdiction-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+.jurisdiction-pill:hover { border-color: var(--archer-blue-100); background: var(--archer-blue-50); }
+
+.jurisdiction-icon {
+  width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.jurisdiction-icon svg { width: 18px; height: 18px; color: var(--archer-blue); stroke-width: 1.8; }
+
+.jurisdiction-flag { font-size: 15px; }
+.jurisdiction-name { font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.jurisdiction-live {
+  width: 6px; height: 6px;
+  background: var(--green-bright);
+  border-radius: 50%;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.jurisdiction-arrow { width: 10px; height: 10px; color: var(--ink-4); }
+
+/* ═══ DROPDOWN JURIDICTION ═══ */
+.jurisdiction-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 320px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.04);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.jd-header {
+  padding: 16px 20px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.jd-header-icon {
+  width: 32px; height: 32px;
+  background: var(--archer-blue-50);
+  border: 1px solid var(--archer-blue-100);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.jd-header-icon svg { width: 16px; height: 16px; color: var(--archer-blue); }
+.jd-header-body {}
+.jd-header-title { font-size: 14px; font-weight: 700; color: var(--ink); letter-spacing: -0.2px; }
+.jd-header-sub { font-size: 11px; color: var(--ink-4); }
+
+.jd-section {
+  padding: 10px 20px 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--ink-4);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.jd-option {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.jd-option:hover { background: var(--bg-soft); }
+.jd-option.active { background: var(--archer-blue-50); }
+.jd-option.disabled { opacity: 0.65; cursor: default; }
+.jd-option.disabled:hover { background: transparent; }
+
+.jd-option-flag { font-size: 24px; flex-shrink: 0; }
+.jd-option-body { flex: 1; min-width: 0; }
+.jd-option-name { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: -0.1px; }
+.jd-option.active .jd-option-name { color: var(--archer-blue); }
+.jd-option-sub { font-size: 11.5px; color: var(--ink-4); margin-top: 1px; }
+
+.jd-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 100px;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.jd-badge.live {
+  background: var(--green-50);
+  color: var(--green);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.jd-badge.live::before {
+  content: '';
+  width: 5px; height: 5px;
+  background: var(--green-bright);
+  border-radius: 50%;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+.jd-badge.soon {
+  background: #faf5ff;
+  color: #7c3aed;
+  border: 1px solid #ddd6fe;
+  font-weight: 800;
+}
+
+.jd-coming-banner {
+  margin: 4px 12px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #faf5ff 0%, #ede9fe 100%);
+  border: 1px solid #ddd6fe;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #7c3aed;
+  letter-spacing: 0.3px;
+}
+.jd-coming-banner-icon {
+  font-size: 14px;
+}
+.jd-coming-banner-text {
+  flex: 1;
+}
+.jd-coming-banner-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 800;
+  color: white;
+  background: #7c3aed;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.8px;
+}
+
+.jd-sep { height: 1px; background: var(--line); margin: 4px 0; }
+
+.jd-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--ink-4);
+}
+.jd-footer svg { width: 12px; height: 12px; color: var(--ink-4); flex-shrink: 0; }
+
+/* CTA */
+.header-cta {
+  padding: 9px 20px;
+  background: var(--archer-blue);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(26,86,219,0.2);
+  transition: all 0.15s;
+}
+.header-cta:hover { background: var(--archer-blue-dark); transform: translateY(-1px); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="label">Header — Langue (FR/NL/EN) + Juridiction (⚖️ balance) bien séparés</div>
+
+  <div class="header">
+    <div class="header-left">
+      <div class="header-logo">Archer</div>
+      <div class="header-nav">
+        <a href="#">Comment ça marche</a>
+        <a href="#">Tarifs</a>
+        <a href="#">Notre IA</a>
+        <a href="#">Blog</a>
+      </div>
+    </div>
+
+    <div class="header-right">
+
+      <!-- LANGUE — petit toggle discret -->
+      <div class="lang-switch">
+        <button class="lang-opt active">FR</button>
+        <button class="lang-opt">NL</button>
+        <button class="lang-opt">EN</button>
+      </div>
+
+      <div class="header-sep"></div>
+
+      <!-- JURIDICTION — pill avec balance de justice -->
+      <div class="jurisdiction-pill">
+        <div class="jurisdiction-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v18"/><path d="M4 7h16"/><path d="M2 13h4"/><path d="M18 13h4"/><path d="M4 7L2 13"/><path d="M4 7l2 6"/><path d="M20 7l-2 6"/><path d="M20 7l2 6"/><path d="M9 21h6"/>
+          </svg>
+        </div>
+        <span class="jurisdiction-flag">🇧🇪</span>
+        <span class="jurisdiction-name">Droit belge</span>
+        <span class="jurisdiction-live"></span>
+        <svg class="jurisdiction-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+
+        <!-- Dropdown -->
+        <div class="jurisdiction-dropdown">
+          <div class="jd-header">
+            <div class="jd-header-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v18"/><path d="M4 7h16"/><path d="M2 13h4"/><path d="M18 13h4"/><path d="M4 7L2 13"/><path d="M4 7l2 6"/><path d="M20 7l-2 6"/><path d="M20 7l2 6"/><path d="M9 21h6"/>
+              </svg>
+            </div>
+            <div class="jd-header-body">
+              <div class="jd-header-title">Législation applicable</div>
+              <div class="jd-header-sub">Choisissez votre juridiction</div>
+            </div>
+          </div>
+
+          <div class="jd-section">Disponible</div>
+          <div class="jd-option active">
+            <span class="jd-option-flag">🇧🇪</span>
+            <div class="jd-option-body">
+              <div class="jd-option-name">Belgique</div>
+              <div class="jd-option-sub">Droit belge · Code civil · Code judiciaire</div>
+            </div>
+            <span class="jd-badge live">LIVE</span>
+          </div>
+
+          <div class="jd-sep"></div>
+
+          <div class="jd-coming-banner">
+            <span class="jd-coming-banner-icon">🚀</span>
+            <span class="jd-coming-banner-text">Prochaines juridictions</span>
+            <span class="jd-coming-banner-tag">COMING SOON</span>
+          </div>
+
+          <div class="jd-option disabled">
+            <span class="jd-option-flag">🇫🇷</span>
+            <div class="jd-option-body">
+              <div class="jd-option-name">France</div>
+              <div class="jd-option-sub">Code civil · Code du travail</div>
+            </div>
+            <span class="jd-badge soon">2027</span>
+          </div>
+          <div class="jd-option disabled">
+            <span class="jd-option-flag">🇺🇸</span>
+            <div class="jd-option-body">
+              <div class="jd-option-name">États-Unis</div>
+              <div class="jd-option-sub">Federal Law · 50 State Laws</div>
+            </div>
+            <span class="jd-badge soon">2027</span>
+          </div>
+          <div class="jd-option disabled">
+            <span class="jd-option-flag">🇦🇪</span>
+            <div class="jd-option-body">
+              <div class="jd-option-name">Émirats Arabes Unis</div>
+              <div class="jd-option-sub">UAE Federal Law · DIFC · ADGM</div>
+            </div>
+            <span class="jd-badge soon">2027</span>
+          </div>
+
+          <div class="jd-footer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            Chaque juridiction utilise son propre corpus légal vérifié
+          </div>
+        </div>
+      </div>
+
+      <button class="header-cta">Commencer gratuitement</button>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
