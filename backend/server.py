@@ -9793,6 +9793,12 @@ async def startup_event():
     except Exception as e:
         logger.error(f"client_notifications index init failed: {e}")
 
+    try:
+        from routes.marketplace_routes import ensure_marketplace_indexes
+        await ensure_marketplace_indexes()
+    except Exception as e:
+        logger.error(f"marketplace index init failed: {e}")
+
     # RAG health check: loud failure if VOYAGE_API_KEY missing or corpus empty.
     # Pre-freeze behaviour silently degraded Belgian analysis; now we log at
     # ERROR level on boot so misconfiguration is obvious.

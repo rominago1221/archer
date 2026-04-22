@@ -7,6 +7,7 @@ from jobs.portal_maintenance import run_tick
 from jobs.weekly_payouts import process_weekly_payouts
 from jobs.credit_reset import reset_monthly_credits
 from jobs.lawyer_routing_status import update_lawyer_routing_status
+from jobs.marketplace_maintenance import run_marketplace_tick
 
 logger = logging.getLogger(__name__)
 
@@ -55,12 +56,21 @@ def start_scheduler() -> None:
             minute=0,  # every hour at :00
             id="lawyer_routing_status", coalesce=True, max_instances=1,
         )
+    # Marketplace expiration — every hour at :15 (staggered from other hourly jobs).
+    marketplace_enabled = os.environ.get("MARKETPLACE_EXPIRE_ENABLED", "true").lower() != "false"
+    if marketplace_enabled:
+        _scheduler.add_job(
+            run_marketplace_tick, "cron",
+            minute=15,
+            id="marketplace_expire", coalesce=True, max_instances=1,
+        )
     _scheduler.start()
     logger.info(
         f"Scheduler started (portal_maintenance every {interval}min, "
         f"weekly_payouts={'on' if payouts_enabled else 'off'}, "
         f"credit_reset={'on' if credits_enabled else 'off'}, "
-        f"lawyer_status={'on' if lawyer_status_enabled else 'off'})"
+        f"lawyer_status={'on' if lawyer_status_enabled else 'off'}, "
+        f"marketplace_expire={'on' if marketplace_enabled else 'off'})"
     )
 
 
