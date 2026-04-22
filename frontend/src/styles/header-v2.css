@@ -70,7 +70,14 @@
 .public-header-v2 .header-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+}
+/* Height harmony — all three zones (lang / pill / cta) normalize to 36px */
+.public-header-v2 .lang-switch,
+.public-header-v2 .jurisdiction-pill,
+.public-header-v2 .header-cta,
+.public-header-v2 .header-signin {
+  height: 36px;
 }
 
 /* Language toggle */
@@ -81,12 +88,14 @@
   padding: 3px;
   background: var(--bg-soft);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
+  box-sizing: border-box;
 }
 .public-header-v2 .lang-opt {
-  padding: 5px 10px;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 0 10px;
+  height: 28px;
+  border-radius: 7px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--ink-4);
   cursor: pointer;
@@ -94,6 +103,8 @@
   border: none;
   background: transparent;
   font-family: inherit;
+  display: inline-flex;
+  align-items: center;
 }
 .public-header-v2 .lang-opt:hover { color: var(--ink-2); }
 .public-header-v2 .lang-opt.active {
@@ -102,12 +113,12 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
-/* Separator */
+/* Separator — softened, centered vertically with the 36px zones */
 .public-header-v2 .header-sep {
   width: 1px;
-  height: 28px;
+  height: 22px;
   background: var(--line);
-  margin: 0 4px;
+  margin: 0 2px;
 }
 
 /* Jurisdiction pill */
@@ -115,7 +126,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 14px;
+  padding: 0 14px;
   background: white;
   border: 1px solid var(--line);
   border-radius: 100px;
@@ -124,6 +135,7 @@
   position: relative;
   font-family: inherit;
   color: inherit;
+  box-sizing: border-box;
 }
 .public-header-v2 .jurisdiction-pill:hover {
   border-color: var(--archer-blue-100);
@@ -347,19 +359,22 @@
   flex-shrink: 0;
 }
 
-/* CTA */
+/* CTA — aligned to the 36px row height via the header-right height rule above */
 .public-header-v2 .header-cta {
-  padding: 9px 20px;
+  padding: 0 18px;
   background: var(--archer-blue);
   color: white;
   border: none;
   border-radius: 10px;
   font-family: inherit;
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 3px 10px rgba(26,86,219,0.2);
   transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
 }
 .public-header-v2 .header-cta:hover {
   background: var(--archer-blue-dark);
@@ -367,15 +382,18 @@
 }
 
 .public-header-v2 .header-signin {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
   color: var(--ink-3);
   cursor: pointer;
-  padding: 7px 10px;
+  padding: 0 10px;
   background: transparent;
   border: none;
   font-family: inherit;
   transition: color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
 }
 .public-header-v2 .header-signin:hover { color: var(--ink); }
 
