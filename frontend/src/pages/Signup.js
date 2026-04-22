@@ -18,25 +18,31 @@ const Signup = () => {
   const navigate = useNavigate();
 
   const storedLocale = getStoredLocale();
-  const initial = localeToSignup[storedLocale] || localeToSignup['us-en'];
+  // FREEZE US — default be-fr au lieu de us-en. Les users peuvent toujours
+  // avoir un locale US stocké (legacy) mais on force BE au niveau du form.
+  const initial = localeToSignup[storedLocale] || localeToSignup['be-fr'];
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('free');
-  const [jurisdiction, setJurisdiction] = useState(initial.country || 'US');
+  // FREEZE US — force BE au lieu de fallback US. On accepte "US" si legacy.
+  const [jurisdiction, setJurisdiction] = useState(initial.country === 'US' ? 'BE' : (initial.country || 'BE'));
   const [region, setRegion] = useState(initial.region || '');
-  const [language, setLanguage] = useState(initial.language || 'en');
+  // FREEZE US — default fr-BE si user BE sans langue.
+  const [language, setLanguage] = useState(initial.language || 'fr');
   const [localError, setLocalError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   React.useEffect(() => { clearError(); }, []);
 
   const handleJurisdictionChange = (val) => {
-    setJurisdiction(val);
+    // FREEZE US — option US retirée du dropdown, mais on garde ce handler
+    // défensivement au cas où un legacy localeStorage renverrait US.
+    const safeVal = val === 'US' ? 'BE' : val;
+    setJurisdiction(safeVal);
     setRegion('');
-    if (val === 'BE') { setStoredLocale('be-fr'); }
-    else { setStoredLocale('us-en'); }
+    setStoredLocale('be-fr');
   };
 
   const handleRegionChange = (val) => {
@@ -102,12 +108,14 @@ const Signup = () => {
             <input type="password" className="form-input" placeholder="Min. 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} data-testid="signup-password-input" />
           </div>
 
-          {/* Jurisdiction selector */}
+          {/* Jurisdiction selector — FREEZE US: option US masquée jusqu'à M6. */}
           <div>
             <label className="form-label">Legal jurisdiction</label>
             <select className="form-input" value={jurisdiction} onChange={(e) => handleJurisdictionChange(e.target.value)} data-testid="signup-jurisdiction-select">
-              <option value="US">{'\u{1F1FA}\u{1F1F8}'} United States — US Federal + State Law</option>
               <option value="BE">{'\u{1F1E7}\u{1F1EA}'} Belgium — Belgian Federal + Regional Law</option>
+              {/* FREEZE US — réactiver M6+:
+              <option value="US">{'\u{1F1FA}\u{1F1F8}'} United States — US Federal + State Law</option>
+              */}
             </select>
           </div>
 

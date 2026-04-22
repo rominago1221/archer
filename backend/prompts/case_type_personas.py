@@ -9,7 +9,14 @@ Structure:
   CASE_TYPE_EXPERTISE[case_type][jurisdiction]  →  str
 
 jurisdiction key is "BE" or "US". Unknown case_types fall back to "other",
-unknown jurisdictions fall back to "US".
+unknown jurisdictions fall back to "BE" (during the US freeze — see below).
+
+FREEZE US — réactiver M6+
+─────────────────────────
+Archer ne couvre que la Belgique jusqu'en M6. Les blocks `_US[*]` ci-dessous
+restent pour réactivation future mais ne sont PAS appelés en production :
+les endpoints d'analyse rejettent les users non-BE avec un 400 explicite.
+NE PAS supprimer — c'est du code gelé, pas du code mort à nettoyer.
 """
 from typing import Optional
 
@@ -18,7 +25,7 @@ from typing import Optional
 # ═══════════════════════════════════════════════════════════════════════════
 
 _BE = {}
-_US = {}
+_US = {}  # FREEZE US — réactiver M6+ : dict rempli mais non appelé (guards 400 en amont).
 
 # ─── HOUSING ──────────────────────────────────────────────────────────────
 _BE["eviction"] = """DOMAINE: ÉVICTION / BAIL RÉSIDENTIEL (droit belge)
@@ -219,10 +226,12 @@ CASE_TYPE_EXPERTISE = {"BE": _BE, "US": _US}
 
 def get_expertise_block(case_type: str, jurisdiction: str, language: Optional[str] = None) -> str:
     """Return the per-case_type expertise addendum to graft onto analysis prompts.
-    Unknown case_types fall back to 'other'. Unknown jurisdictions fall back to US."""
-    j = (jurisdiction or "US").upper()
+    Unknown case_types fall back to 'other'. Unknown jurisdictions fall back to BE
+    (FREEZE US — default changed from 'US' to 'BE'; le vrai garde-fou est dans
+    les endpoints d'analyse qui rejettent déjà tout non-BE avec un 400)."""
+    j = (jurisdiction or "BE").upper()
     if j not in CASE_TYPE_EXPERTISE:
-        j = "US"
+        j = "BE"
     ct_map = CASE_TYPE_EXPERTISE[j]
     block = ct_map.get(case_type) or ct_map["other"]
     header = "\n\n" + ("═" * 60) + "\n"

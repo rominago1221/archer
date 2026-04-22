@@ -34,24 +34,25 @@ import '../styles/home.css';
  * Compute the user's "effective country" for currency + legal-corpus logic:
  *   1. Authenticated user.country / user.jurisdiction wins (respects profile).
  *   2. Otherwise fall back to the locale suffix in localStorage.
- *   3. Otherwise default to US (matches the app's global default).
+ *   3. Otherwise default to BE (FREEZE US — US default disabled until M6+).
  */
 function resolveCountry(user, languageFallback) {
   if (user?.country) return user.country;
   if (user?.jurisdiction) return user.jurisdiction;
-  // If no user, infer from UI language.
-  return languageFallback === 'fr' ? 'BE' : 'US';
+  // FREEZE US — on garde BE comme default pour tous les fallbacks.
+  return 'BE';
 }
 
 export default function HomePage() {
   const { user } = useAuth();
   const [language, setLanguage] = useState(() => {
-    const loc = getStoredLocale() || 'us-en';
-    return loc.split('-')[1] || 'en';
+    // FREEZE US — default locale be-fr (était us-en).
+    const loc = getStoredLocale() || 'be-fr';
+    return loc.split('-')[1] || 'fr';
   });
   const [country, setCountry] = useState(() => {
-    const loc = getStoredLocale() || 'us-en';
-    return (loc.split('-')[0] || 'us').toUpperCase();
+    const loc = getStoredLocale() || 'be-fr';
+    return (loc.split('-')[0] || 'be').toUpperCase();
   });
 
   // When user identity lands, let its profile take priority over storage.

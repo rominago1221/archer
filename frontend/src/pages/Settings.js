@@ -258,7 +258,8 @@ const Settings = () => {
                     </div>
                   </>
                 )}
-                {country === 'US' && (
+                {/* FREEZE US — state selector masqué (réactiver M6+). */}
+                {false && country === 'US' && (
                   <div>
                     <label className="form-label">State of residence</label>
                     <select className="form-input" value={state} onChange={(e) => setState(e.target.value)} data-testid="settings-state-select">
@@ -304,7 +305,8 @@ const Settings = () => {
                   <div className="text-xs text-[#3b82f6]">{user?.plan === 'pro' ? 'Active · Renews Dec 15, 2026' : 'Limited to 1 document'}</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-semibold text-[#111827]">${user?.plan === 'pro' ? '69' : '0'}</div>
+                  {/* FREEZE US — prix affiché en EUR (BE only). */}
+                  <div className="text-2xl font-semibold text-[#111827]">€{user?.plan === 'pro' ? '69' : '0'}</div>
                   <div className="text-xs text-[#6b7280]">/month</div>
                 </div>
               </div>

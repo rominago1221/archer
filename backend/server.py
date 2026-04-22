@@ -37,7 +37,7 @@ from models import (
 )
 from constants.case_types import CASE_TYPES, normalize_case_type
 from prompts.case_type_personas import get_expertise_block
-from services.legal_rag import retrieve_relevant_law, format_rag_block
+from services.legal_rag import retrieve_relevant_law, format_rag_block, validate_analysis_citations
 from services.credits import (
     calculate_credit_cost,
     detect_analysis_complexity,
@@ -159,6 +159,17 @@ financial exposure in specific dollar/EUR amount
 applicable law reference
 recommend_lawyer boolean
 key_insight — one sentence the user must remember"""
+
+# ══════════════════════════════════════════════════════════════════════════
+# FREEZE US — réactiver M6+
+# ──────────────────────────────────────────────────────────────────────────
+# Les prompts US suivants (PASS1_PROMPT, PASS2_PROMPT, PASS3_PROMPT,
+# PASS4A_SYSTEM/PROMPT, PASS4B_SYSTEM/PROMPT) sont conservés en place mais
+# NON UTILISÉS pendant le freeze. Les endpoints d'analyse rejettent
+# tout user non-BE avec un 400 explicite (analyze_trigger_endpoint +
+# multi-doc handler), donc seuls les BE_PASS* sont appelés en production.
+# Ne PAS supprimer — réactivation prévue en M6+ quand le support US revient.
+# ══════════════════════════════════════════════════════════════════════════
 
 PASS1_PROMPT = """TASK: FACT EXTRACTION ONLY
 Read this legal document carefully and extract every factual element. Do not interpret, analyze, or recommend anything yet. Return ONLY raw facts organized in JSON.
@@ -469,6 +480,10 @@ Return ONLY this JSON:
   "what_user_must_prepare_for": "what opposing party will likely argue"
 }}"""
 
+# ══════════════════════════════════════════════════════════════════════════
+# END FREEZE US — fin du bloc de prompts US désactivés.
+# ══════════════════════════════════════════════════════════════════════════
+
 
 def load_jurisprudence(case_type: str, document_type: str) -> str:
     """Load relevant jurisprudence for the case"""
@@ -572,7 +587,8 @@ async def call_claude(system_prompt: str, user_message: str, max_tokens: int = 4
 
 
 async def call_claude_fast(system_prompt: str, user_message: str, max_tokens: int = 800) -> dict:
-    """Direct Anthropic API — Opus 4.6 for analysis tasks (Q&A impact, letter drafts)."""
+    """Direct Anthropic API — Sonnet 4.6 for lightweight analysis tasks (Q&A impact, letter drafts).
+    Fast path: lower latency, lower cost, sufficient quality for classification / short patches."""
     for attempt in range(2):
         try:
             async with httpx.AsyncClient(timeout=90) as client:
@@ -584,7 +600,7 @@ async def call_claude_fast(system_prompt: str, user_message: str, max_tokens: in
                         "content-type": "application/json",
                     },
                     json={
-                        "model": "claude-opus-4-7",
+                        "model": "claude-sonnet-4-6",
                         "max_tokens": max_tokens,
                         "system": system_prompt,
                         "messages": [
@@ -1359,9 +1375,9 @@ CLAUDE_SYSTEM_PROMPT = SENIOR_ATTORNEY_PERSONA
 
 async def analyze_document_stream(
     extracted_text: str,
-    country: str = "US",
+    country: str = "BE",  # FREEZE US — BE par defaut. Le code US reste en place pour M6+.
     region: str = "",
-    language: str = "en",
+    language: str = "fr-BE",
     user_context: str = "",
     case_type: str = "other",
 ):
@@ -1369,7 +1385,15 @@ async def analyze_document_stream(
     Reuses shared helpers — zero duplication of business logic."""
     import time as _time
 
-    is_belgian = country == "BE"
+    # FREEZE US — force BE. On garde le paramètre `country` pour M6+
+    # mais pendant le freeze, toute autre valeur est convertie en BE
+    # (les endpoints en amont rejettent déjà avec un 400, c'est une
+    # ceinture-bretelles au cas où un appel interne passerait à travers).
+    if (country or "").upper() != "BE":
+        logger.warning(f"analyze_document_stream called with country={country!r} during US freeze — forcing BE")
+        country = "BE"
+        language = "fr-BE" if not language or not language.startswith(("fr", "nl", "de")) else language
+    is_belgian = True
 
     # Build persona + language instruction (shared helpers)
     if is_belgian:
@@ -1911,9 +1935,17 @@ async def analyze_trigger_endpoint(
     if not case_doc:
         raise HTTPException(status_code=404, detail="Case not found")
 
-    user_country = current_user.jurisdiction or "US"
+    # FREEZE US — BE uniquement jusqu'a M6.
+    # Tout user non-BE est rejete avec un 400 explicite. Les prompts US
+    # restent dans le code (commentes `# FREEZE US`) pour reactivation M6+.
+    user_country = (current_user.jurisdiction or "BE").upper()
+    if user_country != "BE":
+        raise HTTPException(
+            status_code=400,
+            detail="Archer couvre uniquement la Belgique pour le moment. Support US bientôt disponible."
+        )
     user_region = current_user.region or ""
-    user_language = current_user.language or "en"
+    user_language = current_user.language or "fr-BE"
     return await _start_streaming_analysis(case_id, user_country, user_region, user_language)
 
 
@@ -2242,9 +2274,9 @@ Retourne UNIQUEMENT ce JSON:
     "resultat_attendu": "resultat realiste",
     "delai_resolution": "8-15 jours|1-3 mois|3-6 mois"
   }},
-  "immediate_actions": [{{"action": "Action specifique au stade actuel", "delai": "dans les 24 heures", "priorite": "critique"}}],
+  "immediate_actions": [{{"action": "[VERBE INFINITIF] + objet (ex: 'Envoyer une mise en demeure au bailleur')", "delai": "dans les 24 heures", "priorite": "critique"}}],
   "next_steps": [
-    {{"title": "Action specifique au STADE detecte", "description": "Description adaptee au stade", "action_type": "contacter_avocat|contacter_syndicat|saisir_mediateur|ajouter_document|rediger_reponse|aucune_action", "recipient": "Destinataire exact (ex: Greffe du Tribunal de Police, Parquet du Procureur du Roi)"}}
+    {{"title": "[VERBE INFINITIF] + objet + (ref legale courte, 80 chars max — ex: 'Invalider la clause penale de 12% (art. 5.74 C. civ.)')", "description": "Description detaillee adaptee au stade (les details vont ici, PAS dans title)", "action_type": "contacter_avocat|contacter_syndicat|saisir_mediateur|ajouter_document|rediger_reponse|aucune_action", "recipient": "Destinataire exact (ex: Greffe du Tribunal de Police, Parquet du Procureur du Roi)"}}
   ],
   "documents_to_gather": [{{"document": "Document a rassembler", "pourquoi": "Raison", "urgence": "critique|important|utile"}}],
   "leverage_points": [{{"levier": "Point de levier", "comment_utiliser": "Comment l'utiliser"}}],
@@ -2254,7 +2286,8 @@ Retourne UNIQUEMENT ce JSON:
   "key_insight": "La phrase la plus importante",
   "archer_question": {{"text": "Question SPECIFIQUE", "options": ["Option 1", "Option 2", "Option 3"]}}
 }}
-OBLIGATOIRE: archer_question DOIT etre present. case_stage DOIT etre detecte correctement."""
+OBLIGATOIRE: archer_question DOIT etre present. case_stage DOIT etre detecte correctement.
+RAPPEL FINAL — next_steps[].title et immediate_actions[].action commencent TOUJOURS par un verbe a l'infinitif (Invalider / Contester / Exiger / Demander / Invoquer / Mettre en demeure / etc.). JAMAIS par "Le", "La", "Les", "L'", ni par une citation legale seule. Les phrases coupees ("... par le", "... de la") sont REJETEES."""
 
 BE_PASS4A_SYSTEM = """Tu es un avocat senior en Belgique representant l'utilisateur. Ton travail est de construire le dossier LE PLUS SOLIDE possible pour ton client. Trouve chaque argument, chaque vice de procedure, chaque protection legale qui beneficie a ton client. Sois agressif et exhaustif.
 
@@ -2269,18 +2302,41 @@ ANALYSE: {analysis_json}
 
 OBLIGATOIRE: strongest_arguments DOIT contenir exactement 4-5 elements. JAMAIS moins de 4. Chaque argument doit citer un article de loi belge specifique (CCT 109, Loi contrats travail, Code civil, etc.).
 
-REGLE UI CRITIQUE — strongest_arguments[].argument DOIT etre une phrase COMPLETE et autonome (max 80 caracteres). Commence par un verbe d'action + sujet concret. JAMAIS couper en plein milieu. JAMAIS utiliser ":" ou "—" pour ajouter des explications longues — les details vont dans `how_to_use`. Bon: "Invalidation de la clause pénale à 12% via l'art. 5.74". Mauvais: "Le régime légal du préavis de résiliation anticipée par le".
+REGLE UI CRITIQUE — `strongest_arguments[].argument` DOIT etre une PHRASE D'ACTION complete (max 80 caracteres). Structure obligatoire:
+  [VERBE A L'INFINITIF] + [objet concret] + optionnellement [(ref legale courte)]
+
+Verbes acceptes (choisir le plus precis pour l'action): Invalider, Annuler, Contester, Exiger, Reclamer, Invoquer, Rappeler, Demander, Faire reconnaitre, Mettre en demeure, Refuser, Bloquer, Obtenir, Denoncer, Solliciter, Retenir.
+
+BON (copier ce style, 4 exemples):
+  - "Invalider la clause penale de 12% (art. 5.74 C. civ.)"
+  - "Exiger la reduction du loyer au prix de reference bruxellois"
+  - "Contester l'absence d'etat des lieux contradictoire (art. 1730 C. civ.)"
+  - "Mettre en demeure d'enregistrer le bail sous 15 jours"
+
+INTERDIT (ces patterns DECLENCHENT un rejet automatique):
+  - Commencer par un article: "Le / La / Les / L' / Un / Une / Ce / Cette / Des / Du"
+  - Groupe nominal sans verbe: "La clause d'interets de retard", "Le regime legal"
+  - Citation legale seule: "Article 5.74 C. civ."
+  - Couper en plein milieu: se terminer par "de", "par", "pour", "la", "le", etc.
+  - Utiliser ":" ou "—" pour empiler des explications (les details vont dans `how_to_use`, pas dans `argument`)
+
+Exemples REJETES (NE PAS reproduire):
+  - "Le régime légal d'ordre public de l'article 3 §5 de la Loi"     (pas de verbe, commence par "Le")
+  - "La forme légale du préavis de résiliation anticipée par le"      (coupe au milieu, pas de verbe)
+  - "La clause d'intérêts de retard de 12% l'an de plein droit"       (groupe nominal sans verbe)
+  - "Article 5.74 du Code civil"                                      (citation seule, pas une action)
 
 Retourne UNIQUEMENT ce JSON:
 {{
   "strongest_arguments": [
-    {{"argument": "Description precise de l'argument avec reference legale", "strength": "strong|medium|weak", "law_basis": "Article de loi belge specifique (ex: CCT 109 art. 3, Art. 65-70 Loi contrats travail)", "how_to_use": "Comment utiliser cet argument dans la defense"}}
+    {{"argument": "[VERBE INFINITIF] + objet + (ref legale courte, 80 chars max)", "strength": "strong|medium|weak", "law_basis": "Article de loi belge specifique (ex: CCT 109 art. 3, Art. 65-70 Loi contrats travail)", "how_to_use": "Comment utiliser cet argument dans la defense (les details longs vont ici, PAS dans argument)"}}
   ],
   "procedural_wins": ["liste des avantages proceduraux"],
   "best_outcome_scenario": "description du meilleur resultat possible",
   "opening_argument": "Premiere phrase percutante pour la lettre de reponse"
 }}
-OBLIGATOIRE: strongest_arguments DOIT contenir 4-5 elements. JAMAIS retourner moins de 4."""
+OBLIGATOIRE: strongest_arguments DOIT contenir 4-5 elements. JAMAIS retourner moins de 4.
+RAPPEL FINAL: chaque `argument` commence par un VERBE A L'INFINITIF. Pas d'exception."""
 
 BE_PASS4B_SYSTEM = "Tu es l'avocat de la partie adverse contre l'utilisateur en Belgique. Construis les arguments les plus solides contre l'utilisateur selon le droit belge. Reponds en JSON uniquement."
 BE_PASS4B_PROMPT = """Construis les arguments que la partie adverse va utiliser contre l'utilisateur. Identifie les faiblesses de la position de l'utilisateur.
@@ -2413,6 +2469,18 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
             language=language,
             jurisdiction="BE",
         )
+
+        # PASS 7 — Citation validation. Cross-check every legal_ref emitted by
+        # Pass 2 against the RAG corpus that was actually injected. Hallucinated
+        # refs get `citation_validated: false` per finding + a summary on the
+        # analysis dict for observability.
+        citation_report = validate_analysis_citations(legal_analysis, rag)
+        legal_analysis["citations_validation"] = citation_report
+        if citation_report.get("flagged"):
+            logger.warning(
+                f"BE analysis: {len(citation_report['flagged'])}/{citation_report['total']} "
+                f"citations flagged as unverified — see citations_validation.flagged"
+            )
 
         facts_str = json.dumps(facts, indent=2, ensure_ascii=False)
         analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
@@ -3762,6 +3830,15 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
         jurisdiction="BE",
     )
 
+    # PASS 7 — Citation validation (multi-doc BE).
+    citation_report = validate_analysis_citations(legal_analysis, rag)
+    legal_analysis["citations_validation"] = citation_report
+    if citation_report.get("flagged"):
+        logger.warning(
+            f"BE multi-doc: {len(citation_report['flagged'])}/{citation_report['total']} "
+            f"citations flagged as unverified — see citations_validation.flagged"
+        )
+
     facts_str = json.dumps(facts, indent=2, ensure_ascii=False)
     analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
 
@@ -4086,8 +4163,15 @@ async def generate_case_brief(case_id: str, current_user: User = Depends(get_cur
     ).sort("uploaded_at", 1).to_list(50)
     doc_count = len(docs)
 
-    user_language = current_user.language or case_doc.get("language") or "en"
-    is_belgian = (current_user.jurisdiction or case_doc.get("country", "US")) == "BE"
+    # FREEZE US — default BE et guard explicite sur non-BE.
+    _freeze_jur = (current_user.jurisdiction or case_doc.get("country") or "BE").upper()
+    if _freeze_jur != "BE":
+        raise HTTPException(
+            status_code=400,
+            detail="Archer couvre uniquement la Belgique pour le moment. Support US bientôt disponible."
+        )
+    user_language = current_user.language or case_doc.get("language") or "fr-BE"
+    is_belgian = True
 
     # Build document timeline
     doc_timeline = []
@@ -9404,6 +9488,15 @@ async def startup_event():
         await ensure_client_notifications_indexes()
     except Exception as e:
         logger.error(f"client_notifications index init failed: {e}")
+
+    # RAG health check: loud failure if VOYAGE_API_KEY missing or corpus empty.
+    # Pre-freeze behaviour silently degraded Belgian analysis; now we log at
+    # ERROR level on boot so misconfiguration is obvious.
+    try:
+        from services.legal_rag import rag_startup_check
+        await rag_startup_check(db)
+    except Exception as e:
+        logger.error(f"legal_rag startup check failed: {e}")
 
     try:
         start_scheduler()

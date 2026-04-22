@@ -54,6 +54,38 @@ class _RagCache:
 _cache = _RagCache()
 
 
+def is_rag_key_configured() -> bool:
+    """Return True iff VOYAGE_API_KEY is present. Call at startup to fail loud
+    instead of silently degrading analysis quality."""
+    return bool(os.environ.get("VOYAGE_API_KEY"))
+
+
+async def rag_startup_check(db) -> dict:
+    """Called by FastAPI startup. Logs loudly if RAG is misconfigured or the
+    corpus is empty. Returns a status dict for the health endpoint."""
+    status = {
+        "voyage_api_key": is_rag_key_configured(),
+        "corpus_loaded": False,
+        "corpus_size": 0,
+        "operational": False,
+    }
+    if not status["voyage_api_key"]:
+        logger.error("legal_rag: VOYAGE_API_KEY missing — RAG DISABLED. "
+                     "Belgian analysis will run WITHOUT injected law/jurisprudence. "
+                     "Set VOYAGE_API_KEY to restore full analysis quality.")
+        return status
+
+    has_data = await _ensure_loaded(db)
+    status["corpus_loaded"] = has_data
+    status["corpus_size"] = len(_cache.docs)
+    status["operational"] = has_data
+    if not has_data:
+        logger.error("legal_rag: corpus legal_db_v2 empty or unavailable — RAG DISABLED.")
+    else:
+        logger.info(f"legal_rag: startup check OK — {len(_cache.docs)} docs loaded")
+    return status
+
+
 async def _ensure_loaded(db) -> bool:
     """Populate the in-memory cache from legal_db_v2. Safe to call repeatedly.
     Returns True if the cache has any data, False if the collection is empty/missing."""
@@ -345,6 +377,135 @@ def format_rag_block(rag: dict, language: str = "fr") -> str:
             lines.append("")
     lines.append(rule)
     return "\n".join(lines)
+
+
+# ─── Citation validation (Pass 7) ────────────────────────────────────────
+# Extract legal_ref / law_reference strings from a Pass 2 analysis, then
+# match them against the articles and case law that were actually injected
+# via format_rag_block(). Any citation that doesn't resolve to the allowed
+# set is flagged as `validated: false` — caller can surface this in the UI
+# or in telemetry to detect hallucinations.
+
+import re
+
+_ARTICLE_NUMBER_RE = re.compile(r"\b[Aa]rt(?:icle|\.?)\s*([0-9]+[A-Za-z\-./§\s]*?)(?:\s|,|;|\)|$)")
+
+
+def _normalize_ref(s: str) -> str:
+    if not s:
+        return ""
+    return re.sub(r"\s+", " ", str(s)).strip().lower()
+
+
+def _extract_article_numbers(text: str) -> list[str]:
+    """Pull the numeric part of each 'art. X' or 'article X' occurrence."""
+    if not text:
+        return []
+    return [_normalize_ref(m.group(1).rstrip(" ,.;)").strip()) for m in _ARTICLE_NUMBER_RE.finditer(str(text))]
+
+
+def _build_allowed_citations(rag: Optional[dict]) -> dict:
+    """Return a set-like dict of the article + jurisprudence identifiers
+    we actually injected, so we can check citations against it."""
+    allowed_articles: set[str] = set()
+    allowed_codes: set[str] = set()
+    allowed_cases: set[str] = set()
+    if not rag:
+        return {"articles": allowed_articles, "codes": allowed_codes, "cases": allowed_cases}
+    for a in rag.get("articles", []) or []:
+        code = _normalize_ref(a.get("code_full_name", ""))
+        art = _normalize_ref(a.get("article_number", ""))
+        if code:
+            allowed_codes.add(code)
+        if art:
+            allowed_articles.add(art)
+        if code and art:
+            allowed_articles.add(f"{code} {art}")
+    for j in rag.get("jurisprudences", []) or []:
+        num = _normalize_ref(j.get("case_number", ""))
+        court = _normalize_ref(j.get("court_label", ""))
+        if num:
+            allowed_cases.add(num)
+        if court and num:
+            allowed_cases.add(f"{court} {num}")
+    return {"articles": allowed_articles, "codes": allowed_codes, "cases": allowed_cases}
+
+
+def _ref_is_validated(ref: str, allowed: dict) -> bool:
+    """Soft validation: a reference is considered OK if we find at least one
+    of its article numbers in the allowed_articles OR a code name match."""
+    normalized = _normalize_ref(ref)
+    if not normalized:
+        return True  # empty ref — nothing to validate
+    # Article-number match (strongest signal)
+    for num in _extract_article_numbers(ref):
+        if num in allowed["articles"]:
+            return True
+    # Code-name substring match
+    for code in allowed["codes"]:
+        if code and code in normalized:
+            return True
+    # Case citation substring match
+    for case_key in allowed["cases"]:
+        if case_key and case_key in normalized:
+            return True
+    return False
+
+
+def validate_analysis_citations(analysis: dict, rag: Optional[dict]) -> dict:
+    """Walk the Pass 2 analysis, extract `legal_ref` / `law_reference` strings
+    from findings/applicable_laws/procedural_defects, and flag each one as
+    validated or not against the RAG corpus that was injected into Pass 2.
+
+    Returns a summary dict that callers can store in the case document for
+    observability. Also mutates the analysis findings in-place to add a
+    per-finding `citation_validated` boolean.
+
+    When `rag` is None (RAG disabled), we skip validation and return a
+    summary with `skipped: True` so the UI can show the degraded quality."""
+    if not isinstance(analysis, dict):
+        return {"total": 0, "validated": 0, "flagged": [], "skipped": True}
+    if rag is None:
+        return {"total": 0, "validated": 0, "flagged": [], "skipped": True,
+                "reason": "rag_disabled"}
+
+    allowed = _build_allowed_citations(rag)
+    flagged: list[dict] = []
+    total = 0
+    validated = 0
+
+    def _check_list(items, list_name):
+        nonlocal total, validated
+        if not isinstance(items, list):
+            return
+        for i, item in enumerate(items):
+            if not isinstance(item, dict):
+                continue
+            ref = (item.get("legal_ref")
+                   or item.get("law_reference")
+                   or item.get("legal_basis")
+                   or item.get("ref")
+                   or "")
+            if not ref:
+                continue
+            total += 1
+            ok = _ref_is_validated(ref, allowed)
+            item["citation_validated"] = bool(ok)
+            if ok:
+                validated += 1
+            else:
+                flagged.append({"source": list_name, "index": i, "ref": ref[:200]})
+
+    _check_list(analysis.get("findings"), "findings")
+    _check_list(analysis.get("applicable_laws"), "applicable_laws")
+    _check_list(analysis.get("procedural_defects"), "procedural_defects")
+
+    return {
+        "total": total,
+        "validated": validated,
+        "flagged": flagged,
+        "skipped": False,
+    }
 
 
 # ─── Cache control (admin) ───────────────────────────────────────────────

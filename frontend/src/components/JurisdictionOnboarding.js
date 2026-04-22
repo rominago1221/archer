@@ -64,6 +64,9 @@ const STEPS = {
       },
     ],
   },
+  // FREEZE US — réactiver M6+. L'onboarding US ci-dessous reste en place
+  // mais n'est plus rendu : le Signup ne propose plus "US" et les endpoints
+  // d'analyse rejettent les non-BE. Ne PAS supprimer — réactivation M6+.
   US: {
     en: [
       {

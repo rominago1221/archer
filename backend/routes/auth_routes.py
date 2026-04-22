@@ -91,7 +91,11 @@ async def register_email(body: EmailRegister):
     password = body.password.strip()
     name = body.name.strip()
     plan = body.plan if body.plan in ["free", "pro"] else "free"
-    jurisdiction = body.jurisdiction if body.jurisdiction in ["US", "BE"] else (body.country if body.country in ["US", "BE"] else "US")
+    # FREEZE US — default BE (au lieu de US). Les users qui envoient
+    # explicitement "US" sont acceptes en base (pour ne pas casser les
+    # attorneys US) mais les endpoints d'analyse les rejettent.
+    # A M6+, retirer le freeze et restaurer le support US complet.
+    jurisdiction = body.jurisdiction if body.jurisdiction in ["US", "BE"] else (body.country if body.country in ["US", "BE"] else "BE")
 
     if not email or not password or not name:
         raise HTTPException(status_code=400, detail="Email, password and name are required")
@@ -103,11 +107,13 @@ async def register_email(body: EmailRegister):
         raise HTTPException(status_code=409, detail="An account with this email already exists")
 
     user_id = f"user_{uuid.uuid4().hex[:12]}"
+    # FREEZE US — default language = fr-BE pour un user BE sans language explicite.
+    _default_language = "fr-BE" if jurisdiction == "BE" else "en"
     user_doc = {
         "user_id": user_id, "email": email, "name": name, "picture": None,
         "password_hash": hash_password(password), "auth_provider": "email",
         "plan": plan, "country": jurisdiction, "jurisdiction": jurisdiction,
-        "region": body.region, "language": body.language or "en",
+        "region": body.region, "language": body.language or _default_language,
         "account_type": body.account_type if body.account_type in ("client", "attorney") else "client",
         "state_of_residence": None, "phone": None,
         "notif_risk_score": True, "notif_deadlines": True, "notif_calls": True,
