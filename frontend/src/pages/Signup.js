@@ -70,8 +70,11 @@ const Signup = () => {
   const displayError = localError || error;
 
   const pricingLabel = () => {
+    // FREEZE US — US jurisdiction is disabled at signup (only BE is offered),
+    // so we always show EUR pricing. US fallback left in place for legacy
+    // localStorage locales that might still request us-en on first load.
     if (jurisdiction === 'BE') return { free: '0 EUR / mois', pro: '65 EUR / mois' };
-    return { free: '$0 / month', pro: '$69 / month' };
+    return { free: '€0 / month', pro: '€69 / month' };
   };
   const prices = pricingLabel();
 

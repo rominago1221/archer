@@ -1,16 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import PageHead from '../components/seo/PageHead';
 import JsonLd, { ORGANIZATION_SCHEMA, SOFTWARE_APP_SCHEMA } from '../components/seo/JsonLd';
 import GoogleAnalytics from '../components/seo/GoogleAnalytics';
 import { PAGE_METADATA } from '../lib/seo/metadata';
-import JurisdictionPills from '../components/JurisdictionPills';
+import PublicHeader from '../components/PublicHeader';
 import HomeJourneySection from '../components/Home/HomeJourneySection';
-import { useAuth } from '../contexts/AuthContext';
 import translations, { getStoredLocale, setStoredLocale, getLocaleFromPrefs } from '../data/landingTranslations';
-
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const F = '-apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif';
 
 /* ─── BILINGUAL CONTENT ─── */
@@ -432,12 +428,12 @@ const CSS = `
 
 const Landing = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const stored = getStoredLocale();
+  const stored = getStoredLocale() || 'be-fr';
   const [locale, setLocale] = useState(stored);
-  const [jurisdiction, setJurisdiction] = useState(stored.startsWith('be') ? 'BE' : 'US');
-  const [language, setLanguage] = useState(stored.split('-')[1] || stored.split('-')[0] || 'en');
-  const t = translations[locale] || translations['us-en'];
+  // FREEZE US — default jurisdiction BE. Legacy us-* locales are respected.
+  const [jurisdiction, setJurisdiction] = useState(stored.startsWith('us') ? 'US' : 'BE');
+  const [language, setLanguage] = useState(stored.split('-')[1] || stored.split('-')[0] || 'fr');
+  const t = translations[locale] || translations['be-fr'] || translations['us-en'];
   const c = language === 'fr' ? C.fr : C.en;
 
   const handleJurisdictionChange = (j) => { setJurisdiction(j); const nl = getLocaleFromPrefs(j, language); setLocale(nl); setStoredLocale(nl); };
@@ -451,34 +447,11 @@ const Landing = () => {
       <GoogleAnalytics />
       <style>{CSS}</style>
 
-      {/* ── NAV ── */}
-      <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-[#ebebeb] z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div onClick={() => navigate('/')} style={{ cursor: 'pointer' }} data-testid="landing-logo"><img src="/logos/archer-logo-wordmark.svg" alt="Archer" style={{ height: 32 }} /></div>
-          <div className="hidden md:flex items-center gap-6 text-sm text-[#555]">
-            <span onClick={() => navigate('/how-it-works')} className="hover:text-[#1a56db] cursor-pointer">{t.nav.howItWorks}</span>
-            <span onClick={() => navigate('/pricing')} className="hover:text-[#1a56db] cursor-pointer">{t.nav.pricing}</span>
-            <span onClick={() => navigate('/winning-cases')} className="hover:text-[#1a56db] cursor-pointer">{t.nav.wins}</span>
-            <a href="#faq" className="hover:text-[#1a56db]">{t.nav.faq}</a>
-          </div>
-          <div className="flex items-center gap-3">
-            <JurisdictionPills jurisdiction={jurisdiction} language={language}
-              onSwitch={(j) => { handleJurisdictionChange(j); if (user) axios.put(`${API}/profile`, { jurisdiction: j, country: j }, { withCredentials: true }).catch(() => {}); }}
-              onLanguageChange={(l) => { handleLanguageChange(l); if (user) axios.put(`${API}/profile`, { language: l }, { withCredentials: true }).catch(() => {}); }}
-            />
-            {user ? (
-              <button onClick={() => navigate('/dashboard')} className="px-4 py-2 bg-[#1a56db] text-white text-sm font-medium rounded-full hover:bg-[#1546b3] transition-colors" data-testid="nav-dashboard-btn">
-                {locale.includes('fr') ? 'Mon Dashboard' : 'My Dashboard'}
-              </button>
-            ) : (
-              <>
-                <button onClick={() => navigate('/login')} className="text-sm text-[#555] hover:text-[#1a56db]" data-testid="nav-login-btn">{t.nav.signIn}</button>
-                <button onClick={() => navigate('/signup')} className="px-4 py-2 bg-[#1a56db] text-white text-sm font-medium rounded-full hover:bg-[#1546b3] transition-colors" data-testid="nav-signup-btn">{t.nav.getStarted}</button>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
+      {/* ── NAV (v2 header — was legacy inline nav with JurisdictionPills) ── */}
+      <PublicHeader
+        onLanguageChange={handleLanguageChange}
+        onJurisdictionChange={handleJurisdictionChange}
+      />
 
       {/* ── 1. HERO ── */}
       <div className="hero-wrap" style={{ paddingTop: 170 }}>

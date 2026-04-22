@@ -308,7 +308,7 @@ const Sidebar = () => {
       <button
         type="button"
         className="sb-new-case"
-        onClick={() => navigate('/upload')}
+        onClick={() => navigate('/documents')}
         data-testid="sidebar-new-case"
       >
         <Plus size={13} aria-hidden /> {newCaseLabel}

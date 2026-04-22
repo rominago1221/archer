@@ -319,7 +319,7 @@ const Settings = () => {
               </div>
               {user?.plan === 'free' && (
                 <button onClick={handleUpgrade} disabled={upgrading} className="w-full btn-pill btn-blue mt-4 flex items-center justify-center gap-2" data-testid="upgrade-btn">
-                  {upgrading ? (<><Loader2 size={16} className="animate-spin" />Redirecting to checkout...</>) : (<><CreditCard size={16} />Upgrade to Pro — $69/month</>)}
+                  {upgrading ? (<><Loader2 size={16} className="animate-spin" />Redirecting to checkout...</>) : (<><CreditCard size={16} />Upgrade to Pro — €69/month</>)}
                 </button>
               )}
             </div>
@@ -336,9 +336,9 @@ const Settings = () => {
                   <div className="text-sm font-semibold text-[#111827] mb-4">Billing history</div>
                   <div className="space-y-3">
                     {[
-                      { date: 'November 2026', desc: 'Pro plan · Nov 15', amount: '$69.00' },
-                      { date: 'October 2026', desc: 'Pro plan · Oct 15', amount: '$69.00' },
-                      { date: 'Attorney call', desc: 'Archer Carter · Oct 8', amount: '$149.00' }
+                      { date: 'November 2026', desc: 'Pro plan · Nov 15', amount: '€69.00' },
+                      { date: 'October 2026', desc: 'Pro plan · Oct 15', amount: '€69.00' },
+                      { date: 'Attorney call', desc: 'Archer Carter · Oct 8', amount: '€149.00' }
                     ].map((item) => (
                       <div key={item.date} className="flex items-center justify-between py-2 border-b border-[#f5f5f5] last:border-0">
                         <div><div className="text-sm font-medium text-[#111827]">{item.date}</div><div className="text-xs text-[#6b7280]">{item.desc}</div></div>

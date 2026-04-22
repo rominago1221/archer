@@ -149,8 +149,13 @@ export default function ContractGuard() {
       });
       const caseId = resp.data?.case_id;
       if (caseId) {
+        // Contract Guard analysis runs synchronously at upload time and lands
+        // in contract_guard_reviews (cg_ prefix). The cinematic route
+        // (/analyze/:id) relies on streaming events that never fire for cg_
+        // cases, so we skip straight to /cases/:id where the synthesized
+        // Case (built from the review) renders in CaseDetailV7.
         axios.post(`${API}/analyze/trigger?case_id=${caseId}`, null, { withCredentials: true }).catch(() => {});
-        navigate(`/analyze/${caseId}`);
+        navigate(`/cases/${caseId}`);
         return;
       }
       setError('Upload échoué. Réessayez.');
@@ -322,10 +327,10 @@ export default function ContractGuard() {
                 <div
                   key={r.review_id}
                   className="recent-card"
-                  onClick={() => navigate(`/analyze/${r.review_id}`)}
+                  onClick={() => navigate(`/cases/${r.review_id}`)}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/analyze/${r.review_id}`); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/cases/${r.review_id}`); }}
                   data-testid={`cg-review-${r.review_id}`}
                 >
                   <div className={`recent-icon ${info.tone}`}>
@@ -350,7 +355,7 @@ export default function ContractGuard() {
                     <button
                       type="button"
                       className="recent-cta"
-                      onClick={(e) => { e.stopPropagation(); navigate(`/analyze/${r.review_id}`); }}
+                      onClick={(e) => { e.stopPropagation(); navigate(`/cases/${r.review_id}`); }}
                     >
                       Voir l'analyse
                     </button>

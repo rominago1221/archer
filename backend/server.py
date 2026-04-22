@@ -1971,6 +1971,19 @@ async def analyze_trigger_endpoint(
     """Fire-and-forget endpoint: starts analysis in background, returns immediately.
     Frontend polls /api/cases/:id for progress.
     Idempotent — safe to call even if the upload endpoint already kicked off the analysis."""
+
+    # Contract Guard reviews (cg_ prefix) don't live in the cases collection —
+    # the analysis runs synchronously at upload time and is stored in
+    # contract_guard_reviews. Returning 404 here breaks the client flow; return
+    # 200 no-op so the fire-and-forget client can proceed.
+    if case_id.startswith("cg_"):
+        review = await db.contract_guard_reviews.find_one(
+            {"review_id": case_id, "user_id": current_user.user_id}, {"_id": 0}
+        )
+        if not review:
+            raise HTTPException(status_code=404, detail="Contract Guard review not found")
+        return {"status": "already_analyzed", "case_id": case_id}
+
     case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
     if not case_doc:
         raise HTTPException(status_code=404, detail="Case not found")
@@ -4146,7 +4159,68 @@ async def get_cases(
 
 @api_router.get("/cases/{case_id}", response_model=Case)
 async def get_case(case_id: str, current_user: User = Depends(get_current_user)):
-    """Get a specific case"""
+    """Get a specific case. Contract Guard reviews (cg_ prefix) live in a
+    separate collection — we synthesize a Case-compatible object so
+    CaseDetailV7 / CinematicAnalysis can render them without a dedicated route."""
+
+    if case_id.startswith("cg_"):
+        review = await db.contract_guard_reviews.find_one(
+            {"review_id": case_id, "user_id": current_user.user_id}, {"_id": 0}
+        )
+        if not review:
+            raise HTTPException(status_code=404, detail="Contract Guard review not found")
+        analysis = review.get("analysis") or {}
+        negotiation = review.get("negotiation_score")
+        # Derive a risk score from negotiation_score (higher negotiation = lower risk).
+        # Fallback to red_lines count when negotiation_score is missing.
+        try:
+            neg = int(negotiation) if negotiation is not None else None
+        except (TypeError, ValueError):
+            neg = None
+        red_lines = analysis.get("red_lines") if isinstance(analysis.get("red_lines"), list) else []
+        if neg is not None:
+            risk_total = max(0, min(100, 100 - neg))
+        else:
+            risk_total = min(100, 20 + 15 * len(red_lines))
+        findings = []
+        for rl in red_lines[:10]:
+            if not isinstance(rl, dict):
+                continue
+            findings.append({
+                "text": rl.get("clause") or rl.get("issue") or rl.get("title") or "Clause à risque",
+                "impact": rl.get("severity") or "medium",
+                "type": "risk",
+                "legal_ref": rl.get("legal_basis") or rl.get("law") or "",
+                "impact_description": rl.get("explanation") or rl.get("description") or "",
+                "do_now": rl.get("user_response") or rl.get("recommendation") or "",
+            })
+        synth = {
+            "case_id": case_id,
+            "user_id": current_user.user_id,
+            "title": review.get("file_name") or "Contract Guard",
+            "type": "contract_guard",
+            "status": "analyzed",
+            "country": (current_user.jurisdiction or "BE"),
+            "region": (current_user.region or ""),
+            "language": (current_user.language or "fr-BE"),
+            "risk_score": risk_total,
+            "risk_financial": risk_total,
+            "risk_urgency": 30,
+            "risk_legal_strength": max(0, 100 - risk_total),
+            "risk_complexity": 40,
+            "deadline": None,
+            "financial_exposure": None,
+            "ai_summary": analysis.get("summary") or analysis.get("overall_assessment") or "",
+            "ai_findings": findings,
+            "ai_next_steps": [],
+            "document_count": 1,
+            "live_counsel_active": False,
+            "contract_guard_review": review,  # extra field for specialized UI
+            "created_at": review.get("created_at") or datetime.now(timezone.utc).isoformat(),
+            "updated_at": review.get("created_at") or datetime.now(timezone.utc).isoformat(),
+        }
+        return Case(**synth)
+
     case_doc = await db.cases.find_one(
         {"case_id": case_id, "user_id": current_user.user_id},
         {"_id": 0}

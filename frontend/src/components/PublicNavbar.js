@@ -10,11 +10,14 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const PublicNavbar = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const stored = getStoredLocale();
+  const stored = getStoredLocale() || 'be-fr';
   const [locale, setLocale] = useState(stored);
-  const [jurisdiction, setJurisdiction] = useState(stored.startsWith('be') ? 'BE' : 'US');
-  const [language, setLanguage] = useState(stored.split('-')[1] || stored.split('-')[0] || 'en');
-  const t = translations[locale] || translations['us-en'];
+  // FREEZE US — default jurisdiction is BE. Users with a legacy 'us-*' locale
+  // are respected (they keep seeing US pricing copy in landingTranslations),
+  // but the fallback for any non-be locale is BE, not US.
+  const [jurisdiction, setJurisdiction] = useState(stored.startsWith('us') ? 'US' : 'BE');
+  const [language, setLanguage] = useState(stored.split('-')[1] || stored.split('-')[0] || 'fr');
+  const t = translations[locale] || translations['be-fr'] || translations['us-en'];
 
   const handleJurisdictionChange = (j) => {
     setJurisdiction(j);

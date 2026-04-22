@@ -22,9 +22,12 @@ const JurisdictionPills = ({ jurisdiction, language, onSwitch, onLanguageChange 
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // FREEZE US — US is grayed-out as "Coming soon" until M6+. The backend
+  // rejects non-BE analyses with a 400, so keeping US clickable here was a
+  // user trap. BE remains the only active jurisdiction.
   const items = [
-    { key: 'US', flag: '\u{1F1FA}\u{1F1F8}', label: 'United States' },
-    { key: 'BE', flag: '\u{1F1E7}\u{1F1EA}', label: 'Belgium' },
+    { key: 'BE', flag: '\u{1F1E7}\u{1F1EA}', label: 'Belgium', disabled: false },
+    { key: 'US', flag: '\u{1F1FA}\u{1F1F8}', label: 'United States', disabled: true, comingLabel: '2027' },
   ];
 
   const currentLang = LANGS.find(l => l.key === (language || 'en').replace(/-.*/, '')) || LANGS[0];
@@ -34,25 +37,38 @@ const JurisdictionPills = ({ jurisdiction, language, onSwitch, onLanguageChange 
       {/* Jurisdiction pills */}
       <div data-testid="jurisdiction-pills" style={{ display: 'flex', gap: 6 }}>
         {items.map(item => {
-          const active = (jurisdiction || 'US') === item.key;
+          const active = (jurisdiction || 'BE') === item.key && !item.disabled;
           return (
             <button
               key={item.key}
               data-testid={`jurisdiction-pill-${item.key}`}
-              onClick={() => onSwitch(item.key)}
+              disabled={item.disabled}
+              title={item.disabled ? `${item.label} — coming soon` : item.label}
+              onClick={() => !item.disabled && onSwitch(item.key)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
                 padding: '6px 14px', borderRadius: 20, border: 'none',
-                background: active ? '#1a56db' : '#f4f4f1',
-                color: active ? '#fff' : '#374151',
+                background: active ? '#1a56db' : (item.disabled ? '#faf5ff' : '#f4f4f1'),
+                color: active ? '#fff' : (item.disabled ? '#7c3aed' : '#374151'),
                 fontSize: 13, fontWeight: 500,
-                cursor: 'pointer', transition: 'all 0.2s',
+                cursor: item.disabled ? 'not-allowed' : 'pointer',
+                opacity: item.disabled ? 0.75 : 1,
+                transition: 'all 0.2s',
                 whiteSpace: 'nowrap',
               }}
             >
               <span style={{ fontSize: 16, fontWeight: 700, lineHeight: 1 }}>&#x2696;&#xFE0F;</span>
               <span style={{ fontSize: 13 }}>{item.flag}</span>
               <span>{item.label}</span>
+              {item.disabled && (
+                <span style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 9, fontWeight: 800,
+                  color: '#fff', background: '#7c3aed',
+                  padding: '2px 6px', borderRadius: 4,
+                  letterSpacing: 0.6, marginLeft: 2,
+                }}>{item.comingLabel}</span>
+              )}
             </button>
           );
         })}
