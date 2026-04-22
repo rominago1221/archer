@@ -8,6 +8,7 @@ from jobs.weekly_payouts import process_weekly_payouts
 from jobs.credit_reset import reset_monthly_credits
 from jobs.lawyer_routing_status import update_lawyer_routing_status
 from jobs.marketplace_maintenance import run_marketplace_tick
+from jobs.attorney_daily_reminder import send_daily_attorney_reminders
 
 logger = logging.getLogger(__name__)
 
@@ -64,13 +65,22 @@ def start_scheduler() -> None:
             minute=15,
             id="marketplace_expire", coalesce=True, max_instances=1,
         )
+    # Attorney daily reminder — every day at 09:00 UTC (11:00 Brussels in summer).
+    daily_reminder_enabled = os.environ.get("ATTORNEY_DAILY_REMINDER_ENABLED", "true").lower() != "false"
+    if daily_reminder_enabled:
+        _scheduler.add_job(
+            send_daily_attorney_reminders, "cron",
+            hour=9, minute=0,
+            id="attorney_daily_reminder", coalesce=True, max_instances=1,
+        )
     _scheduler.start()
     logger.info(
         f"Scheduler started (portal_maintenance every {interval}min, "
         f"weekly_payouts={'on' if payouts_enabled else 'off'}, "
         f"credit_reset={'on' if credits_enabled else 'off'}, "
         f"lawyer_status={'on' if lawyer_status_enabled else 'off'}, "
-        f"marketplace_expire={'on' if marketplace_enabled else 'off'})"
+        f"marketplace_expire={'on' if marketplace_enabled else 'off'}, "
+        f"attorney_daily_reminder={'on' if daily_reminder_enabled else 'off'})"
     )
 
 

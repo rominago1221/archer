@@ -544,6 +544,29 @@ async def create_marketplace_checkout(
 # Stripe webhook handler — called from stripe_webhooks.py dispatcher
 # ════════════════════════════════════════════════════════════════════════
 
+@router.patch("/attorney/marketplace/email-preferences")
+async def update_email_preferences(
+    payload: dict,
+    current_attorney: dict = Depends(attorney_required),
+):
+    """Toggle attorney email preferences (for now, just the daily reminder).
+    Payload: { daily_reminder: bool }. Unknown keys ignored."""
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Invalid payload")
+    allowed = {"daily_reminder"}
+    updates = {}
+    for key in allowed:
+        if key in payload:
+            updates[f"email_preferences.{key}"] = bool(payload[key])
+    if not updates:
+        return {"ok": True, "updated": {}}
+    await db.attorneys.update_one(
+        {"id": current_attorney.get("id")},
+        {"$set": updates},
+    )
+    return {"ok": True, "updated": updates}
+
+
 async def handle_marketplace_checkout_session(session: Any) -> None:
     """Runs on `checkout.session.completed` when metadata.type == "marketplace_unlock".
 
