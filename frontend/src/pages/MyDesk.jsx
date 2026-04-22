@@ -536,7 +536,7 @@ export default function MyDesk() {
         <div className="my-desk-empty">
           <h3>Ouvre ton premier dossier</h3>
           <p>Upload un document ou raconte ta situation — Archer analyse en quelques secondes et prépare ta stratégie.</p>
-          <button type="button" onClick={() => navigate('/upload')}>+ Ouvrir un nouveau dossier</button>
+          <button type="button" onClick={() => navigate('/documents')}>+ Ouvrir un nouveau dossier</button>
         </div>
       )}
 
