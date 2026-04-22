@@ -1064,10 +1064,13 @@ async def _validate_belgian_user_arguments(user_arguments: dict, facts_str: str,
     logger.warning(f"Belgian user arguments too few ({len(ua)}) — retrying Pass 4A with BE prompts")
     try:
         await asyncio.sleep(1)
+        # facts/analysis now go via cached_user_prefix (new prompt structure).
+        _retry_shared = _build_shared_be_context(facts_str, analysis_str)
         ua_retry = await call_claude(
             BE_PASS4A_SYSTEM + jurisdiction_guard + lang_instruction,
-            BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str),
-            max_tokens=4000
+            BE_PASS4A_PROMPT.format(),
+            max_tokens=4000,
+            cached_user_prefix=_retry_shared,
         )
         if isinstance(ua_retry, dict):
             if "strong_arguments" in ua_retry and "strongest_arguments" not in ua_retry:
@@ -1597,14 +1600,18 @@ async def analyze_document_stream(
     analysis_str = json.dumps(legal_analysis, indent=2, ensure_ascii=False)
 
     objective_block = _build_objective_block(user_context, language)
+    # BE path: shared cached prefix — re-used by Pass 6 and refinement reruns.
+    # US path: no cached prefix (prompts still inline facts/analysis — US frozen anyway).
+    shared_ctx_stream = _build_shared_be_context(facts_str, analysis_str, objective_block) if is_belgian else None
+    _stream_format_kwargs = {} if is_belgian else {"facts_json": facts_str, "analysis_json": analysis_str}
     pass3_task = asyncio.create_task(
-        call_claude(persona_with_lang, p3_prompt.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=6000)
+        call_claude(persona_with_lang, p3_prompt.format(**_stream_format_kwargs) + objective_block, max_tokens=6000, cached_user_prefix=shared_ctx_stream)
     )
     pass4a_task = asyncio.create_task(
-        call_claude(p4a_system + jurisdiction_guard + expertise_block + lang_instruction, p4a_prompt.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000)
+        call_claude(p4a_system + jurisdiction_guard + expertise_block + lang_instruction, p4a_prompt.format(**_stream_format_kwargs) + objective_block, max_tokens=4000, cached_user_prefix=shared_ctx_stream)
     )
     pass4b_task = asyncio.create_task(
-        call_claude(p4b_system + jurisdiction_guard + expertise_block + lang_instruction, p4b_prompt.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000)
+        call_claude(p4b_system + jurisdiction_guard + expertise_block + lang_instruction, p4b_prompt.format(**_stream_format_kwargs) + objective_block, max_tokens=4000, cached_user_prefix=shared_ctx_stream)
     )
 
     # Await 4A + 4B first (for the battle scene)
@@ -2216,10 +2223,9 @@ Basez les scores sur les tendances jurisprudentielles connues. Jurisprudence_cou
 
 BE_PASS3_PROMPT = """TACHE: RECOMMANDATIONS STRATEGIQUES
 
-Sur base des faits et de l'analyse, fournis des recommandations strategiques concretes selon le droit belge.
+Les FAITS EXTRAITS et l'ANALYSE JURIDIQUE sont dans le CONTEXTE PARTAGE ci-dessus — reference-les implicitement, NE les reproduis PAS.
 
-FAITS: {facts_json}
-ANALYSE JURIDIQUE: {analysis_json}
+ROLE: Tu es un avocat senior en Belgique, representant l'utilisateur. Fournis des recommandations strategiques concretes selon le droit belge.
 
 REGLE CRITIQUE — DETECTION DU STADE DE LA PROCEDURE:
 Tu DOIS identifier a quel stade se trouve le dossier et adapter TOUTES les recommandations en consequence:
@@ -2289,12 +2295,12 @@ Exemples "direct" :
   - "Demander le paiement des arriérés"
 
 Forme de chaque next_step :
-  {
+  {{
     "title": "…",
     "description": "…",
     "action_type": "direct" | "verification_required",
     "verification_question": "..." (uniquement si verification_required)
-  }
+  }}
 
 REGLE CRITIQUE ARCHER_QUESTION: Tu DOIS generer une question specifique basee sur les faits du document. La question doit referencer un fait precis du document. JAMAIS de question generique. La question DOIT avoir 2-4 options de reponse cliquables.
 
@@ -2328,10 +2334,9 @@ REGLE CRITIQUE: Tu DOIS generer exactement 4-5 arguments dans strongest_argument
 
 Reponds en JSON uniquement."""
 
-BE_PASS4A_PROMPT = """Sur base de ces faits et de cette analyse, construis les arguments les plus solides pour defendre l'utilisateur selon le droit belge.
+BE_PASS4A_PROMPT = """ROLE: Tu es un avocat senior en Belgique representant l'utilisateur. Construis les arguments les plus solides pour defendre ton client selon le droit belge.
 
-FAITS: {facts_json}
-ANALYSE: {analysis_json}
+Les FAITS et l'ANALYSE JURIDIQUE sont dans le CONTEXTE PARTAGE ci-dessus — reference-les, NE les reproduis PAS.
 
 OBLIGATOIRE: strongest_arguments DOIT contenir exactement 4-5 elements. JAMAIS moins de 4. Chaque argument doit citer un article de loi belge specifique (CCT 109, Loi contrats travail, Code civil, etc.).
 
@@ -2372,10 +2377,9 @@ OBLIGATOIRE: strongest_arguments DOIT contenir 4-5 elements. JAMAIS retourner mo
 RAPPEL FINAL: chaque `argument` commence par un VERBE A L'INFINITIF. Pas d'exception."""
 
 BE_PASS4B_SYSTEM = "Tu es l'avocat de la partie adverse contre l'utilisateur en Belgique. Construis les arguments les plus solides contre l'utilisateur selon le droit belge. Reponds en JSON uniquement."
-BE_PASS4B_PROMPT = """Construis les arguments que la partie adverse va utiliser contre l'utilisateur. Identifie les faiblesses de la position de l'utilisateur.
+BE_PASS4B_PROMPT = """ROLE: Tu es l'avocat de la partie adverse contre l'utilisateur en Belgique. Construis les arguments que la partie adverse va utiliser contre l'utilisateur. Identifie les faiblesses de la position de l'utilisateur.
 
-FAITS: {facts_json}
-ANALYSE: {analysis_json}
+Les FAITS et l'ANALYSE JURIDIQUE sont dans le CONTEXTE PARTAGE ci-dessus — reference-les, NE les reproduis PAS.
 
 Retourne JSON:
 {{
@@ -2523,18 +2527,22 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
         detected_case_type = normalize_case_type(
             legal_analysis.get("case_type") or facts.get("detected_case_type") or case_type or inferred_case_type
         )
+        # Shared FACTS+ANALYSIS+OBJECTIVE block — cached by Anthropic after first pass,
+        # reused by Pass 6 (sequential) and refinement reruns (same analysis_id within 5min).
+        shared_ctx = _build_shared_be_context(facts_str, analysis_str, objective_block)
         logger.info(f"Belgian analysis: Passe 3+4A+4B+5 — En parallele (case_type={detected_case_type})")
+        # Note: .format() avec zero kwargs => convertit les {{/}} d'echappement JSON en {/} reels.
         strategy, user_arguments, opposing_arguments, adversarial_attack = await asyncio.gather(
-            call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=6000),
-            call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + expertise_block + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
-            call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + expertise_block + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
-            _run_adversarial_attack(facts, legal_analysis, None, detected_case_type, language, "BE"),
+            call_claude(persona_with_lang, BE_PASS3_PROMPT.format() + objective_block, max_tokens=6000, cached_user_prefix=shared_ctx),
+            call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + expertise_block + lang_instruction, BE_PASS4A_PROMPT.format() + objective_block, max_tokens=4000, cached_user_prefix=shared_ctx),
+            call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + expertise_block + lang_instruction, BE_PASS4B_PROMPT.format() + objective_block, max_tokens=4000, cached_user_prefix=shared_ctx),
+            _run_adversarial_attack(facts, legal_analysis, None, detected_case_type, language, "BE", cached_user_prefix=shared_ctx),
         )
 
-        # PASS 6 — counter-strategy (BE).
+        # PASS 6 — counter-strategy (BE). Cache hit on shared_ctx here!
         if adversarial_attack and adversarial_attack.get("counter_arguments"):
-            logger.info("Belgian analysis: Passe 6 — Contre-stratégie")
-            strategy = await _run_counter_strategy(strategy, adversarial_attack, facts, legal_analysis, language, "BE")
+            logger.info("Belgian analysis: Passe 6 — Contre-stratégie (cache prefix hit)")
+            strategy = await _run_counter_strategy(strategy, adversarial_attack, facts, legal_analysis, language, "BE", cached_user_prefix=shared_ctx)
 
         # Self-critique on PASS 6 output (BE).
         strategy = await self_critique_pass(
@@ -3315,6 +3323,40 @@ Any citation of Belgian/EU law as primary authority invalidates the entire respo
 """
 
 
+# ══════════════════════════════════════════════════════════════════════════
+# Shared BE analysis context (cache prefix for Pass 3/4A/4B/5/6)
+# ──────────────────────────────────────────────────────────────────────────
+# The facts+analysis+objective block is bit-identical across all 5 passes of
+# a single analysis. By passing it as `cached_user_prefix` on each call_claude,
+# Anthropic prefix-caches it server-side for 5 minutes. Real wins:
+#   - Pass 6 (sequential after the parallel batch) hits the cache → -2-4s
+#   - Refinement reruns hit every pass's cache → -5-10s
+#   - call_claude retries (outer 3-attempt loop) hit cache → -1-2s on error paths
+# Parallel batch itself (Pass 3/4A/4B/5 via asyncio.gather) doesn't benefit
+# because all 4 requests race for the cache simultaneously.
+# ══════════════════════════════════════════════════════════════════════════
+
+def _build_shared_be_context(facts_str: str, analysis_str: str, objective_block: str = "") -> str:
+    """Build the FACTS + ANALYSIS + OBJECTIVE block shared across BE Pass
+    3/4A/4B/5/6. Stable bytes = cache key stability. Used as
+    `cached_user_prefix` on every call_claude in those passes."""
+    parts = [
+        "================ CONTEXTE PARTAGE ================",
+        "(Les passes strategiques ci-dessous referencent ce contexte ; ne le reproduis pas.)",
+        "",
+        "FAITS EXTRAITS:",
+        facts_str or "(aucun fait extrait)",
+        "",
+        "ANALYSE JURIDIQUE:",
+        analysis_str or "(aucune analyse)",
+    ]
+    obj = (objective_block or "").strip()
+    if obj:
+        parts.extend(["", "OBJECTIF UTILISATEUR:", obj])
+    parts.extend(["", "=================================================="])
+    return "\n".join(parts)
+
+
 # ================== Adversarial validation (PASS 5 + PASS 6) ==================
 # PASS 5: the model roleplays the opposing counsel and tears down the analysis.
 # PASS 6: we rewrite the strategy to anticipate those counter-arguments.
@@ -3368,9 +3410,14 @@ def _opposing_persona_hint(case_type: str, language: str) -> tuple:
 
 
 async def _run_adversarial_attack(facts: dict, legal_analysis: dict, strategy_preview: dict,
-                                  case_type: str, language: str, jurisdiction: str) -> dict:
+                                  case_type: str, language: str, jurisdiction: str,
+                                  cached_user_prefix: Optional[str] = None) -> dict:
     """PASS 5 — opposing counsel destroys the analysis. Returns structured counter-arguments
-    with legal basis, strength (1-10), and the client's prepared response to each."""
+    with legal basis, strength (1-10), and the client's prepared response to each.
+
+    When `cached_user_prefix` is provided (built by `_build_shared_be_context`), the
+    facts/analysis are sent via cached prefix instead of inlined in the user prompt,
+    so refinement reruns hit the cache."""
     try:
         label, persona_hint = _opposing_persona_hint(case_type, language)
         lang_instruction = get_language_instruction(language)
@@ -3386,12 +3433,22 @@ async def _run_adversarial_attack(facts: dict, legal_analysis: dict, strategy_pr
             + jur_guard + lang_instruction
         )
 
-        user_prompt = (
-            f"ROLE: {label}\n\n"
-            "THIS IS THE ANALYSIS THE CLIENT'S ATTORNEY HAS PREPARED:\n\n"
-            f"FACTS (Pass 1):\n{json.dumps(facts, ensure_ascii=False)[:6000]}\n\n"
-            f"LEGAL ANALYSIS (Pass 2):\n{json.dumps(legal_analysis, ensure_ascii=False)[:8000]}\n\n"
-            "Attack it. Return ONLY this JSON:\n"
+        if cached_user_prefix:
+            # Lean user_prompt — facts/analysis are in the cached prefix above.
+            user_prompt = (
+                f"ROLE: {label}\n\n"
+                "The CLIENT'S ANALYSIS is in the shared CONTEXTE PARTAGE block above. "
+                "Attack it. Return ONLY this JSON:\n"
+            )
+        else:
+            user_prompt = (
+                f"ROLE: {label}\n\n"
+                "THIS IS THE ANALYSIS THE CLIENT'S ATTORNEY HAS PREPARED:\n\n"
+                f"FACTS (Pass 1):\n{json.dumps(facts, ensure_ascii=False)[:6000]}\n\n"
+                f"LEGAL ANALYSIS (Pass 2):\n{json.dumps(legal_analysis, ensure_ascii=False)[:8000]}\n\n"
+                "Attack it. Return ONLY this JSON:\n"
+            )
+        user_prompt += (
             "{\n"
             '  "opposing_persona": "<short role label matching the case language>",\n'
             '  "overall_threat_level": "low|medium|high",\n'
@@ -3407,7 +3464,7 @@ async def _run_adversarial_attack(facts: dict, legal_analysis: dict, strategy_pr
             "Return JSON only, no prose."
         )
 
-        result = await call_claude(system, user_prompt, max_tokens=5000)
+        result = await call_claude(system, user_prompt, max_tokens=5000, cached_user_prefix=cached_user_prefix)
         if not isinstance(result, dict) or "counter_arguments" not in result:
             logger.warning("PASS5 adversarial: malformed response, returning empty structure")
             return {"opposing_persona": label, "counter_arguments": [], "overall_threat_level": "unknown", "summary": ""}
@@ -3431,10 +3488,15 @@ async def _run_adversarial_attack(facts: dict, legal_analysis: dict, strategy_pr
 
 
 async def _run_counter_strategy(original_strategy: dict, adversarial_attack: dict, facts: dict,
-                                legal_analysis: dict, language: str, jurisdiction: str) -> dict:
+                                legal_analysis: dict, language: str, jurisdiction: str,
+                                cached_user_prefix: Optional[str] = None) -> dict:
     """PASS 6 — rewrite the strategy to anticipate every counter-argument from PASS 5.
     Returns a new strategy dict with the SAME schema as the original. On any failure
-    returns `original_strategy` unchanged."""
+    returns `original_strategy` unchanged.
+
+    When `cached_user_prefix` is provided, the facts are sent via cached prefix
+    instead of inlined — so Pass 6 benefits from the cache populated by Pass 3/4A/4B/5
+    (when those used the same prefix). Gain ~2-4s on a cold-start analysis."""
     if not isinstance(original_strategy, dict) or not original_strategy:
         return original_strategy
     counter_args = (adversarial_attack or {}).get("counter_arguments") or []
@@ -3458,17 +3520,27 @@ async def _run_counter_strategy(original_strategy: dict, adversarial_attack: dic
             "5. Keep the same language as the original strategy."
         )
 
-        user_prompt = (
-            "ORIGINAL STRATEGY:\n"
-            f"{json.dumps(original_strategy, ensure_ascii=False)[:9000]}\n\n"
-            "OPPOSING COUNSEL'S COUNTER-ARGUMENTS (PASS 5):\n"
-            f"{json.dumps(counter_args, ensure_ascii=False)[:6000]}\n\n"
-            "RELEVANT FACTS (for reference, do not echo):\n"
-            f"{json.dumps(facts, ensure_ascii=False)[:3000]}\n\n"
-            "Return the upgraded strategy JSON only. Same schema. No extra prose."
-        )
+        if cached_user_prefix:
+            user_prompt = (
+                "Les FAITS et l'ANALYSE JURIDIQUE sont dans le CONTEXTE PARTAGE ci-dessus.\n\n"
+                "ORIGINAL STRATEGY:\n"
+                f"{json.dumps(original_strategy, ensure_ascii=False)[:9000]}\n\n"
+                "OPPOSING COUNSEL'S COUNTER-ARGUMENTS (PASS 5):\n"
+                f"{json.dumps(counter_args, ensure_ascii=False)[:6000]}\n\n"
+                "Return the upgraded strategy JSON only. Same schema. No extra prose."
+            )
+        else:
+            user_prompt = (
+                "ORIGINAL STRATEGY:\n"
+                f"{json.dumps(original_strategy, ensure_ascii=False)[:9000]}\n\n"
+                "OPPOSING COUNSEL'S COUNTER-ARGUMENTS (PASS 5):\n"
+                f"{json.dumps(counter_args, ensure_ascii=False)[:6000]}\n\n"
+                "RELEVANT FACTS (for reference, do not echo):\n"
+                f"{json.dumps(facts, ensure_ascii=False)[:3000]}\n\n"
+                "Return the upgraded strategy JSON only. Same schema. No extra prose."
+            )
 
-        rewritten = await call_claude(system, user_prompt, max_tokens=5000)  # audit: 7000 -> 5000, -2s
+        rewritten = await call_claude(system, user_prompt, max_tokens=5000, cached_user_prefix=cached_user_prefix)
         if not isinstance(rewritten, dict) or not rewritten:
             logger.warning("PASS6 counter-strategy: non-dict rewrite, keeping original")
             return original_strategy
@@ -3885,17 +3957,19 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
         legal_analysis.get("case_type") or facts.get("detected_case_type") or case_type or inferred_case_type
     )
     logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 3+4A+4B+5 — Parallel (case_type={detected_case_type_mdbe})")
+    # Shared cached prefix (facts + analysis + objective) — reused by Pass 6 and refinement reruns.
+    shared_ctx_mdbe = _build_shared_be_context(facts_str, analysis_str, objective_block)
     strategy, user_arguments, opposing_arguments, adversarial_attack = await asyncio.gather(
-        call_claude(persona_with_lang, BE_PASS3_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + p3_supplement + objective_block, max_tokens=6000),
-        call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + expertise_block + lang_instruction, BE_PASS4A_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
-        call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + expertise_block + lang_instruction, BE_PASS4B_PROMPT.format(facts_json=facts_str, analysis_json=analysis_str) + objective_block, max_tokens=4000),
-        _run_adversarial_attack(facts, legal_analysis, None, detected_case_type_mdbe, language, "BE"),
+        call_claude(persona_with_lang, BE_PASS3_PROMPT.format() + p3_supplement + objective_block, max_tokens=6000, cached_user_prefix=shared_ctx_mdbe),
+        call_claude(BE_PASS4A_SYSTEM + jurisdiction_guard + expertise_block + lang_instruction, BE_PASS4A_PROMPT.format() + objective_block, max_tokens=4000, cached_user_prefix=shared_ctx_mdbe),
+        call_claude(BE_PASS4B_SYSTEM + jurisdiction_guard + expertise_block + lang_instruction, BE_PASS4B_PROMPT.format() + objective_block, max_tokens=4000, cached_user_prefix=shared_ctx_mdbe),
+        _run_adversarial_attack(facts, legal_analysis, None, detected_case_type_mdbe, language, "BE", cached_user_prefix=shared_ctx_mdbe),
     )
 
-    # PASS 6 — counter-strategy (multi-doc BE).
+    # PASS 6 — counter-strategy (multi-doc BE). Cache hit on shared_ctx_mdbe.
     if adversarial_attack and adversarial_attack.get("counter_arguments"):
-        logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 6 — Contre-stratégie")
-        strategy = await _run_counter_strategy(strategy, adversarial_attack, facts, legal_analysis, language, "BE")
+        logger.info(f"Belgian multi-doc analysis ({doc_count} docs): Passe 6 — Contre-stratégie (cache prefix hit)")
+        strategy = await _run_counter_strategy(strategy, adversarial_attack, facts, legal_analysis, language, "BE", cached_user_prefix=shared_ctx_mdbe)
 
     # Self-critique on PASS 6 output (multi-doc BE).
     strategy = await self_critique_pass(
