@@ -24,16 +24,12 @@ router = APIRouter()
 ADMIN_SECRET = os.environ.get("ADMIN_SECRET", "archer-admin-2026")
 
 
-@router.post("/demo/seed")
-async def run_demo_seed(secret: str = Query(...)):
-    """Run scripts.seed_demo.seed_demo() in-process.
-    Returns the demo credentials + a counts breakdown so the caller
-    can confirm the seed landed."""
+async def _run_seed(secret: str):
+    """Shared impl used by both POST and GET variants."""
     if secret != ADMIN_SECRET:
         raise HTTPException(status_code=403, detail="Invalid admin secret")
 
     try:
-        # Late import so the server doesn't crash at boot if scripts/ moves.
         from scripts.seed_demo import (
             build_client_user,
             build_attorney,
@@ -48,13 +44,11 @@ async def run_demo_seed(secret: str = Query(...)):
         logger.exception("demo seed: failed to import seed script")
         raise HTTPException(status_code=500, detail=f"Seed module not available: {e}")
 
-    # 1. Cleanup previous demo docs.
     del_users = await db.users.delete_many({"is_demo": True})
     del_attorneys = await db.attorneys.delete_many({"is_demo": True})
     del_cases = await db.cases.delete_many({"is_demo": True})
     del_listings = await db.case_marketplace.delete_many({"is_demo": True})
 
-    # 2. Insert fresh docs.
     client_doc = build_client_user()
     attorney_doc = build_attorney()
     cases = build_cases(client_doc["user_id"])
@@ -68,7 +62,6 @@ async def run_demo_seed(secret: str = Query(...)):
         await db.case_marketplace.insert_many(listings)
 
     logger.info("demo seed: accounts + data ready")
-
     return {
         "ok": True,
         "deleted": {
@@ -88,6 +81,18 @@ async def run_demo_seed(secret: str = Query(...)):
             "attorney": {"email": ATTORNEY_EMAIL, "password": DEMO_PASSWORD},
         },
     }
+
+
+@router.get("/demo/seed")
+async def run_demo_seed_get(secret: str = Query(...)):
+    """GET variant for browser/URL execution — same behavior as POST."""
+    return await _run_seed(secret)
+
+
+@router.post("/demo/seed")
+async def run_demo_seed(secret: str = Query(...)):
+    """POST variant (kept for curl / API callers)."""
+    return await _run_seed(secret)
 
 
 @router.get("/demo/seed/status")
