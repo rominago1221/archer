@@ -70,14 +70,16 @@
 .public-header-v2 .header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
-/* Height harmony — all three zones (lang / pill / cta) normalize to 36px */
+/* Height harmony — all zones (lang / pill / signin / cta) normalize to 36px
+   so the right rail reads as a single horizontal row with matching baselines. */
 .public-header-v2 .lang-switch,
 .public-header-v2 .jurisdiction-pill,
 .public-header-v2 .header-cta,
 .public-header-v2 .header-signin {
   height: 36px;
+  line-height: 1;
 }
 
 /* Language toggle */
@@ -113,12 +115,10 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
-/* Separator — softened, centered vertically with the 36px zones */
+/* Separator removed visually — the 10px gap + matching heights carry the rhythm.
+   Kept the rule so the old <div className="header-sep"/> markup still parses clean. */
 .public-header-v2 .header-sep {
-  width: 1px;
-  height: 22px;
-  background: var(--line);
-  margin: 0 2px;
+  display: none;
 }
 
 /* Jurisdiction pill */
