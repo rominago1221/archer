@@ -1071,8 +1071,16 @@ def build_marketplace_listings(cases: list[dict]) -> list[dict]:
 # ══════════════════════════════════════════════════════════════════════════
 async def seed_demo() -> None:
     print("🔧 Suppression des docs is_demo=true existants…")
-    del_users = await db.users.delete_many({"is_demo": True})
-    del_attorneys = await db.attorneys.delete_many({"is_demo": True})
+    # Delete by is_demo flag AND by demo email — the email cleanup catches
+    # stale docs (older seed versions that did not set is_demo, or manual
+    # fixtures). Without this, the unique email index on db.attorneys makes
+    # the insert below fail with DuplicateKeyError → login broken.
+    del_users = await db.users.delete_many(
+        {"$or": [{"is_demo": True}, {"email": CLIENT_EMAIL}]}
+    )
+    del_attorneys = await db.attorneys.delete_many(
+        {"$or": [{"is_demo": True}, {"email": ATTORNEY_EMAIL}]}
+    )
     del_cases = await db.cases.delete_many({"is_demo": True})
     del_listings = await db.case_marketplace.delete_many({"is_demo": True})
     print(

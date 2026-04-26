@@ -44,8 +44,16 @@ async def _run_seed(secret: str):
         logger.exception("demo seed: failed to import seed script")
         raise HTTPException(status_code=500, detail=f"Seed module not available: {e}")
 
-    del_users = await db.users.delete_many({"is_demo": True})
-    del_attorneys = await db.attorneys.delete_many({"is_demo": True})
+    # Clean by is_demo flag AND by demo email — the email cleanup catches stale
+    # docs left over by older seed versions that did not set is_demo, or by
+    # manual fixtures. Without this, the unique email index on db.attorneys
+    # makes the insert below fail with DuplicateKeyError → 500 → login broken.
+    del_users = await db.users.delete_many(
+        {"$or": [{"is_demo": True}, {"email": CLIENT_EMAIL}]}
+    )
+    del_attorneys = await db.attorneys.delete_many(
+        {"$or": [{"is_demo": True}, {"email": ATTORNEY_EMAIL}]}
+    )
     del_cases = await db.cases.delete_many({"is_demo": True})
     del_listings = await db.case_marketplace.delete_many({"is_demo": True})
 
