@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { attorneyApi, setAttorneyToken } from '../../hooks/attorneys/useAttorneyApi';
 import { useAttorneyT } from '../../hooks/attorneys/useAttorneyT';
 
 export default function AttorneyLogin() {
   const { t } = useAttorneyT();
-  const nav = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -18,9 +16,11 @@ export default function AttorneyLogin() {
     setLoading(true);
     try {
       const { data } = await attorneyApi.post('/attorneys/login', { email, password });
-      // Store bearer token as a fallback when cross-site cookies are blocked.
       if (data && data.token) setAttorneyToken(data.token);
-      nav('/attorneys/dashboard');
+      // Full page reload — guarantees the auth guard re-runs with a fresh
+      // app state and the bearer token from localStorage. React Router's
+      // nav() can keep stale auth state in memory and bounce back to login.
+      window.location.href = '/attorneys/dashboard';
     } catch (err) {
       const status = err.response?.status;
       if (status === 403) setError(t.login.notActive);

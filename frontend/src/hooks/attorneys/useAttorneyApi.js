@@ -7,7 +7,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 // we keep a bearer token as a fallback. The backend's _extract_token in
 // utils/attorney_auth.py accepts both `Authorization: Bearer <token>` and
 // the `attorney_session` cookie — first one that matches wins.
-const TOKEN_KEY = 'attorney_session_token';
+const TOKEN_KEY = 'attorney_token';
 
 export function setAttorneyToken(token) {
   if (typeof window === 'undefined') return;

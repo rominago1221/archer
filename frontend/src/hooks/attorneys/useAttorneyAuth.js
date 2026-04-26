@@ -23,8 +23,13 @@ export function useAttorneyAuth() {
     } catch (e) {
       setAttorney(null);
       if (e.response && e.response.status === 401) {
-        // Stale token — drop it so the next refresh starts clean.
+        // Stale or missing token — drop it and hard-redirect to login.
+        // Hard reload (not React Router) avoids stale in-memory state.
         clearAttorneyToken();
+        if (typeof window !== 'undefined'
+            && !window.location.pathname.startsWith('/attorneys/login')) {
+          window.location.href = '/attorneys/login';
+        }
       } else if (e.response) {
         setError(e.response.data?.detail || 'Error loading attorney');
       }
