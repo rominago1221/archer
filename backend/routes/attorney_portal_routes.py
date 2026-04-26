@@ -4,6 +4,7 @@ Mounted under `/api/attorneys/*` (plural) to coexist with the legacy
 `/api/attorney/*` (singular) endpoints in `attorney_routes.py`.
 """
 import os
+import re
 import uuid
 import logging
 from datetime import datetime, timezone
@@ -254,16 +255,46 @@ async def join(req: JoinRequest):
 
 @router.post("/login")
 async def login(req: LoginRequest):
-    attorney = await db.attorneys.find_one({"email": req.email.lower()}, {"_id": 0}) \
-        or await db.attorneys.find_one({"email": req.email}, {"_id": 0})
+    # Temporary structured logging — surfaces in Emergent logs so we can see
+    # exactly which step rejects a login attempt without guessing. Remove
+    # once the demo flow is proven stable.
+    email_in = req.email or ""
+    email_lower = email_in.lower()
+    attorney = await db.attorneys.find_one({"email": email_lower}, {"_id": 0}) \
+        or await db.attorneys.find_one({"email": email_in}, {"_id": 0})
     if not attorney:
+        # Last-resort case-insensitive lookup — diagnostic only, do NOT use
+        # for auth decision (keeps the lower/exact contract above intact).
+        ci_doc = await db.attorneys.find_one(
+            {"email": {"$regex": f"^{re.escape(email_in)}$", "$options": "i"}},
+            {"_id": 0, "email": 1, "id": 1, "status": 1},
+        )
+        logger.warning(
+            "attorney_login_fail step=lookup email_in=%r email_lower=%r "
+            "ci_match=%s ci_email=%r",
+            email_in, email_lower, bool(ci_doc),
+            (ci_doc or {}).get("email"),
+        )
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    if not verify_password(req.password, attorney.get("password_hash", "")):
+    pwd_hash = attorney.get("password_hash") or ""
+    if not verify_password(req.password, pwd_hash):
+        logger.warning(
+            "attorney_login_fail step=verify_password email=%r id=%r "
+            "hash_prefix=%r hash_len=%d password_len=%d",
+            attorney.get("email"), attorney.get("id"),
+            pwd_hash[:7], len(pwd_hash), len(req.password or ""),
+        )
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    if attorney.get("status") != "active":
+    status = attorney.get("status")
+    if status != "active":
+        logger.warning(
+            "attorney_login_fail step=status email=%r id=%r status=%r",
+            attorney.get("email"), attorney.get("id"), status,
+        )
         raise HTTPException(status_code=403, detail="Account not yet verified")
 
     token, _ = await create_session(attorney["id"], session_type="session")
+    logger.info("attorney_login_ok email=%r id=%r", attorney.get("email"), attorney.get("id"))
     response = JSONResponse(content={"success": True, "attorney": _public_attorney(attorney)})
     _set_session_cookie(response, token)
     return response

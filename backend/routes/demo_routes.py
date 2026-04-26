@@ -78,19 +78,33 @@ async def _run_seed(secret: str):
     if listings:
         await db.case_marketplace.insert_many(listings)
 
-    # Verify the demo attorney is now in the right shape for /attorneys/login.
-    fresh = await db.attorneys.find_one(
+    # End-to-end verification — the same lookup + verify_password the
+    # /attorneys/login route runs. If this returns verify_ok=False we know
+    # the seed itself is broken (wrong hash function, wrong field name,
+    # wrong collection) without needing to test login from the UI.
+    from utils.attorney_auth import verify_password as attorney_verify
+    fresh_lower = await db.attorneys.find_one(
+        {"email": ATTORNEY_EMAIL.lower()},
+        {"_id": 0, "email": 1, "id": 1, "status": 1, "password_hash": 1, "is_demo": 1},
+    )
+    fresh_exact = await db.attorneys.find_one(
         {"email": ATTORNEY_EMAIL},
         {"_id": 0, "email": 1, "id": 1, "status": 1, "password_hash": 1, "is_demo": 1},
     )
+    fresh = fresh_lower or fresh_exact
+    pwd_hash_str = (fresh.get("password_hash") if fresh else "") or ""
+    verify_ok = bool(fresh and attorney_verify(DEMO_PASSWORD, pwd_hash_str))
     attorney_check = {
-        "found": fresh is not None,
+        "found_via_lower": fresh_lower is not None,
+        "found_via_exact": fresh_exact is not None,
         "email": fresh.get("email") if fresh else None,
         "id": fresh.get("id") if fresh else None,
         "status": fresh.get("status") if fresh else None,
         "is_demo": fresh.get("is_demo") if fresh else None,
-        "password_hash_prefix": (fresh.get("password_hash", "") or "")[:7] if fresh else None,
-        "password_hash_len": len(fresh.get("password_hash", "")) if fresh else 0,
+        "password_hash_prefix": pwd_hash_str[:7] if fresh else None,
+        "password_hash_len": len(pwd_hash_str),
+        "verify_password_ok": verify_ok,
+        "would_login_succeed": bool(verify_ok and fresh and fresh.get("status") == "active"),
     }
 
     logger.info("demo seed: accounts + data ready — attorney_check=%s", attorney_check)
