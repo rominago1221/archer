@@ -1,28 +1,59 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { attorneyApi } from '../hooks/attorneys/useAttorneyApi';
 import { Scale, User, ArrowLeft } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { loginWithEmail, initiateGoogleLogin, error, clearError } = useAuth();
+  const { loginWithEmail, initiateGoogleLogin, error: clientError, clearError } = useAuth();
   const [accountType, setAccountType] = useState(null); // null | 'client' | 'attorney'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [attorneyError, setAttorneyError] = useState(null);
+
+  // Surface whichever error matches the active form. Attorney login does
+  // not use AuthContext, so its errors live in a local state.
+  const error = accountType === 'attorney' ? attorneyError : clientError;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     clearError();
+    setAttorneyError(null);
     try {
-      const user = await loginWithEmail(email, password);
-      if (user?.account_type === 'attorney') {
-        navigate('/attorney/dashboard');
+      if (accountType === 'attorney') {
+        // Attorney portal (Sprint A) — separate auth stack on db.attorneys.
+        // Client AuthContext.loginWithEmail hits /api/auth/login (db.users)
+        // and would never find the attorney doc → 401. Use the attorney
+        // portal endpoint instead.
+        await attorneyApi.post('/attorneys/login', { email, password });
+        navigate('/attorneys/dashboard');
       } else {
-        navigate('/dashboard');
+        const user = await loginWithEmail(email, password);
+        // Defensive: if a legacy attorney logs in via the client form,
+        // route them to the attorney dashboard.
+        if (user?.account_type === 'attorney') {
+          navigate('/attorneys/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
       }
-    } catch (err) { console.error('Login error:', err); /* error is set by AuthContext */ }
+    } catch (err) {
+      console.error('Login error:', err);
+      if (accountType === 'attorney') {
+        const status = err?.response?.status;
+        if (status === 403) {
+          setAttorneyError('Account not yet verified.');
+        } else if (status === 401) {
+          setAttorneyError('Invalid email or password.');
+        } else {
+          setAttorneyError('Sign in failed. Please try again.');
+        }
+      }
+      // Client errors are set by AuthContext.
+    }
     setLoading(false);
   };
 
@@ -72,7 +103,7 @@ const Login = () => {
           ) : (
             /* ─── Login Form ─── */
             <div data-testid="login-form">
-              <button onClick={() => { setAccountType(null); clearError(); }} className="flex items-center gap-1 text-[11px] text-[#6b7280] hover:text-[#1a56db] mb-4" data-testid="back-to-selector">
+              <button onClick={() => { setAccountType(null); clearError(); setAttorneyError(null); }} className="flex items-center gap-1 text-[11px] text-[#6b7280] hover:text-[#1a56db] mb-4" data-testid="back-to-selector">
                 <ArrowLeft size={12} /> Back
               </button>
               <h2 className="text-[15px] font-semibold text-[#111827] mb-1">
