@@ -295,7 +295,16 @@ async def login(req: LoginRequest):
 
     token, _ = await create_session(attorney["id"], session_type="session")
     logger.info("attorney_login_ok email=%r id=%r", attorney.get("email"), attorney.get("id"))
-    response = JSONResponse(content={"success": True, "attorney": _public_attorney(attorney)})
+    # Return the token in the body too so the SPA can store it and send it
+    # as `Authorization: Bearer <token>`. The cookie path is the primary
+    # auth, but cross-site cookies can be blocked on the Emergent preview
+    # (different domain for frontend vs backend) — the bearer token works
+    # in those environments where the cookie does not.
+    response = JSONResponse(content={
+        "success": True,
+        "attorney": _public_attorney(attorney),
+        "token": token,
+    })
     _set_session_cookie(response, token)
     return response
 
@@ -318,7 +327,11 @@ async def verify_magic(token: str):
     if not attorney:
         raise HTTPException(status_code=410, detail="Magic link invalid or expired")
     session_token, _ = await create_session(attorney["id"], session_type="session")
-    response = JSONResponse(content={"success": True, "attorney": _public_attorney(attorney)})
+    response = JSONResponse(content={
+        "success": True,
+        "attorney": _public_attorney(attorney),
+        "token": session_token,
+    })
     _set_session_cookie(response, session_token)
     return response
 

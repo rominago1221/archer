@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { attorneyApi } from './useAttorneyApi';
+import { attorneyApi, clearAttorneyToken } from './useAttorneyApi';
 
 export function useAttorneyAuth() {
   const [attorney, setAttorney] = useState(null);
@@ -22,7 +22,10 @@ export function useAttorneyAuth() {
       }
     } catch (e) {
       setAttorney(null);
-      if (e.response && e.response.status !== 401) {
+      if (e.response && e.response.status === 401) {
+        // Stale token — drop it so the next refresh starts clean.
+        clearAttorneyToken();
+      } else if (e.response) {
         setError(e.response.data?.detail || 'Error loading attorney');
       }
     } finally {
@@ -34,6 +37,7 @@ export function useAttorneyAuth() {
 
   const logout = useCallback(async () => {
     try { await attorneyApi.post('/attorneys/logout'); } catch (_) { /* ignore */ }
+    clearAttorneyToken();
     setAttorney(null);
     window.location.href = '/attorneys/login';
   }, []);

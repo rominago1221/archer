@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { attorneyApi } from '../../hooks/attorneys/useAttorneyApi';
+import { attorneyApi, setAttorneyToken } from '../../hooks/attorneys/useAttorneyApi';
 import { useAttorneyT } from '../../hooks/attorneys/useAttorneyT';
 
 export default function AttorneyMagicVerify() {
@@ -14,7 +14,10 @@ export default function AttorneyMagicVerify() {
     if (!token) { setStatus('error'); return; }
     attorneyApi
       .get(`/attorneys/login/verify-magic/${encodeURIComponent(token)}`)
-      .then(() => nav('/attorneys/dashboard'))
+      .then((res) => {
+        if (res?.data?.token) setAttorneyToken(res.data.token);
+        nav('/attorneys/dashboard');
+      })
       .catch(() => setStatus('error'));
   }, [params, nav]);
 

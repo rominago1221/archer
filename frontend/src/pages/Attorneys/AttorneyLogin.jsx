@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { attorneyApi } from '../../hooks/attorneys/useAttorneyApi';
+import { attorneyApi, setAttorneyToken } from '../../hooks/attorneys/useAttorneyApi';
 import { useAttorneyT } from '../../hooks/attorneys/useAttorneyT';
 
 export default function AttorneyLogin() {
@@ -17,7 +17,9 @@ export default function AttorneyLogin() {
     setError(null);
     setLoading(true);
     try {
-      await attorneyApi.post('/attorneys/login', { email, password });
+      const { data } = await attorneyApi.post('/attorneys/login', { email, password });
+      // Store bearer token as a fallback when cross-site cookies are blocked.
+      if (data && data.token) setAttorneyToken(data.token);
       nav('/attorneys/dashboard');
     } catch (err) {
       const status = err.response?.status;
