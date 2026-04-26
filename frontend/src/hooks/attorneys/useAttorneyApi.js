@@ -31,6 +31,13 @@ export const attorneyApi = axios.create({
 
 attorneyApi.interceptors.request.use((config) => {
   const token = getAttorneyToken();
+  // [DIAG] Surface for every request so we can confirm the interceptor is
+  // reading localStorage correctly after the page reload.
+  // eslint-disable-next-line no-console
+  console.log(
+    `[attorneyApi] ${(config.method || 'get').toUpperCase()} ${config.url} — `
+    + `token in localStorage: ${token ? token.slice(0, 8) + '…' : 'NONE'}`
+  );
   if (token) {
     config.headers = config.headers || {};
     if (!config.headers['Authorization']) {

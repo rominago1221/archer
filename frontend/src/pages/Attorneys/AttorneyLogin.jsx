@@ -16,7 +16,35 @@ export default function AttorneyLogin() {
     setLoading(true);
     try {
       const { data } = await attorneyApi.post('/attorneys/login', { email, password });
-      if (data && data.token) setAttorneyToken(data.token);
+
+      // [DIAG] Inspect what the backend actually returned. Multiple field
+      // names tried — backends differ; pick whichever the deployed build sends.
+      console.log('[AttorneyLogin] response.data:', data);
+      console.log('[AttorneyLogin] response.data keys:', data ? Object.keys(data) : null);
+      const tokenCandidate =
+        (data && (data.token || data.session_token || data.access_token || data.key)) || null;
+      console.log('[AttorneyLogin] token candidate found?', !!tokenCandidate,
+                  'value preview:', tokenCandidate ? String(tokenCandidate).slice(0, 8) + '…' : 'NONE');
+
+      if (tokenCandidate) {
+        setAttorneyToken(tokenCandidate);
+        console.log('[AttorneyLogin] localStorage.attorney_token after store:',
+                    localStorage.getItem('attorney_token'));
+      } else {
+        // Loud failure — backend response had no usable token field.
+        console.error('[AttorneyLogin] NO TOKEN FIELD in response — backend not deployed with bearer token support');
+        // eslint-disable-next-line no-alert
+        alert(
+          'Pas de token dans la réponse backend.\n\n' +
+          'Réponse complète :\n' + JSON.stringify(data, null, 2) +
+          '\n\nVérifier que Emergent a déployé un commit ≥ 62e39f4 ' +
+          '(la modif qui ajoute `token` dans le body de POST /attorneys/login).'
+        );
+        // Don't redirect — staying on the login page so the user sees the alert
+        // and the console output.
+        return;
+      }
+
       // Full page reload — guarantees the auth guard re-runs with a fresh
       // app state and the bearer token from localStorage. React Router's
       // nav() can keep stale auth state in memory and bounce back to login.
