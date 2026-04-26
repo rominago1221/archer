@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 import sys
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -1071,15 +1072,18 @@ def build_marketplace_listings(cases: list[dict]) -> list[dict]:
 # ══════════════════════════════════════════════════════════════════════════
 async def seed_demo() -> None:
     print("🔧 Suppression des docs is_demo=true existants…")
-    # Delete by is_demo flag AND by demo email — the email cleanup catches
-    # stale docs (older seed versions that did not set is_demo, or manual
-    # fixtures). Without this, the unique email index on db.attorneys makes
-    # the insert below fail with DuplicateKeyError → login broken.
+    # Delete by is_demo flag AND by demo email (case-insensitive). The email
+    # cleanup catches stale docs (older seed versions that did not set is_demo,
+    # or manual fixtures stored with mixed-case emails). Without this, the
+    # unique email index on db.attorneys makes the insert below fail with
+    # DuplicateKeyError → login broken.
+    client_email_ci = {"$regex": f"^{re.escape(CLIENT_EMAIL)}$", "$options": "i"}
+    attorney_email_ci = {"$regex": f"^{re.escape(ATTORNEY_EMAIL)}$", "$options": "i"}
     del_users = await db.users.delete_many(
-        {"$or": [{"is_demo": True}, {"email": CLIENT_EMAIL}]}
+        {"$or": [{"is_demo": True}, {"email": client_email_ci}]}
     )
     del_attorneys = await db.attorneys.delete_many(
-        {"$or": [{"is_demo": True}, {"email": ATTORNEY_EMAIL}]}
+        {"$or": [{"is_demo": True}, {"email": attorney_email_ci}]}
     )
     del_cases = await db.cases.delete_many({"is_demo": True})
     del_listings = await db.case_marketplace.delete_many({"is_demo": True})
@@ -1092,11 +1096,13 @@ async def seed_demo() -> None:
 
     print("👤 Insertion client démo…")
     client_doc = build_client_user()
-    await db.users.insert_one(client_doc)
+    # Defensive: replace_one upsert handles any leftover doc that survived
+    # deletion (e.g., custom Mongo collation on the unique index).
+    await db.users.replace_one({"email": CLIENT_EMAIL}, client_doc, upsert=True)
 
     print("⚖️  Insertion avocat démo…")
     attorney_doc = build_attorney()
-    await db.attorneys.insert_one(attorney_doc)
+    await db.attorneys.replace_one({"email": ATTORNEY_EMAIL}, attorney_doc, upsert=True)
 
     print("📁 Insertion 5 dossiers client (multi-domaines)…")
     cases = build_cases(client_doc["user_id"])

@@ -25,7 +25,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px;
+  padding: 14px 32px;
   background: white;
   border-bottom: 1px solid var(--line);
   position: sticky;
@@ -36,7 +36,7 @@
 .public-header-v2 .header-left {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 40px;
   min-width: 0;
 }
 
@@ -51,10 +51,10 @@
 .public-header-v2 .header-nav {
   display: flex;
   align-items: center;
-  gap: 22px;
+  gap: 30px;
 }
 .public-header-v2 .header-nav a {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--ink-3);
   text-decoration: none;
@@ -64,6 +64,8 @@
   border: none;
   padding: 0;
   font-family: inherit;
+  letter-spacing: -0.005em;
+  line-height: 1;
 }
 .public-header-v2 .header-nav a:hover { color: var(--ink); }
 
