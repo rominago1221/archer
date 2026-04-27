@@ -188,7 +188,6 @@ function TimelinePin({ c, position, anchor }) {
     >
       <div className="tl-pin" />
       <div className="tl-pin-mini">
-        <span className="tl-pin-mini-title">{c.title || '—'}</span>
         <span className="tl-pin-mini-date">dans {days} jours</span>
       </div>
       <div className="tl-card">
