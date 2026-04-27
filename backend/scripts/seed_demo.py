@@ -85,6 +85,57 @@ def build_client_user() -> dict:
     }
 
 
+def build_attorney_profile(attorney_doc: dict) -> dict:
+    """Legacy `attorney_profiles` doc — required because the deployed backend
+    on the demo environment routes `GET /api/attorneys/me` to the legacy
+    catch-all `attorney_routes.py:GET /attorneys/{slug}` (slug=`"me"`), which
+    reads `db.attorney_profiles` with filter `{slug, application_status}`.
+
+    HACK FOR DEMO. Cleaned up by the existing `is_demo=true` deletion. Once
+    `attorney_portal_routes.py` is properly mounted in prod, this insertion
+    can be dropped.
+    """
+    now = _now()
+    full_name = (
+        f"{attorney_doc.get('first_name','')} {attorney_doc.get('last_name','')}"
+    ).strip()
+    year_admitted = int(attorney_doc.get("year_admitted") or 2012)
+    years_exp = max(0, datetime.now(timezone.utc).year - year_admitted)
+    return {
+        # ── Fields read by the legacy /attorneys/{slug} response ─────────
+        "attorney_id": attorney_doc["id"],
+        "slug": "me",  # CRITICAL — matches /api/attorneys/me path param
+        "application_status": "approved",  # required filter on legacy route
+        "full_name": full_name,
+        "bar_number": attorney_doc.get("bar_number", ""),
+        "states_licensed": [],
+        "country": attorney_doc.get("jurisdiction", "BE"),
+        "years_experience": years_exp,
+        "specialties": attorney_doc.get("specialties", []),
+        "bio": attorney_doc.get("bio", ""),
+        "photo_url": attorney_doc.get("photo_url"),
+        "languages": ["French", "English", "Dutch"],
+        "session_price": 150,
+        "rating": attorney_doc.get("rating_avg", 4.9),
+        "total_sessions": attorney_doc.get("cases_completed", 0),
+        "review_count": 0,
+        "is_available": attorney_doc.get("available_for_cases", True),
+        "available_from": None,
+        "available_until": None,
+        # ── Sprint A fields kept alongside in case any downstream reader
+        #    looks for them on the same doc.
+        "id": attorney_doc["id"],
+        "email": attorney_doc.get("email"),
+        "first_name": attorney_doc.get("first_name"),
+        "last_name": attorney_doc.get("last_name"),
+        "status": "active",
+        "user_id": attorney_doc.get("user_id"),
+        "created_at": _iso(now - timedelta(days=90)),
+        "updated_at": _iso(now),
+        "is_demo": True,
+    }
+
+
 def build_attorney() -> dict:
     now = _now()
     attorney_id = "atty_demo_dubois"
@@ -1087,11 +1138,16 @@ async def seed_demo() -> None:
     )
     del_cases = await db.cases.delete_many({"is_demo": True})
     del_listings = await db.case_marketplace.delete_many({"is_demo": True})
+    # Demo workaround: legacy attorney_profiles collection — see build_attorney_profile.
+    del_profiles = await db.attorney_profiles.delete_many(
+        {"$or": [{"is_demo": True}, {"slug": "me"}]}
+    )
     print(
         f"   users={del_users.deleted_count} · "
         f"attorneys={del_attorneys.deleted_count} · "
         f"cases={del_cases.deleted_count} · "
-        f"listings={del_listings.deleted_count}"
+        f"listings={del_listings.deleted_count} · "
+        f"profiles={del_profiles.deleted_count}"
     )
 
     print("👤 Insertion client démo…")
@@ -1103,6 +1159,10 @@ async def seed_demo() -> None:
     print("⚖️  Insertion avocat démo…")
     attorney_doc = build_attorney()
     await db.attorneys.replace_one({"email": ATTORNEY_EMAIL}, attorney_doc, upsert=True)
+    # Demo workaround — also insert into legacy attorney_profiles so that the
+    # /attorneys/{slug} catch-all returns 200 on /api/attorneys/me.
+    profile_doc = build_attorney_profile(attorney_doc)
+    await db.attorney_profiles.replace_one({"slug": "me"}, profile_doc, upsert=True)
 
     print("📁 Insertion 5 dossiers client (multi-domaines)…")
     cases = build_cases(client_doc["user_id"])

@@ -63,6 +63,7 @@ async def _run_seed(secret: str):
         from scripts.seed_demo import (
             build_client_user,
             build_attorney,
+            build_attorney_profile,
             build_cases,
             build_marketplace_listings,
             CLIENT_EMAIL,
@@ -94,14 +95,19 @@ async def _run_seed(secret: str):
         logger.exception("demo seed: delete_attorneys failed")
         return {"ok": False, "progress": progress, "failure": _err("delete_attorneys", e)}
 
-    # ── Step: delete cases + listings ────────────────────────────────────
+    # ── Step: delete cases + listings + legacy attorney_profiles ─────────
     try:
         progress.append("delete_cases")
         del_cases = await db.cases.delete_many({"is_demo": True})
         progress.append("delete_listings")
         del_listings = await db.case_marketplace.delete_many({"is_demo": True})
+        # Demo workaround: legacy attorney_profiles — see build_attorney_profile.
+        progress.append("delete_attorney_profiles")
+        del_profiles = await db.attorney_profiles.delete_many(
+            {"$or": [{"is_demo": True}, {"slug": "me"}]}
+        )
     except BaseException as e:
-        logger.exception("demo seed: delete cases/listings failed")
+        logger.exception("demo seed: delete cases/listings/profiles failed")
         return {"ok": False, "progress": progress, "failure": _err(progress[-1], e)}
 
     # ── Step: build all docs ─────────────────────────────────────────────
@@ -124,6 +130,11 @@ async def _run_seed(secret: str):
         await db.users.replace_one({"email": CLIENT_EMAIL}, client_doc, upsert=True)
         progress.append("write_attorney")
         await db.attorneys.replace_one({"email": ATTORNEY_EMAIL}, attorney_doc, upsert=True)
+        # Demo workaround — write the legacy profile so /api/attorneys/me works
+        # when the deployed backend routes it through /attorneys/{slug}.
+        progress.append("write_attorney_profile")
+        profile_doc = build_attorney_profile(attorney_doc)
+        await db.attorney_profiles.replace_one({"slug": "me"}, profile_doc, upsert=True)
         if cases:
             progress.append("write_cases")
             await db.cases.insert_many(cases)
@@ -174,10 +185,12 @@ async def _run_seed(secret: str):
             "attorneys": del_attorneys.deleted_count,
             "cases": del_cases.deleted_count,
             "listings": del_listings.deleted_count,
+            "attorney_profiles": del_profiles.deleted_count,
         },
         "inserted": {
             "users": 1,
             "attorneys": 1,
+            "attorney_profiles": 1,
             "cases": len(cases),
             "listings": len(listings),
         },
