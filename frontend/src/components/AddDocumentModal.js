@@ -4,45 +4,62 @@ import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+const MIN_CONTEXT = 20;
+
 const T = {
   en: {
     title: 'Add a document to your case',
     dropZone: 'Drag & drop your file here',
     browse: 'or click to browse',
     formats: 'PDF, Word, JPEG/PNG, scan — max 20 MB',
-    contextLabel: 'Add context for Archer (optional)',
+    contextLabel: `Add context for Archer (required, min ${MIN_CONTEXT} characters)`,
     contextPlaceholder: 'Example: This is the landlord response to my dispute letter. They added new claims about an unauthorized pet.',
     analyze: 'Analyze with Archer',
     cancel: 'Cancel',
     uploading: 'Uploading...',
     selected: 'Selected',
     chars: 'characters',
+    minHint: `min ${MIN_CONTEXT}`,
+    err_context_short: `Please add at least ${MIN_CONTEXT} characters of context so Archer can analyze your document properly.`,
+    err_free_limit: 'Free plan is limited to 1 document. Upgrade to Pro for unlimited analyses.',
+    err_too_large: 'File is too large. Maximum size is 20 MB.',
+    err_generic: 'Upload failed. Please check your connection and try again.',
   },
   fr: {
     title: 'Ajouter un document à votre dossier',
     dropZone: 'Glissez-déposez votre fichier ici',
     browse: 'ou cliquez pour parcourir',
     formats: 'PDF, Word, JPEG/PNG, scan — max 20 Mo',
-    contextLabel: 'Ajoutez du contexte pour Archer (optionnel)',
+    contextLabel: `Ajoutez du contexte pour Archer (obligatoire, min. ${MIN_CONTEXT} caractères)`,
     contextPlaceholder: 'Exemple : Voici la réponse du propriétaire à ma lettre de contestation. Il a ajouté de nouvelles accusations concernant un animal non autorisé.',
     analyze: 'Analyser avec Archer',
     cancel: 'Annuler',
     uploading: 'Envoi en cours...',
     selected: 'Sélectionné',
     chars: 'caractères',
+    minHint: `min. ${MIN_CONTEXT}`,
+    err_context_short: `Veuillez ajouter au moins ${MIN_CONTEXT} caractères de contexte pour qu'Archer puisse analyser correctement votre document.`,
+    err_free_limit: 'Le plan gratuit est limité à 1 document. Passez à Pro pour des analyses illimitées.',
+    err_too_large: 'Le fichier est trop volumineux. Taille maximale : 20 Mo.',
+    err_generic: 'Échec de l\'envoi. Vérifiez votre connexion et réessayez.',
   },
   nl: {
     title: 'Voeg een document toe aan uw dossier',
     dropZone: 'Sleep uw bestand hierheen',
     browse: 'of klik om te bladeren',
     formats: 'PDF, Word, JPEG/PNG, scan — max 20 MB',
-    contextLabel: 'Voeg context toe voor Archer (optioneel)',
+    contextLabel: `Voeg context toe voor Archer (verplicht, min. ${MIN_CONTEXT} tekens)`,
     contextPlaceholder: 'Voorbeeld: Dit is het antwoord van de verhuurder op mijn betwistingsbrief. Hij voegde nieuwe claims toe over een ongeautoriseerd huisdier.',
     analyze: 'Analyseren met Archer',
     cancel: 'Annuleren',
     uploading: 'Uploaden...',
     selected: 'Geselecteerd',
     chars: 'tekens',
+    minHint: `min. ${MIN_CONTEXT}`,
+    err_context_short: `Voeg minstens ${MIN_CONTEXT} tekens context toe zodat Archer uw document goed kan analyseren.`,
+    err_free_limit: 'Gratis abonnement is beperkt tot 1 document. Upgrade naar Pro voor onbeperkte analyses.',
+    err_too_large: 'Het bestand is te groot. Maximale grootte: 20 MB.',
+    err_generic: 'Uploaden mislukt. Controleer uw verbinding en probeer opnieuw.',
   },
 };
 
@@ -55,7 +72,11 @@ const AddDocumentModal = ({ caseId, lang, onClose, onUploadComplete }) => {
   const [context, setContext] = useState('');
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [error, setError] = useState(null);
   const fileRef = useRef(null);
+
+  const ctxLen = context.trim().length;
+  const ctxValid = ctxLen >= MIN_CONTEXT;
 
   const handleFile = useCallback((f) => {
     if (f && f.size <= MAX_SIZE) setFile(f);
@@ -68,13 +89,14 @@ const AddDocumentModal = ({ caseId, lang, onClose, onUploadComplete }) => {
   }, [handleFile]);
 
   const handleUpload = async () => {
-    if (!file || uploading) return;
+    if (!file || uploading || !ctxValid) return;
     setUploading(true);
+    setError(null);
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('case_id', caseId);
-      if (context.trim()) formData.append('user_context', context.trim());
+      formData.append('user_context', context.trim());
       await axios.post(`${API}/documents/upload`, formData, {
         withCredentials: true,
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -82,6 +104,16 @@ const AddDocumentModal = ({ caseId, lang, onClose, onUploadComplete }) => {
       onUploadComplete?.();
     } catch (e) {
       console.error('Upload failed:', e);
+      const detail = e?.response?.data?.detail;
+      const status = e?.response?.status;
+      let msg = t.err_generic;
+      if (detail === 'user_context_required_min_20') msg = t.err_context_short;
+      else if (status === 403 && typeof detail === 'string' && detail.toLowerCase().includes('free plan')) msg = t.err_free_limit;
+      else if (status === 413) msg = t.err_too_large;
+      else if (typeof detail === 'string' && detail.length < 200) msg = detail;
+      setError(msg);
+      setUploading(false);
+      return;
     }
     setUploading(false);
   };
@@ -144,22 +176,33 @@ const AddDocumentModal = ({ caseId, lang, onClose, onUploadComplete }) => {
             placeholder={t.contextPlaceholder}
             style={{
               width: '100%', minHeight: 72, padding: '8px 10px', fontSize: 11, color: '#374151',
-              border: '0.5px solid #e2e0db', borderRadius: 8, resize: 'vertical',
+              border: `0.5px solid ${ctxLen > 0 && !ctxValid ? '#ef4444' : '#e2e0db'}`, borderRadius: 8, resize: 'vertical',
               fontFamily: 'inherit', lineHeight: 1.5, background: '#fafafa',
             }}
           />
-          <div style={{ fontSize: 9, color: '#9ca3af', textAlign: 'right', marginTop: 2 }}>{context.length}/500 {t.chars}</div>
+          <div style={{ fontSize: 9, color: ctxLen > 0 && !ctxValid ? '#ef4444' : '#9ca3af', textAlign: 'right', marginTop: 2 }}>
+            {context.length}/500 {t.chars} ({t.minHint})
+          </div>
         </div>
+
+        {error && (
+          <div data-testid="upload-error" style={{
+            background: '#fef2f2', border: '0.5px solid #fecaca', color: '#b91c1c',
+            borderRadius: 8, padding: '8px 10px', fontSize: 11, marginBottom: 12, lineHeight: 1.4,
+          }}>
+            {error}
+          </div>
+        )}
 
         {/* Buttons */}
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             data-testid="analyze-with-archer-btn"
             onClick={handleUpload}
-            disabled={!file || uploading}
+            disabled={!file || uploading || !ctxValid}
             style={{
-              flex: 1, padding: '11px 0', background: !file || uploading ? '#93b4f0' : '#1a56db', color: '#fff',
-              border: 'none', borderRadius: 9, fontSize: 12, fontWeight: 600, cursor: !file || uploading ? 'default' : 'pointer',
+              flex: 1, padding: '11px 0', background: !file || uploading || !ctxValid ? '#93b4f0' : '#1a56db', color: '#fff',
+              border: 'none', borderRadius: 9, fontSize: 12, fontWeight: 600, cursor: !file || uploading || !ctxValid ? 'default' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}
           >
