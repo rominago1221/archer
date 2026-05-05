@@ -55,7 +55,7 @@ const COPY = {
     dropSubPre: 'ou ',
     dropSubLink: 'parcourez depuis votre appareil',
     dropSub2: 'Un document accepté à la fois',
-    dropMeta: 'PDF · DOCX · JPG · PNG · EML · HEIC — jusqu\'à 20 MB',
+    dropMeta: 'PDF · DOC · DOCX · TXT · JPG · PNG · EML · HEIC — jusqu\'à 20 MB',
     altPhotoTitle: 'Prendre une photo',
     altPhotoSub: 'Via caméra de l\'appareil',
     altQrTitle: 'Scanner via mobile',
@@ -82,7 +82,8 @@ const COPY = {
     errMissingCategory: 'Choisissez une catégorie.',
     errMissingObjective: 'Précisez votre objectif (min. 20 caractères).',
     errUpload: 'Upload échoué. Réessayez.',
-    errFileSize: 'Taille max : 20 MB',
+    errFileSize: 'Fichier trop volumineux (max. 20 MB).',
+    errFormatUnsupported: (ext) => `Format .${ext} non supporté. Utilisez PDF, DOC(X), TXT, image (JPG/PNG/HEIC) ou EML.`,
     qrModalTitle: 'Scanner via mobile',
     qrModalSub: 'Flashe ce QR code avec ton téléphone pour ajouter une photo depuis l\'appareil.',
     qrModalWaiting: 'En attente d\'une photo depuis votre téléphone…',
@@ -134,7 +135,7 @@ const COPY = {
     dropSubPre: 'of ',
     dropSubLink: 'blader vanaf uw apparaat',
     dropSub2: 'Eén document tegelijk',
-    dropMeta: 'PDF · DOCX · JPG · PNG · EML · HEIC — tot 20 MB',
+    dropMeta: 'PDF · DOC · DOCX · TXT · JPG · PNG · EML · HEIC — tot 20 MB',
     altPhotoTitle: 'Foto maken',
     altPhotoSub: 'Via de camera van het apparaat',
     altQrTitle: 'Scannen via mobiel',
@@ -161,7 +162,8 @@ const COPY = {
     errMissingCategory: 'Kies een categorie.',
     errMissingObjective: 'Specificeer uw doel (min. 20 tekens).',
     errUpload: 'Upload mislukt. Probeer opnieuw.',
-    errFileSize: 'Max. grootte: 20 MB',
+    errFileSize: 'Bestand te groot (max. 20 MB).',
+    errFormatUnsupported: (ext) => `Formaat .${ext} niet ondersteund. Gebruik PDF, DOC(X), TXT, afbeelding (JPG/PNG/HEIC) of EML.`,
     qrModalTitle: 'Scannen via mobiel',
     qrModalSub: 'Scan deze QR code met uw telefoon om een foto vanaf het toestel toe te voegen.',
     qrModalWaiting: 'Wacht op een foto vanaf uw telefoon…',
@@ -213,7 +215,7 @@ const COPY = {
     dropSubPre: 'or ',
     dropSubLink: 'browse from your device',
     dropSub2: 'One document at a time',
-    dropMeta: 'PDF · DOCX · JPG · PNG · EML · HEIC — up to 20 MB',
+    dropMeta: 'PDF · DOC · DOCX · TXT · JPG · PNG · EML · HEIC — up to 20 MB',
     altPhotoTitle: 'Take a photo',
     altPhotoSub: 'Using the device camera',
     altQrTitle: 'Scan via phone',
@@ -240,7 +242,8 @@ const COPY = {
     errMissingCategory: 'Pick a category.',
     errMissingObjective: 'Tell us what you want to achieve (min. 20 chars).',
     errUpload: 'Upload failed. Retry.',
-    errFileSize: 'Max size: 20 MB',
+    errFileSize: 'File too large (max. 20 MB).',
+    errFormatUnsupported: (ext) => `Format .${ext} not supported. Use PDF, DOC(X), TXT, image (JPG/PNG/HEIC) or EML.`,
     qrModalTitle: 'Scan via phone',
     qrModalSub: 'Scan this QR code with your phone to add a photo from your device.',
     qrModalWaiting: 'Waiting for a photo from your phone…',
@@ -288,7 +291,7 @@ const MIN_CHARS = 20;
 const MAX_CHARS = 500;
 const MAX_BYTES = 20 * 1024 * 1024;
 const DRAFT_KEY = 'analyze_doc_draft_v1';
-const ACCEPTED_EXT = ['pdf', 'docx', 'jpg', 'jpeg', 'png', 'eml', 'heic', 'heif', 'webp'];
+const ACCEPTED_EXT = ['pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'eml', 'heic', 'heif', 'webp'];
 
 function formatSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;
@@ -381,11 +384,14 @@ export default function AnalyzeDocument() {
     if (!f) return;
     const ext = extOf(f.name);
     if (!ACCEPTED_EXT.includes(ext)) {
-      setError(`${t.errUpload} (format ${ext} non supporté)`);
+      const msg = typeof t.errFormatUnsupported === 'function' ? t.errFormatUnsupported(ext) : t.errUpload;
+      setFieldErrors(prev => ({ ...prev, file: msg }));
+      setError(null);
       return;
     }
     if (f.size > MAX_BYTES) {
-      setError(t.errFileSize);
+      setFieldErrors(prev => ({ ...prev, file: t.errFileSize }));
+      setError(null);
       return;
     }
     setFile(f);
@@ -500,7 +506,7 @@ export default function AnalyzeDocument() {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".pdf,.docx,.jpg,.jpeg,.png,.eml,.heic,.heif,.webp"
+        accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.eml,.heic,.heif,.webp"
         style={{ display: 'none' }}
         onChange={(e) => handleFileSelect(e.target.files?.[0])}
         data-testid="file-input"
