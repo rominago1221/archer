@@ -5,30 +5,30 @@ const STAGE_TO_SCENE = {
   findings_ready: 4, battle_ready: 5, strategy_ready: 6, complete: 7,
 };
 
-// Minimum duration each scene stays visible. Scene 0 used to hold 10s which
-// made the cinematic feel "dead" for 20+ seconds before the first motion hit.
-// Scene 0 is a fade-in card — 3s is enough for it to land before the document
-// scan in Scene 1 takes over. Scene 1 keeps its full per-line highlight
-// animation (~12s), but we enter it sooner so the user sees motion fast.
+// Minimum duration each scene stays visible. Tightened (was 12/6/10/10/7/5/2
+// summing to 55s) — backend analysis already takes 30-90s, layering 55s of
+// forced cinematic on top made the whole thing feel slow even on fast cases.
+// Per-scene values still leave room for the in-scene animations to play.
 const MIN_SCENE_DURATION = {
-  0: 3000, 1: 12000, 2: 6000, 3: 10000,
-  4: 10000, 5: 7000, 6: 5000, 7: 2000,
+  0: 2000, 1: 7000, 2: 4000, 3: 5500,
+  4: 5500, 5: 4500, 6: 3500, 7: 1500,
 };
 
-// Auto-advance timers for the first 3 scenes.
-// Scene 1 now enters at 3s (was 10s) so the document-scan animation starts
-// almost immediately. Scene 2 enters after Scene 1's scan has played through.
-const SCENE1_AT_MS = 3000;
-const SCENE2_AT_MS = 15000;
+// Auto-advance timers for the first 3 scenes (time-based, not data-gated).
+// SCENE2 follows SCENE1's new shorter min-duration so we don't sit on Scene 1
+// past its animation.
+const SCENE1_AT_MS = 2000;
+const SCENE2_AT_MS = 9000;
 
 // Post-real-data cadence for scenes 3-7 (offsets from the moment we detect
-// completion). Tuned so the full reveal takes ~35-40s and feels cinematic.
+// completion). Was [0, 10, 20, 27, 32] = 32s of stagger AFTER the analysis
+// was already done; compressed to ~14s so users see the full reveal sooner.
 const REAL_DATA_EVENTS_MS = [
   [0, 'score_ready'],
-  [10000, 'findings_ready'],
-  [20000, 'battle_ready'],
-  [27000, 'strategy_ready'],
-  [32000, 'complete'],
+  [4500, 'findings_ready'],
+  [9000, 'battle_ready'],
+  [12000, 'strategy_ready'],
+  [14000, 'complete'],
 ];
 
 // Polling cadence: fast burst for the first few checks to catch cached/fast

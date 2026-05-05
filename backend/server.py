@@ -4045,12 +4045,13 @@ async def analyze_document_vision(image_b64_list: list, system_prompt: str = Non
         })
     
     prompt_text = "Read ALL text from this scanned legal document and analyze it completely. You MUST return a JSON with: risk_score (total + 4 dimensions), case_type (employment|housing|debt|nda|contract|consumer|family|court|penal|commercial|other), suggested_case_title (descriptive title from content, NEVER the filename), summary, findings (each with text, impact, type, legal_ref, jurisprudence), next_steps, deadline, financial_exposure, key_insight, battle_preview, recommend_lawyer. Return JSON only."
-    if user_context:
-        prompt_text += f"\n\nUser context: {user_context}"
     if len(image_b64_list) > 1:
         prompt_text = f"This document has {len(image_b64_list)} pages. Read ALL text from every page, then analyze the complete document. You MUST return a JSON with: risk_score, case_type, suggested_case_title (from content, NEVER filename), summary, findings (each with text, impact, type, legal_ref, jurisprudence), next_steps, deadline, financial_exposure, key_insight, battle_preview, recommend_lawyer. Return JSON only."
-        if user_context:
-            prompt_text += f"\n\nUser context: {user_context}"
+    # Append the strong "non-negotiable objective" block (same one used by the
+    # multi-pass text pipeline) so vision-only analyses also converge toward
+    # what the user actually asked for, instead of treating the objective as
+    # a passive footnote.
+    prompt_text += _build_objective_block(user_context, language)
     
     content_blocks.append({"type": "text", "text": prompt_text})
     
