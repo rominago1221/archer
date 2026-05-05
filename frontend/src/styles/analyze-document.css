@@ -191,10 +191,25 @@
 }
 
 /* UPLOAD ZONE */
+/* Neutralise the global .upload-zone tailwind rule from index.css — that
+ * rule was written for /upload and bleeds in here, painting an extra
+ * dashed border + padding around the real dropzone, eating drop events
+ * in the gutter between the outer container and the inner .upload-drop. */
 .analyze-doc .upload-zone {
   display: grid;
   grid-template-columns: 1.6fr 1fr;
   gap: 10px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+  cursor: default;
+  border-radius: 0;
+  transition: none;
+}
+.analyze-doc .upload-zone:hover {
+  border: 0;
+  background: transparent;
 }
 @media (max-width: 720px) {
   .analyze-doc .upload-zone { grid-template-columns: 1fr; }

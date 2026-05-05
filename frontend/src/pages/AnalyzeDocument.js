@@ -581,15 +581,18 @@ export default function AnalyzeDocument() {
           {t.docLabel} <span className="req">{t.required}</span>
         </div>
 
-        <div className="upload-zone">
+        <div
+          className="upload-zone"
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDragEnter={onDragOver}
+          data-testid="upload-zone"
+        >
           <div
             className={`upload-drop${isDragging ? ' dragging' : ''}`}
             onClick={onBrowseClick}
             onKeyDown={(e) => { if (e.key === 'Enter') onBrowseClick(); }}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            onDragLeave={onDragLeave}
-            onDragEnter={onDragOver}
             role="button"
             tabIndex={0}
             data-testid="upload-drop"
