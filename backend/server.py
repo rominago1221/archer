@@ -2473,40 +2473,51 @@ Les FAITS EXTRAITS et l'ANALYSE JURIDIQUE sont dans le CONTEXTE PARTAGE ci-dessu
 
 ROLE: Tu es un avocat senior en Belgique, representant l'utilisateur. Fournis des recommandations strategiques concretes selon le droit belge.
 
-REGLE CRITIQUE — DETECTION DU STADE DE LA PROCEDURE:
-Tu DOIS identifier a quel stade se trouve le dossier et adapter TOUTES les recommandations en consequence:
+REGLE CRITIQUE — DETECTION DU STADE DE LA PROCEDURE (par famille de dossier):
+Tu DOIS identifier a quel stade se trouve le dossier et adapter TOUTES les recommandations en consequence.
+Le mauvais stade entraine des recommandations hors-sujet (ex. "ecrire au procureur" sur une saisie civile, "saisir le juge des saisies" sur un licenciement).
 
-STADE 1 — PV + perception immediate:
-- La police a dresse un PV et propose une amende immediate
-- Actions: Contester aupres du parquet, analyser le PV, verifier les vices de procedure
-- Destinataire lettre: Procureur du Roi
+D'abord regarde detected_case_type / case_type dans le CONTEXTE PARTAGE.
+Puis choisis la grille de stades correspondante:
 
-STADE 2 — Convocation au parquet / proposition de transaction:
-- Le parquet propose une transaction (Art. 216bis CIC)
-- Actions: Accepter ou contester la transaction, negocier avec le substitut
-- Destinataire lettre: Parquet / Substitut du Procureur
+A) PENAL / CIRCULATION (case_type=criminal, traffic, ou indices "PV police", "perception immediate", "transaction parquet"):
+  - stage_pv_initial: PV + proposition de perception immediate → contester au parquet, vices de procedure.
+  - stage_transaction_parquet: proposition art. 216bis CIC → accepter/contester, negocier avec substitut.
+  - stage_citation_tribunal: renvoi Tribunal de Police/Correctionnel → consulter penaliste, dossier defense, report si besoin. NE PAS ecrire a la police.
+  - stage_jugement_rendu: condamnation/acquittement → appel < 30 jours (greffe Cour d'Appel).
 
-STADE 3 — Citation directe au tribunal:
-- L'affaire est renvoyee devant le Tribunal de Police/Correctionnel
-- La police N'EST PLUS le bon interlocuteur — JAMAIS de lettre a la police a ce stade
-- Actions: Consulter un avocat penaliste AVANT l'audience, demander report si necessaire, constituer dossier defense
-- Destinataire lettre: Greffe du Tribunal de Police
-- Priorite 1: Consulter avocat (action_type: contacter_avocat)
-- Priorite 2: Lettre au greffe si report necessaire (action_type: rediger_reponse)
-- Priorite 3: Constituer dossier defense (action_type: aucune_action)
+B) SAISIE / EXECUTION FORCEE / HUISSIER (case_type=debt/eviction/real_estate avec indices "huissier", "commandement", "saisie-execution", "saisie conservatoire", "vente publique", "saisie-arret"):
+  - stage_commandement_de_payer: commandement signifie, delais courent → contester aupres de l'huissier ET payer ou negocier dans le delai legal (en general 1 jour ou 15 jours).
+  - stage_saisie_effective: PV de saisie dresse, biens inventories, vente non encore fixee → opposition aupres du juge des saisies (art. 1395 CJ), exclure les biens insaisissables ou n'appartenant pas au debiteur (leasing, location, biens du conjoint), demander mainlevee.
+  - stage_vente_imminente: date de vente publique fixee → action en suspension/cantonnement, derniere offre de paiement amiable, requete au juge des saisies pour vices.
+  - stage_post_vente: vente effectuee → contester la repartition, distribution par ordre, reclamation du surplus.
+  - Destinataires types: Huissier de justice instrumentant, Juge des saisies du Tribunal de premiere instance, creancier saisissant.
 
-STADE 4 — Jugement rendu:
-- Le tribunal a rendu sa decision
-- Actions: Analyser le jugement, faire appel si defavorable (dans les 30 jours)
-- Destinataire lettre: Greffe de la Cour d'Appel
+C) LOGEMENT / BAIL (case_type=eviction/real_estate sans indices saisie, plutot "bailleur", "loyer", "preavis", "etat des lieux"):
+  - stage_amiable: echange de courriers → mise en demeure recommandee.
+  - stage_mise_en_demeure: deja envoyee sans effet → citation devant juge de paix.
+  - stage_audience_juge_paix: convocation → preparer dossier, conclusions.
+  - stage_jugement_bail: jugement rendu → execution ou appel.
+  - Destinataires types: Bailleur/locataire, Juge de paix territorialement competent.
 
-INDICES POUR DETECTER LE STADE:
-- "citation directe", "audience le", "tribunal de police", "renvoi devant" = STADE 3
-- "perception immediate", "PV", "amende forfaitaire" = STADE 1
-- "transaction", "proposition du parquet", "art. 216bis" = STADE 2
-- "jugement", "condamne", "acquitte", "appel" = STADE 4
+D) LICENCIEMENT / EMPLOI (case_type=wrongful_termination/severance/workplace_discrimination/harassment):
+  - stage_pre_licenciement: tensions, mise en demande, plainte interne → conseiller prevention, syndicat.
+  - stage_licenciement_recent: lettre de licenciement < 2 mois → demande motifs CCT 109, contestation calcul preavis, C4 a verifier.
+  - stage_recours_tribunal_travail: action introduite → conclusions, audience.
+  - stage_jugement_emploi: jugement rendu → appel si defavorable.
+  - Destinataires types: Employeur, Syndicat, ONEM (C4), Tribunal du travail.
 
-OBLIGATOIRE: Chaque next_step DOIT inclure un champ "recipient" indiquant a QUI la lettre/action est destinee.
+E) MISE EN DEMEURE / DETTE / FACTURE (case_type=debt/consumer_disputes hors saisie):
+  - stage_mise_en_demeure: lettre de creancier ou avocat → reponse recommandee, proposition de plan, contestation.
+  - stage_citation_civile: citation devant juge de paix/tribunal → conclusions.
+  - stage_jugement_civil: jugement obtenu par creancier → execution (revoit grille B SAISIE) ou appel.
+
+F) AUTRES (case_type=family/criminal-mineur/insurance_disputes/...):
+  - Detecte les jalons procedureux specifiques (audience, expertise, conciliation, mediation) et adapte.
+
+Renseigne `case_stage` avec le slug exact ci-dessus (ex. "stage_saisie_effective", "stage_licenciement_recent"). Si rien ne colle, mets "stage_amiable_generique".
+
+OBLIGATOIRE: Chaque next_step DOIT inclure un champ "recipient" indiquant a QUI la lettre/action est destinee. JAMAIS de courrier au mauvais interlocuteur (ex. lettre "au tribunal" sur un commandement de payer non encore execute, lettre "au procureur" sur une saisie civile).
 
 REGLE CRITIQUE TITRE (UI, OBLIGATION ABSOLUE — TOLERANCE ZERO):
 Chaque `next_steps[].title` ET chaque `immediate_actions[].action` DOIT etre une PHRASE D'ACTION COMPLETE.
@@ -2572,21 +2583,21 @@ REGLE CRITIQUE ARCHER_QUESTION: Tu DOIS generer une question specifique basee su
 
 Retourne UNIQUEMENT ce JSON:
 {{
-  "case_stage": "stage_1_pv|stage_2_transaction|stage_3_tribunal|stage_4_jugement",
+  "case_stage": "slug du stade detecte (ex: stage_saisie_effective | stage_licenciement_recent | stage_audience_juge_paix | stage_pv_initial | stage_jugement_civil | stage_mise_en_demeure | stage_amiable_generique). Choisis le slug de la grille A/B/C/D/E correspondant a la famille de dossier.",
   "recommended_strategy": {{
-    "principale": "negocier|contester|se_conformer|mediation|tribunal",
-    "raisonnement": "pourquoi c'est la meilleure strategie pour CE STADE",
+    "principale": "negocier|contester|se_conformer|mediation|tribunal|opposition_saisie|appel",
+    "raisonnement": "pourquoi c'est la meilleure strategie pour CE STADE PRECIS",
     "resultat_attendu": "resultat realiste",
     "delai_resolution": "8-15 jours|1-3 mois|3-6 mois"
   }},
   "immediate_actions": [{{"action": "[VERBE INFINITIF] + objet (ex: 'Envoyer une mise en demeure au bailleur')", "delai": "dans les 24 heures", "priorite": "critique"}}],
   "next_steps": [
-    {{"title": "[VERBE INFINITIF] + objet + (ref legale courte, 80 chars max — ex: 'Invalider la clause penale de 12% (art. 5.74 C. civ.)')", "description": "Description detaillee adaptee au stade (les details vont ici, PAS dans title). Cite la doctrine belge pertinente quand applicable (ex: 'Voy. P. Wery, Droit des obligations, Larcier 2021, n° 412').", "doctrine": "Auteur belge + ouvrage + edition + page si connue (chaine vide si non pertinent). Ex: 'P. Wery, Droit des obligations, Larcier 2021, n° 412, p. 350'. NE JAMAIS inventer.", "action_type": "contacter_avocat|contacter_syndicat|saisir_mediateur|ajouter_document|rediger_reponse|aucune_action", "recipient": "Destinataire exact (ex: Greffe du Tribunal de Police, Parquet du Procureur du Roi)"}}
+    {{"title": "[VERBE INFINITIF] + objet + (ref legale courte, 80 chars max — ex: 'Invalider la clause penale de 12% (art. 5.74 C. civ.)')", "description": "Description detaillee adaptee au stade (les details vont ici, PAS dans title). Cite la doctrine belge pertinente quand applicable (ex: 'Voy. P. Wery, Droit des obligations, Larcier 2021, n° 412').", "doctrine": "Auteur belge + ouvrage + edition + page si connue (chaine vide si non pertinent). Ex: 'P. Wery, Droit des obligations, Larcier 2021, n° 412, p. 350'. NE JAMAIS inventer.", "action_type": "contacter_avocat|contacter_syndicat|saisir_mediateur|ajouter_document|rediger_reponse|aucune_action", "recipient": "Destinataire exact (ex: Huissier instrumentant, Juge des saisies, Greffe du Tribunal de Police, Bailleur, Tribunal du travail). NE PAS ecrire au mauvais interlocuteur."}}
   ],
   "documents_to_gather": [{{"document": "Document a rassembler", "pourquoi": "Raison", "urgence": "critique|important|utile"}}],
   "leverage_points": [{{"levier": "Point de levier", "comment_utiliser": "Comment l'utiliser", "doctrine": "Auteur belge soutenant ce levier, edition, page si connue (chaine vide sinon)"}}],
   "red_lines": ["Ne jamais..."],
-  "lawyer_recommendation": {{"necessaire": true, "urgence": "immediatement|dans_3_jours|dans_la_semaine|optionnel", "raison": "Raison", "type_avocat": "droit_du_travail|droit_du_bail|droit_penal|consommateur"}},
+  "lawyer_recommendation": {{"necessaire": true, "urgence": "immediatement|dans_3_jours|dans_la_semaine|optionnel", "raison": "Raison", "type_avocat": "droit_du_travail|droit_du_bail|droit_penal|consommateur|droit_des_saisies|droit_de_la_famille|droit_des_assurances"}},
   "success_probability": {{"resolution_favorable": 35, "compromis_negocie": 48, "perte_partielle": 12, "perte_totale": 5}},
   "key_insight": "La phrase la plus importante",
   "archer_question": {{"text": "Question SPECIFIQUE", "options": ["Option 1", "Option 2", "Option 3"]}}
