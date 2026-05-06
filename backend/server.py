@@ -1914,6 +1914,15 @@ async def _start_streaming_analysis(case_id: str, user_country: str, user_region
     if case_doc.get("stream_active"):
         return {"status": "in_progress", "case_id": case_id}
 
+    # Pre-flight: if the document is still being extracted by the upload pipeline,
+    # don't claim stream_active or mark error — the upload pipeline will call us
+    # again once extraction completes.
+    doc = await db.documents.find_one({"case_id": case_id}, {"_id": 0})
+    if not doc:
+        return {"status": "pending", "case_id": case_id}
+    if doc.get("status") == "extracting":
+        return {"status": "pending", "case_id": case_id}
+
     updated = await db.cases.update_one(
         {"case_id": case_id, "status": "analyzing", "stream_active": {"$ne": True}},
         {"$set": {"stream_active": True}}
@@ -1921,8 +1930,7 @@ async def _start_streaming_analysis(case_id: str, user_country: str, user_region
     if updated.modified_count == 0:
         return {"status": "in_progress", "case_id": case_id}
 
-    doc = await db.documents.find_one({"case_id": case_id}, {"_id": 0})
-    if not doc or not doc.get("extracted_text"):
+    if not doc.get("extracted_text"):
         await db.cases.update_one(
             {"case_id": case_id},
             {"$set": {"status": "error", "risk_score": 1, "ai_summary": "No document text could be extracted.", "updated_at": datetime.now(timezone.utc).isoformat()},
@@ -4552,98 +4560,37 @@ async def upload_document(
                 detail="Free plan limited to 1 document. Upgrade to Pro for unlimited analyses."
             )
     
-    # Read file
+    # ── FAST PATH: parse file metadata, create case + doc shells, return case_id ──
+    # All slow work (storage upload, text extraction, OCR fallback, analysis) is
+    # deferred to the background pipeline so the cinematic can start within ~1s.
     file_bytes = await file.read()
     file_ext = file.filename.split(".")[-1].lower() if "." in file.filename else "bin"
     content_type = file.content_type or "application/octet-stream"
-    
-    # Normalize HEIC → JPEG
+
+    # Normalize HEIC → JPEG (just metadata, no decode)
     is_image_file = file_ext in ["jpg", "jpeg", "png", "heic", "heif", "webp"]
     if file_ext in ["heic", "heif"]:
         file_ext = "jpg"
         content_type = "image/jpeg"
-    
-    # Upload to storage
+
+    # Generate the storage path now; actual put_object runs in the background.
     storage_path = f"{APP_NAME}/documents/{current_user.user_id}/{uuid.uuid4()}.{file_ext}"
-    try:
-        put_object(storage_path, file_bytes, content_type)
-    except Exception as e:
-        logger.error(f"Storage upload failed: {e}")
-        storage_path = None
-    
-    # Extract text (for text-based documents)
-    extracted_text = ""
-    use_vision = False
-    
-    if is_image_file:
-        use_vision = True
-        logger.info(f"Image file detected ({file_ext}), routing to Claude Vision")
-    elif file_ext == "pdf":
-        extracted_text = await extract_text_from_pdf(file_bytes, filename=file.filename)
-        if len(extracted_text.strip()) < 100:
-            use_vision = True
-            logger.info(f"PDF has insufficient text ({len(extracted_text.strip())} chars) even after OCR fallback, routing to Claude Vision")
-    elif file_ext in ["docx"]:
-        extracted_text = extract_text_from_docx(file_bytes)
-    elif file_ext in ["txt", "text", "eml"]:
-        extracted_text = file_bytes.decode("utf-8", errors="ignore")
-    elif file_ext in ["doc"]:
-        extracted_text = file_bytes.decode("utf-8", errors="ignore")
-    
-    if not extracted_text.strip():
-        logger.warning(f"No text extracted from {file.filename} (ext={file_ext})")
-    
-    # Create document record
+
     document_id = f"doc_{uuid.uuid4().hex[:12]}"
     now = datetime.now(timezone.utc).isoformat()
-    
-    doc_record = {
-        "document_id": document_id,
-        "case_id": case_id,
-        "user_id": current_user.user_id,
-        "file_name": file.filename,
-        "file_url": None,
-        "storage_path": storage_path,
-        "file_type": file_ext,
-        "extracted_text": extracted_text[:50000] if extracted_text else None,
-        "status": "analyzing",
-        "is_key_document": case_id is None,  # First doc is key doc
-        "uploaded_at": now
-    }
-    await db.documents.insert_one(doc_record)
-    
-    # ── PHASE 1: Create case + document record IMMEDIATELY ──
+
     is_contract_guard = analysis_mode == "contract_guard"
     user_country = current_user.jurisdiction or "US"
     user_region = current_user.region or ""
     user_language = current_user.language or "en"
-    # User-declared case_type from the card picker (P5). Normalised to the 18-enum.
     declared_case_type = normalize_case_type(case_type)
-
-    # Bug A: auto-detect document jurisdiction from extracted text (fast keyword scan)
-    detected_jurisdiction = detect_jurisdiction(extracted_text) if extracted_text else user_country
-    jurisdiction_mismatch = detected_jurisdiction != user_country
-    # Effective jurisdiction for analysis:
-    #   - Existing case: inherit case.jurisdiction (set by first upload or explicit switch)
-    #   - New case: user's configured country (safe default; user can switch via Bug C modal)
-    existing_case_jur = None
-    if case_id and not is_contract_guard:
-        existing_case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0, "jurisdiction": 1, "country": 1})
-        if existing_case_doc:
-            existing_case_jur = existing_case_doc.get("jurisdiction") or existing_case_doc.get("country")
-    effective_jurisdiction = existing_case_jur or user_country
-    is_belgian = effective_jurisdiction == "BE"
-    logger.info(f"Jurisdiction: user={user_country} detected={detected_jurisdiction} mismatch={jurisdiction_mismatch} effective={effective_jurisdiction}")
-    
-    # Determine if adding to existing case
     is_existing_case = case_id is not None and not is_contract_guard
-    
+
+    # Create the case shell immediately (jurisdiction refined post-extraction).
     if is_contract_guard:
-        # Contract Guard — case_id is review_id
         if not case_id:
             case_id = f"cg_{uuid.uuid4().hex[:12]}"
     elif not case_id:
-        # Create a NEW case immediately (before analysis)
         case_id = f"case_{uuid.uuid4().hex[:12]}"
         case_doc = {
             "case_id": case_id,
@@ -4654,9 +4601,9 @@ async def upload_document(
             "country": user_country,
             "region": user_region,
             "language": user_language,
-            "jurisdiction": effective_jurisdiction,
-            "detected_jurisdiction": detected_jurisdiction,
-            "jurisdiction_mismatch": jurisdiction_mismatch,
+            "jurisdiction": user_country,
+            "detected_jurisdiction": user_country,
+            "jurisdiction_mismatch": False,
             "jurisdiction_override": False,
             "risk_score": 0,
             "risk_financial": 0, "risk_urgency": 0,
@@ -4673,15 +4620,24 @@ async def upload_document(
             "created_at": now, "updated_at": now
         }
         await db.cases.insert_one(case_doc)
-        logger.info(f"Case {case_id} created (pending analysis)")
-    
-    # Link document to case
-    await db.documents.update_one(
-        {"document_id": document_id},
-        {"$set": {"case_id": case_id, "status": "analyzing"}}
-    )
-    
-    # Add case_opened event
+        logger.info(f"Case {case_id} created (pending extraction+analysis)")
+
+    # Document shell — extraction status, no text yet.
+    doc_record = {
+        "document_id": document_id,
+        "case_id": case_id,
+        "user_id": current_user.user_id,
+        "file_name": file.filename,
+        "file_url": None,
+        "storage_path": None,
+        "file_type": file_ext,
+        "extracted_text": None,
+        "status": "extracting",
+        "is_key_document": not is_existing_case,
+        "uploaded_at": now
+    }
+    await db.documents.insert_one(doc_record)
+
     if not is_existing_case and not is_contract_guard:
         await db.case_events.insert_one({
             "event_id": f"evt_{uuid.uuid4().hex[:12]}",
@@ -4692,17 +4648,87 @@ async def upload_document(
             "metadata": None,
             "created_at": now
         })
-    
-    # ── PHASE 2: Start background analysis ──
-    async def run_background_analysis():
+
+    # ── BACKGROUND PIPELINE: storage upload → text extraction → analysis ──
+    async def run_pipeline():
         # Make case_id visible to self_critique_pass via contextvar so every critique
         # record in analysis_critiques + admin_alerts can be tied back to this case.
         _current_case_id.set(case_id)
         try:
+            # PREP 1: Storage upload (best-effort, non-fatal)
+            try:
+                put_object(storage_path, file_bytes, content_type)
+                await db.documents.update_one(
+                    {"document_id": document_id},
+                    {"$set": {"storage_path": storage_path}}
+                )
+            except Exception as se:
+                logger.error(f"Storage upload failed for case {case_id}: {se}")
+
+            # PREP 2: Text extraction (PDF/DOCX/text), or mark vision for images.
+            extracted_text = ""
+            use_vision = False
+            if is_image_file:
+                use_vision = True
+                logger.info(f"Image file detected ({file_ext}), routing to Claude Vision")
+            elif file_ext == "pdf":
+                extracted_text = await extract_text_from_pdf(file_bytes, filename=file.filename)
+                if len(extracted_text.strip()) < 100:
+                    use_vision = True
+                    logger.info(f"PDF has insufficient text ({len(extracted_text.strip())} chars), routing to Claude Vision")
+            elif file_ext == "docx":
+                extracted_text = extract_text_from_docx(file_bytes)
+            elif file_ext in ["txt", "text", "eml", "doc"]:
+                extracted_text = file_bytes.decode("utf-8", errors="ignore")
+
+            if not extracted_text.strip():
+                logger.warning(f"No text extracted from {file.filename} (ext={file_ext})")
+
+            # PREP 3: Persist extracted text + flip doc to "analyzing".
+            await db.documents.update_one(
+                {"document_id": document_id},
+                {"$set": {
+                    "extracted_text": extracted_text[:50000] if extracted_text else None,
+                    "status": "analyzing"
+                }}
+            )
+
+            # PREP 4: Detect jurisdiction (fast keyword scan, depends on text).
+            detected_jurisdiction = detect_jurisdiction(extracted_text) if extracted_text else user_country
+            jurisdiction_mismatch = detected_jurisdiction != user_country
+            existing_case_jur = None
+            if is_existing_case:
+                existing_case_doc = await db.cases.find_one(
+                    {"case_id": case_id, "user_id": current_user.user_id},
+                    {"_id": 0, "jurisdiction": 1, "country": 1}
+                )
+                if existing_case_doc:
+                    existing_case_jur = existing_case_doc.get("jurisdiction") or existing_case_doc.get("country")
+            effective_jurisdiction = existing_case_jur or user_country
+            is_belgian = effective_jurisdiction == "BE"
+            logger.info(f"Jurisdiction: user={user_country} detected={detected_jurisdiction} effective={effective_jurisdiction}")
+
+            # PREP 5: Update new case with jurisdiction findings.
+            if not is_existing_case and not is_contract_guard:
+                await db.cases.update_one(
+                    {"case_id": case_id},
+                    {"$set": {
+                        "detected_jurisdiction": detected_jurisdiction,
+                        "jurisdiction_mismatch": jurisdiction_mismatch,
+                        "jurisdiction": effective_jurisdiction
+                    }}
+                )
+
+            # PHASE 6: Run analysis. Streaming pipeline reads text from DB; legacy uses closure.
+            if streaming == "true" and not is_contract_guard:
+                logger.info(f"[upload] kicking streaming analysis for case {case_id} | objective_len={len((user_context or '').strip())}")
+                await _start_streaming_analysis(case_id, user_country, user_region, user_language)
+                return
+
+            # Legacy / contract-guard / vision-only analysis path.
             analysis = None
             context_str = (user_context or "").strip()[:500]
-            
-            # Check multi-document status
+
             existing_doc_count = 0
             is_multi_doc = False
             if is_existing_case:
@@ -4710,7 +4736,7 @@ async def upload_document(
                 if existing_doc_count > 0:
                     is_multi_doc = True
                     logger.info(f"Multi-document case: {existing_doc_count} existing + 1 new")
-            
+
             if extracted_text or use_vision:
                 # Vision analysis path
                 vision_extracted_text = ""
@@ -4911,16 +4937,13 @@ async def upload_document(
                 {"$set": {"status": "error"}}
             )
     
-    # Fire background analysis. For streaming mode, kick off the streaming pipeline
-    # directly here — don't wait for the frontend to call /analyze/trigger (that call
-    # is fragile because the browser may abort the in-flight request after navigation).
-    # The trigger endpoint remains as an idempotent safety net.
+    # Fire the full pipeline (storage + extraction + analysis) asynchronously so the
+    # endpoint returns within ~200ms and the cinematic can start immediately.
+    # The /analyze/trigger endpoint remains as an idempotent safety net for the
+    # browser-side fire-and-forget call.
     use_streaming = streaming == "true"
-    if use_streaming:
-        await _start_streaming_analysis(case_id, user_country, user_region, user_language)
-    else:
-        _spawn_tracked_task(run_background_analysis())
-    
+    _spawn_tracked_task(run_pipeline())
+
     # ── Return IMMEDIATELY with case_id ──
     return {
         "document_id": document_id,
@@ -4929,7 +4952,7 @@ async def upload_document(
         "analysis_mode": analysis_mode,
         "file_name": file.filename,
         "status": "analyzing",
-        "vision_mode": use_vision,
+        "vision_mode": is_image_file,
         "streaming": use_streaming
     }
 
