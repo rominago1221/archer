@@ -6232,55 +6232,135 @@ async def james_answer_deprecated(case_id: str, body: dict, current_user: User =
 
 @api_router.post("/cases/{case_id}/generate-action-letter")
 async def generate_action_letter(case_id: str, body: dict, current_user: User = Depends(get_current_user)):
-    """Generate a letter for a specific next action"""
+    """Generate a letter for a specific next action.
+
+    Hardened path: uses call_claude (Opus 4.7) with cached system prompt and
+    proper retry/truncation handling. Falls back to Sonnet if Opus errors,
+    surfaces the actual failure detail to the client. Injects the user's
+    stated objective from the latest document so the letter pursues the
+    client's goal, not just the action title.
+    """
     case_doc = await db.cases.find_one({"case_id": case_id, "user_id": current_user.user_id}, {"_id": 0})
     if not case_doc:
         raise HTTPException(status_code=404, detail="Case not found")
-    
-    action_title = body.get("action_title", "")
-    action_description = body.get("action_description", "")
+
+    action_title = (body.get("action_title") or "").strip()
+    action_description = (body.get("action_description") or "").strip()
     letter_tone = body.get("tone", "citizen")  # "citizen" or "attorney"
-    user_language = current_user.language or case_doc.get("language", "en")
-    
+    user_language = current_user.language or case_doc.get("language") or "en"
+
+    # Make case_id visible to self_critique_pass / cache helpers if anything
+    # downstream consults the contextvar (no-op otherwise).
+    _current_case_id.set(case_id)
+
+    # Pull the client's stated objective from the latest doc on the case so
+    # the letter is built to ACHIEVE the user's goal, not just to react to
+    # the action title.
+    user_context = ""
+    try:
+        latest_doc = await db.documents.find_one(
+            {"case_id": case_id, "user_id": current_user.user_id},
+            {"_id": 0, "user_context": 1},
+            sort=[("uploaded_at", -1)],
+        )
+        if latest_doc and latest_doc.get("user_context"):
+            user_context = (latest_doc["user_context"] or "").strip()[:600]
+    except Exception:
+        pass
+
     tone_instruction = get_letter_tone_instruction(letter_tone, user_language)
     lang_note = ""
     if user_language.startswith("fr"):
-        lang_note = "Write the letter entirely in French."
+        lang_note = "Redige la lettre entierement en francais."
     elif user_language.startswith("nl"):
-        lang_note = "Write the letter entirely in Dutch."
+        lang_note = "Schrijf de brief volledig in het Nederlands."
     elif user_language.startswith("de"):
-        lang_note = "Write the letter entirely in German."
-    
-    system = f"""You are Archer, drafting a legal letter.
-{lang_note}
-{tone_instruction}
-The letter must cite specific laws and statutes, and be ready to send.
-Use the case details to fill in all specific information (names, addresses, dates, amounts).
-Return JSON:
-{{
-  "subject": "Letter subject line",
-  "recipient": "To whom this letter is addressed",
-  "body": "Complete letter text with proper formatting. Use \\n for line breaks.",
-  "legal_citations": ["List of laws/statutes cited"],
-  "deadline_mentioned": "Any deadline mentioned in the letter or null"
-}}"""
-    
-    user_msg = f"""Case: {case_doc.get('title', '')}
-Type: {case_doc.get('type', '')}
-Findings: {json.dumps(case_doc.get('ai_findings', [])[:5], default=str)}
-Applicable laws: {json.dumps(case_doc.get('applicable_laws', []), default=str)}
+        lang_note = "Schreiben Sie den Brief vollstaendig auf Deutsch."
 
-Action requested: {action_title}
-Description: {action_description}
+    today_iso = datetime.now(timezone.utc).strftime("%Y-%m-%d (%A %d %B %Y)")
+    objective_block = ""
+    if user_context:
+        if user_language.startswith("fr"):
+            objective_block = (
+                "\n\nOBJECTIF DECLARE DU CLIENT (NON-NEGOCIABLE):\n"
+                f"\"{user_context}\"\n"
+                "→ La lettre doit servir cet objectif precis. Chaque paragraphe doit y converger."
+            )
+        elif user_language.startswith("nl"):
+            objective_block = (
+                "\n\nDOEL VAN DE KLANT (NIET-ONDERHANDELBAAR):\n"
+                f"\"{user_context}\"\n"
+                "→ De brief moet dit doel dienen. Elke alinea moet ernaar convergeren."
+            )
+        else:
+            objective_block = (
+                "\n\nCLIENT'S STATED OBJECTIVE (NON-NEGOTIABLE):\n"
+                f"\"{user_context}\"\n"
+                "→ Every paragraph of the letter must serve this objective."
+            )
 
-Generate a complete, ready-to-send legal letter for this action."""
-    
+    system = (
+        "You are Archer, drafting a legal letter on behalf of a client. "
+        "You are NOT an attorney; the letter is a legal communication, not legal advice.\n"
+        f"DATE DU JOUR: {today_iso}\n"
+        f"{lang_note}\n"
+        f"{tone_instruction}\n"
+        "Cite specific laws, articles and statutes (name + date + article only — NEVER invent URLs).\n"
+        "Use the case details to fill in all specific information (names, addresses, dates, amounts).\n"
+        "Return ONLY valid JSON with these keys, no markdown:\n"
+        "{\n"
+        '  "subject": "Letter subject line",\n'
+        '  "recipient": "To whom this letter is addressed",\n'
+        '  "body": "Complete letter text with proper formatting. Use \\n for line breaks.",\n'
+        '  "legal_citations": ["List of laws/statutes cited"],\n'
+        '  "deadline_mentioned": "Any deadline mentioned in the letter, or null"\n'
+        "}"
+        + objective_block
+    )
+
+    user_msg = (
+        f"Case: {case_doc.get('title', '')}\n"
+        f"Type: {case_doc.get('type', '')}\n"
+        f"Risk score: {case_doc.get('risk_score', 0)}/100\n"
+        f"Findings (top 5): {json.dumps(case_doc.get('ai_findings', [])[:5], default=str, ensure_ascii=False)}\n"
+        f"Applicable laws: {json.dumps(case_doc.get('applicable_laws', []), default=str, ensure_ascii=False)}\n"
+        f"Deadline: {case_doc.get('deadline') or 'none'}\n\n"
+        f"Action requested: {action_title}\n"
+        f"Description: {action_description}\n\n"
+        "Generate a complete, ready-to-send legal letter for this action."
+    )
+
+    # Primary path: Opus 4.7 via call_claude (handles retries + max_tokens auto-scaling).
+    letter = None
     try:
-        letter = await call_claude_fast(system, user_msg, max_tokens=1500)
-        return letter
+        letter = await call_claude(system, user_msg, max_tokens=4000)
     except Exception as e:
-        logger.error(f"Letter generation error: {e}")
-        raise HTTPException(status_code=500, detail="Letter generation failed")
+        logger.error(f"[letter] Opus path failed for case {case_id}: {e}", exc_info=True)
+
+    # Fallback: Sonnet 4.6 fast path with raised token budget.
+    if not letter or not isinstance(letter, dict) or not letter.get("body"):
+        logger.warning(f"[letter] Opus returned empty for case {case_id}, falling back to Sonnet")
+        try:
+            letter = await call_claude_fast(system, user_msg, max_tokens=3000)
+        except Exception as e:
+            logger.error(f"[letter] Sonnet fallback also failed for case {case_id}: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=502,
+                detail=f"Letter generation failed (both Opus and Sonnet). Underlying error: {type(e).__name__}: {str(e)[:200]}",
+            )
+
+    if not isinstance(letter, dict) or not letter.get("body"):
+        logger.error(f"[letter] Both paths returned no body for case {case_id}: {letter!r}")
+        raise HTTPException(
+            status_code=502,
+            detail="Letter generation returned an empty document. Please retry.",
+        )
+
+    logger.info(
+        f"[letter] OK case={case_id} subject_len={len(letter.get('subject', ''))} "
+        f"body_len={len(letter.get('body', ''))} citations={len(letter.get('legal_citations', []))}"
+    )
+    return letter
 
 
 
