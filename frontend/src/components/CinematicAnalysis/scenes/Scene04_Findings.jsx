@@ -49,12 +49,15 @@ function FindingCard({ finding, isCritical, delay, t }) {
             </div>
           )}
           {isCritical && finding.do_now && (
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px',
-              background: '#b91c1c', color: '#fff', borderRadius: 8, fontSize: 11, fontWeight: 800, marginTop: 8,
-            }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-              {finding.do_now.length > 40 ? finding.do_now.substring(0, 40) + '...' : finding.do_now}
+            <div
+              title={finding.do_now}
+              style={{
+                display: 'inline-flex', alignItems: 'flex-start', gap: 8, padding: '8px 14px',
+                background: '#b91c1c', color: '#fff', borderRadius: 8, fontSize: 11, fontWeight: 800, marginTop: 8,
+                maxWidth: '100%', lineHeight: 1.35, whiteSpace: 'normal', wordBreak: 'break-word',
+              }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ flexShrink: 0, marginTop: 2 }}><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span>{finding.do_now}</span>
             </div>
           )}
         </div>
