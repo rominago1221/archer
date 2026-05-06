@@ -1355,13 +1355,20 @@ def _build_belgian_analysis_result(
 
 async def analyze_document_advanced(extracted_text: str, user_context: str = "", language: str = "en", jurisdiction: str = "US", case_type: str = "other") -> dict:
     """Advanced 5-pass analysis system with real-time jurisprudence"""
-    # Fix 5: Check cache first — case_type is part of the hash so different
-    # user-declared categories don't collide on the same document.
-    doc_hash = hashlib.sha256((extracted_text[:5000] + user_context + language + jurisdiction + (case_type or "other")).encode()).hexdigest()
-    cached = await get_cached_analysis(doc_hash)
-    if cached:
-        logger.info("Advanced analysis: Returning cached result")
-        return cached
+    # Cache hash MUST include case_id so two different cases never share an
+    # analysis even when the document templates collide on the first 5000 chars.
+    # If no case_id is set in the contextvar, skip the cache entirely (better
+    # slow + correct than fast + contaminated).
+    _cache_case_id = _current_case_id.get() or ""
+    doc_hash = None
+    if _cache_case_id:
+        doc_hash = hashlib.sha256(
+            (extracted_text[:5000] + user_context + language + jurisdiction + (case_type or "other") + _cache_case_id).encode()
+        ).hexdigest()
+        cached = await get_cached_analysis(doc_hash)
+        if cached:
+            logger.info(f"Advanced analysis: Returning cached result (case_id={_cache_case_id})")
+            return cached
 
     try:
         context_supplement = ""
@@ -1465,8 +1472,9 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
             user_arguments, opposing_arguments, recent_case_law, now_date
         )
 
-        # Cache the result
-        await set_cached_analysis(doc_hash, result)
+        # Cache the result only when case_id was available for the hash.
+        if doc_hash:
+            await set_cached_analysis(doc_hash, result)
         return result
 
     except Exception as e:
@@ -2671,12 +2679,20 @@ def get_belgian_persona(language: str, region: str) -> str:
 
 async def analyze_document_belgian(extracted_text: str, user_context: str = "", region: str = "Wallonie", language: str = "fr-BE", case_type: str = "other") -> dict:
     """Belgian 5-pass analysis system with Belgian jurisprudence"""
-    # Check cache first (case_type part of the hash to avoid cross-category collisions).
-    doc_hash = hashlib.sha256((extracted_text[:5000] + user_context + region + language + "BE" + (case_type or "other")).encode()).hexdigest()
-    cached = await get_cached_analysis(doc_hash)
-    if cached:
-        logger.info("Belgian analysis: Returning cached result")
-        return cached
+    # Cache hash MUST include case_id so two different cases never share an
+    # analysis even when the document templates collide on the first 5000 chars
+    # (huissier letters, banking templates, etc.). If no case_id is set in the
+    # contextvar, skip the cache entirely.
+    _cache_case_id = _current_case_id.get() or ""
+    doc_hash = None
+    if _cache_case_id:
+        doc_hash = hashlib.sha256(
+            (extracted_text[:5000] + user_context + region + language + "BE" + (case_type or "other") + _cache_case_id).encode()
+        ).hexdigest()
+        cached = await get_cached_analysis(doc_hash)
+        if cached:
+            logger.info(f"Belgian analysis: Returning cached result (case_id={_cache_case_id})")
+            return cached
 
     try:
         persona = get_belgian_persona(language, region)
@@ -2790,8 +2806,9 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
 
         result = _build_belgian_analysis_result(doc_type, inferred_case_type, legal_analysis, strategy, facts, user_arguments, opposing_arguments, detected_region, language, now_date)
 
-        # Cache the result
-        await set_cached_analysis(doc_hash, result)
+        # Cache the result only when case_id was available for the hash.
+        if doc_hash:
+            await set_cached_analysis(doc_hash, result)
         return result
     except Exception as e:
         logger.error(f"Belgian analysis error: {e}")
