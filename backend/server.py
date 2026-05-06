@@ -16,9 +16,11 @@ import httpx
 import json
 import pdfplumber
 import io
+import re
 import requests
 import base64
 import bcrypt
+import unicodedata
 from utils.admin_auth import admin_required, log_admin_action
 import docx
 import fitz  # pymupdf for PDF→image conversion
@@ -1084,6 +1086,113 @@ async def _validate_belgian_user_arguments(user_arguments: dict, facts_str: str,
 
 
 
+# Allowed action verbs (infinitive) at the start of next_steps[].title.
+# Kept in sync with the BE_PASS3_PROMPT title rules. Lowercase, accent-stripped
+# for matching; comparison runs against an accent-stripped copy of the title.
+_TITLE_ACTION_VERBS_FR = (
+    "invalider", "exiger", "contester", "demander", "reclamer",
+    "mettre en demeure", "invoquer", "rappeler", "signaler", "denoncer",
+    "solliciter", "obtenir", "refuser", "bloquer", "retenir", "notifier",
+    "faire valoir", "saisir", "introduire", "deposer", "faire annuler",
+    "negocier", "opposer", "recuser", "convoquer", "exclure", "retirer",
+    "ecarter", "verifier", "confirmer", "envoyer", "produire", "consulter",
+    "rediger", "constater", "declarer", "intenter", "interjeter", "annuler",
+    "suspendre", "ordonner", "imposer",
+)
+_TITLE_BAD_START_RE = re.compile(
+    r"^\s*(le|la|les|l['’]|un|une|du|de la|de l['’]|des|au|aux|"
+    r"article|art\.|cet|cette|ces|ce |aucun|aucune|toute?|tout |notre|"
+    r"nos|votre|vos|leur|leurs)\s",
+    re.IGNORECASE,
+)
+
+
+def _strip_accents(s: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
+
+
+def _looks_like_action_title(title: str) -> bool:
+    """True iff title starts with one of the allowed infinitive verbs."""
+    if not isinstance(title, str):
+        return False
+    s = title.strip()
+    if not s:
+        return False
+    if _TITLE_BAD_START_RE.match(s):
+        return False
+    s_norm = _strip_accents(s.lower())
+    return any(s_norm.startswith(v) and (len(s_norm) == len(v) or s_norm[len(v)] == " ")
+               for v in _TITLE_ACTION_VERBS_FR)
+
+
+def _fix_title_to_action(title: str, language: str = "fr") -> str:
+    """Return an action-led, ≤80-char version of the title.
+    - If already verb-led, only enforce the length cap.
+    - If starts with an article/citation, prepend a sensible verb and lowercase
+      the first character of the original.
+    - Truncate at last space ≤77 chars and append '…' when needed."""
+    if not isinstance(title, str):
+        return title
+    s = title.strip()
+    if not s:
+        return s
+
+    if not _looks_like_action_title(s):
+        # Try to swap leading article/citation for a verb.
+        is_fr = (language or "fr").lower().startswith("fr")
+        if _TITLE_BAD_START_RE.match(s):
+            verb = "Invoquer" if is_fr else "Invoke"
+        else:
+            verb = "Faire valoir" if is_fr else "Assert"
+        # Lowercase first char so the joined sentence reads naturally.
+        s = f"{verb} {s[0].lower()}{s[1:]}" if s else verb
+
+    # Length cap — truncate at last space ≤77.
+    if len(s) > 80:
+        cut = s.rfind(" ", 0, 78)
+        if cut == -1:
+            cut = 77
+        s = s[:cut].rstrip(" ,;:.") + "…"
+    return s
+
+
+def _validate_next_steps_titles(strategy: dict, language: str = "fr") -> dict:
+    """Enforce action-led, ≤80-char next_steps[].title and immediate_actions[].action.
+    PASS3 rules already require this but the model occasionally returns nominal
+    phrases or mid-sentence cuts; this is the deterministic safety net."""
+    if not isinstance(strategy, dict):
+        return strategy
+
+    fixed = 0
+    steps = strategy.get("next_steps")
+    if isinstance(steps, list):
+        for step in steps:
+            if not isinstance(step, dict):
+                continue
+            original = step.get("title") or ""
+            new_title = _fix_title_to_action(original, language)
+            if new_title != original:
+                logger.info(f"[validate_next_steps] title rewritten: {original!r} -> {new_title!r}")
+                step["title"] = new_title
+                fixed += 1
+
+    actions = strategy.get("immediate_actions")
+    if isinstance(actions, list):
+        for act in actions:
+            if not isinstance(act, dict):
+                continue
+            original = act.get("action") or ""
+            new_action = _fix_title_to_action(original, language)
+            if new_action != original:
+                logger.info(f"[validate_next_steps] action rewritten: {original!r} -> {new_action!r}")
+                act["action"] = new_action
+                fixed += 1
+
+    if fixed:
+        logger.info(f"[validate_next_steps] fixed {fixed} entries")
+    return strategy
+
+
 def _validate_success_probability(strategy: dict, legal_analysis: dict) -> dict:
     """Clamp success probability to sum=100, each value 2-95%, with risk-based fallback."""
     sp = strategy.get("success_probability", {})
@@ -1345,6 +1454,7 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
         strategy["archer_question"] = await _validate_archer_question(strategy, facts_str, persona, lang_instruction, language=language)
         user_arguments = await _validate_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction, jurisdiction_guard)
         strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
+        strategy = _validate_next_steps_titles(strategy, language=language)
 
         # Build result
         recent_case_law = _build_case_law_for_frontend(courtlistener_opinions)
@@ -1644,6 +1754,7 @@ async def analyze_document_stream(
     # Validate (shared helpers)
     strategy["archer_question"] = await _validate_archer_question(strategy, facts_str, persona_with_lang, lang_instruction, language=language)
     strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
+    strategy = _validate_next_steps_titles(strategy, language=language)
 
     # --- EVENT 6: strategy_ready ---
     yield {
@@ -2310,24 +2421,44 @@ INDICES POUR DETECTER LE STADE:
 
 OBLIGATOIRE: Chaque next_step DOIT inclure un champ "recipient" indiquant a QUI la lettre/action est destinee.
 
-REGLE CRITIQUE TITRE (UI, OBLIGATION STRICTE):
-Chaque `title` DOIT etre une phrase d'action COMPLETE. Structure = [VERBE A L'INFINITIF] + [complement d'objet direct] + optionnellement [base legale courte entre parentheses].
-Le title DOIT commencer par un de ces verbes a l'infinitif (ou un synonyme proche):
-  Invalider, Exiger, Contester, Demander, Reclamer, Mettre en demeure, Invoquer, Rappeler,
-  Signaler, Denoncer, Solliciter, Obtenir, Refuser, Bloquer, Retenir, Notifier.
-Longueur max = 90 caracteres. JAMAIS couper en plein milieu. JAMAIS commencer par un article ("Le", "La", "Les", "L'", "Un", "Une"), par un groupe nominal, ou par une citation legale seule.
+REGLE CRITIQUE TITRE (UI, OBLIGATION ABSOLUE — TOLERANCE ZERO):
+Chaque `next_steps[].title` ET chaque `immediate_actions[].action` DOIT etre une PHRASE D'ACTION COMPLETE.
 
-CORRECT:
+Structure imposee (dans cet ordre, pas d'inversion):
+  [VERBE A L'INFINITIF] + [complement d'objet direct] + (reference legale courte, optionnelle, entre parentheses)
+
+Liste FERMEE des verbes autorises a l'initiale (choisis le plus pertinent):
+  Invalider · Exiger · Contester · Demander · Reclamer · Mettre en demeure · Invoquer ·
+  Rappeler · Signaler · Denoncer · Solliciter · Obtenir · Refuser · Bloquer · Retenir ·
+  Notifier · Faire valoir · Saisir · Introduire · Deposer · Annuler · Suspendre · Negocier ·
+  Opposer · Recuser · Convoquer · Exclure · Retirer · Ecarter · Verifier · Confirmer ·
+  Envoyer · Produire · Consulter · Rediger · Constater · Declarer · Intenter · Interjeter
+
+Longueur DURE: max 80 caracteres (pas 90). Compte tes caracteres avant de finaliser.
+JAMAIS de phrase coupee en plein milieu (la phrase DOIT se terminer par un mot complet et avoir un sens autonome).
+JAMAIS commencer par: un article ("Le ", "La ", "Les ", "L'", "Un ", "Une "), une preposition seule ("De ", "Du ", "Au "),
+un demonstratif ("Cet ", "Cette ", "Ces "), un possessif ("Notre ", "Votre "), une citation legale brute
+("Article ...", "Art. ..."), un groupe nominal sans verbe.
+
+EXEMPLES CORRECTS (structure et longueur respectees):
 - "Invalider la clause penale de 12% (art. 5.74 C. civ.)"
-- "Exiger la reduction du loyer au prix de reference bruxellois"
+- "Exiger le retrait de la Rolls Royce de la vente (leasing bancaire)"
 - "Mettre en demeure d'enregistrer le bail sous 15 jours"
 - "Contester l'absence d'etat des lieux contradictoire (art. 1730 C. civ.)"
+- "Saisir le juge des saisies pour suspendre la vente publique"
 
-REJETE (ces patterns NE DOIVENT PAS apparaitre):
-- "Le régime légal d'ordre public de l'article 3 §5 de la Loi" — commence par un article, pas de verbe.
-- "La forme légale du préavis de résiliation anticipée par le" — coupe au milieu.
-- "La clause d'intérêts de retard de 12% l'an de plein droit" — pas de verbe d'action.
+EXEMPLES REJETES (ne doivent JAMAIS apparaitre — ces patterns invalident la sortie):
+- "Le regime legal d'ordre public de l'article 3 §5 de la Loi" — article + pas de verbe.
+- "La forme legale du preavis de resiliation anticipee par le" — coupe au milieu (mot final = preposition).
+- "La clause d'interets de retard de 12% l'an de plein droit" — groupe nominal, pas d'action.
 - "Article 5.74 du Code civil" — citation seule, pas une action.
+- "Verification du droit de propriete sur le vehicule" — substantif "Verification" interdit, utiliser "Verifier".
+
+AUTO-CHECK avant de retourner le JSON: pour CHAQUE title et CHAQUE action, verifie:
+  1. Commence par un verbe de la liste ci-dessus ? OUI / NON
+  2. Longueur <= 80 caracteres ? OUI / NON
+  3. La phrase a-t-elle un sens autonome (sujet implicite + verbe + objet) ? OUI / NON
+Si UNE seule reponse est NON, REECRIS le title avant de finaliser.
 
 REGLE CLASSIFICATION ACTION (BLOQUE UI): Pour CHAQUE next_step, ajoute `action_type` (deux valeurs possibles) et son champ compagnon :
   • action_type = "direct"                → la lettre peut partir telle quelle. Aucun champ supplementaire.
@@ -2613,6 +2744,7 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
         strategy["archer_question"] = await _validate_archer_question(strategy, facts_str, persona_with_lang, lang_instruction, language=language)
         user_arguments = await _validate_belgian_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction, jurisdiction_guard)
         strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
+        strategy = _validate_next_steps_titles(strategy, language=language)
 
         now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
@@ -4039,6 +4171,7 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
     strategy["archer_question"] = await _validate_archer_question(strategy, facts_str, persona_with_lang, lang_instruction, language=language)
     user_arguments = await _validate_belgian_user_arguments(user_arguments, facts_str, analysis_str, lang_instruction, jurisdiction_guard)
     strategy["success_probability"] = _validate_success_probability(strategy, legal_analysis)
+    strategy = _validate_next_steps_titles(strategy, language=language)
 
     now_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
