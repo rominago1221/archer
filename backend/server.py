@@ -2163,6 +2163,12 @@ BELGIAN_PERSONA_FR = """Tu es le moteur d'analyse juridique d'Archer pour la Bel
 
 Tu N'ES PAS un avocat et ne le pretends jamais. Tu fournis des informations juridiques uniquement, pas des conseils juridiques. Ne fabrique jamais d'informations absentes du document. Recommande toujours de consulter un avocat ou un notaire belge agree.
 
+DATE DU JOUR: {today_iso}
+→ Tu DOIS comparer cette date a TOUTES les dates mentionnees dans le document (signification, audience, deadline, prescription, preavis) et calculer pour chacune: jours restants ou ecoules, statut (a venir / depasse), urgence resultante. Les recommandations doivent refleter ces calculs precis.
+
+REGLE STRICTE — AUCUNE URL:
+NE GENERE JAMAIS d'URL ni de lien hypertexte (ejustice.be, jurisquare.be, etc.). Tu hallucines invariablement les URLs. Cite UNIQUEMENT: nom de la loi + date + article + (si applicable) numero/Moniteur. Le systeme ajoutera les liens cliquables apres validation.
+
 JURIDICTION: Belgique — {region}
 LANGUE: Francais
 SYSTEME JURIDIQUE: Droit civil belge, federal + regional
@@ -2233,6 +2239,12 @@ BELGIAN_PERSONA_NL = """U bent de juridische analyse-engine van Archer voor Nede
 
 U BENT GEEN advocaat en beweert dat ook nooit te zijn. U verstrekt alleen juridische informatie, geen juridisch advies. Verzin nooit informatie die niet in het document staat. Raad altijd aan om een erkende Belgische advocaat te raadplegen.
 
+DAGTUM VAN VANDAAG: {today_iso}
+→ Vergelijk deze datum met ALLE data in het document (betekening, zitting, vervaldatum, verjaring, opzegging) en bereken per datum: resterende of verstreken dagen, status (komend / verstreken), de resulterende urgentie. De aanbevelingen MOETEN deze berekeningen weerspiegelen.
+
+STRIKTE REGEL — GEEN URLS:
+GENEREER NOOIT URLs of hyperlinks (ejustice.be, jurisquare.be, etc.). U hallucineert URLs systematisch. Citeer UITSLUITEND: naam van de wet + datum + artikel + (indien van toepassing) Belgisch Staatsblad. Het systeem voegt valideerde links toe na controle.
+
 JURISDICTIE: Belgie — {region}
 TAAL: Nederlands
 RECHTSSYSTEEM: Belgisch burgerlijk recht, federaal + regionaal
@@ -2282,6 +2294,12 @@ OUTPUT FORMAT — retourneer alleen geldige JSON, niets anders."""
 BELGIAN_PERSONA_DE = """Sie sind die rechtliche Analyse-Engine von Archer fuer die deutschsprachige Gemeinschaft Belgiens. Sie analysieren Rechtsdokumente fuer belgische Einwohner und liefern klare, umsetzbare Rechtsinformationen auf Deutsch.
 
 Sie SIND KEIN Anwalt und behaupten das auch nie. Sie liefern nur Rechtsinformationen, keine Rechtsberatung. Erfinden Sie niemals Informationen, die nicht im Dokument enthalten sind. Empfehlen Sie immer, einen zugelassenen belgischen Anwalt zu konsultieren.
+
+HEUTIGES DATUM: {today_iso}
+→ Vergleichen Sie dieses Datum mit ALLEN im Dokument genannten Daten (Zustellung, Verhandlung, Frist, Verjaehrung, Kuendigung) und berechnen Sie pro Datum: verbleibende oder abgelaufene Tage, Status (kommend / abgelaufen), resultierende Dringlichkeit. Empfehlungen MUESSEN diese Berechnungen widerspiegeln.
+
+STRENGE REGEL — KEINE URLs:
+GENERIEREN SIE NIEMALS URLs oder Hyperlinks (ejustice.be, jurisquare.be, usw.). Sie halluzinieren URLs systematisch. Zitieren Sie AUSSCHLIESSLICH: Name des Gesetzes + Datum + Artikel + (sofern zutreffend) Belgisches Staatsblatt. Das System fuegt nach Validierung Links hinzu.
 
 GERICHTSBARKEIT: Belgien — {region}
 SPRACHE: Deutsch
@@ -2669,12 +2687,15 @@ def load_belgian_jurisprudence(doc_type: str, region: str) -> str:
 
 
 def get_belgian_persona(language: str, region: str) -> str:
-    """Get the correct Belgian persona based on language"""
+    """Get the correct Belgian persona based on language. Injects today's date
+    so every pass that consumes the persona can compute deadlines/urgency from
+    a real reference point instead of guessing."""
+    today_iso = datetime.now(timezone.utc).strftime("%Y-%m-%d (%A %d %B %Y)")
     if language == "nl-BE" or language == "nl":
-        return BELGIAN_PERSONA_NL.format(region=region or "Vlaanderen")
+        return BELGIAN_PERSONA_NL.format(region=region or "Vlaanderen", today_iso=today_iso)
     elif language == "de-BE" or language == "de":
-        return BELGIAN_PERSONA_DE.format(region=region or "Communaute germanophone")
-    return BELGIAN_PERSONA_FR.format(region=region or "Belgique")
+        return BELGIAN_PERSONA_DE.format(region=region or "Communaute germanophone", today_iso=today_iso)
+    return BELGIAN_PERSONA_FR.format(region=region or "Belgique", today_iso=today_iso)
 
 
 async def analyze_document_belgian(extracted_text: str, user_context: str = "", region: str = "Wallonie", language: str = "fr-BE", case_type: str = "other") -> dict:

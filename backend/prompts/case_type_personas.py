@@ -31,8 +31,7 @@ _US = {}  # FREEZE US — réactiver M6+ : dict rempli mais non appelé (guards 
 _BE["eviction"] = """DOMAINE: ÉVICTION / BAIL RÉSIDENTIEL (droit belge)
 Cadres: Loi du 20/02/1991 sur les baux (régime résidence principale), Code civil art. 1714-1762bis, Code judiciaire art. 1344bis-decies (procédure d'expulsion), Ordonnance Bxl-Cap. 19/10/2017, Décret wallon 15/03/2018, Vlaams Woninghuurdecreet 09/11/2018.
 Points à vérifier: enregistrement du bail (obligation bailleur), garantie locative max 2 mois (Bxl/Wallonie) ou 3 mois (Flandre), état des lieux d'entrée daté et signé, indexation conforme à l'indice santé, motif de congé légalement recevable + délais de préavis exacts, respect de la trêve hivernale régionale, compétence exclusive du juge de paix.
-Pièges fréquents: congés sans motif valable, restitution de garantie retenue abusivement, travaux à charge du locataire vs bailleur, sous-location non autorisée, présence enfants majeurs et bail glissant.
-Mentionner systématiquement l'URL ejustice.be pour toute loi citée."""
+Pièges fréquents: congés sans motif valable, restitution de garantie retenue abusivement, travaux à charge du locataire vs bailleur, sous-location non autorisée, présence enfants majeurs et bail glissant."""
 
 _US["eviction"] = """DOMAIN: EVICTION / RESIDENTIAL LEASE (U.S. law)
 Frameworks: state landlord-tenant acts (Fla. Stat. Ch. 83, Cal. Civ. Code §§ 1940-1954.05, N.Y. RPL), Fair Housing Act (42 U.S.C. §§ 3601-3619), state security-deposit statutes, local rent-control ordinances (NYC RSC, SF Rent Board, LA RSO), CDC/federal eviction moratoria if temporally relevant.
