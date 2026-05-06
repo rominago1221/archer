@@ -4615,13 +4615,72 @@ async def get_case_documents(case_id: str, current_user: User = Depends(get_curr
     )
     if not case_doc:
         raise HTTPException(status_code=404, detail="Case not found")
-    
+
     documents = await db.documents.find(
         {"case_id": case_id},
         {"_id": 0}
     ).sort("uploaded_at", -1).to_list(100)
-    
+
     return [Document(**d) for d in documents]
+
+
+@api_router.get("/cases/{case_id}/document-preview")
+async def get_case_document_preview(case_id: str, current_user: User = Depends(get_current_user)):
+    """Lightweight preview of the most recent document on a case — used by the
+    cinematic Scene01 to show the REAL document text being scanned (instead of
+    a hardcoded sample).
+
+    Returns up to ~40 lines (~3000 chars) of the extracted text, plus the file
+    name and the document's extraction status so the frontend can display a
+    'Lecture en cours…' placeholder when text is not yet ready.
+    """
+    case_doc = await db.cases.find_one(
+        {"case_id": case_id, "user_id": current_user.user_id},
+        {"_id": 0, "case_id": 1},
+    )
+    if not case_doc:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    doc = await db.documents.find_one(
+        {"case_id": case_id, "user_id": current_user.user_id},
+        {"_id": 0, "file_name": 1, "extracted_text": 1, "status": 1, "file_type": 1, "uploaded_at": 1},
+        sort=[("uploaded_at", -1)],
+    )
+    if not doc:
+        return {
+            "file_name": None,
+            "file_type": None,
+            "lines": [],
+            "status": "missing",
+            "has_text": False,
+        }
+
+    text = (doc.get("extracted_text") or "").strip()
+    lines: list[str] = []
+    if text:
+        # Cap total chars first so we don't iterate over a 50k blob.
+        truncated = text[:6000]
+        for raw in truncated.split("\n"):
+            ln = raw.rstrip()
+            # Preserve a single blank line for visual rhythm; collapse runs.
+            if not ln.strip():
+                if lines and lines[-1] != "":
+                    lines.append("")
+                continue
+            # Wrap very long lines so the cinematic column fits.
+            if len(ln) > 110:
+                ln = ln[:108] + "…"
+            lines.append(ln)
+            if len(lines) >= 40:
+                break
+
+    return {
+        "file_name": doc.get("file_name"),
+        "file_type": doc.get("file_type"),
+        "lines": lines,
+        "status": doc.get("status") or "unknown",
+        "has_text": bool(lines),
+    }
 
 @api_router.get("/cases/{case_id}/brief")
 async def generate_case_brief(case_id: str, current_user: User = Depends(get_current_user)):

@@ -117,6 +117,37 @@ export function useAnalysisStream(caseId) {
     let pollNum = 0;
     let intervalId = null;
 
+    // ── Document preview: fetch real extracted text for Scene 01 ──────────
+    // Lightweight endpoint returns the latest doc's first ~40 lines + filename
+    // + extraction status. We retry every 2.5s while status === 'extracting'
+    // (OCR fallback can take 10-30s for scanned PDFs). On success we emit a
+    // pseudo-stage 'document_preview' so Scene01 can render the REAL document
+    // instead of the hardcoded lease sample.
+    let docPreviewAttempts = 0;
+    const MAX_DOC_PREVIEW_ATTEMPTS = 24; // ~60s total
+    const fetchDocPreview = async () => {
+      if (!mountedRef.current || stopped) return;
+      docPreviewAttempts++;
+      try {
+        const res = await fetch(`${API}/api/cases/${caseId}/document-preview`, { credentials: 'include' });
+        if (!res.ok) return;
+        const preview = await res.json();
+        if (!mountedRef.current) return;
+        emit('document_preview', preview, { advance: false });
+        if (preview.has_text && Array.isArray(preview.lines) && preview.lines.length > 0) {
+          return; // real text landed; stop retrying.
+        }
+        if (preview.status === 'extracting' && docPreviewAttempts < MAX_DOC_PREVIEW_ATTEMPTS) {
+          setTimeout(fetchDocPreview, 2500);
+        }
+      } catch (_) {
+        if (docPreviewAttempts < MAX_DOC_PREVIEW_ATTEMPTS) {
+          setTimeout(fetchDocPreview, 3000);
+        }
+      }
+    };
+    fetchDocPreview();
+
     const completed = (c) => {
       // Fire scenes 3-7 relative to now, using real backend data.
       const findings = c.ai_findings || [];

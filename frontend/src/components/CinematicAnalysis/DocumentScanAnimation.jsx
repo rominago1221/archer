@@ -1,133 +1,99 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 
 /**
- * Bug 4 — Progressive document scan with synchronized findings list.
+ * Progressive document scan with synchronized findings list.
  *
- * Renders a faux legal document on the left (lines of text); a scan cursor
- * walks down the page, highlighting one line every `intervalMs` (default 800ms).
- * On the right, a findings list grows in real time: each finding appears the
- * moment its corresponding line is highlighted.
+ * Renders the REAL uploaded document on the left (or a 'Reading…' placeholder
+ * with the filename if the extraction is not yet finished). A scan cursor
+ * walks down the page, highlighting one line every `intervalMs` (800ms).
  *
- * Self-contained — no external state. Owns its setInterval and cleans up on
- * unmount. Calls `onComplete()` once after the last line + a small dwell.
+ * On the right, the findings list is built as items arrive: legal references
+ * surfaced by Pass 1 first, then upgraded to real Pass 2 findings if they
+ * land while the scene is still on screen.
+ *
+ * No hardcoded sample text. Self-contained — no external state. Owns its
+ * setInterval and cleans up on unmount.
  */
-
-// Demo legal text used as the visual canvas. Real client documents are far too
-// long for a 12s scan, and we don't want to leak content anyway. The visual
-// "scanning" effect is what matters; the lines are anonymous filler.
-const DEMO_LINES_FR = [
-  'CONTRAT DE BAIL — RÉSIDENCE PRINCIPALE',
-  'Entre les soussignés :',
-  'M./Mme [BAILLEUR], propriétaire d\'un appartement situé au',
-  '[ADRESSE], ci-après dénommé "le bailleur",',
-  'Et M./Mme [PRENEUR], ci-après dénommé "le preneur",',
-  '',
-  'Article 1 — Objet du bail',
-  'Le bailleur loue au preneur un appartement de [N] pièces,',
-  'pour un usage strictement résidentiel.',
-  '',
-  'Article 2 — Durée du bail',
-  'Le présent bail est consenti pour une durée de neuf (9) années,',
-  'à compter du [DATE], renouvelable tacitement.',
-  '',
-  'Article 3 — Loyer et charges',
-  'Le loyer mensuel est fixé à [MONTANT] EUR, payable d\'avance,',
-  'au plus tard le 5 de chaque mois.',
-  '',
-  'Article 4 — État des lieux',
-  'Un état des lieux contradictoire sera dressé à l\'entrée et à la sortie.',
-  '',
-  'Article 5 — Résiliation',
-  'Le preneur peut résilier le bail moyennant préavis de trois mois.',
-];
-
-const DEMO_LINES_EN = [
-  'RESIDENTIAL LEASE AGREEMENT',
-  'Between the undersigned:',
-  'Mr./Mrs. [LANDLORD], owner of an apartment located at',
-  '[ADDRESS], hereinafter "the Landlord",',
-  'And Mr./Mrs. [TENANT], hereinafter "the Tenant",',
-  '',
-  'Section 1 — Premises',
-  'The Landlord leases to the Tenant a [N]-room apartment,',
-  'for residential use only.',
-  '',
-  'Section 2 — Term',
-  'This lease is granted for a term of nine (9) years,',
-  'starting on [DATE], with automatic renewal.',
-  '',
-  'Section 3 — Rent and charges',
-  'Monthly rent is set at [AMOUNT] EUR, payable in advance,',
-  'no later than the 5th of each month.',
-  '',
-  'Section 4 — Inspection',
-  'A move-in/move-out inspection will be conducted jointly.',
-  '',
-  'Section 5 — Termination',
-  'Tenant may terminate this lease with three months\' written notice.',
-];
-
-// Generic "violation" labels. We attach 3 of them to specific line indices.
-function buildViolations(lang) {
-  const isFr = lang === 'fr';
-  return [
-    {
-      lineIndex: 12,
-      text: isFr
-        ? 'Délai de préavis non conforme — art. 1762'
-        : 'Notice period non-compliant — art. 1762',
-    },
-    {
-      lineIndex: 16,
-      text: isFr
-        ? 'Clause de loyer indexable manquante'
-        : 'Missing indexation clause for rent',
-    },
-    {
-      lineIndex: 22,
-      text: isFr
-        ? 'Motif de résiliation insuffisamment caractérisé'
-        : 'Termination grounds insufficiently characterized',
-    },
-  ];
-}
 
 const SCAN_INTERVAL_MS = 800;
 const POST_SCAN_DWELL_MS = 1500;
 
-export default function DocumentScanAnimation({ language = 'fr', onComplete }) {
-  const lines = language === 'fr' ? DEMO_LINES_FR : DEMO_LINES_EN;
-  const violations = buildViolations(language);
-  const violationByLine = Object.fromEntries(violations.map((v) => [v.lineIndex, v]));
+// Soft visual lines used ONLY when no real document text is available yet
+// (extraction in progress). They never claim to be the user's document —
+// they're greyed shimmer placeholders showing the system is reading.
+function makePlaceholderLines(fileName, language) {
+  const isFr = language === 'fr';
+  const label = fileName
+    ? (isFr ? `Lecture de ${fileName}…` : `Reading ${fileName}…`)
+    : (isFr ? 'Lecture du document en cours…' : 'Reading the document…');
+  // 12 dim shimmer rows + the label on top.
+  return [label, '', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '];
+}
 
-  const [scanIndex, setScanIndex] = useState(-1); // -1 = before scan starts
-  const [revealedFindings, setRevealedFindings] = useState([]);
+export default function DocumentScanAnimation({
+  language = 'fr',
+  lines: realLines,
+  fileName,
+  items,
+  onComplete,
+}) {
+  const isFr = language === 'fr';
+  const hasRealText = Array.isArray(realLines) && realLines.length > 0;
+  const lines = useMemo(
+    () => (hasRealText ? realLines : makePlaceholderLines(fileName, language)),
+    [hasRealText, realLines, fileName, language],
+  );
+
+  // Pick a few lines to highlight as "interesting" while the scan walks. We
+  // do this deterministically (every 5th non-empty line, starting from index
+  // 3) so the visual feels coherent without trying to do real NLP mapping.
+  const highlightLineSet = useMemo(() => {
+    const set = new Set();
+    let nonEmptySeen = 0;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i] && lines[i].trim()) {
+        nonEmptySeen++;
+        if (nonEmptySeen >= 4 && (nonEmptySeen - 4) % 5 === 0) set.add(i);
+      }
+    }
+    return set;
+  }, [lines]);
+
+  const [scanIndex, setScanIndex] = useState(-1);
   const completedRef = useRef(false);
 
   useEffect(() => {
-    setScanIndex(0); // start scanning the first line
+    setScanIndex(0);
     const interval = setInterval(() => {
-      setScanIndex((i) => {
-        if (i >= lines.length - 1) return i;
-        return i + 1;
-      });
+      setScanIndex((i) => (i >= lines.length - 1 ? i : i + 1));
     }, SCAN_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [lines.length]);
 
-  // Add findings as we cross their line index
   useEffect(() => {
-    if (scanIndex < 0) return;
-    const v = violationByLine[scanIndex];
-    if (v && !revealedFindings.find((r) => r.lineIndex === v.lineIndex)) {
-      setRevealedFindings((prev) => [...prev, v]);
-    }
     if (scanIndex >= lines.length - 1 && !completedRef.current) {
       completedRef.current = true;
       const t = setTimeout(() => onComplete && onComplete(), POST_SCAN_DWELL_MS);
       return () => clearTimeout(t);
     }
-  }, [scanIndex, lines.length, violationByLine, revealedFindings, onComplete]);
+  }, [scanIndex, lines.length, onComplete]);
+
+  // Right-column items: use whatever the parent feeds us. Fallback to a
+  // single "Reading…" hint while we wait. We reveal items progressively
+  // (one every ~1.2s) for cinematic effect.
+  const itemList = Array.isArray(items) ? items.filter(Boolean) : [];
+  const [itemsShown, setItemsShown] = useState(0);
+  useEffect(() => {
+    if (itemList.length === 0) {
+      setItemsShown(0);
+      return undefined;
+    }
+    setItemsShown(0);
+    const id = setInterval(() => {
+      setItemsShown((n) => (n < itemList.length ? n + 1 : n));
+    }, 1200);
+    return () => clearInterval(id);
+  }, [itemList.length]);
 
   return (
     <div
@@ -153,94 +119,89 @@ export default function DocumentScanAnimation({ language = 'fr', onComplete }) {
           color: '#1f2937',
           boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
           minHeight: 380,
+          maxHeight: 560,
+          overflow: 'hidden',
         }}
       >
-        {lines.map((line, i) => {
-          const isHighlighted = scanIndex >= i && violationByLine[i];
-          const isCurrent = scanIndex === i;
-          return (
-            <div
-              key={i}
-              style={{
-                background: isHighlighted ? '#fef08a' : 'transparent',
-                padding: isHighlighted ? '1px 4px' : 0,
-                borderRadius: 2,
-                transition: 'background 0.4s ease',
-                opacity: line === '' ? 0 : 1,
-                outline: isCurrent && !isHighlighted ? '0.5px solid rgba(26,86,219,0.15)' : 'none',
-                fontWeight: i === 0 ? 700 : 400,
-                marginBottom: line === '' ? 4 : 0,
-              }}
-            >
-              {line || '\u00A0'}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* === RIGHT: Findings list, built as the scan progresses === */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-        }}
-      >
-        <div
-          style={{
+        {hasRealText && fileName && (
+          <div style={{
+            fontFamily: '"SF Mono", Monaco, monospace',
             fontSize: 10,
             fontWeight: 700,
             color: '#9ca3af',
             letterSpacing: '0.7px',
             textTransform: 'uppercase',
-            fontFamily: '"SF Mono", Monaco, monospace',
-            marginBottom: 4,
-          }}
-        >
-          {language === 'fr' ? 'Violations détectées en temps réel' : 'Violations detected in real time'}
+            marginBottom: 12,
+            paddingBottom: 8,
+            borderBottom: '0.5px dashed #e2e0db',
+          }}>
+            {fileName}
+          </div>
+        )}
+        {lines.map((line, i) => {
+          const isHighlighted = scanIndex >= i && highlightLineSet.has(i);
+          const isCurrent = scanIndex === i;
+          const isPlaceholderShimmer = !hasRealText && line === ' ';
+          return (
+            <div
+              key={i}
+              style={{
+                background: isHighlighted ? '#fef08a' : (isPlaceholderShimmer ? '#f4f4f1' : 'transparent'),
+                padding: isHighlighted ? '1px 4px' : 0,
+                height: isPlaceholderShimmer ? 14 : 'auto',
+                borderRadius: isPlaceholderShimmer ? 4 : 2,
+                marginBottom: isPlaceholderShimmer ? 8 : (line === '' ? 4 : 0),
+                transition: 'background 0.4s ease',
+                opacity: line === '' ? 0 : (isPlaceholderShimmer ? 0.6 : 1),
+                outline: isCurrent && !isHighlighted && !isPlaceholderShimmer ? '0.5px solid rgba(26,86,219,0.15)' : 'none',
+                fontWeight: i === 0 && hasRealText ? 700 : 400,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}
+            >
+              {line || ' '}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* === RIGHT: Items detected, revealed progressively === */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{
+          fontSize: 10, fontWeight: 700, color: '#9ca3af', letterSpacing: '0.7px',
+          textTransform: 'uppercase', fontFamily: '"SF Mono", Monaco, monospace', marginBottom: 4,
+        }}>
+          {isFr ? 'Éléments détectés en temps réel' : 'Items detected in real time'}
         </div>
 
-        {revealedFindings.length === 0 ? (
-          <div
-            style={{
-              fontSize: 12,
-              color: '#9ca3af',
-              fontStyle: 'italic',
-              padding: '12px 14px',
-              border: '1px dashed #e2e0db',
-              borderRadius: 8,
-              background: '#fafaf8',
-            }}
-          >
-            {language === 'fr' ? 'Lecture en cours…' : 'Reading…'}
+        {itemList.length === 0 || itemsShown === 0 ? (
+          <div style={{
+            fontSize: 12, color: '#9ca3af', fontStyle: 'italic', padding: '12px 14px',
+            border: '1px dashed #e2e0db', borderRadius: 8, background: '#fafaf8',
+          }}>
+            {isFr ? 'Lecture en cours…' : 'Reading…'}
           </div>
         ) : (
-          revealedFindings.map((v, idx) => (
+          itemList.slice(0, itemsShown).map((it, idx) => (
             <div
-              key={v.lineIndex}
+              key={`${idx}-${(it.text || it.label || '').slice(0, 20)}`}
               style={{
-                display: 'flex',
-                gap: 10,
-                alignItems: 'flex-start',
-                padding: '10px 14px',
-                background: '#fff',
-                border: '0.5px solid #e2e0db',
-                borderLeft: '2px solid #16a34a',
-                borderRadius: 8,
-                animation: `fadeUp 0.35s ease ${idx * 0.05}s both`,
+                display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 14px',
+                background: '#fff', border: '0.5px solid #e2e0db',
+                borderLeft: `2px solid ${it.tone === 'risk' ? '#b91c1c' : '#16a34a'}`,
+                borderRadius: 8, animation: `fadeUp 0.35s ease ${idx * 0.05}s both`,
                 boxShadow: '0 1px 2px rgba(22,163,74,0.06)',
               }}
             >
-              <svg
-                width="14" height="14" viewBox="0 0 24 24"
-                fill="none" stroke="#15803d" strokeWidth="3"
-                strokeLinecap="round" strokeLinejoin="round"
-                style={{ marginTop: 2, flexShrink: 0 }}
-              >
-                <polyline points="20 6 9 17 4 12" />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke={it.tone === 'risk' ? '#b91c1c' : '#15803d'} strokeWidth="3"
+                strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 2, flexShrink: 0 }}>
+                {it.tone === 'risk'
+                  ? <><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/><path d="m10.29 3.86-8.47 14a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></>
+                  : <polyline points="20 6 9 17 4 12" />}
               </svg>
               <span style={{ fontSize: 12, color: '#1f2937', fontWeight: 500 }}>
-                {v.text}
+                {it.text || it.label || ''}
               </span>
             </div>
           ))
