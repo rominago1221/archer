@@ -878,6 +878,7 @@ async def self_critique_pass(
     language: str = "en",
     jurisdiction: str = "US",
     case_id: Optional[str] = None,
+    user_context: str = "",
 ) -> dict:
     """Critique the given analysis JSON. If severity_score > 5, rewrite and return
     the improved version. Otherwise return the original unchanged.
@@ -887,6 +888,10 @@ async def self_critique_pass(
 
     `context_hint` is a 1-2 sentence reminder of what this pass was supposed to
     produce. Used inside the critique prompt to scope the reviewer.
+
+    `user_context` is the client's stated objective. The reviewer must judge
+    the analysis through the lens of this objective — an analysis that is
+    technically sound but doesn't serve the client's goal is BAD.
     """
     if not isinstance(analysis_output, dict) or not analysis_output:
         return analysis_output
@@ -899,20 +904,31 @@ async def self_critique_pass(
     except Exception:
         return analysis_output
 
+    objective_clause = ""
+    _ctx_clean = (user_context or "").strip()
+    if _ctx_clean:
+        objective_clause = (
+            "\n\nCLIENT'S STATED OBJECTIVE (NON-NEGOTIABLE — every critique must be judged against this):\n"
+            f"\"{_ctx_clean[:600]}\"\n"
+            "An analysis that is technically correct but does NOT serve this objective is a BAD analysis. "
+            "Flag any finding/recommendation/argument that drifts away from this goal."
+        )
+
     critique_system = (
         "You are a senior litigation attorney reviewing a junior colleague's analysis before it is "
         "used by a real client. Your job is to be brutally honest about weaknesses. Pretend this will "
         "be scrutinised by an opposing counsel in court. Identify every gap, every superficial claim, "
         "every missing nuance, every imprecise legal reference, every strategic alternative that was "
-        "not explored. Be specific, not generic. Cite what should be added, corrected, or deepened.\n\n"
+        "not explored. Be specific, not generic. Cite what should be added, corrected, or deepened."
+        + objective_clause + "\n\n"
         "Return ONLY valid JSON with exactly these keys:\n"
         "{\n"
-        '  "critiques": [ { "category": "findings_missed|weak_argument|imprecise_law_ref|missed_nuance|missed_alternative|other", '
+        '  "critiques": [ { "category": "findings_missed|weak_argument|imprecise_law_ref|missed_nuance|missed_alternative|off_objective|other", '
         '"description": "specific issue, 1-2 sentences", "severity": integer 1-10 } ],\n'
         '  "severity_score": integer 0-10, representing the overall severity (max of individual severities, adjusted by count),\n'
         '  "summary": "one-line verdict"\n'
         "}\n"
-        "If the analysis is genuinely solid, return critiques=[] and severity_score=0."
+        "If the analysis is genuinely solid AND on-objective, return critiques=[] and severity_score=0."
     )
 
     critique_user = (
@@ -1397,11 +1413,13 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
 
         # PASS 2: Legal analysis
         logger.info("Advanced analysis: Pass 2 — Legal analysis")
+        _p2_objective = _build_objective_block(user_context, language)
         legal_analysis = await call_claude(
             persona,
             PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2), jurisprudence_section=jurisprudence_text + realtime_law_context)
-            + "\n\nIMPORTANT: Use the provided recent court decisions and jurisprudence to inform your analysis. Cite any relevant rulings in your findings.",
-            max_tokens=6000  # audit: 8000 was excessive for structured JSON output, -3-5s
+            + "\n\nIMPORTANT: Use the provided recent court decisions and jurisprudence to inform your analysis. Cite any relevant rulings in your findings."
+            + _p2_objective,
+            max_tokens=6000
         )
 
         # PASS 2 self-critique — senior-attorney review, rewrite if severity > 5.
@@ -1415,6 +1433,7 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
             ),
             language=language,
             jurisdiction=jurisdiction,
+            user_context=user_context,
         )
 
         facts_str = json.dumps(facts, indent=2)
@@ -1450,6 +1469,7 @@ async def analyze_document_advanced(extracted_text: str, user_context: str = "",
             ),
             language=language,
             jurisdiction=jurisdiction,
+            user_context=user_context,
         )
         # Carry the adversarial attack on the strategy object for result builder pickup.
         if isinstance(strategy, dict):
@@ -1642,12 +1662,13 @@ async def analyze_document_stream(
         jurisprudence_text = load_jurisprudence(inferred_case_type, doc_type)
 
     # Run Pass 2 + CourtListener in parallel
+    p2_objective_block = _build_objective_block(user_context, language)
     if is_belgian:
         pass2_task = asyncio.create_task(
             call_claude(persona_with_lang, p2_prompt.format(
                 facts_json=json.dumps(facts, indent=2, ensure_ascii=False),
                 jurisprudence_section=jurisprudence_text
-            ), max_tokens=6000)  # audit: 8000 -> 6000, -3-5s
+            ) + p2_objective_block, max_tokens=6000)
         )
         # No CourtListener for Belgian cases
         cl_opinions = []
@@ -1664,8 +1685,9 @@ async def analyze_document_stream(
                 p2_prompt.format(
                     facts_json=json.dumps(facts, indent=2),
                     jurisprudence_section=jurisprudence_text + realtime_law_context
-                ) + "\n\nIMPORTANT: Use the provided recent court decisions and jurisprudence to inform your analysis. Cite any relevant rulings in your findings.",
-                max_tokens=6000  # audit: 8000 -> 6000, -3-5s
+                ) + "\n\nIMPORTANT: Use the provided recent court decisions and jurisprudence to inform your analysis. Cite any relevant rulings in your findings."
+                + p2_objective_block,
+                max_tokens=6000
             )
         )
 
@@ -2747,7 +2769,13 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
 
         # PASS 2: Legal analysis
         logger.info("Belgian analysis: Passe 2 — Analyse juridique")
-        legal_analysis = await call_claude(persona_with_lang, BE_PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2, ensure_ascii=False), jurisprudence_section=jurisprudence_text), max_tokens=6000)  # audit: 8000 -> 6000
+        _p2_objective_be = _build_objective_block(user_context, language)
+        legal_analysis = await call_claude(
+            persona_with_lang,
+            BE_PASS2_PROMPT.format(facts_json=json.dumps(facts, indent=2, ensure_ascii=False), jurisprudence_section=jurisprudence_text)
+            + _p2_objective_be,
+            max_tokens=6000,
+        )
 
         # PASS 2 self-critique (BE).
         legal_analysis = await self_critique_pass(
@@ -2761,6 +2789,7 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
             ),
             language=language,
             jurisdiction="BE",
+            user_context=user_context,
         )
 
         # PASS 7 — Citation validation. Cross-check every legal_ref emitted by
@@ -2811,6 +2840,7 @@ async def analyze_document_belgian(extracted_text: str, user_context: str = "", 
             ),
             language=language,
             jurisdiction="BE",
+            user_context=user_context,
         )
         if isinstance(strategy, dict):
             strategy["_adversarial_attack"] = adversarial_attack
@@ -4078,6 +4108,7 @@ async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, us
         ),
         language=language,
         jurisdiction=jurisdiction,
+        user_context=user_context,
     )
 
     facts_str = json.dumps(facts, indent=2)
@@ -4112,6 +4143,7 @@ async def run_multi_doc_analysis_advanced(combined_text: str, doc_count: int, us
         ),
         language=language,
         jurisdiction=jurisdiction,
+        user_context=user_context,
     )
     if isinstance(strategy, dict):
         strategy["_adversarial_attack"] = adversarial_attack
@@ -4195,6 +4227,7 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
         ),
         language=language,
         jurisdiction="BE",
+        user_context=user_context,
     )
 
     # PASS 7 — Citation validation (multi-doc BE).
@@ -4239,6 +4272,7 @@ async def run_multi_doc_analysis_belgian(combined_text: str, doc_count: int, use
         ),
         language=language,
         jurisdiction="BE",
+        user_context=user_context,
     )
     if isinstance(strategy, dict):
         strategy["_adversarial_attack"] = adversarial_attack
