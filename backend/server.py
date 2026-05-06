@@ -10118,6 +10118,114 @@ async def health_check():
     return {"status": "healthy"}
 
 
+# ──────────────────────────────────────────────────────────────────────────
+# Deploy visibility + self-pull
+# ──────────────────────────────────────────────────────────────────────────
+# Two endpoints to settle the recurring question "is the prod pod actually
+# running the latest commit?":
+#   GET  /api/admin/version       — public read of the running git SHA + branch
+#                                   so we can compare with origin/main from the
+#                                   outside (curl-friendly, no auth needed).
+#   POST /api/admin/deploy/pull   — token-gated `git fetch` + ff-only pull.
+#                                   Returns old/new SHA + changed files. Does
+#                                   NOT restart the process: the supervisor /
+#                                   uvicorn reload has to pick the new code up.
+# Token is read from env DEPLOY_TOKEN; pass via header X-Deploy-Token.
+import subprocess as _subprocess
+from pathlib import Path as _Path
+
+_SERVER_STARTED_AT = datetime.now(timezone.utc).isoformat()
+_REPO_ROOT_GUESS = str(_Path(__file__).resolve().parent.parent)
+
+
+def _run_git(*args: str, cwd: str = _REPO_ROOT_GUESS, timeout: int = 30) -> dict:
+    """Run a git subcommand and return {ok, stdout, stderr, code}."""
+    try:
+        proc = _subprocess.run(
+            ["git", *args], cwd=cwd, capture_output=True, text=True, timeout=timeout
+        )
+        return {
+            "ok": proc.returncode == 0,
+            "code": proc.returncode,
+            "stdout": (proc.stdout or "").strip(),
+            "stderr": (proc.stderr or "").strip(),
+        }
+    except FileNotFoundError:
+        return {"ok": False, "code": -1, "stdout": "", "stderr": "git binary not found"}
+    except _subprocess.TimeoutExpired:
+        return {"ok": False, "code": -1, "stdout": "", "stderr": f"git {' '.join(args)} timed out after {timeout}s"}
+    except Exception as e:
+        return {"ok": False, "code": -1, "stdout": "", "stderr": f"{type(e).__name__}: {e}"}
+
+
+@api_router.get("/admin/version")
+async def admin_version():
+    """Read what's actually running. No auth — leaks nothing sensitive."""
+    sha = _run_git("rev-parse", "HEAD")
+    short = _run_git("rev-parse", "--short", "HEAD")
+    branch = _run_git("rev-parse", "--abbrev-ref", "HEAD")
+    last_commit = _run_git("log", "-1", "--pretty=%h %s (%ar)")
+    status = _run_git("status", "--porcelain")
+    return {
+        "git_sha": sha.get("stdout") if sha.get("ok") else None,
+        "git_sha_short": short.get("stdout") if short.get("ok") else None,
+        "git_branch": branch.get("stdout") if branch.get("ok") else None,
+        "last_commit": last_commit.get("stdout") if last_commit.get("ok") else None,
+        "working_tree_clean": status.get("ok") and not (status.get("stdout") or "").strip(),
+        "server_started_at": _SERVER_STARTED_AT,
+        "current_time": datetime.now(timezone.utc).isoformat(),
+        "repo_root": _REPO_ROOT_GUESS,
+        "errors": [
+            r.get("stderr") for r in (sha, short, branch, last_commit, status)
+            if not r.get("ok") and r.get("stderr")
+        ],
+    }
+
+
+@api_router.post("/admin/deploy/pull")
+async def admin_deploy_pull(request: Request):
+    """Self-pull origin/main. Token-gated via X-Deploy-Token header.
+    Sends back old/new SHA + changed files. Does NOT auto-restart — the
+    supervisor / uvicorn --reload watcher has to pick up the new code,
+    OR you trigger your usual restart afterwards."""
+    expected = os.environ.get("DEPLOY_TOKEN") or ""
+    provided = request.headers.get("X-Deploy-Token") or ""
+    if not expected:
+        raise HTTPException(status_code=503, detail="DEPLOY_TOKEN not configured on this server")
+    if not provided or provided != expected:
+        raise HTTPException(status_code=401, detail="Invalid or missing X-Deploy-Token")
+
+    before = _run_git("rev-parse", "HEAD")
+    fetch = _run_git("fetch", "origin", "main", timeout=60)
+    if not fetch.get("ok"):
+        raise HTTPException(status_code=502, detail=f"git fetch failed: {fetch.get('stderr') or fetch.get('stdout')}")
+
+    pull = _run_git("pull", "--ff-only", "origin", "main", timeout=60)
+    if not pull.get("ok"):
+        # Probably divergent commits on the pod — surface the actual error.
+        raise HTTPException(
+            status_code=409,
+            detail=f"git pull --ff-only failed: {pull.get('stderr') or pull.get('stdout')}",
+        )
+
+    after = _run_git("rev-parse", "HEAD")
+    diff_names = _run_git("diff", "--name-only", f"{before.get('stdout')}..{after.get('stdout')}")
+    last_commit = _run_git("log", "-1", "--pretty=%h %s (%ar)")
+    changed = (diff_names.get("stdout") or "").splitlines() if diff_names.get("ok") else []
+
+    moved = (before.get("stdout") or "") != (after.get("stdout") or "")
+    return {
+        "moved": moved,
+        "before_sha": before.get("stdout"),
+        "after_sha": after.get("stdout"),
+        "last_commit": last_commit.get("stdout") if last_commit.get("ok") else None,
+        "changed_files": changed,
+        "changed_count": len(changed),
+        "restart_required": moved,
+        "pull_output": pull.get("stdout"),
+    }
+
+
 # Attorney Portal routes extracted to routes/attorney_routes.py
 from routes.attorney_routes import router as attorney_router
 api_router.include_router(attorney_router)
