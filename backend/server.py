@@ -1421,6 +1421,13 @@ async def analyze_document_stream(
     Reuses shared helpers — zero duplication of business logic."""
     import time as _time
 
+    _ctx_in = (user_context or "").strip()
+    logger.info(
+        f"[analyze_document_stream] ENTRY | country={country!r} language={language!r} "
+        f"case_type={case_type!r} text_len={len(extracted_text or '')} "
+        f"objective_len={len(_ctx_in)} objective_preview={_ctx_in[:160]!r}"
+    )
+
     # FREEZE US — force BE. On garde le paramètre `country` pour M6+
     # mais pendant le freeze, toute autre valeur est convertie en BE
     # (les endpoints en amont rejettent déjà avec un 400, c'est une
@@ -1902,10 +1909,13 @@ def _spawn_tracked_task(coro):
     return task
 
 
-async def _start_streaming_analysis(case_id: str, user_country: str, user_region: str, user_language: str) -> dict:
+async def _start_streaming_analysis(case_id: str, user_country: str, user_region: str, user_language: str, user_context: Optional[str] = None) -> dict:
     """Atomically claim a case for streaming analysis and spawn the background pipeline.
     Returns a dict describing the outcome ({"status": "started"|"in_progress"|"already_complete"|"error", ...}).
-    Callers can ignore the result — the pipeline runs to completion regardless."""
+    Callers can ignore the result — the pipeline runs to completion regardless.
+
+    user_context: caller-supplied objective. If None, falls back to the value persisted
+    on the most recent document for this case."""
     case_doc = await db.cases.find_one({"case_id": case_id}, {"_id": 0})
     if not case_doc:
         return {"status": "error", "message": "Case not found"}
@@ -1943,6 +1953,14 @@ async def _start_streaming_analysis(case_id: str, user_country: str, user_region
     trigger_case = await db.cases.find_one({"case_id": case_id}, {"_id": 0, "type": 1})
     trigger_case_type = normalize_case_type((trigger_case or {}).get("type"))
 
+    # Resolve user_context: caller-supplied takes precedence, fall back to doc-stored.
+    effective_user_context = (user_context or "").strip() if user_context is not None else (doc.get("user_context") or "").strip()
+    logger.info(
+        f"[stream] case={case_id} starting analysis | "
+        f"objective_len={len(effective_user_context)} "
+        f"objective_preview={effective_user_context[:120]!r}"
+    )
+
     async def run_background():
         full_result = None
         try:
@@ -1951,6 +1969,7 @@ async def _start_streaming_analysis(case_id: str, user_country: str, user_region
                 country=user_country,
                 region=user_region,
                 language=user_language,
+                user_context=effective_user_context,
                 case_type=trigger_case_type,
             ):
                 if event.get("stage") == "complete":
@@ -4623,6 +4642,8 @@ async def upload_document(
         logger.info(f"Case {case_id} created (pending extraction+analysis)")
 
     # Document shell — extraction status, no text yet.
+    # Persist user_context on the doc so the /analyze/trigger fallback (and any
+    # re-analysis path) can recover the user's stated objective.
     doc_record = {
         "document_id": document_id,
         "case_id": case_id,
@@ -4632,6 +4653,7 @@ async def upload_document(
         "storage_path": None,
         "file_type": file_ext,
         "extracted_text": None,
+        "user_context": (user_context or "").strip(),
         "status": "extracting",
         "is_key_document": not is_existing_case,
         "uploaded_at": now
@@ -4721,8 +4743,12 @@ async def upload_document(
 
             # PHASE 6: Run analysis. Streaming pipeline reads text from DB; legacy uses closure.
             if streaming == "true" and not is_contract_guard:
-                logger.info(f"[upload] kicking streaming analysis for case {case_id} | objective_len={len((user_context or '').strip())}")
-                await _start_streaming_analysis(case_id, user_country, user_region, user_language)
+                _ctx = (user_context or "").strip()
+                logger.info(
+                    f"[upload] kicking streaming analysis for case {case_id} | "
+                    f"objective_len={len(_ctx)} objective_preview={_ctx[:120]!r}"
+                )
+                await _start_streaming_analysis(case_id, user_country, user_region, user_language, user_context=user_context)
                 return
 
             # Legacy / contract-guard / vision-only analysis path.
